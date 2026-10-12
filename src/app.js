@@ -49,7 +49,17 @@ app.use(
 );
 
 // Dùng cho dịch vụ ping giữ server luôn thức (Render free) và kiểm tra sức khỏe
-app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
+app.get('/healthz', async (req, res) => {
+  // ?db=1: chạm cả database để dịch vụ DB miễn phí không tự tắt vì "không hoạt động"
+  if (req.query.db) {
+    try {
+      await db.raw('select 1');
+    } catch (err) {
+      return res.status(503).type('text/plain').send('db error');
+    }
+  }
+  res.type('text/plain').send('ok');
+});
 
 // Ảnh lưu trong DB — không mất khi deploy lại
 app.get('/media/:id', async (req, res, next) => {

@@ -17,7 +17,7 @@ async function start() {
   await require('./scripts/seed')({ demo: process.env.SEED_DEMO === 'true' });
 
   const server = app.listen(config.port, () => {
-    console.log(`Lunar đang chạy tại ${config.siteUrl} (port ${config.port}, ${config.env})`);
+    console.log(`Lunar Lucky đang chạy tại ${config.siteUrl} (port ${config.port}, ${config.env})`);
   });
 
   const shutdown = () => {

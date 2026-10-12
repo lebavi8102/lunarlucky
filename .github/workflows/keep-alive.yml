@@ -1,0 +1,19 @@
+# Gọi website mỗi 10 phút để Render (gói free) không "ngủ"
+# và database Aiven không bị tắt vì không hoạt động.
+name: keep-alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping website
+        run: |
+          for url in "https://lunarlucky.onrender.com/healthz?db=1" "https://lunarlucky.onrender.com/"; do
+            curl -fsS -m 90 -o /dev/null -w "%{http_code} %{time_total}s $url\n" "$url" || echo "lỗi: $url"
+          done
