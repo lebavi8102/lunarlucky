@@ -6,7 +6,7 @@ const cart = require('../lib/cart');
 const notify = require('../lib/notify');
 const { vietQrUrl } = require('../lib/vietqr');
 const { Form } = require('../lib/validate');
-const { parseJson, normalizePhone, todayVN } = require('../lib/format');
+const { normalizePhone, todayVN } = require('../lib/format');
 const { flash } = require('../middleware/locals');
 
 const router = express.Router();
@@ -110,13 +110,11 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     coupon_code: priced.coupon ? priced.coupon.code : null,
   };
   const items = priced.lines.map((l) => ({
-    product_id: l.type === 'product' ? l.productId : null,
-    kind: l.type,
+    product_id: l.productId,
     name: l.name,
     price: l.unitPrice,
     qty: l.qty,
     line_total: l.lineTotal,
-    details: l.details ? JSON.stringify(l.details) : null,
   }));
 
   try {
@@ -195,9 +193,7 @@ router.get('/don-hang/:code', async (req, res, next) => {
     (req.session.myOrders || []).includes(code) ||
     (u && (u.role === 'admin' || u.id === order.user_id));
   if (!allowed) return res.redirect(`/tra-cuu-don?ma=${encodeURIComponent(code)}`);
-  const items = (await db('order_items').where({ order_id: order.id })).map((i) => ({
-    ...i, details: parseJson(i.details, null),
-  }));
+  const items = await db('order_items').where({ order_id: order.id });
   res.locals.seo.title = `Đơn hàng ${order.code} · Lunar`;
   res.locals.seo.noindex = true;
   res.render('shop/order', { order, items, qr: qrFor(order, res.locals.s), isNew: req.query.moi === '1' });

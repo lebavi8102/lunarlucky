@@ -90,7 +90,6 @@ app.use(require('./routes/seo'));
 app.use(require('./routes/shop'));
 app.use(require('./routes/cart'));
 app.use(require('./routes/checkout'));
-app.use(require('./routes/builder'));
 app.use(require('./routes/account'));
 app.use(require('./routes/b2b'));
 app.use(require('./routes/blog'));

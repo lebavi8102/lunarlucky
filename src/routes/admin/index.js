@@ -5,7 +5,7 @@ const notify = require('../../lib/notify');
 const resource = require('./resource');
 const { requireAdmin } = require('../../middleware/auth');
 const { flash } = require('../../middleware/locals');
-const { parseJson, toDate, todayVN } = require('../../lib/format');
+const { toDate, todayVN } = require('../../lib/format');
 
 const router = express.Router();
 
@@ -98,7 +98,7 @@ router.get('/don-hang', async (req, res) => {
 async function loadOrder(id) {
   const order = await db('orders').where({ id: Number(id) }).first();
   if (!order) return null;
-  const items = (await db('order_items').where({ order_id: order.id })).map((i) => ({ ...i, details: parseJson(i.details, null) }));
+  const items = await db('order_items').where({ order_id: order.id });
   return { order, items };
 }
 
@@ -322,55 +322,6 @@ router.use(
       if (v.min_order == null) v.min_order = 0;
       return e;
     },
-  }),
-);
-
-router.use(
-  resource({
-    path: 'hop-qua', table: 'builder_boxes', title: 'Hộp quà (Tự tạo giỏ)', singular: 'hộp quà', titleField: 'name',
-    orderBy: [{ column: 'sort' }],
-    columns: [
-      { key: 'image_id', label: '', format: 'image' },
-      { key: 'name', label: 'Tên', format: 'title' },
-      { key: 'price', label: 'Giá hộp', format: 'money' },
-      { key: 'capacity', label: 'Sức chứa' },
-      { key: 'is_active', label: 'Hiển thị', format: 'bool' },
-    ],
-    fields: [
-      { name: 'name', label: 'Tên hộp', type: 'text', required: true },
-      { name: 'description', label: 'Mô tả', type: 'textarea', max: 300 },
-      { name: 'price', label: 'Giá hộp (₫)', type: 'money', required: true },
-      { name: 'capacity', label: 'Số món tối đa', type: 'number', required: true, default: 6 },
-      { name: 'image_id', label: 'Ảnh', type: 'image' },
-      { name: 'sort', label: 'Thứ tự', type: 'number', default: 0 },
-      { name: 'is_active', label: 'Hiển thị', type: 'checkbox', default: true },
-    ],
-    validate: (v) => { if (v.sort == null) v.sort = 0; return {}; },
-  }),
-);
-
-router.use(
-  resource({
-    path: 'mon-qua', table: 'builder_items', title: 'Món quà (Tự tạo giỏ)', singular: 'món quà', titleField: 'name',
-    searchable: ['name', 'group_name'],
-    orderBy: [{ column: 'group_name' }, { column: 'sort' }],
-    columns: [
-      { key: 'image_id', label: '', format: 'image' },
-      { key: 'name', label: 'Tên', format: 'title' },
-      { key: 'group_name', label: 'Nhóm' },
-      { key: 'price', label: 'Giá', format: 'money' },
-      { key: 'is_active', label: 'Hiển thị', format: 'bool' },
-    ],
-    fields: [
-      { name: 'name', label: 'Tên món', type: 'text', required: true },
-      { name: 'group_name', label: 'Nhóm', type: 'text', required: true, help: 'VD: Trà & Cà phê, Rượu vang, Bánh mứt, Hạt dinh dưỡng, Đặc sản' },
-      { name: 'description', label: 'Mô tả ngắn', type: 'text', max: 300 },
-      { name: 'price', label: 'Giá (₫)', type: 'money', required: true },
-      { name: 'image_id', label: 'Ảnh', type: 'image' },
-      { name: 'sort', label: 'Thứ tự', type: 'number', default: 0 },
-      { name: 'is_active', label: 'Hiển thị', type: 'checkbox', default: true },
-    ],
-    validate: (v) => { if (v.sort == null) v.sort = 0; return {}; },
   }),
 );
 

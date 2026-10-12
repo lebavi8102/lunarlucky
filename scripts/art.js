@@ -96,34 +96,6 @@ function categoryArt(opts) {
   return productArt(opts).replace('viewBox="0 0 800 1000"', 'viewBox="40 60 720 960"');
 }
 
-/** Ảnh hộp quà cho trình tạo giỏ, 600×600 */
-function boxArt({ kind, palette = 'cream', id = 'b' }) {
-  const p = PALETTES[palette];
-  let body = '';
-  if (kind === 'lacquer') {
-    body = `<g transform="translate(110 200)"><rect y="40" width="380" height="250" rx="8" fill="url(#bx${id})"/><rect y="110" width="380" height="70" fill="url(#lt${id})"/><rect x="-14" width="408" height="56" rx="8" fill="${p.box1}"/><rect x="166" width="48" height="290" fill="url(#gd${id})"/></g>${bow(300, 200, id, 0.8)}`;
-  } else if (kind === 'rattan') {
-    body = `<g transform="translate(90 230)"><path d="M0 0h420l-40 250c-2 8-8 14-16 14H56c-8 0-14-6-16-14Z" fill="url(#wv${id})" stroke="#5c3d1c" stroke-width="4"/><rect x="-12" y="-16" width="444" height="30" rx="15" fill="#8a5f2e"/><path d="M40-10C40-150 380-150 380-10" fill="none" stroke="#8a5f2e" stroke-width="16"/></g>`;
-  } else {
-    body = `<g transform="translate(120 190)"><rect y="40" width="360" height="270" rx="4" fill="#8a5f2e"/><rect y="40" width="360" height="270" rx="4" fill="none" stroke="#5c3d1c" stroke-width="4"/><path d="M0 120h360M0 200h360" stroke="#6e4a22" stroke-width="2"/><rect x="-10" width="380" height="56" rx="4" fill="#a3713a"/><circle cx="180" cy="160" r="46" fill="none" stroke="#f3dfae" stroke-width="3"/><use href="#fl" x="180" y="160" transform="scale(1)"/></g>`;
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">${defs(p, id)}<rect width="600" height="600" fill="url(#bg${id})"/><circle cx="460" cy="130" r="80" fill="url(#mn${id})" opacity=".8"/><ellipse cx="300" cy="520" rx="230" ry="22" fill="#000" opacity=".15"/>${body}</svg>`;
-}
-
-/** Ảnh món quà nhỏ 400×400 */
-function itemArt({ kind, color = '#7a1622', id = 'i' }) {
-  const p = PALETTES.cream;
-  const shapes = {
-    tea: `<g transform="translate(130 90)"><rect y="30" width="140" height="210" rx="6" fill="#2f5d50"/><rect x="-6" width="152" height="40" rx="6" fill="${color}"/><circle cx="70" cy="140" r="34" fill="none" stroke="#d8b878" stroke-width="3"/><path d="M50 140c10-20 30-20 40 0-10 20-30 20-40 0Z" fill="#d8b878"/></g>`,
-    wine: bottle(150, 40, 1.05, color),
-    tin: `<g transform="translate(200 230)"><ellipse rx="130" ry="36" fill="#4a0c14"/><path d="M-130 0v-90c0-20 260-20 260 0V0" fill="${color}"/><ellipse cy="-90" rx="130" ry="32" fill="#d8b878"/><ellipse cy="-90" rx="100" ry="22" fill="none" stroke="#9c7535" stroke-width="2"/><path d="M-130-45h260" stroke="#d8b878" stroke-width="4"/></g>`,
-    jar: `<g transform="translate(200 110)"><rect x="-50" width="100" height="34" rx="6" fill="${color}"/><path d="M-80 40h160c10 0 20 10 20 30v170c0 20-10 30-30 30H-90c-20 0-30-10-30-30V70c0-20 10-30 40-30Z" fill="#f5ead6" opacity=".9" stroke="#c9a15a" stroke-width="2"/><g fill="#c48a4a">${[[-60, 120], [-20, 110], [20, 125], [60, 115], [-40, 160], [0, 150], [40, 165], [-60, 200], [-10, 195], [40, 205], [70, 180]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="18" ry="12"/>`).join('')}</g><rect x="-70" y="90" width="140" height="44" fill="${color}" opacity=".9"/><text y="118" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#f3dfae">LUNAR</text></g>`,
-    bag: `<g transform="translate(200 80)"><path d="M-90 30h180l20 240c0 14-10 20-20 20H-110c-10 0-20-6-20-20Z" fill="${color}"/><path d="M-90 30c0-30 30-30 30 0M60 30c0-30 30-30 30 0" stroke="#d8b878" stroke-width="5" fill="none"/><rect x="-60" y="120" width="120" height="80" rx="4" fill="#f5ead6"/><use href="#fl" x="0" y="160"/></g>`,
-    tray: `<g transform="translate(200 200)">${[0, 60, 120, 180, 240, 300].map((r, k) => `<path d="M0 0L${Math.cos((r * Math.PI) / 180) * 140} ${Math.sin((r * Math.PI) / 180) * 140}A140 140 0 0 1 ${Math.cos(((r + 60) * Math.PI) / 180) * 140} ${Math.sin(((r + 60) * Math.PI) / 180) * 140}Z" fill="${['#e0742a', '#f2c14e', '#b8d47a', '#e85a71', '#f5ead6', '#9c5a2e'][k]}" stroke="${color}" stroke-width="6"/>`).join('')}<circle r="40" fill="${color}"/><circle r="140" fill="none" stroke="${color}" stroke-width="10"/></g>`,
-  };
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">${defs(p, id)}<rect width="400" height="400" fill="#f8f1e6"/><circle cx="200" cy="200" r="170" fill="#efe4d2"/><ellipse cx="200" cy="350" rx="140" ry="14" fill="#000" opacity=".1"/>${shapes[kind]}</svg>`;
-}
-
 /** Ảnh bìa blog 1200×800 */
 function coverArt({ palette = 'lacquer', composition = 'box', id = 'c' }) {
   const inner = productArt({ palette, composition, id })
@@ -133,4 +105,4 @@ function coverArt({ palette = 'lacquer', composition = 'box', id = 'c' }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="${p.bg2}"/><g transform="translate(200 -100) scale(1)">${inner}</g></svg>`;
 }
 
-module.exports = { productArt, categoryArt, boxArt, itemArt, coverArt, PALETTES };
+module.exports = { productArt, categoryArt, coverArt, PALETTES };

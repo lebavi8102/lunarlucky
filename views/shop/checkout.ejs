@@ -82,7 +82,7 @@
         <% cart.lines.forEach(l => { %>
         <li>
           <span class="thumb"><img src="<%= img(l.image_id) %>" alt="" width="60" height="75" loading="lazy"><span class="q"><%= l.qty %></span></span>
-          <span><%= l.name %><% if (l.details) { %><br><span class="tiny muted"><%= l.details.items.map(i => i.name + ' ×' + i.qty).join(', ') %></span><% } %></span>
+          <span><%= l.name %></span>
           <span class="line-total"><%= money(l.lineTotal) %></span>
         </li>
         <% }) %>

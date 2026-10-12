@@ -4,7 +4,6 @@ const settings = require('./settings');
 const { todayVN } = require('./format');
 
 const MAX_QTY = 500;
-const MIN_CUSTOM_ITEMS = 2;
 
 function getCart(req) {
   if (!req.session.cart) req.session.cart = { lines: [], coupon: null };
@@ -23,16 +22,6 @@ function addProduct(cart, productId, qty) {
   else cart.lines.push({ key: crypto.randomUUID(), type: 'product', productId: id, qty: clampQty(qty) });
 }
 
-function addCustom(cart, { boxId, items, qty }) {
-  cart.lines.push({
-    key: crypto.randomUUID(),
-    type: 'custom',
-    boxId: Number(boxId),
-    items: items.map((i) => ({ id: Number(i.id), qty: clampQty(i.qty, 50) })),
-    qty: clampQty(qty),
-  });
-}
-
 function updateQty(cart, key, qty) {
   const line = cart.lines.find((l) => l.key === key);
   if (!line) return;
@@ -42,30 +31,6 @@ function updateQty(cart, key, qty) {
 
 function removeLine(cart, key) {
   cart.lines = cart.lines.filter((l) => l.key !== key);
-}
-
-/** Kiểm tra giỏ tự tạo, trả về { box, items, unitPrice } hoặc { error } */
-async function resolveCustom({ boxId, items }) {
-  const box = await db('builder_boxes').where({ id: Number(boxId), is_active: true }).first();
-  if (!box) return { error: 'Vui lòng chọn hộp quà.' };
-  const ids = [...new Set((items || []).map((i) => Number(i.id)).filter(Boolean))];
-  if (!ids.length) return { error: 'Vui lòng chọn ít nhất một món.' };
-  const rows = await db('builder_items').whereIn('id', ids).andWhere({ is_active: true });
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const picked = [];
-  let count = 0;
-  let price = box.price;
-  for (const i of items) {
-    const row = byId.get(Number(i.id));
-    if (!row) continue;
-    const qty = clampQty(i.qty, 50);
-    count += qty;
-    price += row.price * qty;
-    picked.push({ id: row.id, name: row.name, price: row.price, qty, image_id: row.image_id });
-  }
-  if (count < MIN_CUSTOM_ITEMS) return { error: `Giỏ quà cần ít nhất ${MIN_CUSTOM_ITEMS} món.` };
-  if (count > box.capacity) return { error: `${box.name} chứa tối đa ${box.capacity} món.` };
-  return { box, items: picked, count, unitPrice: price };
 }
 
 async function validateCoupon(code, subtotal) {
@@ -123,19 +88,6 @@ async function priceCart(cart) {
         image_id: p.image_id, unitPrice: p.price, comparePrice: p.compare_price, qty: l.qty,
         lineTotal: p.price * l.qty, maxQty: Math.min(p.stock, MAX_QTY),
       });
-    } else if (l.type === 'custom') {
-      const r = await resolveCustom(l);
-      if (r.error) {
-        notices.push('Một giỏ quà tự tạo không còn hợp lệ và được bỏ ra.');
-        continue;
-      }
-      keep.push(l);
-      lines.push({
-        key: l.key, type: 'custom', name: `Giỏ quà tự tạo · ${r.box.name}`, url: '/tu-tao-gio-qua',
-        image_id: r.box.image_id, unitPrice: r.unitPrice, qty: l.qty, lineTotal: r.unitPrice * l.qty,
-        maxQty: MAX_QTY,
-        details: { box: { id: r.box.id, name: r.box.name, price: r.box.price }, items: r.items },
-      });
     }
   }
   cart.lines = keep;
@@ -172,6 +124,5 @@ function cartCount(req) {
 }
 
 module.exports = {
-  getCart, addProduct, addCustom, updateQty, removeLine, priceCart, resolveCustom, validateCoupon,
-  cartCount, MIN_CUSTOM_ITEMS,
+  getCart, addProduct, updateQty, removeLine, priceCart, validateCoupon, cartCount,
 };

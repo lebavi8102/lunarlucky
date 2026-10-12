@@ -31,7 +31,6 @@ router.get('/sitemap.xml', async (req, res) => {
   const urls = [
     ['/', 'daily', '1.0'],
     ['/bo-suu-tap', 'daily', '0.9'],
-    ['/tu-tao-gio-qua', 'weekly', '0.8'],
     ['/qua-tang-doanh-nghiep', 'weekly', '0.8'],
     ['/blog', 'weekly', '0.6'],
     ...Object.keys(PAGES).map((p) => [`/${p}`, 'monthly', '0.4']),

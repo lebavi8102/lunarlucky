@@ -27,8 +27,4 @@ module.exports = [
     q: 'Nếu giỏ quà bị hư hỏng khi nhận thì sao?',
     a: 'Vui lòng quay video khi mở hàng và liên hệ Lunar trong 24 giờ. Chúng tôi sẽ đổi mới món bị hư hỏng hoặc hoàn tiền tương ứng.',
   },
-  {
-    q: 'Tôi có thể tự chọn món trong giỏ quà không?',
-    a: 'Có. Tính năng "Tự tạo giỏ quà" cho phép bạn chọn hộp và từng món theo sở thích, giá được tính tự động.',
-  },
 ];

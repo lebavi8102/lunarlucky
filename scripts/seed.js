@@ -1,5 +1,5 @@
 /**
- * Dữ liệu mẫu cho Lunar: danh mục, sản phẩm, món quà tự tạo, mã giảm giá, bài viết.
+ * Dữ liệu mẫu cho Lunar: danh mục, sản phẩm, mã giảm giá, bài viết.
  * Chạy: npm run seed            (bỏ qua nếu đã có sản phẩm)
  *       npm run seed -- --reset (xóa dữ liệu mẫu cũ và tạo lại)
  */
@@ -59,29 +59,6 @@ const PRODUCTS = [
   ['hop-qua-nho-xinh', 'Hộp Trăng Rằm', 890000, null, null, 'ink', 'stack', false,
     'Hai hộp xếp tầng với trà ô long và socola đặc sản, thanh lịch cho người trẻ.',
     ['Hộp đôi xếp tầng', 'Trà Ô long 100g', 'Socola Marou 2 thanh', 'Hạt macca 150g', 'Thiệp chúc viết tay']],
-];
-
-const BOXES = [
-  ['Giỏ mây Đồng Quê', 'Giỏ mây đan tay, quai xách, mộc mạc và ấm áp.', 180000, 6, 'rattan', 'sand'],
-  ['Hộp sơn mài Nguyệt', 'Hộp sơn mài đỏ son, nơ lụa vàng, sang trọng.', 350000, 8, 'lacquer', 'cream'],
-  ['Hộp gỗ Khắc Mai', 'Hộp gỗ thông khắc hoa mai, giữ lại làm hộp trang trí.', 520000, 10, 'wood', 'jade'],
-];
-
-const ITEMS = [
-  ['Trà & Cà phê', 'Trà Shan tuyết cổ thụ 100g', 320000, 'tea', '#2f5d50'],
-  ['Trà & Cà phê', 'Trà sen Tây Hồ 100g', 280000, 'tea', '#7a1622'],
-  ['Trà & Cà phê', 'Trà Ô long Bảo Lộc 100g', 160000, 'tea', '#85642b'],
-  ['Trà & Cà phê', 'Cà phê Arabica Cầu Đất 250g', 190000, 'bag', '#3b2412'],
-  ['Rượu vang', 'Vang đỏ Đà Lạt 750ml', 260000, 'wine', '#4a0c14'],
-  ['Rượu vang', 'Vang đỏ Chile 750ml', 420000, 'wine', '#24382f'],
-  ['Rượu vang', 'Vang Bordeaux Pháp 750ml', 890000, 'wine', '#2a070c'],
-  ['Bánh mứt', 'Mứt gừng dẻo 200g', 85000, 'tray', '#7a1622'],
-  ['Bánh mứt', 'Khay mứt Tết 6 ngăn', 220000, 'tray', '#a9823e'],
-  ['Bánh mứt', 'Bánh quy bơ hộp thiếc 300g', 150000, 'tin', '#2f5d50'],
-  ['Hạt dinh dưỡng', 'Hạt điều rang muối 300g', 175000, 'jar', '#7a1622'],
-  ['Hạt dinh dưỡng', 'Hạt macca nứt vỏ 300g', 210000, 'jar', '#2f5d50'],
-  ['Đặc sản', 'Mật ong hoa nhãn 350ml', 165000, 'jar', '#a9823e'],
-  ['Đặc sản', 'Yến sào Khánh Hòa 50g', 1200000, 'tin', '#7a1622'],
 ];
 
 const POSTS = [
@@ -173,7 +150,7 @@ async function seed({ reset = false, demo = true } = {}) {
     console.log('Đã có dữ liệu sản phẩm, bỏ qua dữ liệu mẫu.');
   } else {
     if (reset) {
-      for (const t of ['order_items', 'orders', 'products', 'categories', 'builder_items', 'builder_boxes', 'coupons', 'posts', 'media']) {
+      for (const t of ['order_items', 'orders', 'products', 'categories', 'coupons', 'posts', 'media']) {
         await db(t).del();
       }
     }
@@ -197,15 +174,6 @@ async function seed({ reset = false, demo = true } = {}) {
       });
     }
 
-    for (const [i, [name, description, price, capacity, kind, palette]] of BOXES.entries()) {
-      const image_id = await svg(art.boxArt({ kind, palette, id: `b${i}` }), `box-${i}.svg`);
-      await db('builder_boxes').insert({ name, description, price, capacity, image_id, sort: i });
-    }
-    for (const [i, [group_name, name, price, kind, color]] of ITEMS.entries()) {
-      const image_id = await svg(art.itemArt({ kind, color, id: `i${i}` }), `item-${i}.svg`);
-      await db('builder_items').insert({ group_name, name, price, image_id, sort: i });
-    }
-
     await db('coupons').insert([
       { code: 'TET2027', description: 'Giảm 10% mùa Tết, tối đa 300.000₫', type: 'percent', value: 10, min_order: 1000000, max_discount: 300000 },
       { code: 'LUNARVIP', description: 'Giảm 100.000₫ cho đơn từ 1.500.000₫', type: 'fixed', value: 100000, min_order: 1500000 },
@@ -218,7 +186,7 @@ async function seed({ reset = false, demo = true } = {}) {
         is_published: true, published_at: new Date(Date.now() - (i + 1) * 3 * 86400000),
       });
     }
-    console.log(`Đã tạo ${CATEGORIES.length} danh mục, ${PRODUCTS.length} sản phẩm, ${BOXES.length} hộp, ${ITEMS.length} món, ${POSTS.length} bài viết.`);
+    console.log(`Đã tạo ${CATEGORIES.length} danh mục, ${PRODUCTS.length} sản phẩm, ${POSTS.length} bài viết.`);
   }
 
   if (config.admin.email && config.admin.password) {

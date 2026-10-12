@@ -22,8 +22,7 @@
     <h3>Danh sách đóng gói</h3>
     <table>
       <% items.forEach(i => { %>
-        <tr><td><input type="checkbox" aria-label="Đã xếp"> <b><%= i.name %></b> × <%= i.qty %>
-          <% if (i.details) { %><ul><% i.details.items.forEach(x => { %><li><%= x.name %> × <%= x.qty %></li><% }) %></ul><% } %></td></tr>
+        <tr><td><input type="checkbox" aria-label="Đã xếp"> <b><%= i.name %></b> × <%= i.qty %></td></tr>
       <% }) %>
     </table>
     <% if (order.note) { %><p class="note"><b>Ghi chú:</b> <%= order.note %></p><% } %>

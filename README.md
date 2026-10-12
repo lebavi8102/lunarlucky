@@ -11,7 +11,6 @@ Website thương mại điện tử cho cửa hàng giỏ quà Tết **Lunar**: 
 **Khách hàng**
 - Trang chủ, bộ sưu tập theo danh mục, lọc giá, sắp xếp, tìm kiếm
 - Trang sản phẩm: thư viện ảnh, thành phần giỏ quà, giá gốc/giá giảm
-- **Tự tạo giỏ quà**: chọn hộp và từng món, giá và sức chứa cập nhật tức thì
 - Giỏ hàng, mã giảm giá, thanh tiến độ miễn phí giao hàng
 - Thanh toán: **COD** hoặc **chuyển khoản VietQR** (mã QR tự điền số tiền và nội dung là mã đơn)
 - Gửi tặng người khác, chọn ngày giao, lời chúc viết tay trên thiệp, thông tin xuất hóa đơn VAT
@@ -25,7 +24,7 @@ Website thương mại điện tử cho cửa hàng giỏ quà Tết **Lunar**: 
 - Tổng quan: doanh thu hôm nay và tháng này, biểu đồ 14 ngày, đơn mới, đơn chờ chuyển khoản, sắp hết hàng
 - Đơn hàng: lọc, tìm, đổi trạng thái (tự gửi email cho khách), **in phiếu đóng gói và thiệp**; hủy đơn tự hoàn tồn kho
 - Báo giá B2B, khách hàng
-- Quản lý sản phẩm, danh mục, hộp và món cho trình tạo giỏ, mã giảm giá, bài viết (Markdown)
+- Quản lý sản phẩm, danh mục, mã giảm giá, bài viết (Markdown)
 - Cài đặt: hotline, link Zalo/fanpage, **tài khoản ngân hàng VietQR**, phí giao hàng, nội dung trang chủ
 
 **Thông báo:** báo đơn mới và yêu cầu báo giá qua **Telegram**; gửi email xác nhận đơn cho khách.
@@ -120,7 +119,7 @@ Mỗi lần `git push` lên nhánh `main`, vào app trên Hostinger bấm **Rede
 ## Thiết lập sau khi deploy
 
 1. Đăng nhập `/admin` → **Cài đặt**: nhập hotline, link fanpage, Zalo, Messenger, **ngân hàng và số tài khoản** (mã QR thử hiện ngay bên dưới để kiểm tra).
-2. **Sản phẩm / Danh mục / Hộp quà / Món quà**: thay ảnh minh họa bằng ảnh thật tải từ fanpage (JPG/PNG/WebP, ≤ 5MB, nên dùng ảnh dọc 4:5 rộng khoảng 1200px).
+2. **Sản phẩm / Danh mục**: thay ảnh minh họa bằng ảnh thật tải từ fanpage (JPG/PNG/WebP, ≤ 5MB, nên dùng ảnh dọc 4:5 rộng khoảng 1200px).
 3. **Logo**: chép logo vào `public/img/logo.png` và làm theo hướng dẫn trong `views/partials/logo.ejs`.
 4. Đổi mật khẩu admin: `/quen-mat-khau` (cần SMTP), hoặc chạy `npm run create-admin`.
 
@@ -137,7 +136,7 @@ Mỗi lần `git push` lên nhánh `main`, vào app trên Hostinger bấm **Rede
 ```
 server.js              Điểm khởi động (migration + seed admin + listen)
 src/app.js             Cấu hình Express, bảo mật, session
-src/routes/            shop, cart, checkout, builder, account, b2b, blog, pages, seo, admin/
+src/routes/            shop, cart, checkout, account, b2b, blog, pages, seo, admin/
 src/lib/               cart (tính giá), notify (email/Telegram), vietqr, validate, settings...
 src/db/migrations/     Lược đồ database
 views/                 Giao diện EJS (partials, shop, account, admin, emails...)

@@ -64,7 +64,7 @@
       <h2 class="h3" style="margin-bottom:16px">Sản phẩm</h2>
       <ul class="summary-items" style="grid-template-columns:1fr">
         <% items.forEach(i => { %>
-          <li style="grid-template-columns:1fr auto"><span><%= i.name %> × <%= i.qty %><% if (i.details) { %><br><span class="tiny muted"><%= i.details.items.map(x => x.name + ' ×' + x.qty).join(', ') %></span><% } %></span><span class="line-total"><%= money(i.line_total) %></span></li>
+          <li style="grid-template-columns:1fr auto"><span><%= i.name %> × <%= i.qty %></span><span class="line-total"><%= money(i.line_total) %></span></li>
         <% }) %>
       </ul>
       <div class="sum-row"><span>Tạm tính</span><span><%= money(order.subtotal) %></span></div>

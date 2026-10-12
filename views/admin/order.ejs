@@ -21,9 +21,7 @@
           <tbody>
           <% items.forEach(i => { %>
             <tr>
-              <td class="wrap"><b><%= i.name %></b>
-                <% if (i.details) { %><br><span class="tiny muted">Hộp <%= i.details.box.name %>: <%= i.details.items.map(x => x.name + ' ×' + x.qty).join(', ') %></span><% } %>
-              </td>
+              <td class="wrap"><b><%= i.name %></b></td>
               <td class="num"><%= money(i.price) %></td><td class="num"><%= i.qty %></td><td class="num"><%= money(i.line_total) %></td>
             </tr>
           <% }) %>

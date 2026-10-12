@@ -80,32 +80,6 @@ exports.up = async function up(knex) {
     t.index(['is_active', 'category_id']);
   });
 
-  await knex.schema.createTable('builder_boxes', (t) => {
-    engine(t);
-    t.increments('id');
-    t.string('name', 120).notNullable();
-    t.string('description', 300);
-    t.integer('price').unsigned().notNullable();
-    t.integer('capacity').unsigned().notNullable().defaultTo(6);
-    t.integer('image_id').unsigned().references('media.id').onDelete('SET NULL');
-    t.boolean('is_active').notNullable().defaultTo(true);
-    t.integer('sort').notNullable().defaultTo(0);
-    ts(t);
-  });
-
-  await knex.schema.createTable('builder_items', (t) => {
-    engine(t);
-    t.increments('id');
-    t.string('group_name', 60).notNullable();
-    t.string('name', 140).notNullable();
-    t.string('description', 300);
-    t.integer('price').unsigned().notNullable();
-    t.integer('image_id').unsigned().references('media.id').onDelete('SET NULL');
-    t.boolean('is_active').notNullable().defaultTo(true);
-    t.integer('sort').notNullable().defaultTo(0);
-    ts(t);
-  });
-
   await knex.schema.createTable('coupons', (t) => {
     engine(t);
     t.increments('id');
@@ -160,12 +134,10 @@ exports.up = async function up(knex) {
     t.increments('id');
     t.integer('order_id').unsigned().notNullable().references('orders.id').onDelete('CASCADE');
     t.integer('product_id').unsigned().references('products.id').onDelete('SET NULL');
-    t.string('kind', 10).notNullable().defaultTo('product'); // product | custom
     t.string('name', 200).notNullable();
     t.integer('price').unsigned().notNullable();
     t.integer('qty').unsigned().notNullable();
     t.integer('line_total').unsigned().notNullable();
-    t.text('details'); // JSON thành phần giỏ tự tạo
   });
 
   await knex.schema.createTable('quotes', (t) => {
@@ -217,7 +189,7 @@ exports.up = async function up(knex) {
 exports.down = async function down(knex) {
   for (const t of [
     'sessions', 'settings', 'posts', 'quotes', 'order_items', 'orders', 'coupons',
-    'builder_items', 'builder_boxes', 'products', 'categories', 'users', 'media',
+    'products', 'categories', 'users', 'media',
   ]) {
     await knex.schema.dropTableIfExists(t);
   }
