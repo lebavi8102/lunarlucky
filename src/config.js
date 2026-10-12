@@ -36,6 +36,13 @@ module.exports = {
             database: required('DB_NAME', 'lunar'),
             charset: 'utf8mb4',
             dateStrings: false,
+            // Database cloud (Aiven, TiDB...) bắt buộc SSL. DB_SSL_CA: nội dung file ca.pem
+            ssl:
+              process.env.DB_SSL === 'true'
+                ? process.env.DB_SSL_CA
+                  ? { ca: process.env.DB_SSL_CA.replace(/\\n/g, '\n'), rejectUnauthorized: true }
+                  : { rejectUnauthorized: true }
+                : undefined,
           }
         : { filename: path.resolve(root, process.env.SQLITE_FILE || './data/lunar.sqlite') },
   },

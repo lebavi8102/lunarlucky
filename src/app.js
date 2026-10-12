@@ -48,6 +48,9 @@ app.use(
   }),
 );
 
+// Dùng cho dịch vụ ping giữ server luôn thức (Render free) và kiểm tra sức khỏe
+app.get('/healthz', (req, res) => res.type('text/plain').send('ok'));
+
 // Ảnh lưu trong DB — không mất khi deploy lại
 app.get('/media/:id', async (req, res, next) => {
   const id = Number(req.params.id);
