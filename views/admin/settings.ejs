@@ -1,0 +1,30 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Cài đặt</h1></div>
+<form action="/admin/cai-dat" method="post" class="form-grid">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div>
+    <% groups.forEach(([title, fields]) => { %>
+    <section class="form-card">
+      <h2><%= title %></h2>
+      <% fields.forEach(([k, label, kind]) => { %>
+        <div class="field">
+          <label class="label" for="s-<%= k %>"><%= label %></label>
+          <% if (kind === 'textarea') { %><textarea class="textarea" id="s-<%= k %>" name="<%= k %>"><%= values[k] %></textarea>
+          <% } else { %><input class="input" id="s-<%= k %>" name="<%= k %>" value="<%= values[k] %>"><% } %>
+        </div>
+      <% }) %>
+      <% if (title === 'Chuyển khoản VietQR') { %>
+        <p class="help" style="margin-top:12px">Mã QR thử với 100.000₫:</p>
+        <img src="https://img.vietqr.io/image/<%= encodeURIComponent(values.bank_id) %>-<%= encodeURIComponent(values.bank_account) %>-compact2.png?amount=100000&addInfo=TEST&accountName=<%= encodeURIComponent(values.bank_holder) %>" alt="Mã VietQR thử" width="180" style="margin-top:8px;border:1px solid var(--line);border-radius:8px" loading="lazy">
+      <% } %>
+    </section>
+    <% }) %>
+  </div>
+  <aside class="form-side">
+    <div class="form-card">
+      <button class="btn btn-block" type="submit">Lưu cài đặt</button>
+      <p class="tiny muted" style="margin-top:10px">Thay đổi áp dụng cho toàn bộ website trong vòng 30 giây.</p>
+    </div>
+  </aside>
+</form>
+<%- include('_bottom') %>

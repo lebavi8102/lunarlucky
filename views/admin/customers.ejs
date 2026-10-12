@@ -1,0 +1,15 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Khách hàng</h1><span class="muted small"><%= users.length %> tài khoản</span></div>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">Tên</th><th scope="col">Email</th><th scope="col">Điện thoại</th><th scope="col">Ngày tạo</th><th scope="col" class="num">Số đơn</th><th scope="col" class="num">Tổng chi tiêu</th></tr></thead>
+    <tbody>
+      <% if (!users.length) { %><tr><td colspan="6" class="muted" style="padding:32px;text-align:center">Chưa có khách đăng ký tài khoản.</td></tr><% } %>
+      <% users.forEach(u => { %>
+      <tr><td><b><%= u.name %></b></td><td><%= u.email %></td><td><%= u.phone || '—' %></td><td><%= fmt.date(u.created_at) %></td><td class="num"><%= u.orders %></td><td class="num"><%= money(u.spent || 0) %></td></tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<p class="small muted" style="margin-top:12px">Khách đặt hàng không cần tài khoản vẫn được lưu trong mục Đơn hàng.</p>
+<%- include('_bottom') %>

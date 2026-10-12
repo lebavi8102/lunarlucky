@@ -1,0 +1,32 @@
+<%#
+  Ô nhập có nhãn + lỗi ngay dưới.
+  Cần: name, label; tùy chọn: type, required, optional, placeholder, help, autocomplete, as ('textarea'|'select'), options, min, max, maxlength, inputmode
+%>
+<% const v = (typeof values !== 'undefined' && values && values[name] != null) ? values[name] : '';
+   const e = (typeof errors !== 'undefined' && errors) ? errors[name] : null;
+   const id = 'f-' + name;
+   const kind = typeof as !== 'undefined' ? as : 'input';
+   const req = typeof required !== 'undefined' && required; %>
+<div class="field <%= e ? 'has-error' : '' %>">
+  <label class="label" for="<%= id %>"><%= label %><% if (typeof optional !== 'undefined' && optional) { %> <span class="opt">(không bắt buộc)</span><% } %></label>
+  <% if (kind === 'textarea') { %>
+    <textarea class="textarea" id="<%= id %>" name="<%= name %>" <%= req ? 'required' : '' %> <% if (typeof maxlength !== 'undefined') { %>maxlength="<%= maxlength %>"<% } %> <% if (typeof placeholder !== 'undefined') { %>placeholder="<%= placeholder %>"<% } %> <% if (e) { %>aria-invalid="true" aria-describedby="<%= id %>-err"<% } %>><%= v %></textarea>
+  <% } else if (kind === 'select') { %>
+    <select class="select" id="<%= id %>" name="<%= name %>" <%= req ? 'required' : '' %> <% if (e) { %>aria-invalid="true" aria-describedby="<%= id %>-err"<% } %>>
+      <% options.forEach(o => { const ov = typeof o === 'string' ? o : o.value; const ol = typeof o === 'string' ? o : o.label; %>
+        <option value="<%= ov %>" <%= String(ov) === String(v) ? 'selected' : '' %>><%= ol %></option>
+      <% }) %>
+    </select>
+  <% } else { %>
+    <input class="input" id="<%= id %>" name="<%= name %>" type="<%= typeof type !== 'undefined' ? type : 'text' %>" value="<%= v %>" <%= req ? 'required' : '' %>
+      <% if (typeof autocomplete !== 'undefined') { %>autocomplete="<%= autocomplete %>"<% } %>
+      <% if (typeof placeholder !== 'undefined') { %>placeholder="<%= placeholder %>"<% } %>
+      <% if (typeof min !== 'undefined') { %>min="<%= min %>"<% } %>
+      <% if (typeof max !== 'undefined') { %>max="<%= max %>"<% } %>
+      <% if (typeof maxlength !== 'undefined') { %>maxlength="<%= maxlength %>"<% } %>
+      <% if (typeof inputmode !== 'undefined') { %>inputmode="<%= inputmode %>"<% } %>
+      <% if (e) { %>aria-invalid="true" aria-describedby="<%= id %>-err"<% } %>>
+  <% } %>
+  <% if (e) { %><p class="err" id="<%= id %>-err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= e %></p>
+  <% } else if (typeof help !== 'undefined') { %><p class="help"><%= help %></p><% } %>
+</div>

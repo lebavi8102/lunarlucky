@@ -1,0 +1,60 @@
+<%- include('../partials/top') %>
+<% const catById = Object.fromEntries(categories.map(c => [c.id, c.name]));
+   const sortLabels = { 'noi-bat': 'Nổi bật', 'ban-chay': 'Bán chạy', 'gia-tang': 'Giá tăng dần', 'gia-giam': 'Giá giảm dần', 'moi-nhat': 'Mới nhất' };
+   const rangeLabels = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-2-trieu': '1 – 2 triệu', '2-5-trieu': '2 – 5 triệu', 'tren-5-trieu': 'Trên 5 triệu' };
+   const basePath = category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap';
+   const qs = (o) => { const q = new URLSearchParams(Object.entries({ sap_xep: sort !== 'noi-bat' ? sort : '', gia: range, ...o }).filter(([, v]) => v)); const s2 = q.toString(); return s2 ? '?' + s2 : ''; };
+%>
+<section class="page-head">
+  <div class="container">
+    <ol class="crumbs" aria-label="Breadcrumb">
+      <li><a href="/">Trang chủ</a></li>
+      <% if (category) { %><li><a href="/bo-suu-tap">Bộ sưu tập</a></li><li aria-current="page"><%= category.name %></li>
+      <% } else { %><li aria-current="page">Bộ sưu tập</li><% } %>
+    </ol>
+    <h1><%= category ? category.name : 'Tất cả giỏ quà Tết' %></h1>
+    <p class="lead"><%= category ? (category.description || category.tagline) : 'Hộp quà sơn mài, giỏ mây tre và những set quà nhỏ xinh. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công.' %></p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <nav aria-label="Danh mục" style="margin-bottom:20px;overflow-x:auto">
+      <ul class="chips" style="flex-wrap:nowrap">
+        <li><a class="chip" href="/bo-suu-tap" aria-current="<%= !category %>">Tất cả</a></li>
+        <% categories.forEach(c => { %><li><a class="chip" href="/bo-suu-tap/<%= c.slug %>" aria-current="<%= !!(category && category.id === c.id) %>"><%= c.name %></a></li><% }) %>
+      </ul>
+    </nav>
+    <div class="toolbar">
+      <ul class="chips" aria-label="Khoảng giá">
+        <% for (const r of ranges) { %>
+          <li><a class="chip" href="<%= basePath + qs({ gia: range === r ? '' : r }) %>" aria-current="<%= range === r %>"><%= rangeLabels[r] %></a></li>
+        <% } %>
+      </ul>
+      <form method="get" action="<%= basePath %>" data-autosubmit>
+        <% if (range) { %><input type="hidden" name="gia" value="<%= range %>"><% } %>
+        <label class="small muted" for="sort">Sắp xếp</label>
+        <select class="select" id="sort" name="sap_xep" style="min-height:44px;width:auto">
+          <% for (const k of sorts) { %><option value="<%= k %>" <%= k === sort ? 'selected' : '' %>><%= sortLabels[k] %></option><% } %>
+        </select>
+        <noscript><button class="btn btn-sm" type="submit">Áp dụng</button></noscript>
+      </form>
+    </div>
+    <p class="small muted" style="margin-bottom:24px"><%= total %> giỏ quà</p>
+
+    <% if (products.length) { %>
+      <div class="product-grid cols-4">
+        <% products.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: category ? null : catById[p.category_id] }) %><% }) %>
+      </div>
+      <%- include('../partials/pagination', { baseQuery: { sap_xep: sort !== 'noi-bat' ? sort : '', gia: range } }) %>
+    <% } else { %>
+      <div class="empty">
+        <svg class="icon"><use href="#i-gift"/></svg>
+        <h2 class="h3">Chưa có giỏ quà phù hợp</h2>
+        <p class="muted" style="margin-top:8px">Thử chọn khoảng giá khác, hoặc tự tạo một giỏ quà theo ý bạn.</p>
+        <div class="hero-cta" style="justify-content:center"><a class="btn" href="/tu-tao-gio-qua">Tự tạo giỏ quà</a><a class="btn btn-quiet" href="/bo-suu-tap">Xem tất cả</a></div>
+      </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/bottom') %>

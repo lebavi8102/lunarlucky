@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= seo.title %></title>
+  <meta name="description" content="<%= seo.description %>">
+  <link rel="canonical" href="<%= seo.canonical %>">
+  <% if (seo.noindex) { %><meta name="robots" content="noindex, nofollow"><% } %>
+  <meta name="theme-color" content="#3b0a10">
+  <meta property="og:site_name" content="<%= s.shop_name %>">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:type" content="<%= seo.type %>">
+  <meta property="og:title" content="<%= seo.title %>">
+  <meta property="og:description" content="<%= seo.description %>">
+  <meta property="og:url" content="<%= seo.canonical %>">
+  <meta property="og:image" content="<%= seo.image %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap&subset=vietnamese">
+  <link rel="stylesheet" href="/css/main.css?v=1">
+  <% if (typeof extraCss !== 'undefined') { %><link rel="stylesheet" href="<%= extraCss %>"><% } %>
+  <% for (const ld of jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(ld).replace(/</g, '\\u003c') %></script>
+  <% } %>
+  <script src="/js/boot.js"></script>
+</head>

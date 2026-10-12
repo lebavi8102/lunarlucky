@@ -1,0 +1,15 @@
+<%- include('../partials/top') %>
+<div class="container auth-wrap">
+  <span class="eyebrow center" style="display:flex;justify-content:center">Tra cứu</span>
+  <h1 style="margin-top:12px">Đơn hàng của bạn</h1>
+  <p class="sub">Nhập mã đơn (VD: LN261012ABCD) và số điện thoại người đặt hoặc người nhận.</p>
+  <% if (error) { %><div class="flash flash-error" role="alert" style="margin-bottom:20px"><svg class="icon"><use href="#i-alert"/></svg><span><%= error %></span></div><% } %>
+  <form class="card" action="/tra-cuu-don" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field"><label class="label" for="code">Mã đơn hàng</label><input class="input" id="code" name="code" value="<%= values.code %>" required autocomplete="off" style="text-transform:uppercase"></div>
+    <div class="field"><label class="label" for="phone">Số điện thoại</label><input class="input" id="phone" name="phone" type="tel" inputmode="tel" value="<%= values.phone %>" required autocomplete="tel"></div>
+    <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Tra cứu</button>
+  </form>
+  <p class="auth-alt">Đã có tài khoản? <a href="/dang-nhap?next=/tai-khoan">Đăng nhập để xem mọi đơn</a></p>
+</div>
+<%- include('../partials/bottom') %>

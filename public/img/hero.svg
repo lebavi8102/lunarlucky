@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Giỏ quà Tết Lunar">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b1420"/>
+      <stop offset="0.55" stop-color="#4a0c14"/>
+      <stop offset="1" stop-color="#2a070c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.7" cy="0.22" r="0.6">
+      <stop offset="0" stop-color="#e6b770" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#e6b770" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moon" cx="0.4" cy="0.38" r="0.7">
+      <stop offset="0" stop-color="#fbeccb"/>
+      <stop offset="0.6" stop-color="#ecd29a"/>
+      <stop offset="1" stop-color="#c9a15a"/>
+    </radialGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b02a3b"/>
+      <stop offset="0.5" stop-color="#8a1a28"/>
+      <stop offset="1" stop-color="#5a1018"/>
+    </linearGradient>
+    <linearGradient id="redTop" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c13447"/>
+      <stop offset="1" stop-color="#93202f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3dfae"/>
+      <stop offset="0.45" stop-color="#d8b878"/>
+      <stop offset="1" stop-color="#9c7535"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#ead9bd"/>
+    </linearGradient>
+    <linearGradient id="bottle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1b2b25"/>
+      <stop offset="0.35" stop-color="#2f4a40"/>
+      <stop offset="0.5" stop-color="#4c6b5f"/>
+      <stop offset="1" stop-color="#14201b"/>
+    </linearGradient>
+    <pattern id="lattice" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M14 2 26 14 14 26 2 14Z" fill="none" stroke="#d8b878" stroke-width="1" opacity="0.55"/>
+      <circle cx="14" cy="14" r="2" fill="#d8b878" opacity="0.6"/>
+    </pattern>
+    <g id="fl">
+      <ellipse cx="0" cy="-9" rx="6.5" ry="9" fill="#f7c948"/>
+      <ellipse cx="0" cy="-9" rx="6.5" ry="9" fill="#f7c948" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-9" rx="6.5" ry="9" fill="#f7c948" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-9" rx="6.5" ry="9" fill="#f7c948" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-9" rx="6.5" ry="9" fill="#f7c948" transform="rotate(288)"/>
+      <circle r="4.5" fill="#e08a1e"/>
+      <circle r="2" fill="#7a1622"/>
+    </g>
+    <g id="bud"><ellipse rx="4.5" ry="6.5" fill="#f2b632"/><path d="M0 6v6" stroke="#5b3a1e" stroke-width="2"/></g>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <rect width="800" height="1000" fill="url(#glow)"/>
+
+  <!-- Mây -->
+  <g fill="none" stroke="#c9a15a" stroke-width="2" opacity="0.35" stroke-linecap="round">
+    <path d="M60 430c20-30 60-30 70 0 12-24 50-24 56 6M40 450h170"/>
+    <path d="M560 520c18-26 54-26 62 0 10-20 44-20 50 6M540 540h150"/>
+  </g>
+
+  <!-- Trăng -->
+  <circle cx="540" cy="250" r="160" fill="url(#moon)"/>
+  <circle cx="540" cy="250" r="160" fill="none" stroke="#fbeccb" stroke-opacity="0.4" stroke-width="2"/>
+  <circle cx="540" cy="250" r="190" fill="none" stroke="#d8b878" stroke-opacity="0.25" stroke-width="1"/>
+  <g fill="#c9a15a" opacity="0.25"><circle cx="490" cy="210" r="22"/><circle cx="590" cy="300" r="14"/><circle cx="575" cy="200" r="9"/></g>
+
+  <!-- Cành mai -->
+  <g stroke="#3a2412" stroke-linecap="round" fill="none">
+    <path d="M-10 160C90 190 160 260 230 300s140 40 210 20" stroke-width="10"/>
+    <path d="M150 238c20-50 60-80 110-90" stroke-width="6"/>
+    <path d="M300 318c30 30 40 70 30 110" stroke-width="5"/>
+    <path d="M380 330c40-20 80-60 90-110" stroke-width="5"/>
+    <path d="M60 180c-10-40 0-80 30-110" stroke-width="5"/>
+  </g>
+  <g>
+    <use href="#fl" x="255" y="150"/><use href="#fl" x="215" y="178" transform="rotate(10 215 178)"/>
+    <use href="#fl" x="300" y="300"/><use href="#fl" x="335" y="420"/><use href="#fl" x="322" y="378"/>
+    <use href="#fl" x="465" y="230"/><use href="#fl" x="430" y="300"/><use href="#fl" x="470" y="330"/>
+    <use href="#fl" x="90" y="76"/><use href="#fl" x="62" y="120"/><use href="#fl" x="135" y="210"/>
+    <use href="#fl" x="190" y="275"/><use href="#fl" x="390" y="340"/>
+    <use href="#bud" x="282" y="132"/><use href="#bud" x="352" y="440"/><use href="#bud" x="480" y="205"/><use href="#bud" x="110" y="60"/><use href="#bud" x="40" y="168"/>
+  </g>
+
+  <!-- Bóng sàn -->
+  <ellipse cx="400" cy="915" rx="330" ry="38" fill="#1a0407" opacity="0.6"/>
+
+  <!-- Chai rượu -->
+  <g transform="translate(560 520)">
+    <path d="M38 0h28v70c0 18 34 40 34 78v240c0 8-6 12-12 12H16c-6 0-12-4-12-12V148c0-38 34-60 34-78Z" fill="url(#bottle)"/>
+    <rect x="36" y="-6" width="32" height="20" rx="3" fill="url(#gold)"/>
+    <rect x="12" y="200" width="80" height="110" rx="4" fill="#f5ead6"/>
+    <rect x="18" y="206" width="68" height="98" rx="2" fill="none" stroke="#a9823e"/>
+    <text x="52" y="248" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#5a1018" letter-spacing="2">VANG</text>
+    <text x="52" y="270" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#85642b">ĐÀ LẠT</text>
+    <path d="M30 160c-6 40-6 140 0 220" stroke="#fff" stroke-opacity="0.12" stroke-width="6" fill="none"/>
+  </g>
+
+  <!-- Hộp lớn sơn mài -->
+  <g transform="translate(150 640)">
+    <path d="M0 40h420v240c0 12-8 20-20 20H20c-12 0-20-8-20-20Z" fill="url(#red)"/>
+    <rect x="0" y="100" width="420" height="80" fill="url(#lattice)"/>
+    <rect x="0" y="96" width="420" height="4" fill="url(#gold)"/>
+    <rect x="0" y="180" width="420" height="4" fill="url(#gold)"/>
+    <path d="M-12 0h444c6 0 10 4 10 10v40H-22V10c0-6 4-10 10-10Z" fill="url(#redTop)"/>
+    <rect x="-22" y="44" width="464" height="6" fill="#4a0c14" opacity="0.5"/>
+    <rect x="186" y="0" width="48" height="300" fill="url(#gold)"/>
+    <rect x="200" y="0" width="6" height="300" fill="#fff" opacity="0.25"/>
+    <!-- Nơ -->
+    <g transform="translate(210 0)">
+      <path d="M0 0C-40-60-120-70-110-20-102 18-40 10 0 0Z" fill="url(#gold)"/>
+      <path d="M0 0C40-60 120-70 110-20 102 18 40 10 0 0Z" fill="url(#gold)"/>
+      <path d="M0 0C-30-36-80-44-82-22" stroke="#9c7535" stroke-width="2" fill="none"/>
+      <path d="M0 0C30-36 80-44 82-22" stroke="#9c7535" stroke-width="2" fill="none"/>
+      <path d="M-6 6-40 70l18-4 8 18 20-66Z" fill="#b8924c"/>
+      <path d="M6 6 40 70l-18-4-8 18-20-66Z" fill="#b8924c"/>
+      <ellipse rx="18" ry="16" fill="#d8b878"/>
+      <ellipse rx="8" ry="7" cx="-4" cy="-4" fill="#f3dfae" opacity="0.7"/>
+    </g>
+    <!-- Con dấu -->
+    <g transform="translate(70 230)">
+      <rect x="-26" y="-26" width="52" height="52" rx="6" fill="none" stroke="#d8b878" stroke-width="2"/>
+      <text y="9" text-anchor="middle" font-family="Georgia,serif" font-size="28" fill="#e6cf9f">福</text>
+    </g>
+  </g>
+
+  <!-- Hộp trà nhỏ -->
+  <g transform="translate(70 760)">
+    <rect x="0" y="16" width="120" height="164" rx="6" fill="url(#cream)"/>
+    <rect x="-6" y="0" width="132" height="30" rx="5" fill="#2f5d50"/>
+    <rect x="0" y="70" width="120" height="60" fill="#2f5d50"/>
+    <circle cx="60" cy="100" r="20" fill="none" stroke="#d8b878" stroke-width="2"/>
+    <text x="60" y="106" text-anchor="middle" font-family="Georgia,serif" font-size="16" fill="#e6cf9f">茶</text>
+  </g>
+
+  <!-- Hũ tròn -->
+  <g transform="translate(600 870)">
+    <ellipse cx="0" cy="0" rx="70" ry="18" fill="#3b0a10"/>
+    <path d="M-70 0v-70c0-10 140-10 140 0V0" fill="url(#gold)"/>
+    <ellipse cx="0" cy="-70" rx="70" ry="16" fill="#f3dfae"/>
+    <ellipse cx="0" cy="-70" rx="50" ry="10" fill="#d8b878"/>
+    <path d="M-70-36h140" stroke="#9c7535" stroke-width="2"/>
+  </g>
+
+  <!-- Viền vàng -->
+  <rect x="24" y="24" width="752" height="952" rx="0" fill="none" stroke="#d8b878" stroke-opacity="0.35"/>
+</svg>

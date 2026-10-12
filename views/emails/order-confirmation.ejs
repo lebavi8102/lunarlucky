@@ -1,0 +1,34 @@
+<%- include('_layout-top') %>
+<h1 style="font-family:Georgia,serif;font-weight:normal;font-size:26px;margin:0 0 8px">Cảm ơn <%= order.customer_name %>!</h1>
+<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar đã nhận đơn quà <b><%= order.code %></b> và sẽ gọi xác nhận trong giờ làm việc.</p>
+
+<% if (qr) { %>
+<table role="presentation" width="100%" style="border:1px solid #c9a15a;border-radius:10px;margin-bottom:24px"><tr>
+<td style="padding:16px;text-align:center" width="200"><img src="<%= qr %>" width="180" alt="Mã VietQR" style="display:block;margin:auto"></td>
+<td style="padding:16px;font-size:14px;line-height:1.8">
+  <b>Chuyển khoản để hoàn tất đơn</b><br>
+  Ngân hàng: <%= s.bank_name %><br>
+  Số TK: <b><%= s.bank_account %></b><br>
+  Chủ TK: <%= s.bank_holder %><br>
+  Số tiền: <b style="color:#7a1622"><%= money(order.total) %></b><br>
+  Nội dung: <b><%= order.code %></b>
+</td></tr></table>
+<% } %>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">
+<% items.forEach(i => { %>
+<tr><td style="padding:8px 0;border-bottom:1px solid #efe4d2"><%= i.name %> × <%= i.qty %></td><td align="right" style="padding:8px 0;border-bottom:1px solid #efe4d2"><%= money(i.line_total) %></td></tr>
+<% }) %>
+<tr><td style="padding:6px 0;color:#75685e">Tạm tính</td><td align="right"><%= money(order.subtotal) %></td></tr>
+<% if (order.discount) { %><tr><td style="padding:6px 0;color:#75685e">Giảm giá (<%= order.coupon_code %>)</td><td align="right">−<%= money(order.discount) %></td></tr><% } %>
+<tr><td style="padding:6px 0;color:#75685e">Phí giao hàng</td><td align="right"><%= order.shipping_fee ? money(order.shipping_fee) : 'Miễn phí' %></td></tr>
+<tr><td style="padding:12px 0;font-weight:bold;font-size:16px">Tổng cộng</td><td align="right" style="font-weight:bold;font-size:18px;color:#7a1622"><%= money(order.total) %></td></tr>
+</table>
+
+<p style="margin:20px 0 0;font-size:14px;line-height:1.7;color:#4a3f38">
+  <b>Giao ngày:</b> <%= ymd(order.delivery_date) %><br>
+  <b>Đến:</b> <%= order.is_gift ? `${order.recipient_name} · ${order.recipient_phone} · ${order.recipient_address}` : order.address %>, <%= order.province %>
+  <% if (order.card_message) { %><br><b>Thiệp:</b> <i>“<%= order.card_message %>”</i><% } %>
+</p>
+<p style="margin:24px 0 0"><a href="<%= siteUrl %>/tra-cuu-don?ma=<%= order.code %>" style="display:inline-block;background:#7a1622;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">Theo dõi đơn hàng</a></p>
+<%- include('_layout-bottom') %>

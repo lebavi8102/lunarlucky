@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> · Quản trị Lunar</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&display=swap&subset=vietnamese">
+  <link rel="stylesheet" href="/css/main.css?v=1">
+  <link rel="stylesheet" href="/css/admin.css?v=1">
+  <script src="/js/boot.js"></script>
+</head>
+<body class="admin">
+<%- include('../partials/icons') %>
+<% const nav = [
+  ['/admin', 'Tổng quan', 'home'],
+  ['/admin/don-hang', 'Đơn hàng', 'package'],
+  ['/admin/bao-gia', 'Báo giá B2B', 'building'],
+  ['/admin/san-pham', 'Sản phẩm', 'gift'],
+  ['/admin/danh-muc', 'Danh mục', 'grid'],
+  ['/admin/hop-qua', 'Hộp quà (tự tạo)', 'box'],
+  ['/admin/mon-qua', 'Món quà (tự tạo)', 'sparkle'],
+  ['/admin/ma-giam-gia', 'Mã giảm giá', 'tag'],
+  ['/admin/bai-viet', 'Bài viết', 'file'],
+  ['/admin/khach-hang', 'Khách hàng', 'users'],
+  ['/admin/cai-dat', 'Cài đặt', 'settings'],
+]; %>
+<div class="admin-shell">
+  <aside class="admin-side" aria-label="Menu quản trị">
+    <a href="/admin" class="logo"><%- include('../partials/logo') %></a>
+    <span class="side-label">Quản lý</span>
+    <% nav.forEach(([href, label, icon]) => { const cur = href === '/admin' ? /^\/admin\/?$/.test(path) : path.startsWith(href); %>
+      <a class="side-link" href="<%= href %>" <%- cur ? 'aria-current="page"' : '' %>><svg class="icon"><use href="#i-<%= icon %>"/></svg><%= label %></a>
+    <% }) %>
+    <div class="side-foot">
+      <a class="side-link" href="/" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"/></svg>Xem website</a>
+      <form action="/dang-xuat" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="side-link" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button></form>
+    </div>
+  </aside>
+  <main class="admin-main" id="main">
+    <% if (flash) { %>
+      <div class="flash flash-<%= flash.type %>" role="<%= flash.type === 'error' ? 'alert' : 'status' %>"><svg class="icon"><use href="#i-<%= flash.type === 'error' ? 'alert' : 'check' %>"/></svg><span><%= flash.message %></span></div>
+    <% } %>

@@ -1,0 +1,80 @@
+<%- include('head') %>
+<body>
+<%- include('icons') %>
+<a class="skip-link" href="#main">Bỏ qua, đến nội dung chính</a>
+
+<% if (s.announcement) { %>
+<div class="announce"><%= s.announcement %></div>
+<% } %>
+
+<header class="site-header" data-header>
+  <div class="container header-inner">
+    <button class="icon-btn menu-toggle" type="button" aria-label="Mở menu" aria-controls="drawer" aria-expanded="false" data-drawer-open>
+      <svg class="icon"><use href="#i-menu"/></svg>
+    </button>
+    <a href="/" class="logo" aria-label="Lunar – Trang chủ"><%- include('logo') %></a>
+
+    <nav class="nav" aria-label="Điều hướng chính">
+      <ul>
+        <li><a href="/bo-suu-tap" <%- isActive('/bo-suu-tap') ? 'aria-current="page"' : '' %>>Bộ sưu tập</a></li>
+        <li><a href="/tu-tao-gio-qua" <%- isActive('/tu-tao-gio-qua') ? 'aria-current="page"' : '' %>>Tự tạo giỏ quà</a></li>
+        <li><a href="/qua-tang-doanh-nghiep" <%- isActive('/qua-tang-doanh-nghiep') ? 'aria-current="page"' : '' %>>Quà doanh nghiệp</a></li>
+        <li><a href="/blog" <%- isActive('/blog') ? 'aria-current="page"' : '' %>>Cẩm nang</a></li>
+        <li><a href="/gioi-thieu" <%- isActive('/gioi-thieu') ? 'aria-current="page"' : '' %>>Về Lunar</a></li>
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <button class="icon-btn" type="button" aria-label="Tìm kiếm" aria-controls="search-panel" aria-expanded="false" data-search-toggle>
+        <svg class="icon"><use href="#i-search"/></svg>
+      </button>
+      <a class="icon-btn" href="<%= user ? (user.role === 'admin' ? '/admin' : '/tai-khoan') : '/dang-nhap' %>" aria-label="<%= user ? 'Tài khoản của tôi' : 'Đăng nhập' %>">
+        <svg class="icon"><use href="#i-user"/></svg>
+      </a>
+      <a class="icon-btn" href="/gio-hang" aria-label="Giỏ hàng, <%= cartCount %> sản phẩm">
+        <svg class="icon"><use href="#i-bag"/></svg>
+        <span class="badge-count" data-cart-count="<%= cartCount %>" data-count="<%= cartCount %>"><%= cartCount %></span>
+      </a>
+    </div>
+  </div>
+  <div class="search-panel" id="search-panel" hidden>
+    <form class="container" action="/tim-kiem" method="get" role="search">
+      <label class="sr-only" for="q-top">Tìm giỏ quà</label>
+      <input class="input" id="q-top" type="search" name="q" placeholder="Tìm giỏ quà, trà, rượu vang, hạt…" autocomplete="off">
+      <button class="btn" type="submit">Tìm</button>
+    </form>
+  </div>
+</header>
+
+<div class="drawer" id="drawer" data-drawer aria-hidden="true">
+  <div class="drawer-backdrop" data-drawer-close></div>
+  <div class="drawer-panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="drawer-head">
+      <a href="/" class="logo"><%- include('logo') %></a>
+      <button class="icon-btn" type="button" aria-label="Đóng menu" data-drawer-close><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <nav class="drawer-nav" aria-label="Menu di động">
+      <a href="/">Trang chủ <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/bo-suu-tap">Bộ sưu tập <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/tu-tao-gio-qua">Tự tạo giỏ quà <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/qua-tang-doanh-nghiep">Quà doanh nghiệp <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/blog">Cẩm nang quà Tết <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/gioi-thieu">Về Lunar <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/tra-cuu-don">Tra cứu đơn hàng <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+    </nav>
+    <div class="drawer-foot">
+      <a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>" class="btn btn-block"><svg class="icon"><use href="#i-phone"/></svg> <%= s.shop_phone %></a>
+      <span class="muted"><%= s.shop_hours %></span>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+<% if (flash) { %>
+  <div class="container">
+    <div class="flash flash-<%= flash.type %>" role="<%= flash.type === 'error' ? 'alert' : 'status' %>">
+      <svg class="icon"><use href="#i-<%= flash.type === 'error' ? 'alert' : 'check' %>"/></svg>
+      <span><%= flash.message %></span>
+    </div>
+  </div>
+<% } %>

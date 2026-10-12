@@ -1,0 +1,102 @@
+<%- include('_top') %>
+<% const action = item.id ? `${base}/${item.id}` : `${base}/moi`;
+   const mainFields = def.fields.filter(f => !['checkbox','image','gallery'].includes(f.type) && !/^seo_/.test(f.name) && !['sort'].includes(f.name));
+   const sideFields = def.fields.filter(f => f.type === 'checkbox' || f.name === 'sort');
+   const mediaFields = def.fields.filter(f => f.type === 'image' || f.type === 'gallery');
+   const seoFields = def.fields.filter(f => /^seo_/.test(f.name));
+   const val = (f) => item[f.name] == null ? '' : item[f.name];
+   const errCount = Object.keys(errors).length; %>
+<div class="admin-head">
+  <div><a class="small muted" href="<%= base %>">← <%= def.title %></a><h1><%= title %></h1></div>
+  <% if (viewUrl) { %><div class="actions"><a class="btn btn-sm btn-quiet" href="<%= viewUrl %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-eye"/></svg> Xem trên website</a></div><% } %>
+</div>
+<% if (errCount) { %><div class="flash flash-error" role="alert"><svg class="icon"><use href="#i-alert"/></svg><span>Vui lòng sửa <%= errCount %> lỗi bên dưới.</span></div><% } %>
+
+<form class="form-grid" action="<%= action %>?_csrf=<%= csrfToken %>" method="post" enctype="multipart/form-data" novalidate>
+  <div>
+    <section class="form-card">
+      <% mainFields.forEach(f => { const e = errors[f.name]; const id = 'r-' + f.name; %>
+      <div class="field <%= e ? 'has-error' : '' %>">
+        <label class="label" for="<%= id %>"><%= f.label %><% if (f.required) { %> <span aria-hidden="true" style="color:var(--danger)">*</span><% } %></label>
+        <% if (f.type === 'textarea') { %>
+          <textarea class="textarea" id="<%= id %>" name="<%= f.name %>" <% if (f.max) { %>maxlength="<%= f.max %>"<% } %>><%= val(f) %></textarea>
+        <% } else if (f.type === 'markdown') { %>
+          <textarea class="textarea mono" id="<%= id %>" name="<%= f.name %>" style="min-height:280px"><%= val(f) %></textarea>
+        <% } else if (f.type === 'select') { %>
+          <select class="select" id="<%= id %>" name="<%= f.name %>">
+            <% if (!f.required) { %><option value="">— Không chọn —</option><% } %>
+            <% opts[f.name].forEach(o => { %><option value="<%= o.value %>" <%= String(o.value) === String(val(f)) ? 'selected' : '' %>><%= o.label %></option><% }) %>
+          </select>
+        <% } else if (f.type === 'date') { %>
+          <input class="input" type="date" id="<%= id %>" name="<%= f.name %>" value="<%= val(f) %>">
+        <% } else if (f.type === 'money' || f.type === 'number') { %>
+          <input class="input" type="text" inputmode="numeric" id="<%= id %>" name="<%= f.name %>" value="<%= val(f) %>" <%- f.type === 'money' ? 'data-money' : '' %>>
+        <% } else { %>
+          <input class="input" type="text" id="<%= id %>" name="<%= f.name %>" value="<%= val(f) %>" <% if (f.max) { %>maxlength="<%= f.max %>"<% } %>>
+        <% } %>
+        <% if (e) { %><p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= e %></p><% } else if (f.type === 'markdown') { %><p class="help">Hỗ trợ Markdown: **in đậm**, *nghiêng*, ## Tiêu đề, - danh sách, [liên kết](https://…)</p><% } else if (f.help) { %><p class="help"><%= f.help %></p><% } %>
+      </div>
+      <% }) %>
+    </section>
+
+    <% if (mediaFields.length) { %>
+    <section class="form-card">
+      <h2>Hình ảnh</h2>
+      <% mediaFields.forEach(f => { const id = 'r-' + f.name; %>
+      <div class="field">
+        <label class="label" for="<%= id %>"><%= f.label %></label>
+        <% if (f.type === 'image') { %>
+          <div class="img-field">
+            <% if (item[f.name]) { %>
+              <div class="img-preview"><img src="<%= img(item[f.name]) %>" alt=""></div>
+              <label class="check" style="padding-top:0"><input type="checkbox" name="<%= f.name %>_remove" value="1"> Xóa ảnh này</label>
+            <% } %>
+            <input class="input" type="file" id="<%= id %>" name="<%= f.name %>" accept="image/jpeg,image/png,image/webp,image/avif" data-preview>
+          </div>
+        <% } else { const g = fmt.parseJson(item[f.name], []); %>
+          <% if (g.length) { %><div class="gallery-edit"><% g.forEach(mid => { %><label><img src="<%= img(mid) %>" alt=""><span><input type="checkbox" name="<%= f.name %>_remove" value="<%= mid %>"> Xóa</span></label><% }) %></div><% } %>
+          <input class="input" type="file" id="<%= id %>" name="<%= f.name %>" accept="image/jpeg,image/png,image/webp,image/avif" multiple style="margin-top:8px">
+        <% } %>
+        <p class="help">JPG, PNG, WebP hoặc AVIF, tối đa 5MB. Nên dùng ảnh dọc tỉ lệ 4:5, rộng khoảng 1200px.</p>
+      </div>
+      <% }) %>
+    </section>
+    <% } %>
+
+    <% if (seoFields.length) { %>
+    <details class="form-card">
+      <summary style="cursor:pointer;font-weight:600">Tối ưu SEO (không bắt buộc)</summary>
+      <div style="margin-top:16px">
+      <% seoFields.forEach(f => { const id = 'r-' + f.name; %>
+        <div class="field"><label class="label" for="<%= id %>"><%= f.label %></label>
+          <% if (f.type === 'textarea') { %><textarea class="textarea" id="<%= id %>" name="<%= f.name %>" maxlength="<%= f.max %>"><%= val(f) %></textarea>
+          <% } else { %><input class="input" id="<%= id %>" name="<%= f.name %>" value="<%= val(f) %>" maxlength="<%= f.max %>"><% } %>
+        </div>
+      <% }) %>
+      </div>
+    </details>
+    <% } %>
+  </div>
+
+  <aside class="form-side">
+    <div class="form-card">
+      <% sideFields.forEach(f => { %>
+        <% if (f.type === 'checkbox') { %>
+          <label class="check"><input type="checkbox" name="<%= f.name %>" value="1" <%= item[f.name] ? 'checked' : '' %>> <%= f.label %></label>
+        <% } else { %>
+          <div class="field" style="margin-top:12px"><label class="label" for="r-<%= f.name %>"><%= f.label %></label><input class="input" id="r-<%= f.name %>" name="<%= f.name %>" inputmode="numeric" value="<%= val(f) %>"><p class="help">Số nhỏ hiển thị trước.</p></div>
+        <% } %>
+      <% }) %>
+      <button class="btn btn-block" type="submit" style="margin-top:20px"><%= item.id ? 'Lưu thay đổi' : 'Tạo ' + def.singular %></button>
+    </div>
+  </aside>
+</form>
+
+<% if (item.id) { %>
+<form action="<%= base %>/<%= item.id %>/xoa" method="post" class="form-card danger-zone" style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap" data-confirm="Xóa <%= def.singular %> này? Thao tác không thể hoàn tác.">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div><strong>Xóa <%= def.singular %></strong><p class="small muted">Đơn hàng cũ vẫn giữ nguyên thông tin.</p></div>
+  <button class="btn btn-sm btn-danger" type="submit"><svg class="icon icon-sm"><use href="#i-trash"/></svg> Xóa</button>
+</form>
+<% } %>
+<%- include('_bottom') %>

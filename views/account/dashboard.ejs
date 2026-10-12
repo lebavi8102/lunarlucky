@@ -1,0 +1,45 @@
+<%- include('../partials/top') %>
+<% const ST = { new: 'Mới', confirmed: 'Đã xác nhận', packing: 'Đang đóng gói', shipping: 'Đang giao', completed: 'Hoàn tất', cancelled: 'Đã hủy' }; %>
+<section class="page-head">
+  <div class="container" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px">
+    <div><span class="eyebrow">Tài khoản</span><h1>Xin chào, <%= user.name %></h1></div>
+    <form action="/dang-xuat" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-quiet btn-sm" type="submit"><svg class="icon icon-sm"><use href="#i-logout"/></svg> Đăng xuất</button></form>
+  </div>
+</section>
+<div class="container cart-layout">
+  <section>
+    <h2 class="h3" style="margin-bottom:20px">Đơn hàng của tôi</h2>
+    <% if (!orders.length) { %>
+      <div class="card card-cream" style="text-align:center"><p class="muted">Bạn chưa có đơn hàng nào.</p><a class="btn" href="/bo-suu-tap" style="margin-top:16px">Chọn giỏ quà đầu tiên</a></div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th scope="col">Mã đơn</th><th scope="col">Ngày đặt</th><th scope="col">Ngày giao</th><th scope="col">Trạng thái</th><th scope="col" class="num">Tổng</th></tr></thead>
+        <tbody>
+          <% orders.forEach(o => { %>
+          <tr>
+            <td><a href="/don-hang/<%= o.code %>" style="color:var(--primary);font-weight:600"><%= o.code %></a></td>
+            <td><%= fmt.date(o.created_at) %></td>
+            <td><%= fmt.ymd(o.delivery_date) %></td>
+            <td><span class="status status-<%= o.status %>"><%= ST[o.status] %></span></td>
+            <td class="num"><%= money(o.total) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+  <aside class="card">
+    <h2 class="h3" style="margin-bottom:20px">Thông tin cá nhân</h2>
+    <form action="/tai-khoan" method="post" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <%- include('../partials/field', { name: 'name', label: 'Họ và tên', required: true, autocomplete: 'name' }) %>
+      <div class="field"><span class="label">Email</span><span class="muted"><%= user.email %></span></div>
+      <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại', type: 'tel', autocomplete: 'tel' }) %>
+      <%- include('../partials/field', { name: 'address', label: 'Địa chỉ mặc định', autocomplete: 'street-address' }) %>
+      <button class="btn btn-block" type="submit" style="margin-top:20px">Lưu thông tin</button>
+    </form>
+  </aside>
+</div>
+<%- include('../partials/bottom') %>

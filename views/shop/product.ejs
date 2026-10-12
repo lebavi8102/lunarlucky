@@ -1,0 +1,92 @@
+<%- include('../partials/top') %>
+<% const save = product.compare_price && product.compare_price > product.price ? Math.round((1 - product.price / product.compare_price) * 100) : 0; %>
+<div class="container">
+  <ol class="crumbs" aria-label="Breadcrumb" style="padding-top:24px">
+    <li><a href="/">Trang chủ</a></li>
+    <li><a href="/bo-suu-tap">Bộ sưu tập</a></li>
+    <% if (category) { %><li><a href="/bo-suu-tap/<%= category.slug %>"><%= category.name %></a></li><% } %>
+    <li aria-current="page"><%= product.name %></li>
+  </ol>
+
+  <div class="pdp">
+    <div class="pdp-gallery" data-gallery>
+      <div class="gallery-main">
+        <img src="<%= img(gallery[0]) %>" alt="<%= product.name %>" width="800" height="1000" fetchpriority="high" data-gallery-main>
+      </div>
+      <% if (gallery.length > 1) { %>
+      <ul class="thumbs" aria-label="Ảnh sản phẩm">
+        <% gallery.forEach((id, i) => { %>
+          <li><button type="button" aria-label="Xem ảnh <%= i + 1 %>" aria-current="<%= i === 0 %>" data-src="<%= img(id) %>"><img src="<%= img(id) %>" alt="" loading="lazy" width="76" height="92"></button></li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </div>
+
+    <div class="pdp-info">
+      <% if (category) { %><a class="eyebrow" href="/bo-suu-tap/<%= category.slug %>"><%= category.name %></a><% } %>
+      <h1><%= product.name %></h1>
+      <div class="price">
+        <span><%= money(product.price) %></span>
+        <% if (save) { %><del><%= money(product.compare_price) %></del><span class="save">Tiết kiệm <%= save %>%</span><% } %>
+      </div>
+      <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>
+
+      <% if (contents.length) { %>
+      <div class="contents">
+        <h2>Trong giỏ quà có</h2>
+        <ul><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
+      </div>
+      <% } %>
+
+      <% if (product.stock > 0) { %>
+      <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="product_id" value="<%= product.id %>">
+        <div class="buy-row">
+          <div class="qty" data-qty>
+            <button type="button" aria-label="Giảm số lượng" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
+            <label class="sr-only" for="qty">Số lượng</label>
+            <input id="qty" name="qty" type="number" inputmode="numeric" min="1" max="<%= Math.min(product.stock, 500) %>" value="1">
+            <button type="button" aria-label="Tăng số lượng" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
+          </div>
+          <button class="btn btn-lg" type="submit"><svg class="icon"><use href="#i-bag"/></svg> Thêm vào giỏ</button>
+          <button class="btn btn-lg btn-ghost" type="submit" name="buy_now" value="1" data-no-ajax>Mua ngay</button>
+        </div>
+      </form>
+      <p class="stock-note <%= product.stock <= 5 ? 'low' : '' %>">
+        <svg class="icon icon-sm"><use href="#i-<%= product.stock <= 5 ? 'alert' : 'check' %>"/></svg>
+        <%= product.stock <= 5 ? `Chỉ còn ${product.stock} giỏ, đặt sớm để giữ hàng` : 'Còn hàng, sẵn sàng giao' %>
+      </p>
+      <% } else { %>
+        <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
+        <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a></div>
+      <% } %>
+
+      <ul class="assure">
+        <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày giao khi thanh toán, giao đúng hẹn</li>
+        <li><svg class="icon"><use href="#i-pen"/></svg> Thiệp chúc viết tay miễn phí theo lời nhắn của bạn</li>
+        <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
+        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Nhắn Zalo cho Lunar</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <% if (descriptionHtml && descriptionHtml.trim()) { %>
+  <section class="section-tight" style="border-top:1px solid var(--line)">
+    <div class="split" style="align-items:start">
+      <div><span class="eyebrow">Câu chuyện giỏ quà</span><h2 class="h2" style="margin-top:12px">Về <em><%= product.name %></em></h2></div>
+      <div class="prose"><%- descriptionHtml %></div>
+    </div>
+  </section>
+  <% } %>
+
+  <% if (related.length) { %>
+  <section class="section" style="border-top:1px solid var(--line)">
+    <div class="section-head"><div class="stack"><span class="eyebrow">Có thể bạn thích</span><h2 class="h2">Giỏ quà <em>tương tự</em></h2></div></div>
+    <div class="product-grid cols-4">
+      <% related.forEach((p, i) => { %><%- include('../partials/product-card', { p, i }) %><% }) %>
+    </div>
+  </section>
+  <% } %>
+</div>
+<%- include('../partials/bottom') %>

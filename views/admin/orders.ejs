@@ -1,0 +1,38 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Đơn hàng</h1></div>
+<div class="list-tools">
+  <nav aria-label="Lọc theo trạng thái"><ul class="chips">
+    <li><a class="chip" href="/admin/don-hang" aria-current="<%= !status && !unpaidOnly %>">Tất cả</a></li>
+    <% Object.entries(ORDER_STATUS).forEach(([k, v]) => { %><li><a class="chip" href="?status=<%= k %>" aria-current="<%= status === k %>"><%= v %><% if (counts[k]) { %>&nbsp;<b><%= counts[k] %></b><% } %></a></li><% }) %>
+    <li><a class="chip" href="?chua_tt=1" aria-current="<%= unpaidOnly %>">Chờ chuyển khoản</a></li>
+  </ul></nav>
+</div>
+<div class="list-tools">
+  <form method="get" role="search">
+    <% if (status) { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+    <label class="sr-only" for="oq">Tìm đơn</label>
+    <input class="input" id="oq" type="search" name="q" value="<%= q %>" placeholder="Mã đơn, SĐT, tên khách">
+    <button class="btn btn-sm btn-ghost" type="submit">Tìm</button>
+  </form>
+</div>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">Mã đơn</th><th scope="col">Ngày đặt</th><th scope="col">Khách hàng</th><th scope="col">Ngày giao</th><th scope="col">Thanh toán</th><th scope="col">Trạng thái</th><th scope="col" class="num">Tổng</th></tr></thead>
+    <tbody>
+      <% if (!orders.length) { %><tr><td colspan="7" class="muted" style="padding:32px;text-align:center">Không có đơn hàng phù hợp.</td></tr><% } %>
+      <% orders.forEach(o => { %>
+      <tr>
+        <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.is_gift) { %> <svg class="icon icon-sm" style="display:inline;vertical-align:-3px;color:var(--gold-700)" aria-label="Gửi tặng"><use href="#i-gift"/></svg><% } %></td>
+        <td><%= fmt.dateTime(o.created_at) %></td>
+        <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %></span></td>
+        <td><%= fmt.ymd(o.delivery_date) %></td>
+        <td><span class="status status-<%= o.payment_status %>"><%= o.payment_method === 'cod' ? 'COD' : 'CK' %> · <%= PAYMENT_STATUS[o.payment_status] %></span></td>
+        <td><span class="status status-<%= o.status %>"><%= ORDER_STATUS[o.status] %></span></td>
+        <td class="num"><b><%= money(o.total) %></b></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../partials/pagination', { baseQuery: { status, q, chua_tt: unpaidOnly ? '1' : '' } }) %>
+<%- include('_bottom') %>

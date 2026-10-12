@@ -1,0 +1,22 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Chính sách</span>
+    <h1><%= page.title %></h1>
+    <p class="muted small">Cập nhật lần cuối: 12/10/2026</p>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container"><div class="prose">
+<h2>Phạm vi và thời gian giao</h2>
+<p>Lunar giao hàng toàn quốc. Bạn chọn <strong>ngày giao mong muốn</strong> khi đặt hàng; Lunar giao trong khung 8:00 – 20:00 của ngày đó và gọi xác nhận trước khi giao.</p>
+<ul><li>Nội thành TP. Hồ Chí Minh và Hà Nội: giao đúng ngày đã chọn.</li><li>Các tỉnh thành khác: giao qua đối tác vận chuyển, thời gian 2–4 ngày; Lunar sẽ báo ngày giao dự kiến khi xác nhận đơn.</li></ul>
+<h2>Phí giao hàng</h2>
+<p>Phí giao đồng giá <strong><%= money(s.shipping_fee) %></strong> mỗi đơn. Miễn phí giao hàng cho đơn từ <strong><%= money(s.free_ship_threshold) %></strong> (sau giảm giá). Đơn đi huyện đảo hoặc vùng sâu có thể phát sinh phụ phí và sẽ được thông báo trước.</p>
+<h2>Gửi tặng trực tiếp</h2>
+<p>Với đơn gửi tặng, Lunar giao đến người nhận, không kèm hóa đơn giá tiền và gửi ảnh xác nhận cho người đặt sau khi giao thành công.</p>
+<h2>Không liên lạc được người nhận</h2>
+<p>Lunar sẽ liên hệ người đặt để thống nhất thời gian giao lại. Giao lại lần hai trong cùng khu vực được miễn phí.</p>
+  </div></div>
+</section>
+<%- include('../partials/bottom') %>

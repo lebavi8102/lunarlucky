@@ -1,0 +1,18 @@
+<%- include('../partials/top') %>
+<div class="container auth-wrap">
+  <h1>Đăng nhập</h1>
+  <p class="sub">Theo dõi đơn quà và đặt hàng nhanh hơn.</p>
+  <% if (error) { %><div class="flash flash-error" role="alert" style="margin-bottom:20px"><svg class="icon"><use href="#i-alert"/></svg><span><%= error %></span></div><% } %>
+  <form class="card" action="/dang-nhap" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= next %>">
+    <div class="field"><label class="label" for="email">Email</label><input class="input" id="email" name="email" type="email" value="<%= values.email %>" required autocomplete="email"></div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><label class="label" for="password">Mật khẩu</label><a class="small" href="/quen-mat-khau" style="color:var(--primary)">Quên mật khẩu?</a></div>
+      <input class="input" id="password" name="password" type="password" required autocomplete="current-password">
+    </div>
+    <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Đăng nhập</button>
+  </form>
+  <p class="auth-alt">Chưa có tài khoản? <a href="/dang-ky">Tạo tài khoản</a></p>
+</div>
+<%- include('../partials/bottom') %>

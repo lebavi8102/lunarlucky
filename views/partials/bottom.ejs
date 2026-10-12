@@ -1,0 +1,59 @@
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-top">
+    <div>
+      <a href="/" class="logo"><%- include('logo') %></a>
+      <p style="margin-top:20px;max-width:36ch">Giỏ quà Tết tuyển chọn thủ công, đóng hộp sơn mài, kèm thiệp viết tay và giao đúng ngày bạn chọn.</p>
+      <div class="pay-chips" style="margin-top:20px" aria-label="Hình thức thanh toán">
+        <span>COD</span><span>VietQR</span><span>Chuyển khoản</span>
+      </div>
+    </div>
+    <div>
+      <h4>Mua sắm</h4>
+      <ul>
+        <li><a href="/bo-suu-tap">Tất cả giỏ quà</a></li>
+        <li><a href="/tu-tao-gio-qua">Tự tạo giỏ quà</a></li>
+        <li><a href="/qua-tang-doanh-nghiep">Quà doanh nghiệp</a></li>
+        <li><a href="/tra-cuu-don">Tra cứu đơn hàng</a></li>
+        <li><a href="/blog">Cẩm nang quà Tết</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Hỗ trợ</h4>
+      <ul>
+        <li><a href="/cau-hoi-thuong-gap">Câu hỏi thường gặp</a></li>
+        <li><a href="/chinh-sach-giao-hang">Chính sách giao hàng</a></li>
+        <li><a href="/chinh-sach-doi-tra">Chính sách đổi trả</a></li>
+        <li><a href="/chinh-sach-bao-mat">Chính sách bảo mật</a></li>
+        <li><a href="/dieu-khoan">Điều khoản sử dụng</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Liên hệ</h4>
+      <ul>
+        <li><a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg><%= s.shop_phone %></a></li>
+        <li><a href="mailto:<%= s.shop_email %>"><svg class="icon icon-sm"><use href="#i-mail"/></svg><%= s.shop_email %></a></li>
+        <li><a href="<%= s.fanpage_url %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-facebook"/></svg>Fanpage Lunar</a></li>
+        <li><span style="display:inline-flex;gap:8px;align-items:center;min-height:32px"><svg class="icon icon-sm"><use href="#i-clock"/></svg><%= s.shop_hours %></span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© <%= new Date().getFullYear() %> <%= s.shop_name %>. Bán hàng trực tuyến, giao toàn quốc.</span>
+    <span>An Khang · Thịnh Vượng · Vạn Sự Như Ý</span>
+  </div>
+</footer>
+
+<div class="float-contact no-print" aria-label="Liên hệ nhanh">
+  <a href="<%= s.zalo_url %>" class="zalo" target="_blank" rel="noopener" aria-label="Nhắn Zalo">Zalo</a>
+  <a href="<%= s.messenger_url %>" target="_blank" rel="noopener" aria-label="Nhắn Messenger"><svg class="icon"><use href="#i-chat"/></svg></a>
+  <a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>" aria-label="Gọi hotline <%= s.shop_phone %>"><svg class="icon"><use href="#i-phone"/></svg></a>
+</div>
+
+<div class="toast" role="status" aria-live="polite" data-toast><span data-toast-text></span><a href="/gio-hang">Xem giỏ</a></div>
+
+<script src="/js/main.js" defer></script>
+<% if (typeof pageScript !== 'undefined') { %><script src="<%= pageScript %>" defer></script><% } %>
+</body>
+</html>

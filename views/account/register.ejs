@@ -1,0 +1,19 @@
+<%- include('../partials/top') %>
+<div class="container auth-wrap">
+  <h1>Tạo tài khoản</h1>
+  <p class="sub">Lưu địa chỉ, xem lại đơn quà và nhận ưu đãi dành riêng cho khách quen.</p>
+  <form class="card" action="/dang-ky" method="post" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../partials/field', { name: 'name', label: 'Họ và tên', required: true, autocomplete: 'name' }) %>
+    <%- include('../partials/field', { name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' }) %>
+    <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại', type: 'tel', optional: true, autocomplete: 'tel', inputmode: 'tel' }) %>
+    <div class="field <%= errors.password ? 'has-error' : '' %>">
+      <label class="label" for="f-password">Mật khẩu</label>
+      <input class="input" id="f-password" name="password" type="password" required minlength="8" autocomplete="new-password" <% if (errors.password) { %>aria-invalid="true" aria-describedby="pw-err"<% } %>>
+      <% if (errors.password) { %><p class="err" id="pw-err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= errors.password %></p><% } else { %><p class="help">Ít nhất 8 ký tự.</p><% } %>
+    </div>
+    <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Tạo tài khoản</button>
+  </form>
+  <p class="auth-alt">Đã có tài khoản? <a href="/dang-nhap">Đăng nhập</a></p>
+</div>
+<%- include('../partials/bottom') %>

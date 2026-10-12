@@ -1,0 +1,99 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/gio-hang">Giỏ hàng</a></li><li aria-current="page">Thanh toán</li></ol>
+    <h1>Hoàn tất đơn quà</h1>
+  </div>
+</section>
+
+<div class="container">
+  <% if (Object.keys(errors).length) { %>
+    <div class="flash flash-error" role="alert" tabindex="-1" data-focus-on-load>
+      <svg class="icon"><use href="#i-alert"/></svg>
+      <span>Vui lòng kiểm tra lại <%= Object.keys(errors).length %> thông tin được đánh dấu bên dưới.</span>
+    </div>
+  <% } %>
+
+  <form class="cart-layout" action="/thanh-toan" method="post" novalidate data-checkout>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <fieldset class="fieldset">
+        <legend><span class="num">1</span> Thông tin người đặt</legend>
+        <%- include('../partials/field', { name: 'customer_name', label: 'Họ và tên', required: true, autocomplete: 'name', maxlength: 120 }) %>
+        <div class="grid-2" style="margin-top:16px">
+          <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại', type: 'tel', required: true, autocomplete: 'tel', inputmode: 'tel', placeholder: '0912 345 678' }) %>
+          <%- include('../partials/field', { name: 'email', label: 'Email', type: 'email', optional: true, autocomplete: 'email', help: 'Để nhận xác nhận đơn hàng.' }) %>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend><span class="num">2</span> Giao hàng</legend>
+        <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
+          <input type="checkbox" name="is_gift" value="1" <%= values.is_gift ? 'checked' : '' %> data-gift-toggle>
+          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar giao đến người nhận, không kèm hóa đơn giá tiền.</span></span>
+        </label>
+
+        <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
+        <div data-buyer-address <%= values.is_gift ? 'hidden' : '' %> style="margin-top:16px">
+          <%- include('../partials/field', { name: 'address', label: 'Địa chỉ nhận hàng', required: true, autocomplete: 'street-address', placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %>
+        </div>
+
+        <div data-gift-fields <%= values.is_gift ? '' : 'hidden' %> style="margin-top:20px;padding-top:20px;border-top:1px dashed var(--line)">
+          <p class="label" style="margin-bottom:12px">Thông tin người nhận quà</p>
+          <div class="grid-2">
+            <%- include('../partials/field', { name: 'recipient_name', label: 'Tên người nhận', maxlength: 120 }) %>
+            <%- include('../partials/field', { name: 'recipient_phone', label: 'SĐT người nhận', type: 'tel', inputmode: 'tel' }) %>
+          </div>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'recipient_address', label: 'Địa chỉ người nhận', placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %></div>
+        </div>
+
+        <div style="margin-top:16px">
+          <%- include('../partials/field', { name: 'delivery_date', label: 'Ngày giao mong muốn', type: 'date', required: true, min: minDate, max: maxDate, help: 'Lunar giao trong khung 8:00 – 20:00 và gọi xác nhận trước khi giao.' }) %>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend><span class="num">3</span> Thiệp &amp; lời nhắn</legend>
+        <%- include('../partials/field', { name: 'card_message', label: 'Lời chúc trên thiệp', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Kính chúc gia đình chú Hai một năm mới An Khang Thịnh Vượng!', help: 'Lunar sẽ viết tay lời chúc này lên thiệp. Tối đa 300 ký tự.' }) %>
+        <div style="margin-top:16px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar', as: 'textarea', optional: true, maxlength: 500 }) %></div>
+        <div style="margin-top:16px"><%- include('../partials/field', { name: 'invoice_info', label: 'Thông tin xuất hóa đơn VAT', as: 'textarea', optional: true, maxlength: 500, placeholder: 'Tên công ty, mã số thuế, địa chỉ, email nhận hóa đơn' }) %></div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend><span class="num">4</span> Thanh toán</legend>
+        <div class="radio-cards">
+          <label class="radio-card">
+            <input type="radio" name="payment_method" value="bank" <%= values.payment_method !== 'cod' ? 'checked' : '' %>>
+            <span class="dot"></span>
+            <span><strong>Chuyển khoản VietQR</strong><span>Quét mã QR ngay sau khi đặt, xác nhận nhanh</span></span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' ? 'checked' : '' %>>
+            <span class="dot"></span>
+            <span><strong>Thanh toán khi nhận hàng</strong><span>Trả tiền mặt cho nhân viên giao hàng</span></span>
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <aside class="summary card" aria-label="Đơn hàng của bạn">
+      <h2>Đơn hàng</h2>
+      <ul class="summary-items">
+        <% cart.lines.forEach(l => { %>
+        <li>
+          <span class="thumb"><img src="<%= img(l.image_id) %>" alt="" width="60" height="75" loading="lazy"><span class="q"><%= l.qty %></span></span>
+          <span><%= l.name %><% if (l.details) { %><br><span class="tiny muted"><%= l.details.items.map(i => i.name + ' ×' + i.qty).join(', ') %></span><% } %></span>
+          <span class="line-total"><%= money(l.lineTotal) %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <div class="sum-row"><span>Tạm tính</span><span><%= money(cart.subtotal) %></span></div>
+      <% if (cart.discount) { %><div class="sum-row"><span>Mã <%= cart.coupon.code %></span><span class="disc">−<%= money(cart.discount) %></span></div><% } %>
+      <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
+      <div class="sum-row total"><span>Tổng cộng</span><span><%= money(cart.total) %></span></div>
+      <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
+      <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar.</p>
+    </aside>
+  </form>
+</div>
+<%- include('../partials/bottom') %>

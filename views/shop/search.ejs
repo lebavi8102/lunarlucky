@@ -1,0 +1,28 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Tìm kiếm</span>
+    <h1><%= q ? `Kết quả cho “${q}”` : 'Bạn đang tìm món quà nào?' %></h1>
+    <form action="/tim-kiem" method="get" role="search" style="display:flex;gap:12px;margin-top:24px;max-width:560px">
+      <label class="sr-only" for="q">Từ khóa</label>
+      <input class="input" id="q" type="search" name="q" value="<%= q %>" placeholder="VD: trà sen, rượu vang, hạt điều…">
+      <button class="btn" type="submit">Tìm</button>
+    </form>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container">
+    <% if (products.length) { %>
+      <p class="small muted" style="margin-bottom:24px">Tìm thấy <%= products.length %> giỏ quà</p>
+      <div class="product-grid cols-4"><% products.forEach((p, i) => { %><%- include('../partials/product-card', { p, i }) %><% }) %></div>
+    <% } else if (q) { %>
+      <div class="empty">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <h2 class="h3">Chưa tìm thấy giỏ quà phù hợp</h2>
+        <p class="muted" style="margin-top:8px">Thử từ khóa ngắn hơn, hoặc tự phối giỏ quà với đúng món bạn muốn.</p>
+        <div class="hero-cta" style="justify-content:center"><a class="btn" href="/tu-tao-gio-qua">Tự tạo giỏ quà</a><a class="btn btn-quiet" href="/bo-suu-tap">Xem bộ sưu tập</a></div>
+      </div>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/bottom') %>

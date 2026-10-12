@@ -1,0 +1,28 @@
+<%# Cần: p (sản phẩm), catName (tùy chọn), i (index, tùy chọn) %>
+<article class="p-card reveal" style="--d: <%= ((typeof i !== 'undefined' ? i : 0) % 4) * 80 %>ms">
+  <div class="p-media">
+    <% if (p.stock <= 0) { %>
+      <span class="p-badge out">Hết hàng</span>
+    <% } else if (p.badge) { %>
+      <span class="p-badge <%= /giới hạn|cao cấp/i.test(p.badge) ? 'gold' : '' %>"><%= p.badge %></span>
+    <% } %>
+    <img src="<%= img(p.image_id) %>" alt="<%= p.name %>" loading="lazy" decoding="async" width="800" height="1000">
+    <% if (p.stock > 0) { %>
+    <form class="p-quick" action="/gio-hang/them" method="post" data-add-to-cart>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="product_id" value="<%= p.id %>">
+      <input type="hidden" name="qty" value="1">
+      <button class="btn btn-sm" type="submit"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm vào giỏ</button>
+    </form>
+    <% } %>
+  </div>
+  <div class="p-body">
+    <% if (typeof catName !== 'undefined' && catName) { %><span class="p-cat"><%= catName %></span><% } %>
+    <h3 class="p-title"><a href="/san-pham/<%= p.slug %>"><%= p.name %></a></h3>
+    <% if (p.short_desc) { %><p class="p-desc"><%= p.short_desc %></p><% } %>
+    <div class="price">
+      <span><%= money(p.price) %></span>
+      <% if (p.compare_price && p.compare_price > p.price) { %><del><%= money(p.compare_price) %></del><% } %>
+    </div>
+  </div>
+</article>

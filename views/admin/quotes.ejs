@@ -1,0 +1,27 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Báo giá doanh nghiệp</h1></div>
+<% if (!quotes.length) { %><div class="panel"><p class="muted">Chưa có yêu cầu báo giá nào.</p></div><% } %>
+<% quotes.forEach(q => { %>
+<article class="quote-card">
+  <div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 class="h3"><%= q.company %></h2><span class="status status-<%= q.status %>"><%= QUOTE_STATUS[q.status] %></span></div>
+    <p class="small muted" style="margin-top:4px"><%= fmt.dateTime(q.created_at) %></p>
+    <dl class="kv" style="margin-top:12px">
+      <dt>Liên hệ</dt><dd><b><%= q.contact_name %></b> · <a href="tel:<%= q.phone %>" style="color:var(--primary)"><%= q.phone %></a><% if (q.email) { %> · <a href="mailto:<%= q.email %>" style="color:var(--primary)"><%= q.email %></a><% } %></dd>
+      <dt>Số lượng</dt><dd><%= q.quantity %> giỏ</dd>
+      <dt>Ngân sách/giỏ</dt><dd><%= q.budget %></dd>
+      <% if (q.delivery_date) { %><dt>Ngày giao</dt><dd><%= fmt.ymd(q.delivery_date) %></dd><% } %>
+      <dt>In logo</dt><dd><%= q.logo_print ? 'Có' : 'Không' %></dd>
+      <% if (q.message) { %><dt>Mô tả</dt><dd style="white-space:pre-line"><%= q.message %></dd><% } %>
+    </dl>
+  </div>
+  <form action="/admin/bao-gia/<%= q.id %>" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field"><label class="label" for="qs-<%= q.id %>">Trạng thái</label>
+      <select class="select" id="qs-<%= q.id %>" name="status"><% Object.entries(QUOTE_STATUS).forEach(([k, v]) => { %><option value="<%= k %>" <%= k === q.status ? 'selected' : '' %>><%= v %></option><% }) %></select></div>
+    <div class="field"><label class="label" for="qn-<%= q.id %>">Ghi chú</label><textarea class="textarea" id="qn-<%= q.id %>" name="admin_note" style="min-height:80px"><%= q.admin_note || '' %></textarea></div>
+    <button class="btn btn-sm btn-block" type="submit" style="margin-top:12px">Lưu</button>
+  </form>
+</article>
+<% }) %>
+<%- include('_bottom') %>

@@ -1,0 +1,85 @@
+<%- include('../partials/top', { pageScript: '/js/builder.js' }) %>
+<% const selBox = selected ? selected.boxId : (boxes[1] || boxes[0] || {}).id; const selItems = selected ? selected.items : {}; %>
+<section class="page-head">
+  <div class="container">
+    <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">Trang chủ</a></li><li aria-current="page">Tự tạo giỏ quà</li></ol>
+    <h1>Tự tay gói <em class="serif" style="color:var(--primary)">lời chúc riêng</em></h1>
+    <p class="lead">Chọn một hộp quà, rồi phối từng món theo sở thích người nhận. Tổng tiền được cập nhật ngay khi bạn chọn.</p>
+  </div>
+</section>
+
+<div class="container">
+  <% if (error) { %><div class="flash flash-error" role="alert"><svg class="icon"><use href="#i-alert"/></svg><span><%= error %></span></div><% } %>
+
+  <form class="builder" action="/tu-tao-gio-qua" method="post" data-builder data-min="<%= minItems %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <fieldset class="fieldset">
+        <legend><span class="num">1</span> Chọn hộp quà</legend>
+        <div class="box-options">
+          <% boxes.forEach(b => { %>
+          <label class="box-opt">
+            <input type="radio" name="box_id" value="<%= b.id %>" data-price="<%= b.price %>" data-capacity="<%= b.capacity %>" data-name="<%= b.name %>" <%= b.id === selBox ? 'checked' : '' %> required>
+            <span class="tick"><svg class="icon icon-sm"><use href="#i-check"/></svg></span>
+            <span class="media"><img src="<%= img(b.image_id) %>" alt="" loading="lazy" width="300" height="300"></span>
+            <span class="body">
+              <strong><%= b.name %></strong>
+              <span class="small muted"><%= b.description %></span>
+              <span class="price small"><%= money(b.price) %> · tối đa <%= b.capacity %> món</span>
+            </span>
+          </label>
+          <% }) %>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend><span class="num">2</span> Phối các món quà</legend>
+        <% groups.forEach(g => { %>
+        <div class="item-group">
+          <h3><%= g.name %></h3>
+          <ul class="item-list">
+            <% g.items.forEach(it => { const q = selItems[it.id] || 0; %>
+            <li class="item-row <%= q ? 'is-picked' : '' %>" data-item data-id="<%= it.id %>" data-name="<%= it.name %>" data-price="<%= it.price %>">
+              <span class="media"><img src="<%= img(it.image_id) %>" alt="" loading="lazy" width="64" height="64"></span>
+              <span><strong><%= it.name %></strong><span class="price"><%= money(it.price) %></span></span>
+              <div class="qty sm" data-qty>
+                <button type="button" aria-label="Bớt <%= it.name %>" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
+                <label class="sr-only" for="it-<%= it.id %>">Số lượng <%= it.name %></label>
+                <input id="it-<%= it.id %>" name="item_<%= it.id %>" type="number" inputmode="numeric" min="0" max="20" value="<%= q %>">
+                <button type="button" aria-label="Thêm <%= it.name %>" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
+              </div>
+            </li>
+            <% }) %>
+          </ul>
+        </div>
+        <% }) %>
+      </fieldset>
+    </div>
+
+    <aside class="builder-summary card" aria-label="Giỏ quà của bạn">
+      <span class="eyebrow">Giỏ quà của bạn</span>
+      <h2 class="h3" style="margin-top:8px" data-box-name>Chọn hộp quà</h2>
+      <div class="capacity" data-capacity>
+        <div class="capacity-label"><span>Số món</span><span><b data-count>0</b> / <span data-cap>0</span></span></div>
+        <div class="bar" role="progressbar" aria-label="Mức đầy của hộp" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      </div>
+      <ul class="picked-list" data-picked aria-live="polite"><li class="muted">Chưa chọn món nào</li></ul>
+      <div class="sum-row" style="margin-top:16px"><span>Hộp quà</span><span data-box-price>0₫</span></div>
+      <div class="sum-row"><span>Các món</span><span data-items-price>0₫</span></div>
+      <div class="sum-row total"><span>Giá mỗi giỏ</span><span data-total>0₫</span></div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:16px">
+        <span class="small">Số giỏ</span>
+        <div class="qty sm" data-qty>
+          <button type="button" aria-label="Giảm số giỏ" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
+          <label class="sr-only" for="b-qty">Số giỏ</label>
+          <input id="b-qty" name="qty" type="number" inputmode="numeric" min="1" max="500" value="1">
+          <button type="button" aria-label="Tăng số giỏ" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
+        </div>
+      </div>
+      <p class="err" data-builder-msg hidden style="margin-top:12px"></p>
+      <button class="btn btn-lg btn-block" type="submit" style="margin-top:16px" data-builder-submit><svg class="icon"><use href="#i-bag"/></svg> Thêm vào giỏ hàng</button>
+      <p class="tiny muted" style="margin-top:12px;text-align:center">Thiệp viết tay và nơ lụa được tặng kèm mỗi giỏ.</p>
+    </aside>
+  </form>
+</div>
+<%- include('../partials/bottom', { pageScript: '/js/builder.js' }) %>

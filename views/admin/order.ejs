@@ -1,0 +1,76 @@
+<%- include('_top') %>
+<div class="admin-head">
+  <div>
+    <a class="small muted" href="/admin/don-hang">← Đơn hàng</a>
+    <h1>Đơn <%= order.code %></h1>
+    <p class="small muted">Đặt lúc <%= fmt.dateTime(order.created_at) %></p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-sm btn-quiet" href="/admin/don-hang/<%= order.id %>/in" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-printer"/></svg> In phiếu &amp; thiệp</a>
+    <a class="btn btn-sm btn-quiet" href="/don-hang/<%= order.code %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-eye"/></svg> Trang khách xem</a>
+  </div>
+</div>
+
+<div class="form-grid">
+  <div>
+    <section class="form-card">
+      <h2>Sản phẩm</h2>
+      <div class="table-wrap" style="border:0">
+        <table class="table">
+          <thead><tr><th scope="col">Sản phẩm</th><th scope="col" class="num">Đơn giá</th><th scope="col" class="num">SL</th><th scope="col" class="num">Thành tiền</th></tr></thead>
+          <tbody>
+          <% items.forEach(i => { %>
+            <tr>
+              <td class="wrap"><b><%= i.name %></b>
+                <% if (i.details) { %><br><span class="tiny muted">Hộp <%= i.details.box.name %>: <%= i.details.items.map(x => x.name + ' ×' + x.qty).join(', ') %></span><% } %>
+              </td>
+              <td class="num"><%= money(i.price) %></td><td class="num"><%= i.qty %></td><td class="num"><%= money(i.line_total) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div style="max-width:320px;margin-left:auto;margin-top:12px">
+        <div class="sum-row"><span>Tạm tính</span><span><%= money(order.subtotal) %></span></div>
+        <% if (order.discount) { %><div class="sum-row"><span>Mã <%= order.coupon_code %></span><span class="disc">−<%= money(order.discount) %></span></div><% } %>
+        <div class="sum-row"><span>Phí giao</span><span><%= money(order.shipping_fee) %></span></div>
+        <div class="sum-row total"><span>Tổng</span><span><%= money(order.total) %></span></div>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h2>Khách hàng &amp; giao hàng</h2>
+      <dl class="kv">
+        <dt>Người đặt</dt><dd><b><%= order.customer_name %></b> · <a href="tel:<%= order.phone %>" style="color:var(--primary)"><%= order.phone %></a><% if (order.email) { %> · <%= order.email %><% } %></dd>
+        <% if (order.is_gift) { %>
+          <dt>Gửi tặng</dt><dd><b><%= order.recipient_name %></b> · <a href="tel:<%= order.recipient_phone %>" style="color:var(--primary)"><%= order.recipient_phone %></a></dd>
+          <dt>Địa chỉ nhận</dt><dd><%= order.recipient_address %>, <%= order.province %></dd>
+        <% } else { %>
+          <dt>Địa chỉ</dt><dd><%= order.address %>, <%= order.province %></dd>
+        <% } %>
+        <dt>Ngày giao</dt><dd><b><%= fmt.ymd(order.delivery_date) %></b></dd>
+        <dt>Thanh toán</dt><dd><%= order.payment_method === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản VietQR, nội dung ' + order.code %></dd>
+        <% if (order.card_message) { %><dt>Lời chúc thiệp</dt><dd class="serif" style="font-size:19px;font-style:italic">“<%= order.card_message %>”</dd><% } %>
+        <% if (order.note) { %><dt>Ghi chú</dt><dd><%= order.note %></dd><% } %>
+        <% if (order.invoice_info) { %><dt>Xuất VAT</dt><dd style="white-space:pre-line"><%= order.invoice_info %></dd><% } %>
+      </dl>
+    </section>
+  </div>
+
+  <aside class="form-side">
+    <form class="form-card" action="/admin/don-hang/<%= order.id %>" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2>Xử lý đơn</h2>
+      <div class="field"><label class="label" for="st">Trạng thái đơn</label>
+        <select class="select" id="st" name="status"><% Object.entries(ORDER_STATUS).forEach(([k, v]) => { %><option value="<%= k %>" <%= k === order.status ? 'selected' : '' %>><%= v %></option><% }) %></select>
+      </div>
+      <div class="field"><label class="label" for="ps">Thanh toán</label>
+        <select class="select" id="ps" name="payment_status"><% Object.entries(PAYMENT_STATUS).forEach(([k, v]) => { %><option value="<%= k %>" <%= k === order.payment_status ? 'selected' : '' %>><%= v %></option><% }) %></select>
+      </div>
+      <div class="field"><label class="label" for="an">Ghi chú nội bộ</label><textarea class="textarea" id="an" name="admin_note" maxlength="500"><%= order.admin_note || '' %></textarea></div>
+      <button class="btn btn-block" type="submit" style="margin-top:16px">Lưu</button>
+      <p class="tiny muted" style="margin-top:10px">Khi đổi trạng thái, khách có email sẽ nhận thông báo. Hủy đơn sẽ tự hoàn lại tồn kho.</p>
+    </form>
+  </aside>
+</div>
+<%- include('_bottom') %>

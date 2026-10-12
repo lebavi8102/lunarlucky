@@ -1,0 +1,102 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Giỏ hàng</span>
+    <h1><%= cart.lines.length ? 'Giỏ quà của bạn' : 'Giỏ hàng đang trống' %></h1>
+  </div>
+</section>
+
+<div class="container">
+  <% for (const n of cart.notices) { %>
+    <div class="flash flash-info" role="status"><svg class="icon"><use href="#i-info"/></svg><span><%= n %></span></div>
+  <% } %>
+
+  <% if (!cart.lines.length) { %>
+    <div class="empty">
+      <svg class="icon"><use href="#i-bag"/></svg>
+      <h2 class="h3">Chưa có giỏ quà nào được chọn</h2>
+      <p class="muted" style="margin-top:8px">Khám phá bộ sưu tập Tết hoặc tự tay phối một giỏ quà riêng.</p>
+      <div class="hero-cta" style="justify-content:center"><a class="btn btn-lg" href="/bo-suu-tap">Xem bộ sưu tập</a><a class="btn btn-lg btn-quiet" href="/tu-tao-gio-qua">Tự tạo giỏ quà</a></div>
+    </div>
+  <% } else { %>
+  <div class="cart-layout">
+    <div>
+      <ul class="cart-lines">
+        <% cart.lines.forEach(l => { %>
+        <li class="cart-line">
+          <a class="thumb" href="<%= l.url %>"><img src="<%= img(l.image_id) %>" alt="" width="112" height="140" loading="lazy"></a>
+          <div>
+            <h3><a href="<%= l.url %>"><%= l.name %></a></h3>
+            <div class="price small" style="margin-top:4px"><%= money(l.unitPrice) %><% if (l.comparePrice && l.comparePrice > l.unitPrice) { %> <del><%= money(l.comparePrice) %></del><% } %></div>
+            <% if (l.details) { %>
+            <ul class="details">
+              <li>Hộp: <%= l.details.box.name %> (<%= money(l.details.box.price) %>)</li>
+              <% l.details.items.forEach(it => { %><li><%= it.name %> × <%= it.qty %></li><% }) %>
+            </ul>
+            <% } %>
+          </div>
+          <div class="actions">
+            <form action="/gio-hang/cap-nhat" method="post" data-qty-form>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="key" value="<%= l.key %>">
+              <div class="qty sm" data-qty>
+                <button type="button" aria-label="Giảm số lượng <%= l.name %>" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
+                <label class="sr-only" for="q-<%= l.key %>">Số lượng <%= l.name %></label>
+                <input id="q-<%= l.key %>" name="qty" type="number" inputmode="numeric" min="1" max="<%= l.maxQty %>" value="<%= l.qty %>">
+                <button type="button" aria-label="Tăng số lượng <%= l.name %>" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
+              </div>
+              <noscript><button class="btn btn-sm btn-quiet" type="submit">Cập nhật</button></noscript>
+            </form>
+            <span class="line-total"><%= money(l.lineTotal) %></span>
+            <form action="/gio-hang/xoa" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="key" value="<%= l.key %>">
+              <button class="remove-btn" type="submit"><svg class="icon icon-sm"><use href="#i-trash"/></svg> Xóa</button>
+            </form>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+      <a class="link-arrow" href="/bo-suu-tap" style="margin-top:24px"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> Tiếp tục chọn quà</a>
+    </div>
+
+    <aside class="summary card" aria-label="Tóm tắt đơn hàng">
+      <h2>Tóm tắt</h2>
+      <div class="sum-row"><span>Tạm tính (<%= cart.count %> sản phẩm)</span><span><%= money(cart.subtotal) %></span></div>
+
+      <% if (cart.coupon) { %>
+        <div class="sum-row">
+          <form action="/gio-hang/ma-giam-gia" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="remove" value="1">
+            <span class="coupon-tag"><svg class="icon icon-sm"><use href="#i-tag"/></svg><%= cart.coupon.code %><button type="submit" aria-label="Bỏ mã giảm giá"><svg class="icon icon-sm"><use href="#i-x"/></svg></button></span>
+          </form>
+          <span class="disc">−<%= money(cart.discount) %></span>
+        </div>
+      <% } else { %>
+        <form class="coupon-form" action="/gio-hang/ma-giam-gia" method="post">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label class="sr-only" for="coupon">Mã giảm giá</label>
+          <input class="input" id="coupon" name="code" placeholder="Mã giảm giá" autocomplete="off" maxlength="40">
+          <button class="btn btn-sm btn-ghost" type="submit">Áp dụng</button>
+        </form>
+        <% if (cart.couponError) { %><p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= cart.couponError %></p><% } %>
+      <% } %>
+
+      <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
+      <div class="sum-row total"><span>Tổng cộng</span><span><%= money(cart.total) %></span></div>
+
+      <% if (cart.freeShipRemaining) { %>
+      <div class="ship-meter">
+        Thêm <b><%= money(cart.freeShipRemaining) %></b> để được miễn phí giao hàng
+        <div class="bar" role="progressbar" aria-label="Tiến độ miễn phí giao hàng" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= Math.round((1 - cart.freeShipRemaining / cart.freeShipThreshold) * 100) %>"><span style="width:<%= Math.round((1 - cart.freeShipRemaining / cart.freeShipThreshold) * 100) %>%"></span></div>
+      </div>
+      <% } %>
+
+      <a class="btn btn-lg btn-block" href="/thanh-toan" style="margin-top:20px">Tiến hành đặt hàng <svg class="icon"><use href="#i-arrow"/></svg></a>
+      <p class="secure-note"><svg class="icon icon-sm"><use href="#i-shield"/></svg> Thanh toán COD hoặc chuyển khoản VietQR</p>
+    </aside>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,11 @@
+<%- include('_layout-top') %>
+<h1 style="font-family:Georgia,serif;font-weight:normal;font-size:24px;margin:0 0 12px">Đơn <%= order.code %>: <%= statusLabel %></h1>
+<p style="margin:0;line-height:1.7;color:#4a3f38">
+  Chào <%= order.customer_name %>,<br>
+  <% if (order.status === 'confirmed') { %>Lunar đã xác nhận đơn quà của bạn và đang chuẩn bị đóng gói.<% } %>
+  <% if (order.status === 'shipping') { %>Giỏ quà đang trên đường giao đến <%= order.is_gift ? order.recipient_name : 'bạn' %>. Nhân viên sẽ gọi trước khi giao.<% } %>
+  <% if (order.status === 'completed') { %>Giỏ quà đã được giao thành công. Cảm ơn bạn đã chọn Lunar để gửi lời chúc Tết.<% } %>
+  <% if (order.status === 'cancelled') { %>Đơn hàng đã được hủy. Nếu bạn đã chuyển khoản, Lunar sẽ liên hệ để hoàn tiền trong 3 ngày làm việc.<% } %>
+</p>
+<p style="margin:24px 0 0"><a href="<%= siteUrl %>/tra-cuu-don?ma=<%= order.code %>" style="display:inline-block;background:#7a1622;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">Xem đơn hàng</a></p>
+<%- include('_layout-bottom') %>

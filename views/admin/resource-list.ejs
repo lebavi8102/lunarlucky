@@ -1,0 +1,42 @@
+<%- include('_top') %>
+<div class="admin-head">
+  <h1><%= def.title %></h1>
+  <div class="actions"><a class="btn btn-sm" href="<%= base %>/moi"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm <%= def.singular %></a></div>
+</div>
+<% if (def.searchable) { %>
+<div class="list-tools">
+  <form method="get" role="search">
+    <label class="sr-only" for="rq">Tìm</label>
+    <input class="input" id="rq" type="search" name="q" value="<%= q %>" placeholder="Tìm <%= def.singular %>…">
+    <button class="btn btn-sm btn-ghost" type="submit">Tìm</button>
+  </form>
+  <span class="small muted"><%= total %> mục</span>
+</div>
+<% } %>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><% def.columns.forEach(c => { %><th scope="col" class="<%= ['money','stock','uses'].includes(c.format) ? 'num' : '' %>"><%= c.label %></th><% }) %></tr></thead>
+    <tbody>
+      <% if (!rows.length) { %><tr><td colspan="<%= def.columns.length %>" class="muted" style="padding:32px;text-align:center">Chưa có <%= def.singular %> nào. <a href="<%= base %>/moi" style="color:var(--primary);font-weight:600">Thêm ngay</a></td></tr><% } %>
+      <% rows.forEach(r => { %>
+      <tr>
+        <% def.columns.forEach(c => { const v = r[c.key]; %>
+          <% if (c.format === 'image') { %><td style="width:60px"><img class="thumb" src="<%= img(v) %>" alt="" loading="lazy" width="44" height="54"></td>
+          <% } else if (c.format === 'title') { %><td class="wrap"><a class="t" href="<%= base %>/<%= r.id %>"><%= v %></a></td>
+          <% } else if (c.format === 'money') { %><td class="num"><%= v == null ? '—' : money(v) %></td>
+          <% } else if (c.format === 'bool') { %><td><span class="<%= v ? 'yes' : 'no' %>"><%= v ? 'Có' : 'Không' %></span></td>
+          <% } else if (c.format === 'lookup') { %><td><%= (lookups[c.lookup] || {})[v] || '—' %></td>
+          <% } else if (c.format === 'stock') { %><td class="num"><span class="status <%= v <= 0 ? 'status-cancelled' : v <= 5 ? 'status-pending' : 'status-completed' %>"><%= v %></span></td>
+          <% } else if (c.format === 'coupon') { %><td><%= v === 'percent' ? r.value + '%' : money(r.value) %></td>
+          <% } else if (c.format === 'uses') { %><td class="num"><%= v %><%= r.max_uses != null ? ' / ' + r.max_uses : '' %></td>
+          <% } else if (c.format === 'ymd') { %><td><%= v ? fmt.ymd(v) : '—' %></td>
+          <% } else if (c.format === 'date') { %><td><%= v ? fmt.date(v) : '—' %></td>
+          <% } else { %><td><%= v == null ? '—' : v %></td><% } %>
+        <% }) %>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../partials/pagination', { baseQuery: { q } }) %>
+<%- include('_bottom') %>

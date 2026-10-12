@@ -1,0 +1,229 @@
+const crypto = require('crypto');
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const db = require('../db');
+const cart = require('../lib/cart');
+const notify = require('../lib/notify');
+const { vietQrUrl } = require('../lib/vietqr');
+const { Form } = require('../lib/validate');
+const { parseJson, normalizePhone, todayVN } = require('../lib/format');
+const { flash } = require('../middleware/locals');
+
+const router = express.Router();
+
+const PROVINCES = [
+  'TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Huế', 'An Giang', 'Bắc Ninh',
+  'Cà Mau', 'Cao Bằng', 'Đắk Lắk', 'Điện Biên', 'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Tĩnh',
+  'Hưng Yên', 'Khánh Hòa', 'Lai Châu', 'Lâm Đồng', 'Lạng Sơn', 'Lào Cai', 'Nghệ An', 'Ninh Bình',
+  'Phú Thọ', 'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị', 'Sơn La', 'Tây Ninh', 'Thái Nguyên',
+  'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long',
+];
+
+const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, standardHeaders: true, legacyHeaders: false });
+const trackLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
+
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function newCode() {
+  const d = todayVN().replace(/-/g, '').slice(2);
+  let r = '';
+  for (const b of crypto.randomBytes(4)) r += CODE_CHARS[b % CODE_CHARS.length];
+  return `LN${d}${r}`;
+}
+
+function rememberOrder(req, code) {
+  req.session.myOrders = [...new Set([...(req.session.myOrders || []), code])].slice(-20);
+}
+
+function checkoutDefaults(req) {
+  const u = req.session.user;
+  return {
+    customer_name: u ? u.name : '', phone: u ? u.phone || '' : '', email: u ? u.email : '',
+    address: u ? u.address || '' : '', province: 'TP. Hồ Chí Minh', payment_method: 'bank', is_gift: false,
+  };
+}
+
+router.get('/thanh-toan', async (req, res) => {
+  const priced = await cart.priceCart(cart.getCart(req));
+  if (!priced.lines.length) return res.redirect('/gio-hang');
+  res.locals.seo.title = 'Thanh toán · Lunar';
+  res.locals.seo.noindex = true;
+  const minDays = Number(res.locals.s.min_delivery_days) || 1;
+  res.render('shop/checkout', {
+    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: PROVINCES,
+    minDate: todayVN(minDays), maxDate: todayVN(180),
+  });
+});
+
+router.post('/thanh-toan', orderLimiter, async (req, res) => {
+  const c = cart.getCart(req);
+  const priced = await cart.priceCart(c);
+  if (!priced.lines.length) return res.redirect('/gio-hang');
+
+  const minDays = Number(res.locals.s.min_delivery_days) || 1;
+  const f = new Form(req.body);
+  const customer_name = f.text('customer_name', { label: 'họ tên', required: true, min: 2, max: 120 });
+  const phone = f.phone('phone');
+  const email = f.email('email');
+  const is_gift = f.bool('is_gift');
+  let address = f.text('address', { label: 'địa chỉ nhận hàng', required: !is_gift, min: 6, max: 255 });
+  const province = f.oneOf('province', PROVINCES, '');
+  if (!province) f.errors.province = 'Vui lòng chọn tỉnh/thành phố.';
+  let recipient_name = null;
+  let recipient_phone = null;
+  let recipient_address = null;
+  if (is_gift) {
+    recipient_name = f.text('recipient_name', { label: 'tên người nhận', required: true, min: 2, max: 120 });
+    recipient_phone = f.phone('recipient_phone', { label: 'số điện thoại người nhận' });
+    recipient_address = f.text('recipient_address', { label: 'địa chỉ người nhận', required: true, min: 6 });
+    if (!address) address = recipient_address;
+  }
+  const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
+  const card_message = f.text('card_message', { max: 300 });
+  const note = f.text('note', { max: 500 });
+  const invoice_info = f.text('invoice_info', { max: 500 });
+  const payment_method = f.oneOf('payment_method', ['cod', 'bank'], 'bank');
+
+  if (priced.couponError) {
+    c.coupon = null;
+    flash(req, 'error', priced.couponError);
+    return res.redirect('/thanh-toan');
+  }
+
+  if (!f.ok) {
+    res.status(422);
+    res.locals.seo.title = 'Thanh toán · Lunar';
+    res.locals.seo.noindex = true;
+    return res.render('shop/checkout', {
+      cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES,
+      minDate: todayVN(minDays), maxDate: todayVN(180),
+    });
+  }
+
+  const order = {
+    code: newCode(),
+    user_id: req.session.user ? req.session.user.id : null,
+    customer_name, phone, email: email || null, address, province,
+    is_gift, recipient_name, recipient_phone, recipient_address, delivery_date,
+    card_message: card_message || null, note: note || null, invoice_info: invoice_info || null,
+    payment_method, payment_status: 'pending', status: 'new',
+    subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee, total: priced.total,
+    coupon_code: priced.coupon ? priced.coupon.code : null,
+  };
+  const items = priced.lines.map((l) => ({
+    product_id: l.type === 'product' ? l.productId : null,
+    kind: l.type,
+    name: l.name,
+    price: l.unitPrice,
+    qty: l.qty,
+    line_total: l.lineTotal,
+    details: l.details ? JSON.stringify(l.details) : null,
+  }));
+
+  try {
+    await db.transaction(async (trx) => {
+      for (const l of priced.lines.filter((x) => x.type === 'product')) {
+        const n = await trx('products')
+          .where({ id: l.productId })
+          .andWhere('stock', '>=', l.qty)
+          .update({ stock: trx.raw('stock - ?', [l.qty]), sold: trx.raw('sold + ?', [l.qty]) });
+        if (!n) {
+          const e = new Error(`“${l.name}” không còn đủ số lượng. Vui lòng kiểm tra lại giỏ hàng.`);
+          e.status = 409;
+          throw e;
+        }
+      }
+      if (order.coupon_code) {
+        const n = await trx('coupons')
+          .where({ code: order.coupon_code })
+          .andWhere((w) => w.whereNull('max_uses').orWhere('used_count', '<', trx.ref('max_uses')))
+          .increment('used_count', 1);
+        if (!n) {
+          const e = new Error('Mã giảm giá vừa hết lượt sử dụng.');
+          e.status = 409;
+          throw e;
+        }
+      }
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const [id] = await trx('orders').insert(order);
+          order.id = typeof id === 'object' ? id.id : id;
+          break;
+        } catch (err) {
+          if (attempt < 3 && /unique|duplicate/i.test(err.message)) order.code = newCode();
+          else throw err;
+        }
+      }
+      await trx('order_items').insert(items.map((i) => ({ ...i, order_id: order.id })));
+    });
+  } catch (err) {
+    if (err.status === 409) {
+      if (/Mã giảm giá/.test(err.message)) c.coupon = null;
+      flash(req, 'error', err.message);
+      return res.redirect('/gio-hang');
+    }
+    throw err;
+  }
+
+  req.session.cart = { lines: [], coupon: null };
+  rememberOrder(req, order.code);
+
+  notify.telegram(notify.orderTelegram(order, items));
+  if (order.email) {
+    notify.sendMail({
+      to: order.email,
+      subject: `Lunar đã nhận đơn hàng ${order.code}`,
+      template: 'order-confirmation',
+      data: { order, items, s: res.locals.s, qr: qrFor(order, res.locals.s) },
+    });
+  }
+  res.redirect(`/don-hang/${order.code}?moi=1`);
+});
+
+function qrFor(order, s) {
+  if (order.payment_method !== 'bank') return null;
+  return vietQrUrl({
+    bankId: s.bank_id, account: s.bank_account, holder: s.bank_holder, amount: order.total, info: order.code,
+  });
+}
+
+router.get('/don-hang/:code', async (req, res, next) => {
+  const code = String(req.params.code).toUpperCase();
+  const order = await db('orders').where({ code }).first();
+  if (!order) return next();
+  const u = req.session.user;
+  const allowed =
+    (req.session.myOrders || []).includes(code) ||
+    (u && (u.role === 'admin' || u.id === order.user_id));
+  if (!allowed) return res.redirect(`/tra-cuu-don?ma=${encodeURIComponent(code)}`);
+  const items = (await db('order_items').where({ order_id: order.id })).map((i) => ({
+    ...i, details: parseJson(i.details, null),
+  }));
+  res.locals.seo.title = `Đơn hàng ${order.code} · Lunar`;
+  res.locals.seo.noindex = true;
+  res.render('shop/order', { order, items, qr: qrFor(order, res.locals.s), isNew: req.query.moi === '1' });
+});
+
+router.get('/tra-cuu-don', (req, res) => {
+  res.locals.seo.title = 'Tra cứu đơn hàng · Lunar';
+  res.render('shop/track', { values: { code: String(req.query.ma || '').slice(0, 20), phone: '' }, error: null });
+});
+
+router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
+  const code = String(req.body.code || '').trim().toUpperCase().slice(0, 20);
+  const phone = normalizePhone(req.body.phone);
+  const order = code && phone ? await db('orders').where({ code }).first() : null;
+  const match = order && (normalizePhone(order.phone) === phone || normalizePhone(order.recipient_phone) === phone);
+  if (!match) {
+    res.status(404);
+    res.locals.seo.title = 'Tra cứu đơn hàng · Lunar';
+    return res.render('shop/track', {
+      values: { code, phone: req.body.phone || '' },
+      error: 'Không tìm thấy đơn hàng khớp với mã và số điện thoại này.',
+    });
+  }
+  rememberOrder(req, order.code);
+  res.redirect(`/don-hang/${order.code}`);
+});
+
+module.exports = router;
+module.exports.PROVINCES = PROVINCES;

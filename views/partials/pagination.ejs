@@ -1,0 +1,14 @@
+<%# Cần: page, pages, baseQuery (object) %>
+<% if (pages > 1) {
+  const link = (n) => { const q = new URLSearchParams(Object.entries(baseQuery || {}).filter(([, v]) => v)); if (n > 1) q.set('trang', n); const s = q.toString(); return s ? '?' + s : '?'; };
+%>
+<nav aria-label="Phân trang">
+  <ul class="pagination">
+    <% if (page > 1) { %><li><a href="<%= link(page - 1) %>" aria-label="Trang trước"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg></a></li><% } %>
+    <% for (let n = 1; n <= pages; n++) { if (n === 1 || n === pages || Math.abs(n - page) <= 1) { %>
+      <li><% if (n === page) { %><span aria-current="page"><%= n %></span><% } else { %><a href="<%= link(n) %>"><%= n %></a><% } %></li>
+    <% } else if (Math.abs(n - page) === 2) { %><li><span aria-hidden="true">…</span></li><% } } %>
+    <% if (page < pages) { %><li><a href="<%= link(page + 1) %>" aria-label="Trang sau"><svg class="icon icon-sm"><use href="#i-arrow"/></svg></a></li><% } %>
+  </ul>
+</nav>
+<% } %>

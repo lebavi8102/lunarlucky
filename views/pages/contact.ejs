@@ -1,0 +1,23 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Liên hệ</span>
+    <h1>Lunar luôn sẵn lòng lắng nghe</h1>
+    <p class="lead">Lunar bán hàng trực tuyến. Cách nhanh nhất để được tư vấn là nhắn Zalo hoặc gọi hotline trong giờ làm việc.</p>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container">
+    <ul class="feature-list" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+      <li class="card"><span class="feature-ico"><svg class="icon"><use href="#i-phone"/></svg></span><div><strong>Hotline</strong><a href="tel:<%= s.shop_phone.replace(/\s/g,'') %>" class="serif" style="font-size:26px;color:var(--primary)"><%= s.shop_phone %></a><br><span><%= s.shop_hours %></span></div></li>
+      <li class="card"><span class="feature-ico"><svg class="icon"><use href="#i-chat"/></svg></span><div><strong>Zalo &amp; Messenger</strong><span>Phản hồi trong vài phút</span><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><a class="btn btn-sm" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Zalo</a><a class="btn btn-sm btn-ghost" href="<%= s.messenger_url %>" target="_blank" rel="noopener">Messenger</a></div></div></li>
+      <li class="card"><span class="feature-ico"><svg class="icon"><use href="#i-mail"/></svg></span><div><strong>Email</strong><a href="mailto:<%= s.shop_email %>" style="color:var(--primary)"><%= s.shop_email %></a><br><span>Dành cho hợp tác và hóa đơn</span></div></li>
+      <li class="card"><span class="feature-ico"><svg class="icon"><use href="#i-facebook"/></svg></span><div><strong>Fanpage</strong><span>Cập nhật mẫu mới và ưu đãi</span><div style="margin-top:12px"><a class="btn btn-sm btn-ghost" href="<%= s.fanpage_url %>" target="_blank" rel="noopener">Mở fanpage <svg class="icon icon-sm"><use href="#i-external"/></svg></a></div></div></li>
+    </ul>
+    <div class="card card-cream" style="margin-top:32px;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center">
+      <div><strong class="serif" style="font-size:24px">Đặt quà số lượng lớn cho doanh nghiệp?</strong><p class="muted">Gửi yêu cầu để nhận báo giá kèm mẫu in logo trong 24 giờ.</p></div>
+      <a class="btn" href="/qua-tang-doanh-nghiep#bao-gia">Yêu cầu báo giá</a>
+    </div>
+  </div>
+</section>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,28 @@
+<%- include('../partials/top') %>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Cẩm nang</span>
+    <h1>Chuyện quà Tết</h1>
+    <p class="lead">Ý nghĩa từng món quà, cách chọn quà biếu và những nét đẹp của văn hóa tặng quà ngày xuân.</p>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container">
+    <% if (!posts.length) { %>
+      <div class="empty"><svg class="icon"><use href="#i-file"/></svg><h2 class="h3">Bài viết đang được chuẩn bị</h2></div>
+    <% } else { %>
+    <div class="post-grid">
+      <% posts.forEach((p, i) => { %>
+      <article class="post-card reveal" style="--d:<%= (i % 3) * 90 %>ms">
+        <div class="media"><img src="<%= img(p.cover_id) %>" alt="" loading="lazy" width="900" height="600"></div>
+        <div class="meta"><time datetime="<%= fmt.toDate(p.published_at)?.toISOString() %>"><%= fmt.longDate(p.published_at) %></time></div>
+        <h3><a href="/blog/<%= p.slug %>"><%= p.title %></a></h3>
+        <p><%= p.excerpt %></p>
+      </article>
+      <% }) %>
+    </div>
+    <%- include('../partials/pagination', { baseQuery: {} }) %>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/bottom') %>

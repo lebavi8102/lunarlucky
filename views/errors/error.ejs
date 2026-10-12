@@ -1,0 +1,8 @@
+<%- include('../partials/top') %>
+<div class="container empty" style="padding-block:120px">
+  <svg class="icon" style="width:48px;height:48px"><use href="#i-alert"/></svg>
+  <h1 class="h2"><%= status === 403 ? 'Không thể thực hiện' : status === 429 ? 'Bạn thao tác hơi nhanh' : 'Đã có lỗi xảy ra' %></h1>
+  <p class="lead" style="margin:16px auto 0"><%= message %></p>
+  <div class="hero-cta" style="justify-content:center"><a class="btn btn-lg" href="/">Về trang chủ</a><a class="btn btn-lg btn-quiet" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo hỗ trợ</a></div>
+</div>
+<%- include('../partials/bottom') %>
