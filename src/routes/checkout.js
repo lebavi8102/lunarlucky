@@ -45,7 +45,7 @@ function checkoutDefaults(req) {
 router.get('/thanh-toan', async (req, res) => {
   const priced = await cart.priceCart(cart.getCart(req));
   if (!priced.lines.length) return res.redirect('/gio-hang');
-  res.locals.seo.title = 'Thanh toán · Lunar';
+  res.locals.seo.title = 'Thanh toán · Lunar Lucky';
   res.locals.seo.noindex = true;
   const minDays = Number(res.locals.s.min_delivery_days) || 1;
   res.render('shop/checkout', {
@@ -91,7 +91,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
 
   if (!f.ok) {
     res.status(422);
-    res.locals.seo.title = 'Thanh toán · Lunar';
+    res.locals.seo.title = 'Thanh toán · Lunar Lucky';
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
       cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES,
@@ -169,7 +169,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   if (order.email) {
     notify.sendMail({
       to: order.email,
-      subject: `Lunar đã nhận đơn hàng ${order.code}`,
+      subject: `Lunar Lucky đã nhận đơn hàng ${order.code}`,
       template: 'order-confirmation',
       data: { order, items, s: res.locals.s, qr: qrFor(order, res.locals.s) },
     });
@@ -194,13 +194,13 @@ router.get('/don-hang/:code', async (req, res, next) => {
     (u && (u.role === 'admin' || u.id === order.user_id));
   if (!allowed) return res.redirect(`/tra-cuu-don?ma=${encodeURIComponent(code)}`);
   const items = await db('order_items').where({ order_id: order.id });
-  res.locals.seo.title = `Đơn hàng ${order.code} · Lunar`;
+  res.locals.seo.title = `Đơn hàng ${order.code} · Lunar Lucky`;
   res.locals.seo.noindex = true;
   res.render('shop/order', { order, items, qr: qrFor(order, res.locals.s), isNew: req.query.moi === '1' });
 });
 
 router.get('/tra-cuu-don', (req, res) => {
-  res.locals.seo.title = 'Tra cứu đơn hàng · Lunar';
+  res.locals.seo.title = 'Tra cứu đơn hàng · Lunar Lucky';
   res.render('shop/track', { values: { code: String(req.query.ma || '').slice(0, 20), phone: '' }, error: null });
 });
 
@@ -211,7 +211,7 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
   const match = order && (normalizePhone(order.phone) === phone || normalizePhone(order.recipient_phone) === phone);
   if (!match) {
     res.status(404);
-    res.locals.seo.title = 'Tra cứu đơn hàng · Lunar';
+    res.locals.seo.title = 'Tra cứu đơn hàng · Lunar Lucky';
     return res.render('shop/track', {
       values: { code, phone: req.body.phone || '' },
       error: 'Không tìm thấy đơn hàng khớp với mã và số điện thoại này.',

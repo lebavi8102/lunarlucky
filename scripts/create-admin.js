@@ -20,7 +20,7 @@ async function main() {
     await db('users').where({ id: u.id }).update({ password_hash: hash, role: 'admin', updated_at: new Date() });
     console.log(`Đã cập nhật ${e} thành quản trị viên.`);
   } else {
-    await db('users').insert({ name: 'Quản trị Lunar', email: e, password_hash: hash, role: 'admin' });
+    await db('users').insert({ name: 'Quản trị Lunar Lucky', email: e, password_hash: hash, role: 'admin' });
     console.log(`Đã tạo quản trị viên ${e}.`);
   }
 }

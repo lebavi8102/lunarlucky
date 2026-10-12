@@ -1,5 +1,5 @@
 /**
- * Dữ liệu mẫu cho Lunar: danh mục, sản phẩm, mã giảm giá, bài viết.
+ * Dữ liệu mẫu cho Lunar Lucky: danh mục, sản phẩm, mã giảm giá, bài viết.
  * Chạy: npm run seed            (bỏ qua nếu đã có sản phẩm)
  *       npm run seed -- --reset (xóa dữ liệu mẫu cũ và tạo lại)
  */
@@ -107,7 +107,7 @@ Hộp sơn mài, giỏ mây hay hộp gỗ có thể giữ lại dùng sau Tết
 
 Một lời chúc viết tay ngắn gọn, chân thành sẽ làm món quà trở nên riêng tư và ý nghĩa.
 
-## Gợi ý từ Lunar
+## Gợi ý từ Lunar Lucky
 
 Các giỏ trong bộ sưu tập **Biếu sếp & đối tác** được thiết kế đúng tinh thần này: sang trọng vừa đủ, mỗi món đều có câu chuyện riêng.`,
   },
@@ -137,7 +137,7 @@ Hãy chọn nhà cung cấp xuất được hóa đơn VAT và biên bản giao 
 
 Giao hàng theo danh sách đến từng địa chỉ giúp đối tác cảm nhận được sự chu đáo.
 
-Lunar hỗ trợ trọn gói từ tư vấn, in logo đến giao hàng loạt. [Gửi yêu cầu báo giá](/qua-tang-doanh-nghiep#bao-gia) để nhận phương án trong 24 giờ.`,
+Lunar Lucky hỗ trợ trọn gói từ tư vấn, in logo đến giao hàng loạt. [Gửi yêu cầu báo giá](/qua-tang-doanh-nghiep#bao-gia) để nhận phương án trong 24 giờ.`,
   },
 ];
 
@@ -170,7 +170,7 @@ async function seed({ reset = false, demo = true } = {}) {
         category_id: catIds[cat], name, slug: slugify(name), short_desc: short, price, compare_price: compare,
         stock: i === 2 ? 4 : 40 + i * 7, badge, image_id, gallery: JSON.stringify([alt]), is_featured: featured,
         contents: contents.join('\n'), sold: [86, 142, 12, 210, 64, 38, 175, 51, 33, 97, 44, 29][i], sort: i,
-        description: `**${name}** là lời chúc được Lunar chuẩn bị tỉ mỉ cho mùa Tết.\n\n${short}\n\nMỗi giỏ quà được xếp tay, lót giấy lụa, thắt nơ và kèm thiệp chúc viết tay theo lời nhắn của bạn. Các sản phẩm đều có nguồn gốc rõ ràng, hạn sử dụng tối thiểu 3 tháng kể từ ngày giao.\n\n*Lưu ý: một số món có thể được thay bằng sản phẩm tương đương về giá trị tùy thời điểm.*`,
+        description: `**${name}** là lời chúc được Lunar Lucky chuẩn bị tỉ mỉ cho mùa Tết.\n\n${short}\n\nMỗi giỏ quà được xếp tay, lót giấy lụa, thắt nơ và kèm thiệp chúc viết tay theo lời nhắn của bạn. Các sản phẩm đều có nguồn gốc rõ ràng, hạn sử dụng tối thiểu 3 tháng kể từ ngày giao.\n\n*Lưu ý: một số món có thể được thay bằng sản phẩm tương đương về giá trị tùy thời điểm.*`,
       });
     }
 
@@ -193,7 +193,7 @@ async function seed({ reset = false, demo = true } = {}) {
     const email = config.admin.email.toLowerCase();
     const exists = await db('users').where({ email }).first();
     if (!exists) {
-      await db('users').insert({ name: 'Quản trị Lunar', email, password_hash: await bcrypt.hash(config.admin.password, 11), role: 'admin' });
+      await db('users').insert({ name: 'Quản trị Lunar Lucky', email, password_hash: await bcrypt.hash(config.admin.password, 11), role: 'admin' });
       console.log(`Đã tạo tài khoản quản trị: ${email}`);
     }
   } else {

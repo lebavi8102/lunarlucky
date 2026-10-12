@@ -1,4 +1,4 @@
-/* Lunar — tương tác phía client. Mọi form vẫn hoạt động khi tắt JS. */
+/* Lunar Lucky — tương tác phía client. Mọi form vẫn hoạt động khi tắt JS. */
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];

@@ -13,7 +13,7 @@ router.get('/gio-hang', async (req, res) => {
   const c = cart.getCart(req);
   const priced = await cart.priceCart(c);
   res.locals.cartCount = priced.count;
-  res.locals.seo.title = 'Giỏ hàng · Lunar';
+  res.locals.seo.title = 'Giỏ hàng · Lunar Lucky';
   res.locals.seo.noindex = true;
   res.render('shop/cart', { cart: priced });
 });

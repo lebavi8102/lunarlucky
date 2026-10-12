@@ -9,7 +9,7 @@
 </head>
 <body>
   <section class="slip">
-    <header><div class="brand">LUNAR<small>GIỎ QUÀ TẾT</small></div><div><b><%= order.code %></b><br>Giao ngày <%= fmt.ymd(order.delivery_date) %></div></header>
+    <header><div class="brand">LUNAR LUCKY<small>LUXURY GIFTS &amp; HAMPERS</small></div><div><b><%= order.code %></b><br>Giao ngày <%= fmt.ymd(order.delivery_date) %></div></header>
     <div class="cols">
       <div><h3>Người nhận</h3>
         <% if (order.is_gift) { %><p><b><%= order.recipient_name %></b><br><%= order.recipient_phone %><br><%= order.recipient_address %>, <%= order.province %></p>

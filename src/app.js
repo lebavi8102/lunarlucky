@@ -98,7 +98,7 @@ app.use('/admin', require('./routes/admin'));
 
 app.use((req, res) => {
   res.status(404);
-  res.locals.seo.title = 'Không tìm thấy trang · Lunar';
+  res.locals.seo.title = 'Không tìm thấy trang · Lunar Lucky';
   res.locals.seo.noindex = true;
   res.render('errors/404');
 });
@@ -118,7 +118,7 @@ app.use((err, req, res, next) => {
   }
   res.status(status);
   if (!res.locals.seo) return res.send(message);
-  res.locals.seo.title = 'Có lỗi xảy ra · Lunar';
+  res.locals.seo.title = 'Có lỗi xảy ra · Lunar Lucky';
   res.locals.seo.noindex = true;
   res.render('errors/error', { status, message });
 });

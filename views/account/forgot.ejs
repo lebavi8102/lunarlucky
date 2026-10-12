@@ -2,10 +2,10 @@
 <div class="container auth-wrap">
   <h1>Quên mật khẩu</h1>
   <% if (sent) { %>
-    <p class="sub">Nếu <b><%= email %></b> đã đăng ký tại Lunar, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu trong vài phút. Liên kết có hiệu lực trong 1 giờ.</p>
+    <p class="sub">Nếu <b><%= email %></b> đã đăng ký tại Lunar Lucky, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu trong vài phút. Liên kết có hiệu lực trong 1 giờ.</p>
     <p class="auth-alt"><a href="/dang-nhap">Quay lại đăng nhập</a></p>
   <% } else { %>
-    <p class="sub">Nhập email đã đăng ký, Lunar sẽ gửi liên kết đặt lại mật khẩu.</p>
+    <p class="sub">Nhập email đã đăng ký, Lunar Lucky sẽ gửi liên kết đặt lại mật khẩu.</p>
     <form class="card" action="/quen-mat-khau" method="post">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="field"><label class="label" for="email">Email</label><input class="input" id="email" name="email" type="email" required autocomplete="email"></div>

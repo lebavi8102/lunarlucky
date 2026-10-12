@@ -173,10 +173,15 @@ ul, ol { margin: 0; padding: 0; }
 }
 .site-header.is-scrolled { border-color: var(--line); box-shadow: var(--shadow-sm); }
 .header-inner { display: flex; align-items: center; gap: var(--space-5); height: var(--header-h); }
-.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--lacquer-800); }
-.logo-mark { width: 34px; height: 34px; }
-.logo-word { font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: 0.16em; line-height: 1; }
-.logo-word small { display: block; font-family: var(--font-body); font-size: 9px; letter-spacing: 0.32em; font-weight: 500; color: var(--gold-700); margin-top: 4px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; color: #8a5d22; }
+.logo-mark { width: 40px; height: 40px; flex: none; }
+.logo { --logo-gold: linear-gradient(180deg, #d4a85c 0%, #a8742c 48%, #c4924a 70%, #7d5320 100%); }
+.logo-mark { color: #9a6a2a; }
+.logo-word { display: flex; flex-direction: column; align-items: center; line-height: 1; white-space: nowrap; }
+.logo-name { font-family: 'Cinzel', var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: 0.04em; background: var(--logo-gold); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo-name b { font-size: 1.32em; font-weight: 700; }
+.logo-word small { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 9px; letter-spacing: 0.22em; font-weight: 600; color: #8a5d22; margin-top: 4px; }
+.logo-word small::before, .logo-word small::after { content: ''; width: 14px; height: 1px; background: currentColor; opacity: 0.6; }
 .nav { display: none; margin-inline: auto; }
 .nav ul { display: flex; list-style: none; gap: 4px; }
 .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 15px; font-weight: 500; color: var(--ink-700); border-radius: 999px; transition: color 200ms, background-color 200ms; }
@@ -184,7 +189,7 @@ ul, ol { margin: 0; padding: 0; }
 .nav a[aria-current='page'] { color: var(--lacquer-700); }
 .header-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .icon-btn {
-  position: relative; display: inline-grid; place-items: center; width: 44px; height: 44px;
+  position: relative; flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px;
   border: 0; background: transparent; border-radius: 999px; color: var(--ink-900);
   transition: background-color 200ms;
 }
@@ -388,8 +393,9 @@ ul, ol { margin: 0; padding: 0; }
 .site-footer { background: var(--lacquer-950); color: rgb(253 250 245 / 0.72); font-size: 15px; }
 .footer-top { display: grid; gap: var(--space-7); padding-block: var(--space-8); }
 @media (min-width: 768px) { .footer-top { grid-template-columns: 1.4fr repeat(3, 1fr); } }
-.site-footer .logo { color: var(--gold-400); }
-.site-footer .logo-word small { color: var(--gold-500); }
+.site-footer .logo { --logo-gold: linear-gradient(180deg, #f3dfae 0%, #d8b878 50%, #b88a44 100%); }
+.site-footer .logo-mark { color: var(--gold-400); }
+.site-footer .logo-word small { color: var(--gold-400); }
 .site-footer h4 { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-400); margin-bottom: var(--space-4); }
 .site-footer ul { list-style: none; display: grid; gap: 4px; }
 .site-footer a { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; transition: color 200ms; }
@@ -639,6 +645,14 @@ ul, ol { margin: 0; padding: 0; }
 
 /* ---------- Tinh chỉnh mobile ---------- */
 @media (max-width: 767px) {
+  .logo { gap: 7px; min-width: 0; }
+  .logo-name { font-size: 16px; }
+  .logo-word small { font-size: 7px; letter-spacing: 0.14em; gap: 4px; }
+  .logo-word small::before, .logo-word small::after { width: 8px; }
+  .logo-mark { width: 32px; height: 32px; }
+  .header-inner { gap: 6px; }
+  .header-actions { gap: 0; }
+  .hide-sm { display: none !important; }
   .float-contact { right: 12px; bottom: 12px; }
   .float-contact a:not(.zalo) { display: none; }
   .float-contact a { width: 48px; height: 48px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }

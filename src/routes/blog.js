@@ -12,7 +12,7 @@ router.get('/blog', async (req, res) => {
   const base = db('posts').where({ is_published: true });
   const [{ n }] = await base.clone().count({ n: '*' });
   const posts = await base.orderBy('published_at', 'desc').limit(perPage).offset((page - 1) * perPage);
-  res.locals.seo.title = 'Cẩm nang quà Tết · Lunar';
+  res.locals.seo.title = 'Cẩm nang quà Tết · Lunar Lucky';
   res.locals.seo.description = 'Ý nghĩa quà Tết, cách chọn giỏ quà biếu sếp, đối tác, gia đình và văn hóa tặng quà ngày xuân.';
   res.render('blog/index', { posts, page, pages: Math.max(1, Math.ceil(Number(n) / perPage)) });
 });
@@ -27,7 +27,7 @@ router.get('/blog/:slug', async (req, res, next) => {
     .limit(3);
   const products = await db('products').where({ is_active: true, is_featured: true }).orderBy('sold', 'desc').limit(3);
   const url = `${res.locals.siteUrl}/blog/${post.slug}`;
-  res.locals.seo.title = post.seo_title || `${post.title} · Lunar`;
+  res.locals.seo.title = post.seo_title || `${post.title} · Lunar Lucky`;
   res.locals.seo.description = post.seo_desc || post.excerpt || truncate(post.content, 160);
   res.locals.seo.type = 'article';
   if (post.cover_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${post.cover_id}`;
@@ -39,8 +39,8 @@ router.get('/blog/:slug', async (req, res, next) => {
     image: post.cover_id ? [`${res.locals.siteUrl}/media/${post.cover_id}`] : undefined,
     datePublished: toDate(post.published_at)?.toISOString(),
     dateModified: toDate(post.updated_at)?.toISOString(),
-    author: { '@type': 'Organization', name: 'Lunar' },
-    publisher: { '@type': 'Organization', name: 'Lunar', logo: { '@type': 'ImageObject', url: `${res.locals.siteUrl}/img/logo-mark.svg` } },
+    author: { '@type': 'Organization', name: 'Lunar Lucky' },
+    publisher: { '@type': 'Organization', name: 'Lunar Lucky', logo: { '@type': 'ImageObject', url: `${res.locals.siteUrl}/img/logo-mark.svg` } },
     mainEntityOfPage: url,
   });
   res.locals.jsonLd.push(breadcrumb(res, [['Cẩm nang', '/blog'], [post.title, `/blog/${post.slug}`]]));

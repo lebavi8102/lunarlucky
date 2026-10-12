@@ -30,7 +30,7 @@
         <legend><span class="num">2</span> Giao hàng</legend>
         <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
           <input type="checkbox" name="is_gift" value="1" <%= values.is_gift ? 'checked' : '' %> data-gift-toggle>
-          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar giao đến người nhận, không kèm hóa đơn giá tiền.</span></span>
+          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền.</span></span>
         </label>
 
         <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
@@ -48,14 +48,14 @@
         </div>
 
         <div style="margin-top:16px">
-          <%- include('../partials/field', { name: 'delivery_date', label: 'Ngày giao mong muốn', type: 'date', required: true, min: minDate, max: maxDate, help: 'Lunar giao trong khung 8:00 – 20:00 và gọi xác nhận trước khi giao.' }) %>
+          <%- include('../partials/field', { name: 'delivery_date', label: 'Ngày giao mong muốn', type: 'date', required: true, min: minDate, max: maxDate, help: 'Lunar Lucky giao trong khung 8:00 – 20:00 và gọi xác nhận trước khi giao.' }) %>
         </div>
       </fieldset>
 
       <fieldset class="fieldset">
         <legend><span class="num">3</span> Thiệp &amp; lời nhắn</legend>
-        <%- include('../partials/field', { name: 'card_message', label: 'Lời chúc trên thiệp', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Kính chúc gia đình chú Hai một năm mới An Khang Thịnh Vượng!', help: 'Lunar sẽ viết tay lời chúc này lên thiệp. Tối đa 300 ký tự.' }) %>
-        <div style="margin-top:16px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar', as: 'textarea', optional: true, maxlength: 500 }) %></div>
+        <%- include('../partials/field', { name: 'card_message', label: 'Lời chúc trên thiệp', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Kính chúc gia đình chú Hai một năm mới An Khang Thịnh Vượng!', help: 'Lunar Lucky sẽ viết tay lời chúc này lên thiệp. Tối đa 300 ký tự.' }) %>
+        <div style="margin-top:16px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar Lucky', as: 'textarea', optional: true, maxlength: 500 }) %></div>
         <div style="margin-top:16px"><%- include('../partials/field', { name: 'invoice_info', label: 'Thông tin xuất hóa đơn VAT', as: 'textarea', optional: true, maxlength: 500, placeholder: 'Tên công ty, mã số thuế, địa chỉ, email nhận hóa đơn' }) %></div>
       </fieldset>
 
@@ -92,7 +92,7 @@
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
       <div class="sum-row total"><span>Tổng cộng</span><span><%= money(cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
-      <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar.</p>
+      <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>
     </aside>
   </form>
 </div>

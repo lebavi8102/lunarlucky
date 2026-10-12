@@ -12,14 +12,14 @@
     <button class="icon-btn menu-toggle" type="button" aria-label="Mở menu" aria-controls="drawer" aria-expanded="false" data-drawer-open>
       <svg class="icon"><use href="#i-menu"/></svg>
     </button>
-    <a href="/" class="logo" aria-label="Lunar – Trang chủ"><%- include('logo') %></a>
+    <a href="/" class="logo" aria-label="Lunar Lucky – Trang chủ"><%- include('logo') %></a>
 
     <nav class="nav" aria-label="Điều hướng chính">
       <ul>
         <li><a href="/bo-suu-tap" <%- isActive('/bo-suu-tap') ? 'aria-current="page"' : '' %>>Bộ sưu tập</a></li>
         <li><a href="/qua-tang-doanh-nghiep" <%- isActive('/qua-tang-doanh-nghiep') ? 'aria-current="page"' : '' %>>Quà doanh nghiệp</a></li>
         <li><a href="/blog" <%- isActive('/blog') ? 'aria-current="page"' : '' %>>Cẩm nang</a></li>
-        <li><a href="/gioi-thieu" <%- isActive('/gioi-thieu') ? 'aria-current="page"' : '' %>>Về Lunar</a></li>
+        <li><a href="/gioi-thieu" <%- isActive('/gioi-thieu') ? 'aria-current="page"' : '' %>>Về Lunar Lucky</a></li>
       </ul>
     </nav>
 
@@ -27,7 +27,7 @@
       <button class="icon-btn" type="button" aria-label="Tìm kiếm" aria-controls="search-panel" aria-expanded="false" data-search-toggle>
         <svg class="icon"><use href="#i-search"/></svg>
       </button>
-      <a class="icon-btn" href="<%= user ? (user.role === 'admin' ? '/admin' : '/tai-khoan') : '/dang-nhap' %>" aria-label="<%= user ? 'Tài khoản của tôi' : 'Đăng nhập' %>">
+      <a class="icon-btn hide-sm" href="<%= user ? (user.role === 'admin' ? '/admin' : '/tai-khoan') : '/dang-nhap' %>" aria-label="<%= user ? 'Tài khoản của tôi' : 'Đăng nhập' %>">
         <svg class="icon"><use href="#i-user"/></svg>
       </a>
       <a class="icon-btn" href="/gio-hang" aria-label="Giỏ hàng, <%= cartCount %> sản phẩm">
@@ -57,7 +57,8 @@
       <a href="/bo-suu-tap">Bộ sưu tập <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
       <a href="/qua-tang-doanh-nghiep">Quà doanh nghiệp <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
       <a href="/blog">Cẩm nang quà Tết <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
-      <a href="/gioi-thieu">Về Lunar <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="/gioi-thieu">Về Lunar Lucky <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
+      <a href="<%= user ? (user.role === 'admin' ? '/admin' : '/tai-khoan') : '/dang-nhap' %>"><%= user ? 'Tài khoản của tôi' : 'Đăng nhập' %> <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
       <a href="/tra-cuu-don">Tra cứu đơn hàng <svg class="icon icon-sm"><use href="#i-chevron-right"/></svg></a>
     </nav>
     <div class="drawer-foot">

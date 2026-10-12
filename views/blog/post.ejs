@@ -20,7 +20,7 @@
 <% if (products.length) { %>
 <section class="section" style="background:var(--cream-100)">
   <div class="container">
-    <div class="section-head"><div class="stack"><span class="eyebrow">Gợi ý từ Lunar</span><h2 class="h2">Giỏ quà <em>được yêu thích</em></h2></div><a class="link-arrow" href="/bo-suu-tap">Xem bộ sưu tập <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a></div>
+    <div class="section-head"><div class="stack"><span class="eyebrow">Gợi ý từ Lunar Lucky</span><h2 class="h2">Giỏ quà <em>được yêu thích</em></h2></div><a class="link-arrow" href="/bo-suu-tap">Xem bộ sưu tập <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a></div>
     <div class="product-grid"><% products.forEach((p, i) => { %><%- include('../partials/product-card', { p, i }) %><% }) %></div>
   </div>
 </section>

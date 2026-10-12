@@ -70,8 +70,8 @@ async function listing(req, res, category) {
 
 router.get('/bo-suu-tap', async (req, res) => {
   const data = await listing(req, res, null);
-  res.locals.seo.title = 'Tất cả giỏ quà Tết · Lunar';
-  res.locals.seo.description = 'Khám phá toàn bộ bộ sưu tập giỏ quà Tết Lunar: hộp sơn mài, giỏ mây tre, quà doanh nghiệp, giá từ vài trăm nghìn đến cao cấp.';
+  res.locals.seo.title = 'Tất cả giỏ quà Tết · Lunar Lucky';
+  res.locals.seo.description = 'Khám phá toàn bộ bộ sưu tập giỏ quà Tết Lunar Lucky: hộp sơn mài, giỏ mây tre, quà doanh nghiệp, giá từ vài trăm nghìn đến cao cấp.';
   res.render('shop/collection', { ...data, category: null, sorts: Object.keys(SORTS), ranges: Object.keys(PRICE_RANGES) });
 });
 
@@ -79,7 +79,7 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   const category = await db('categories').where({ slug: req.params.slug, is_active: true }).first();
   if (!category) return next();
   const data = await listing(req, res, category);
-  res.locals.seo.title = `${category.name} · Lunar`;
+  res.locals.seo.title = `${category.name} · Lunar Lucky`;
   res.locals.seo.description = category.tagline || truncate(category.description, 160);
   if (category.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${category.image_id}`;
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
@@ -98,7 +98,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
   const gallery = [product.image_id, ...parseJson(product.gallery, [])].filter(Boolean);
   const url = `${res.locals.siteUrl}/san-pham/${product.slug}`;
 
-  res.locals.seo.title = product.seo_title || `${product.name} · Lunar`;
+  res.locals.seo.title = product.seo_title || `${product.name} · Lunar Lucky`;
   res.locals.seo.description = product.seo_desc || product.short_desc || truncate(product.description, 160);
   res.locals.seo.type = 'product';
   if (product.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${product.image_id}`;
@@ -109,7 +109,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
     description: product.short_desc || truncate(product.description, 300),
     image: gallery.map((id) => `${res.locals.siteUrl}/media/${id}`),
     sku: `LN-${product.id}`,
-    brand: { '@type': 'Brand', name: 'Lunar' },
+    brand: { '@type': 'Brand', name: 'Lunar Lucky' },
     category: category ? category.name : undefined,
     offers: {
       '@type': 'Offer',
@@ -144,7 +144,7 @@ router.get('/tim-kiem', async (req, res) => {
       .orderBy('sold', 'desc')
       .limit(24);
   }
-  res.locals.seo.title = q ? `Tìm “${q}” · Lunar` : 'Tìm kiếm · Lunar';
+  res.locals.seo.title = q ? `Tìm “${q}” · Lunar Lucky` : 'Tìm kiếm · Lunar Lucky';
   res.locals.seo.noindex = true;
   res.render('shop/search', { q, products });
 });

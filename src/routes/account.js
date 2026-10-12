@@ -30,7 +30,7 @@ function login(req, user) {
 }
 
 function view(res, name, title, data) {
-  res.locals.seo.title = `${title} · Lunar`;
+  res.locals.seo.title = `${title} · Lunar Lucky`;
   res.locals.seo.noindex = true;
   res.render(`account/${name}`, data);
 }
@@ -78,7 +78,7 @@ router.post('/dang-ky', authLimiter, async (req, res) => {
   });
   const user = await db('users').where({ id: typeof id === 'object' ? id.id : id }).first();
   await login(req, user);
-  flash(req, 'success', `Chào mừng ${user.name} đến với Lunar.`);
+  flash(req, 'success', `Chào mừng ${user.name} đến với Lunar Lucky.`);
   res.redirect('/tai-khoan');
 });
 
@@ -124,7 +124,7 @@ router.post('/quen-mat-khau', authLimiter, async (req, res) => {
     await db('users').where({ id: user.id }).update({ reset_token: hash, reset_expires: Date.now() + 3600000 });
     notify.sendMail({
       to: user.email,
-      subject: 'Đặt lại mật khẩu Lunar',
+      subject: 'Đặt lại mật khẩu Lunar Lucky',
       template: 'reset-password',
       data: { name: user.name, link: `${config.siteUrl}/dat-lai-mat-khau/${token}`, s: res.locals.s },
     });

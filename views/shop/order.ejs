@@ -8,7 +8,7 @@
     <div class="seal"><svg class="icon"><use href="#i-<%= cancelled ? 'x' : 'check' %>"/></svg></div>
     <span class="eyebrow center"><%= isNew ? 'Đặt hàng thành công' : 'Chi tiết đơn hàng' %></span>
     <h1 class="h2" style="margin-top:12px"><%= isNew ? `Cảm ơn ${order.customer_name}!` : (cancelled ? 'Đơn hàng đã hủy' : 'Đơn quà của bạn') %></h1>
-    <% if (isNew) { %><p class="lead" style="margin:16px auto 0">Lunar sẽ gọi xác nhận trong giờ làm việc. <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
+    <% if (isNew) { %><p class="lead" style="margin:16px auto 0">Lunar Lucky sẽ gọi xác nhận trong giờ làm việc. <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
     <div class="order-code">Mã đơn: <span data-copy-text><%= order.code %></span>
       <button type="button" class="copy-btn" data-copy="<%= order.code %>"><svg class="icon icon-sm"><use href="#i-copy"/></svg> Sao chép</button>
     </div>
@@ -27,7 +27,7 @@
         <div class="bank-row"><span>Số tiền</span><span style="display:flex;gap:8px;align-items:center"><b style="color:var(--lacquer-700)"><%= money(order.total) %></b><button type="button" class="copy-btn" data-copy="<%= order.total %>" aria-label="Sao chép số tiền"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
         <div class="bank-row"><span>Nội dung</span><span style="display:flex;gap:8px;align-items:center"><b><%= order.code %></b><button type="button" class="copy-btn" data-copy="<%= order.code %>" aria-label="Sao chép nội dung chuyển khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
       </div>
-      <p class="small muted" style="margin-top:12px">Vui lòng giữ nguyên nội dung <b><%= order.code %></b> để Lunar đối soát nhanh.</p>
+      <p class="small muted" style="margin-top:12px">Vui lòng giữ nguyên nội dung <b><%= order.code %></b> để Lunar Lucky đối soát nhanh.</p>
     </div>
   </section>
   <% } %>

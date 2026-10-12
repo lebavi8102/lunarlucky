@@ -8,6 +8,7 @@
   <link rel="canonical" href="<%= seo.canonical %>">
   <% if (seo.noindex) { %><meta name="robots" content="noindex, nofollow"><% } %>
   <meta name="theme-color" content="#3b0a10">
+  <meta name="application-name" content="Lunar Lucky">
   <meta property="og:site_name" content="<%= s.shop_name %>">
   <meta property="og:locale" content="vi_VN">
   <meta property="og:type" content="<%= seo.type %>">
@@ -20,7 +21,7 @@
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap&subset=vietnamese">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap&subset=vietnamese">
   <link rel="stylesheet" href="/css/main.css?v=1">
   <% if (typeof extraCss !== 'undefined') { %><link rel="stylesheet" href="<%= extraCss %>"><% } %>
   <% for (const ld of jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(ld).replace(/</g, '\\u003c') %></script>

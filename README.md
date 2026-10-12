@@ -1,6 +1,6 @@
-# Lunar — Website giỏ quà Tết cao cấp
+# Lunar Lucky — Website giỏ quà Tết cao cấp
 
-Website thương mại điện tử cho cửa hàng giỏ quà Tết **Lunar**: bán online, nhận khách lẻ và khách doanh nghiệp.
+Website thương mại điện tử cho cửa hàng giỏ quà Tết **Lunar Lucky**: bán online, nhận khách lẻ và khách doanh nghiệp.
 
 **Công nghệ:** Node.js (≥ 18.18) · Express 5 · EJS (render phía server, tốt cho SEO) · Knex · MySQL (production) / SQLite (máy local).
 

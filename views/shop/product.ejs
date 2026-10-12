@@ -58,7 +58,7 @@
         <%= product.stock <= 5 ? `Chỉ còn ${product.stock} giỏ, đặt sớm để giữ hàng` : 'Còn hàng, sẵn sàng giao' %>
       </p>
       <% } else { %>
-        <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
+        <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar Lucky để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
         <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a></div>
       <% } %>
 
@@ -66,7 +66,7 @@
         <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày giao khi thanh toán, giao đúng hẹn</li>
         <li><svg class="icon"><use href="#i-pen"/></svg> Thiệp chúc viết tay miễn phí theo lời nhắn của bạn</li>
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
-        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Nhắn Zalo cho Lunar</a></li>
+        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Nhắn Zalo cho Lunar Lucky</a></li>
       </ul>
     </div>
   </div>

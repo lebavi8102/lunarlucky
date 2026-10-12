@@ -1,5 +1,5 @@
 /**
- * Lược đồ ban đầu cho Lunar.
+ * Lược đồ ban đầu cho Lunar Lucky.
  * Chạy được trên cả MySQL (Hostinger) lẫn SQLite (máy local).
  */
 exports.up = async function up(knex) {
