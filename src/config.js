@@ -17,7 +17,18 @@ function required(name, fallback) {
 
 // DATABASE_URL dạng mysql://user:pass@host:port/db (copy từ Aiven) — ưu tiên hơn các biến DB_* riêng lẻ
 if (process.env.DATABASE_URL) {
-  const u = new URL(process.env.DATABASE_URL);
+  let u;
+  try {
+    u = new URL(process.env.DATABASE_URL.trim());
+  } catch {
+    u = null;
+  }
+  if (!u || u.protocol !== 'mysql:') {
+    throw new Error(
+      `DATABASE_URL không hợp lệ (đang là "${u ? u.protocol + '//' + u.host : 'không đọc được'}"). ` +
+        'Cần dán dòng "Service URI" của Aiven, dạng mysql://avnadmin:...@...aivencloud.com:PORT/defaultdb?ssl-mode=REQUIRED',
+    );
+  }
   process.env.DB_CLIENT = 'mysql2';
   process.env.DB_HOST = u.hostname;
   process.env.DB_PORT = u.port || '3306';

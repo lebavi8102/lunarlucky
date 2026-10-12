@@ -3,6 +3,12 @@ const db = require('./src/db');
 const app = require('./src/app');
 
 async function start() {
+  const c = config.db.connection;
+  console.log(
+    config.db.client === 'mysql2'
+      ? `[db] mysql ${c.host}:${c.port}/${c.database} ssl=${c.ssl ? 'on' : 'off'}${process.env.DATABASE_URL ? ' (DATABASE_URL)' : ''}`
+      : `[db] sqlite ${c.filename}`,
+  );
   // Tự chạy migration khi khởi động để deploy trên Hostinger không cần SSH
   const [, pending] = await db.migrate.latest();
   if (pending && pending.length) console.log('[db] đã chạy migration:', pending.join(', '));
