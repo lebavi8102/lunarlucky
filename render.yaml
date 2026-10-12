@@ -1,0 +1,36 @@
+# Cấu hình deploy Lunar Lucky lên Render (gói Free).
+# Render đọc file này khi tạo "Blueprint" từ repo GitHub.
+services:
+  - type: web
+    name: lunarlucky
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm ci --omit=optional
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: SITE_URL
+        value: https://lunarlucky.vn
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_CA_FILE
+        value: certs/aiven-ca.pem
+      - key: SEED_DEMO
+        value: "true"
+      # Render tự sinh chuỗi ngẫu nhiên
+      - key: SESSION_SECRET
+        generateValue: true
+      # Các biến dưới đây chủ shop tự điền khi tạo Blueprint
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

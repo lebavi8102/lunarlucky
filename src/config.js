@@ -15,6 +15,21 @@ function required(name, fallback) {
   return fallback;
 }
 
+// DATABASE_URL dạng mysql://user:pass@host:port/db (copy từ Aiven) — ưu tiên hơn các biến DB_* riêng lẻ
+if (process.env.DATABASE_URL) {
+  const u = new URL(process.env.DATABASE_URL);
+  process.env.DB_CLIENT = 'mysql2';
+  process.env.DB_HOST = u.hostname;
+  process.env.DB_PORT = u.port || '3306';
+  process.env.DB_USER = decodeURIComponent(u.username);
+  process.env.DB_PASSWORD = decodeURIComponent(u.password);
+  process.env.DB_NAME = u.pathname.replace(/^\//, '') || 'defaultdb';
+  if (/required|verify/i.test(u.searchParams.get('ssl-mode') || '')) process.env.DB_SSL = 'true';
+}
+if (process.env.DB_SSL_CA_FILE && !process.env.DB_SSL_CA) {
+  process.env.DB_SSL_CA = require('fs').readFileSync(path.resolve(root, process.env.DB_SSL_CA_FILE), 'utf8');
+}
+
 const dbClient = process.env.DB_CLIENT || (isProd ? 'mysql2' : 'better-sqlite3');
 
 module.exports = {
