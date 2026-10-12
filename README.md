@@ -59,11 +59,11 @@ Tài khoản admin local nằm trong file `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWOR
 
 ## Đưa code lên GitHub
 
-1. Tạo repository mới trên GitHub (nên để **Private**), không chọn thêm README.
+1. Repository: https://github.com/lebavi8102/lunarlucky
 2. Trong thư mục `lunar`:
 
 ```bash
-git remote add origin https://github.com/<ten-ban>/lunar.git
+git remote add origin https://github.com/lebavi8102/lunarlucky.git
 git push -u origin main
 ```
 

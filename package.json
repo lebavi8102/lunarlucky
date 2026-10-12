@@ -1,5 +1,5 @@
 {
-  "name": "lunar",
+  "name": "lunarlucky",
   "version": "1.0.0",
   "description": "Lunar — Giỏ quà Tết cao cấp. Website thương mại điện tử Node.js (Express + EJS + MySQL).",
   "main": "server.js",
