@@ -15,15 +15,7 @@ router.use(requireAdmin, (req, res, next) => {
   next();
 });
 
-const ORDER_STATUS = {
-  new: 'Mới',
-  confirmed: 'Đã xác nhận',
-  packing: 'Đang đóng gói',
-  shipping: 'Đang giao',
-  completed: 'Hoàn tất',
-  cancelled: 'Đã hủy',
-};
-const PAYMENT_STATUS = { pending: 'Chưa thanh toán', paid: 'Đã thanh toán', refunded: 'Đã hoàn tiền' };
+const { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder } = require('../../lib/orders');
 const QUOTE_STATUS = { new: 'Mới', contacted: 'Đã liên hệ', won: 'Chốt đơn', lost: 'Không thành' };
 
 router.use((req, res, next) => {
@@ -95,13 +87,6 @@ router.get('/don-hang', async (req, res) => {
   });
 });
 
-async function loadOrder(id) {
-  const order = await db('orders').where({ id: Number(id) }).first();
-  if (!order) return null;
-  const items = await db('order_items').where({ order_id: order.id });
-  return { order, items };
-}
-
 router.get('/don-hang/:id', async (req, res, next) => {
   const data = await loadOrder(req.params.id);
   if (!data) return next();
@@ -115,38 +100,19 @@ router.get('/don-hang/:id/in', async (req, res, next) => {
 });
 
 router.post('/don-hang/:id', async (req, res, next) => {
-  const data = await loadOrder(req.params.id);
-  if (!data) return next();
-  const { order, items } = data;
-  const status = ORDER_STATUS[req.body.status] ? req.body.status : order.status;
-  const payment_status = PAYMENT_STATUS[req.body.payment_status] ? req.body.payment_status : order.payment_status;
-  const admin_note = String(req.body.admin_note || '').slice(0, 500) || null;
-
-  await db.transaction(async (trx) => {
-    const goingCancelled = status === 'cancelled' && order.status !== 'cancelled';
-    const leavingCancelled = order.status === 'cancelled' && status !== 'cancelled';
-    if (goingCancelled || leavingCancelled) {
-      const sign = goingCancelled ? 1 : -1;
-      for (const i of items.filter((x) => x.product_id)) {
-        await trx('products').where({ id: i.product_id }).update({
-          stock: trx.raw('stock + ?', [sign * i.qty]),
-          sold: trx.raw('CASE WHEN sold - ? < 0 THEN 0 ELSE sold - ? END', [sign * i.qty, sign * i.qty]),
-        });
-      }
-    }
-    await trx('orders').where({ id: order.id }).update({ status, payment_status, admin_note, updated_at: new Date() });
-  });
-
-  if (status !== order.status && order.email && ['confirmed', 'shipping', 'completed', 'cancelled'].includes(status)) {
-    notify.sendMail({
-      to: order.email,
-      subject: `Đơn hàng ${order.code}: ${ORDER_STATUS[status]}`,
-      template: 'order-status',
-      data: { order: { ...order, status }, statusLabel: ORDER_STATUS[status], s: res.locals.s },
-    });
-  }
+  const r = await updateOrder(
+    req.params.id,
+    {
+      status: req.body.status,
+      payment_status: req.body.payment_status,
+      admin_note: String(req.body.admin_note || '').slice(0, 500) || null,
+    },
+    { by: req.session.user.name },
+  );
+  if (!r) return next();
+  require('../../lib/telegram-orders').refreshOrderMessage(r.order.id);
   flash(req, 'success', 'Đã cập nhật đơn hàng.');
-  res.redirect(`/admin/don-hang/${order.id}`);
+  res.redirect(`/admin/don-hang/${r.order.id}`);
 });
 
 /* ---------- Báo giá doanh nghiệp ---------- */
@@ -248,6 +214,7 @@ router.post('/telegram/chon', async (req, res) => {
   }
   await settings.save({ telegram_chat_id: id });
   try {
+    await require('../../lib/telegram-orders').ensureWebhook();
     await notify.telegram('✅ <b>Lunar Lucky</b> đã kết nối. Từ giờ đơn hàng mới và yêu cầu báo giá sẽ được báo tại đây.', id);
     flash(req, 'success', 'Đã kết nối và gửi tin nhắn thử. Hãy kiểm tra Telegram.');
   } catch (err) {

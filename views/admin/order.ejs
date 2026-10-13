@@ -69,6 +69,18 @@
       <button class="btn btn-block" type="submit" style="margin-top:16px">Lưu</button>
       <p class="tiny muted" style="margin-top:10px">Khi đổi trạng thái, khách có email sẽ nhận thông báo. Hủy đơn sẽ tự hoàn lại tồn kho.</p>
     </form>
+    <section class="form-card">
+      <h2>Lịch sử xử lý</h2>
+      <% const logLines = String(order.handled_log || '').split('\n').filter(Boolean); %>
+      <% if (!logLines.length) { %>
+        <p class="small muted">Chưa có thao tác nào.</p>
+      <% } else { %>
+        <ul style="list-style:none;display:grid;gap:8px;font-size:14px">
+          <% logLines.slice().reverse().forEach(l => { %><li style="padding-left:12px;border-left:2px solid var(--gold-500)"><%= l %></li><% }) %>
+        </ul>
+      <% } %>
+      <% if (order.tg_message_id) { %><p class="tiny muted" style="margin-top:10px">Đơn này có nút xử lý trong nhóm Telegram.</p><% } %>
+    </section>
   </aside>
 </div>
 <%- include('_bottom') %>

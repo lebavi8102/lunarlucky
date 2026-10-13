@@ -69,15 +69,17 @@ async function telegramChatId() {
   return (await require('./settings').all()).telegram_chat_id || '';
 }
 
-async function telegram(html, chatIdOverride) {
+/** Gửi tin; trả về message Telegram (có message_id) hoặc false nếu chưa cấu hình/lỗi. */
+async function telegram(html, chatIdOverride, extra = {}) {
   const chatId = chatIdOverride || (await telegramChatId());
   if (!config.telegram.token || !chatId) {
     console.log('[telegram] (chưa cấu hình)\n' + html.replace(/<[^>]+>/g, ''));
     return false;
   }
   try {
-    await tgApi('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true });
-    return true;
+    return await tgApi('sendMessage', {
+      chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...extra,
+    });
   } catch (err) {
     console.error('[telegram] gửi thất bại:', err.message);
     if (chatIdOverride) throw err;
@@ -88,8 +90,20 @@ async function telegram(html, chatIdOverride) {
 /** Thông tin bot + các cuộc trò chuyện gần đây đã nhắn cho bot (để chọn chat ID). */
 async function telegramDiscover() {
   const me = await tgApi('getMe');
-  const updates = await tgApi('getUpdates', { limit: 100, allowed_updates: ['message', 'my_chat_member'] });
   const chats = new Map();
+  // Khi webhook đang bật, Telegram không cho getUpdates → dùng danh sách chat webhook đã ghi nhớ
+  try {
+    const seen = JSON.parse((await require('./settings').all()).telegram_seen_chats || '[]');
+    for (const c of seen) chats.set(c.id, c);
+  } catch {
+    /* bỏ qua */
+  }
+  let updates = [];
+  try {
+    updates = await tgApi('getUpdates', { limit: 100, allowed_updates: ['message', 'my_chat_member'] });
+  } catch (err) {
+    if (!/webhook|conflict/i.test(err.message)) throw err;
+  }
   for (const u of updates) {
     const chat = (u.message || u.my_chat_member || {}).chat;
     if (!chat) continue;
@@ -116,7 +130,7 @@ function orderTelegram(order, items) {
     `<b>Tổng: ${money(order.total)}</b> · ${order.payment_method === 'bank' ? 'Chuyển khoản' : 'COD'}`,
     order.card_message ? `💌 Thiệp: “${e(order.card_message)}”` : null,
     order.note ? `📝 ${e(order.note)}` : null,
-    `\n${config.siteUrl}/admin/don-hang/${order.id}`,
+    `\n${config.publicUrl}/admin/don-hang/${order.id}`,
   ]
     .filter((x) => x !== null)
     .join('\n');
@@ -133,10 +147,10 @@ function quoteTelegram(q) {
     q.delivery_date ? `Ngày giao: ${ymd(q.delivery_date)}` : null,
     q.logo_print ? 'In logo: Có' : null,
     q.message ? `📝 ${e(q.message)}` : null,
-    `\n${config.siteUrl}/admin/bao-gia`,
+    `\n${config.publicUrl}/admin/bao-gia`,
   ]
     .filter(Boolean)
     .join('\n');
 }
 
-module.exports = { sendMail, telegram, telegramDiscover, telegramChatId, orderTelegram, quoteTelegram };
+module.exports = { sendMail, telegram, tgApi, telegramDiscover, telegramChatId, orderTelegram, quoteTelegram, escapeTg };

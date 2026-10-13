@@ -48,6 +48,8 @@ module.exports = {
   isProd,
   port: Number(process.env.PORT) || 3000,
   siteUrl: (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, ''),
+  // Địa chỉ chắc chắn truy cập được (Render tự đặt RENDER_EXTERNAL_URL) — dùng cho webhook, link trong Telegram
+  publicUrl: (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, ''),
   sessionSecret: required('SESSION_SECRET', isProd ? undefined : 'dev-only-secret-change-me'),
 
   db: {

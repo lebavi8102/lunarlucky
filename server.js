@@ -18,6 +18,10 @@ async function start() {
 
   const server = app.listen(config.port, () => {
     console.log(`Lunar Lucky đang chạy tại ${config.siteUrl} (port ${config.port}, ${config.env})`);
+    require('./src/lib/telegram-orders')
+      .ensureWebhook()
+      .then((r) => r.ok && console.log('[telegram] webhook:', r.url))
+      .catch((err) => console.error('[telegram] không đăng ký được webhook:', err.message));
   });
 
   const shutdown = () => {
