@@ -130,9 +130,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     ...payment.snapshot(payment.accountFromSettings('personal', res.locals.s)),
     payment_method, payment_status: 'pending', status: 'new',
     subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee,
-    vat_fee: needs_vat ? payment.vatFee(priced.total, res.locals.s) : 0,
+    vat_fee: needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0,
     vat_fee_percent: needs_vat ? payment.vatFeePercent(res.locals.s) : null,
-    total: priced.total + (needs_vat ? payment.vatFee(priced.total, res.locals.s) : 0),
+    total: priced.total + (needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0),
     coupon_code: priced.coupon ? priced.coupon.code : null,
   };
   const items = priced.lines.map((l) => ({

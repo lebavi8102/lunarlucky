@@ -66,7 +66,7 @@ function maskAccount(no) {
   return s.length > 4 ? `****${s.slice(-4)}` : s;
 }
 
-/** Phí xuất hóa đơn VAT khách chịu: % × (tiền hàng − giảm giá + phí giao). */
+/** Phí xuất hóa đơn VAT khách chịu: % × (tiền hàng − giảm giá), không tính phí giao. */
 function vatFeePercent(s) {
   const raw = String(s.vat_fee_percent ?? '').trim().replace(',', '.');
   if (!raw) return 11;

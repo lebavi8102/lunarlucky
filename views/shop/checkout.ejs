@@ -68,12 +68,12 @@
           <svg class="icon"><use href="#i-file"/></svg>
           <span>
             <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị đối tác của Lunar Lucky.
-            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> trên giá trị đơn (tiền hàng sau giảm giá + phí giao).
+            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> trên giá trị đơn (tiền hàng sau giảm giá, không tính phí giao).
             Phí này <b>đã được cộng vào số tiền cần thanh toán</b>.
             Đơn xuất VAT thanh toán bằng chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.
-            <% const vf = Math.round(cart.total * vatPercent / 100); %>
+            <% const vf = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
             <% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %>
-            <span style="display:block;margin-top:8px">Giá trị đơn <%= money(cart.total) %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
+            <span style="display:block;margin-top:8px">Tiền hàng <%= money(cart.subtotal - cart.discount) %><% if (cart.shippingFee) { %> + phí giao <%= money(cart.shippingFee) %><% } %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
           </span>
         </div>
         <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">
@@ -113,7 +113,7 @@
       <div class="sum-row"><span>Tạm tính</span><span><%= money(cart.subtotal) %></span></div>
       <% if (cart.discount) { %><div class="sum-row"><span>Mã <%= cart.coupon.code %></span><span class="disc">−<%= money(cart.discount) %></span></div><% } %>
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
-      <% const vatFeePreview = Math.round(cart.total * vatPercent / 100); %>
+      <% const vatFeePreview = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
       <div class="sum-row" data-vat-row <%= values.needs_vat ? '' : 'hidden' %>><span>Phí xuất hóa đơn VAT (<%= vatPercent %>%)</span><span><%= money(vatFeePreview) %></span></div>
       <div class="sum-row total"><span>Tổng cộng</span><span data-total data-base="<%= cart.total %>" data-with-vat="<%= cart.total + vatFeePreview %>"><%= money(values.needs_vat ? cart.total + vatFeePreview : cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
