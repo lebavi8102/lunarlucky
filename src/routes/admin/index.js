@@ -213,6 +213,61 @@ router.post('/cai-dat', async (req, res) => {
   res.redirect('/admin/cai-dat');
 });
 
+/* ---------- Thông báo Telegram ---------- */
+const config = require('../../config');
+
+async function telegramPage(res, extra = {}) {
+  const s = await settings.all();
+  res.render('admin/telegram', {
+    title: 'Thông báo Telegram',
+    hasToken: !!config.telegram.token,
+    envChatId: config.telegram.chatId || '',
+    chatId: await notify.telegramChatId(),
+    savedChatId: s.telegram_chat_id || '',
+    discover: null,
+    error: null,
+    ...extra,
+  });
+}
+
+router.get('/telegram', (req, res) => telegramPage(res));
+
+router.post('/telegram/tim', async (req, res) => {
+  try {
+    await telegramPage(res, { discover: await notify.telegramDiscover() });
+  } catch (err) {
+    await telegramPage(res, { error: err.message });
+  }
+});
+
+router.post('/telegram/chon', async (req, res) => {
+  const id = String(req.body.chat_id || '').trim();
+  if (!/^-?\d{3,20}$/.test(id)) {
+    flash(req, 'error', 'Chat ID không hợp lệ.');
+    return res.redirect('/admin/telegram');
+  }
+  await settings.save({ telegram_chat_id: id });
+  try {
+    await notify.telegram('✅ <b>Lunar Lucky</b> đã kết nối. Từ giờ đơn hàng mới và yêu cầu báo giá sẽ được báo tại đây.', id);
+    flash(req, 'success', 'Đã kết nối và gửi tin nhắn thử. Hãy kiểm tra Telegram.');
+  } catch (err) {
+    flash(req, 'error', `Đã lưu chat nhưng gửi tin thử thất bại: ${err.message}`);
+  }
+  res.redirect('/admin/telegram');
+});
+
+router.post('/telegram/thu', async (req, res) => {
+  const id = await notify.telegramChatId();
+  try {
+    if (!id) throw new Error('Chưa chọn cuộc trò chuyện nhận thông báo.');
+    await notify.telegram(`🔔 Tin nhắn thử từ <b>Lunar Lucky</b> lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`, id);
+    flash(req, 'success', 'Đã gửi tin nhắn thử. Hãy kiểm tra Telegram.');
+  } catch (err) {
+    flash(req, 'error', `Gửi thất bại: ${err.message}`);
+  }
+  res.redirect('/admin/telegram');
+});
+
 /* ---------- CRUD ---------- */
 const categoryOptions = async () =>
   (await db('categories').orderBy('sort')).map((c) => ({ value: c.id, label: c.name }));

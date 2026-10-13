@@ -1,0 +1,86 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Thông báo Telegram</h1></div>
+
+<% const step = !hasToken ? 1 : !chatId ? 2 : 3; %>
+<div class="form-grid">
+  <div>
+    <section class="form-card">
+      <h2>Trạng thái</h2>
+      <dl class="kv">
+        <dt>Bot Telegram</dt>
+        <dd><% if (hasToken) { %><span class="status status-completed">Đã có token</span><% } else { %><span class="status status-pending">Chưa có token</span><% } %></dd>
+        <dt>Nơi nhận thông báo</dt>
+        <dd><% if (chatId) { %><span class="status status-completed">Đã chọn</span> <span class="mono"><%= chatId %></span><% if (envChatId) { %> <span class="tiny muted">(đặt bằng biến TELEGRAM_CHAT_ID)</span><% } %><% } else { %><span class="status status-pending">Chưa chọn</span><% } %></dd>
+      </dl>
+    </section>
+
+    <% if (step === 1) { %>
+    <section class="form-card">
+      <h2>Bước 1 · Tạo bot và lấy token</h2>
+      <ol style="padding-left:20px;display:grid;gap:8px;font-size:15px">
+        <li>Trên điện thoại, mở Telegram, tìm <b>@BotFather</b> (có tích xanh) và bấm <b>Start</b>.</li>
+        <li>Gửi lệnh <span class="mono">/newbot</span>.</li>
+        <li>Đặt tên hiển thị, ví dụ <b>Lunar Lucky Đơn hàng</b>.</li>
+        <li>Đặt username kết thúc bằng <span class="mono">bot</span>, ví dụ <span class="mono">lunarlucky_donhang_bot</span>.</li>
+        <li>BotFather gửi lại một <b>token</b> dạng <span class="mono">123456789:AA…</span>. Giữ bí mật token này.</li>
+        <li>Mở Render → dịch vụ <b>lunarlucky</b> → <b>Environment</b> → thêm biến <span class="mono">TELEGRAM_BOT_TOKEN</span> và dán token vào → <b>Save, rebuild, and deploy</b>.</li>
+      </ol>
+      <p class="help" style="margin-top:12px">Sau khi Render deploy xong (khoảng 1 phút), tải lại trang này.</p>
+    </section>
+    <% } %>
+
+    <% if (step >= 2) { %>
+    <section class="form-card">
+      <h2>Bước 2 · Chọn nơi nhận thông báo</h2>
+      <p class="small" style="margin-bottom:12px">Mở bot của bạn trên Telegram và <b>gửi cho bot một tin bất kỳ</b> (ví dụ "xin chào"). Muốn cả nhóm cùng nhận thì thêm bot vào nhóm rồi nhắn một tin trong nhóm. Sau đó bấm nút bên dưới.</p>
+      <form action="/admin/telegram/tim" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-sm" type="submit">Tìm cuộc trò chuyện</button>
+      </form>
+
+      <% if (error) { %><div class="flash flash-error" role="alert" style="margin-top:16px"><svg class="icon"><use href="#i-alert"/></svg><span><%= error %></span></div><% } %>
+
+      <% if (discover) { %>
+        <p class="small muted" style="margin-top:16px">Bot: <b><%= discover.bot.name %></b> (@<%= discover.bot.username %>)</p>
+        <% if (!discover.chats.length) { %>
+          <div class="flash flash-info" style="margin-top:12px"><svg class="icon"><use href="#i-info"/></svg><span>Chưa thấy tin nhắn nào. Hãy mở <a href="https://t.me/<%= discover.bot.username %>" target="_blank" rel="noopener" style="text-decoration:underline">t.me/<%= discover.bot.username %></a>, bấm Start, nhắn "xin chào" rồi bấm "Tìm cuộc trò chuyện" lần nữa.</span></div>
+        <% } else { %>
+          <div class="table-wrap" style="margin-top:12px">
+            <table class="table">
+              <thead><tr><th scope="col">Cuộc trò chuyện</th><th scope="col">Loại</th><th scope="col"></th></tr></thead>
+              <tbody>
+              <% discover.chats.forEach(c => { %>
+                <tr>
+                  <td><b><%= c.name %></b><br><span class="tiny muted mono"><%= c.id %></span></td>
+                  <td><%= c.type %></td>
+                  <td class="num">
+                    <form action="/admin/telegram/chon" method="post">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="chat_id" value="<%= c.id %>">
+                      <button class="btn btn-sm" type="submit"><%= c.id === chatId ? 'Đang dùng · Chọn lại' : 'Nhận thông báo tại đây' %></button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      <% } %>
+    </section>
+    <% } %>
+  </div>
+
+  <aside class="form-side">
+    <div class="form-card">
+      <h2>Kiểm tra</h2>
+      <p class="small muted" style="margin-bottom:12px">Gửi một tin nhắn thử để chắc chắn shop nhận được thông báo.</p>
+      <form action="/admin/telegram/thu" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-block" type="submit" <%= step < 3 ? 'disabled' : '' %>>Gửi tin nhắn thử</button>
+      </form>
+      <p class="tiny muted" style="margin-top:12px">Khi đã kết nối, mỗi đơn hàng mới và mỗi yêu cầu báo giá doanh nghiệp sẽ được báo ngay qua Telegram.</p>
+    </div>
+  </aside>
+</div>
+<%- include('_bottom') %>

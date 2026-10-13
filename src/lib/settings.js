@@ -6,6 +6,7 @@ const db = require('../db');
  */
 const DEFAULTS = {
   shop_name: 'Lunar Lucky',
+  telegram_chat_id: '',
   shop_tagline: 'Luxury Gifts & Hampers',
   shop_phone: '096 900 09 10',
   shop_email: 'hello@lunarlucky.vn',

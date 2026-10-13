@@ -40,23 +40,63 @@ function escapeTg(s) {
   return String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 }
 
-async function telegram(html) {
-  const { token, chatId } = config.telegram;
-  if (!token || !chatId) {
+/* ---------- Telegram ----------
+ * Token bot nằm trong biến môi trường TELEGRAM_BOT_TOKEN (bí mật).
+ * Chat ID có thể đặt bằng TELEGRAM_CHAT_ID hoặc chọn trong /admin/telegram (lưu ở settings).
+ */
+async function tgApi(method, body) {
+  const { token } = config.telegram;
+  if (!token) throw new Error('Chưa đặt TELEGRAM_BOT_TOKEN trên máy chủ.');
+  const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body || {}),
+    signal: AbortSignal.timeout(10000),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!data.ok) {
+    if (r.status === 401) throw new Error('Token bot không đúng. Kiểm tra lại TELEGRAM_BOT_TOKEN trên Render.');
+    if (/chat not found|bot was blocked|not a member/i.test(data.description || '')) {
+      throw new Error('Bot chưa thể nhắn vào cuộc trò chuyện này. Hãy bấm Start với bot hoặc thêm bot vào nhóm.');
+    }
+    throw new Error(data.description || `Telegram trả về lỗi ${r.status}`);
+  }
+  return data.result;
+}
+
+async function telegramChatId() {
+  if (config.telegram.chatId) return config.telegram.chatId;
+  return (await require('./settings').all()).telegram_chat_id || '';
+}
+
+async function telegram(html, chatIdOverride) {
+  const chatId = chatIdOverride || (await telegramChatId());
+  if (!config.telegram.token || !chatId) {
     console.log('[telegram] (chưa cấu hình)\n' + html.replace(/<[^>]+>/g, ''));
-    return;
+    return false;
   }
   try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!r.ok) console.error('[telegram] lỗi', r.status, await r.text());
+    await tgApi('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true });
+    return true;
   } catch (err) {
     console.error('[telegram] gửi thất bại:', err.message);
+    if (chatIdOverride) throw err;
+    return false;
   }
+}
+
+/** Thông tin bot + các cuộc trò chuyện gần đây đã nhắn cho bot (để chọn chat ID). */
+async function telegramDiscover() {
+  const me = await tgApi('getMe');
+  const updates = await tgApi('getUpdates', { limit: 100, allowed_updates: ['message', 'my_chat_member'] });
+  const chats = new Map();
+  for (const u of updates) {
+    const chat = (u.message || u.my_chat_member || {}).chat;
+    if (!chat) continue;
+    const name = chat.title || [chat.first_name, chat.last_name].filter(Boolean).join(' ') || chat.username || String(chat.id);
+    chats.set(String(chat.id), { id: String(chat.id), name, type: chat.type === 'private' ? 'Cá nhân' : 'Nhóm' });
+  }
+  return { bot: { name: me.first_name, username: me.username }, chats: [...chats.values()] };
 }
 
 function orderTelegram(order, items) {
@@ -99,4 +139,4 @@ function quoteTelegram(q) {
     .join('\n');
 }
 
-module.exports = { sendMail, telegram, orderTelegram, quoteTelegram };
+module.exports = { sendMail, telegram, telegramDiscover, telegramChatId, orderTelegram, quoteTelegram };
