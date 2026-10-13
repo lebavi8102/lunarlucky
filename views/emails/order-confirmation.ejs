@@ -7,9 +7,10 @@
 <td style="padding:16px;text-align:center" width="200"><img src="<%= qr %>" width="180" alt="Mã VietQR" style="display:block;margin:auto"></td>
 <td style="padding:16px;font-size:14px;line-height:1.8">
   <b>Chuyển khoản để hoàn tất đơn</b><br>
-  Ngân hàng: <%= s.bank_name %><br>
-  Số TK: <b><%= s.bank_account %></b><br>
-  Chủ TK: <%= s.bank_holder %><br>
+  <% if (order.needs_vat) { %>Thanh toán vào tài khoản công ty (đơn xuất hóa đơn VAT)<br><% } %>
+  Ngân hàng: <%= payee.bankName || payee.bankId %><br>
+  Số TK: <b><%= payee.account %></b><br>
+  Chủ TK: <%= payee.holder %><br>
   Số tiền: <b style="color:#7a1622"><%= money(order.total) %></b><br>
   Nội dung: <b><%= order.code %></b>
 </td></tr></table>

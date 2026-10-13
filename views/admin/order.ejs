@@ -50,12 +50,24 @@
         <dt>Thanh toán</dt><dd><%= order.payment_method === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản VietQR, nội dung ' + order.code %></dd>
         <% if (order.card_message) { %><dt>Lời chúc thiệp</dt><dd class="serif" style="font-size:19px;font-style:italic">“<%= order.card_message %>”</dd><% } %>
         <% if (order.note) { %><dt>Ghi chú</dt><dd><%= order.note %></dd><% } %>
-        <% if (order.invoice_info) { %><dt>Xuất VAT</dt><dd style="white-space:pre-line"><%= order.invoice_info %></dd><% } %>
+        <% if (order.needs_vat) { %><dt>Xuất VAT</dt><dd><b><%= order.vat_company %></b><br>MST <span class="mono"><%= order.vat_tax_code %></span><br><%= order.vat_address %><br><%= order.vat_email %></dd>
+        <% } else if (order.invoice_info) { %><dt>Xuất VAT</dt><dd style="white-space:pre-line"><%= order.invoice_info %></dd><% } %>
+        <% if (order.payment_method === 'bank') { %><dt>Nhận tiền vào</dt><dd><span class="status <%= payee.type === 'company' ? 'status-confirmed' : 'status-completed' %>"><%= payee.label %></span><br><%= payee.bankName || payee.bankId || '—' %> · <span class="mono"><%= payee.account || 'chưa cài đặt' %></span> · <%= payee.holder || '' %></dd><% } %>
       </dl>
     </section>
   </div>
 
   <aside class="form-side">
+    <% if (order.payment_method === 'bank' && order.payment_status !== 'paid' && order.status !== 'cancelled') { const other = payee.type === 'company' ? 'personal' : 'company'; %>
+    <form class="form-card" action="/admin/don-hang/<%= order.id %>/tai-khoan" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="pay_account" value="<%= other %>">
+      <h2>Tài khoản nhận tiền</h2>
+      <p class="small muted" style="margin-bottom:12px">Đang dùng: <b><%= payee.label %></b>. Đổi khi khách cần (hoặc không cần) xuất VAT.</p>
+      <button class="btn btn-sm btn-quiet btn-block" type="submit" <%= other === 'company' && !companyReady ? 'disabled' : '' %>><%= other === 'company' ? 'Đổi sang TK công ty (xuất VAT)' : 'Đổi sang TK bán lẻ' %></button>
+      <% if (other === 'company' && !companyReady) { %><p class="tiny muted" style="margin-top:8px">Cần nhập tài khoản công ty trong Cài đặt trước.</p><% } %>
+    </form>
+    <% } %>
     <form class="form-card" action="/admin/don-hang/<%= order.id %>" method="post">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <h2>Xử lý đơn</h2>

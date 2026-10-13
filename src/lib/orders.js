@@ -84,4 +84,4 @@ async function updateOrder(id, changes, { by } = {}) {
   return { before: order, order: { ...order, ...update }, items, changed: events.length > 0 };
 }
 
-module.exports = { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder };
+module.exports = { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder, logTime };

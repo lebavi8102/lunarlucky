@@ -56,19 +56,30 @@
         <legend><span class="num">3</span> Thiệp &amp; lời nhắn</legend>
         <%- include('../partials/field', { name: 'card_message', label: 'Lời chúc trên thiệp', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Kính chúc gia đình chú Hai một năm mới An Khang Thịnh Vượng!', help: 'Lunar Lucky sẽ viết tay lời chúc này lên thiệp. Tối đa 300 ký tự.' }) %>
         <div style="margin-top:16px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar Lucky', as: 'textarea', optional: true, maxlength: 500 }) %></div>
-        <div style="margin-top:16px"><%- include('../partials/field', { name: 'invoice_info', label: 'Thông tin xuất hóa đơn VAT', as: 'textarea', optional: true, maxlength: 500, placeholder: 'Tên công ty, mã số thuế, địa chỉ, email nhận hóa đơn' }) %></div>
       </fieldset>
 
       <fieldset class="fieldset">
         <legend><span class="num">4</span> Thanh toán</legend>
+        <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
+          <input type="checkbox" name="needs_vat" value="1" <%= values.needs_vat ? 'checked' : '' %> data-vat-toggle>
+          <span><b>Tôi cần xuất hóa đơn VAT</b><br><span class="small muted">Dành cho doanh nghiệp. Đơn xuất VAT thanh toán bằng chuyển khoản vào tài khoản công ty<%= s.company_name ? ' ' + s.company_name : '' %>.</span></span>
+        </label>
+        <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">
+          <%- include('../partials/field', { name: 'vat_company', label: 'Tên công ty', autocomplete: 'organization', maxlength: 200 }) %>
+          <div class="grid-2" style="margin-top:16px">
+            <%- include('../partials/field', { name: 'vat_tax_code', label: 'Mã số thuế', inputmode: 'numeric', maxlength: 20, placeholder: '0123456789' }) %>
+            <%- include('../partials/field', { name: 'vat_email', label: 'Email nhận hóa đơn', type: 'email', autocomplete: 'email' }) %>
+          </div>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'vat_address', label: 'Địa chỉ công ty (theo đăng ký kinh doanh)', maxlength: 255 }) %></div>
+        </div>
         <div class="radio-cards">
           <label class="radio-card">
             <input type="radio" name="payment_method" value="bank" <%= values.payment_method !== 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
             <span><strong>Chuyển khoản VietQR</strong><span>Quét mã QR ngay sau khi đặt, xác nhận nhanh</span></span>
           </label>
-          <label class="radio-card">
-            <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' ? 'checked' : '' %>>
+          <label class="radio-card" data-cod-option <%= values.needs_vat ? 'hidden' : '' %>>
+            <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
             <span class="dot"></span>
             <span><strong>Thanh toán khi nhận hàng</strong><span>Trả tiền mặt cho nhân viên giao hàng</span></span>
           </label>

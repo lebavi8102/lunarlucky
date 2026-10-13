@@ -3,19 +3,25 @@
 <form action="/admin/cai-dat" method="post" class="form-grid">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div>
-    <% groups.forEach(([title, fields]) => { %>
+    <datalist id="bank-codes"><% banks.forEach(([code, name]) => { %><option value="<%= code %>"><%= name %></option><% }) %></datalist>
+    <% groups.forEach(([title, fields, extra]) => { %>
     <section class="form-card">
       <h2><%= title %></h2>
       <% fields.forEach(([k, label, kind]) => { %>
         <div class="field">
           <label class="label" for="s-<%= k %>"><%= label %></label>
           <% if (kind === 'textarea') { %><textarea class="textarea" id="s-<%= k %>" name="<%= k %>"><%= values[k] %></textarea>
+          <% } else if (kind === 'bank') { %><input class="input" id="s-<%= k %>" name="<%= k %>" value="<%= values[k] %>" list="bank-codes" placeholder="Chọn hoặc gõ mã, VD: VCB" autocomplete="off"><p class="help">Mã ngân hàng theo VietQR: VCB, BIDV, ICB (VietinBank), VBA (Agribank), TCB, MB, ACB…</p>
           <% } else { %><input class="input" id="s-<%= k %>" name="<%= k %>" value="<%= values[k] %>"><% } %>
         </div>
       <% }) %>
-      <% if (title === 'Chuyển khoản VietQR') { %>
-        <p class="help" style="margin-top:12px">Mã QR thử với 100.000₫:</p>
-        <img src="https://img.vietqr.io/image/<%= encodeURIComponent(values.bank_id) %>-<%= encodeURIComponent(values.bank_account) %>-compact2.png?amount=100000&addInfo=TEST&accountName=<%= encodeURIComponent(values.bank_holder) %>" alt="Mã VietQR thử" width="180" style="margin-top:8px;border:1px solid var(--line);border-radius:8px" loading="lazy">
+      <% if (extra && extra.startsWith('qr:')) { const pre = extra.slice(3); %>
+        <% if (values[pre + '_id'] && values[pre + '_account']) { %>
+          <p class="help" style="margin-top:12px">Mã QR thử với 100.000₫ (quét bằng app ngân hàng để kiểm tra đúng tên chủ tài khoản, không cần chuyển):</p>
+          <img src="https://img.vietqr.io/image/<%= encodeURIComponent(values[pre + '_id']) %>-<%= encodeURIComponent(values[pre + '_account']) %>-compact2.png?amount=100000&addInfo=TEST&accountName=<%= encodeURIComponent(values[pre + '_holder']) %>" alt="Mã VietQR thử" width="180" style="margin-top:8px;border:1px solid var(--line);border-radius:8px" loading="lazy">
+        <% } else { %>
+          <p class="help" style="margin-top:12px">Chưa đủ thông tin<%= pre === 'company_bank' ? ' — đơn xuất VAT sẽ chưa hiện mã QR, khách được báo nhân viên gửi thông tin chuyển khoản' : '' %>.</p>
+        <% } %>
       <% } %>
     </section>
     <% }) %>

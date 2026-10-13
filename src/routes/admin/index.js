@@ -90,7 +90,12 @@ router.get('/don-hang', async (req, res) => {
 router.get('/don-hang/:id', async (req, res, next) => {
   const data = await loadOrder(req.params.id);
   if (!data) return next();
-  res.render('admin/order', { title: `Đơn ${data.order.code}`, ...data });
+  const payment = require('../../lib/payment');
+  const s = await settings.all();
+  res.render('admin/order', {
+    title: `Đơn ${data.order.code}`, ...data, payee: payment.accountForOrder(data.order, s),
+    companyReady: payment.isConfigured(payment.accountFromSettings('company', s)),
+  });
 });
 
 router.get('/don-hang/:id/in', async (req, res, next) => {
@@ -113,6 +118,26 @@ router.post('/don-hang/:id', async (req, res, next) => {
   require('../../lib/telegram-orders').refreshOrderMessage(r.order.id);
   flash(req, 'success', 'Đã cập nhật đơn hàng.');
   res.redirect(`/admin/don-hang/${r.order.id}`);
+});
+
+router.post('/don-hang/:id/tai-khoan', async (req, res, next) => {
+  const payment = require('../../lib/payment');
+  const order = await db('orders').where({ id: Number(req.params.id) }).first();
+  if (!order) return next();
+  const type = req.body.pay_account === 'company' ? 'company' : 'personal';
+  const acc = payment.accountFromSettings(type, await settings.all());
+  if (!payment.isConfigured(acc)) {
+    flash(req, 'error', `Chưa cài đặt đủ ${type === 'company' ? 'tài khoản công ty' : 'tài khoản bán lẻ'} trong Cài đặt.`);
+    return res.redirect(`/admin/don-hang/${order.id}`);
+  }
+  const label = type === 'company' ? 'Đổi sang TK công ty' : 'Đổi sang TK bán lẻ';
+  const log = [order.handled_log, `${require('../../lib/orders').logTime()} · ${label} · ${req.session.user.name}`]
+    .filter(Boolean)
+    .join('\n');
+  await db('orders').where({ id: order.id }).update({ ...payment.snapshot(acc), handled_log: log, updated_at: new Date() });
+  require('../../lib/telegram-orders').refreshOrderMessage(order.id);
+  flash(req, 'success', `${label}. Trang đơn của khách đã hiện mã QR mới — hãy gửi lại link đơn cho khách.`);
+  res.redirect(`/admin/don-hang/${order.id}`);
 });
 
 /* ---------- Báo giá doanh nghiệp ---------- */
@@ -153,10 +178,15 @@ const SETTING_GROUPS = [
   ['Kênh liên hệ', [
     ['fanpage_url', 'Link fanpage Facebook'], ['messenger_url', 'Link Messenger (m.me/...)'], ['zalo_url', 'Link Zalo (zalo.me/...)'],
   ]],
-  ['Chuyển khoản VietQR', [
-    ['bank_id', 'Mã ngân hàng (VD: VCB, TCB, MB, ACB, VPB)'], ['bank_name', 'Tên ngân hàng hiển thị'],
+  ['Tài khoản bán lẻ (cá nhân)', [
+    ['bank_id', 'Ngân hàng', 'bank'], ['bank_name', 'Tên ngân hàng hiển thị cho khách'],
     ['bank_account', 'Số tài khoản'], ['bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
-  ]],
+  ], 'qr:bank'],
+  ['Tài khoản công ty (đơn xuất hóa đơn VAT)', [
+    ['company_name', 'Tên công ty xuất hóa đơn'],
+    ['company_bank_id', 'Ngân hàng', 'bank'], ['company_bank_name', 'Tên ngân hàng hiển thị cho khách'],
+    ['company_bank_account', 'Số tài khoản'], ['company_bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
+  ], 'qr:company_bank'],
   ['Giao hàng', [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
@@ -168,7 +198,7 @@ const SETTING_GROUPS = [
 ];
 
 router.get('/cai-dat', async (req, res) => {
-  res.render('admin/settings', { title: 'Cài đặt', groups: SETTING_GROUPS, values: await settings.all() });
+  res.render('admin/settings', { title: 'Cài đặt', groups: SETTING_GROUPS, values: await settings.all(), banks: require('../../lib/payment').BANKS });
 });
 
 router.post('/cai-dat', async (req, res) => {

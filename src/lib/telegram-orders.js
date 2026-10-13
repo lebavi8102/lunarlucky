@@ -9,6 +9,7 @@ const db = require('../db');
 const notify = require('./notify');
 const settings = require('./settings');
 const { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder } = require('./orders');
+const payment = require('./payment');
 
 const e = notify.escapeTg;
 
@@ -36,6 +37,17 @@ function messageText(order, items) {
     order.payment_method === 'bank'
       ? `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
       : `💵 COD${order.payment_status === 'paid' ? ' · đã thu tiền' : ''}`;
+  let account = null;
+  if (order.payment_method === 'bank') {
+    const acc = payment.accountForOrder(order, {});
+    const isCompany = order.pay_account ? order.pay_account === 'company' : !!order.needs_vat;
+    account = isCompany
+      ? `🏢 Nhận tiền: <b>TK công ty</b>${acc.account ? ` · ${e(acc.bankName || acc.bankId)} ${payment.maskAccount(acc.account)}` : ' · <b>chưa cài đặt, cần gửi TK cho khách</b>'}`
+      : `💳 Nhận tiền: TK bán lẻ${acc.account ? ` · ${e(acc.bankName || acc.bankId)} ${payment.maskAccount(acc.account)}` : ''}`;
+  }
+  const vat = order.needs_vat
+    ? `🧾 <b>Xuất VAT:</b> ${e(order.vat_company)} · MST ${e(order.vat_tax_code)}\n    ${e(order.vat_address)} · ${e(order.vat_email)}`
+    : null;
   const log = String(order.handled_log || '')
     .split('\n')
     .filter(Boolean)
@@ -45,8 +57,10 @@ function messageText(order, items) {
   return [
     head,
     '',
+    vat,
     `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
     pay,
+    account,
     log ? `\n<i>Lịch sử xử lý</i>\n${log}` : null,
   ]
     .filter((x) => x !== null)

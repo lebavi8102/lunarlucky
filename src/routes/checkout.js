@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit');
 const db = require('../db');
 const cart = require('../lib/cart');
 const notify = require('../lib/notify');
-const { vietQrUrl } = require('../lib/vietqr');
+const payment = require('../lib/payment');
 const { Form } = require('../lib/validate');
 const { normalizePhone, todayVN } = require('../lib/format');
 const { flash } = require('../middleware/locals');
@@ -80,8 +80,28 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
   const card_message = f.text('card_message', { max: 300 });
   const note = f.text('note', { max: 500 });
-  const invoice_info = f.text('invoice_info', { max: 500 });
-  const payment_method = f.oneOf('payment_method', ['cod', 'bank'], 'bank');
+  // Xuất hóa đơn VAT → bắt buộc chuyển khoản vào tài khoản công ty
+  const needs_vat = f.bool('needs_vat');
+  let vat = {};
+  if (needs_vat) {
+    vat = {
+      vat_company: f.text('vat_company', { label: 'tên công ty', required: true, min: 3, max: 200 }),
+      vat_tax_code: f.text('vat_tax_code', { label: 'mã số thuế', required: true, max: 20 }).replace(/\s/g, ''),
+      vat_address: f.text('vat_address', { label: 'địa chỉ công ty', required: true, min: 6, max: 255 }),
+      vat_email: f.email('vat_email', { required: true }),
+    };
+    if (vat.vat_tax_code && !/^\d{10}(-?\d{3})?$/.test(vat.vat_tax_code)) {
+      f.errors.vat_tax_code = 'Mã số thuế gồm 10 số (hoặc 13 số với chi nhánh).';
+    }
+  }
+  let payment_method = f.oneOf('payment_method', ['cod', 'bank'], 'bank');
+  if (needs_vat && payment_method === 'cod') {
+    payment_method = 'bank';
+    f.values.payment_method = 'bank';
+  }
+  const invoice_info = needs_vat
+    ? `${vat.vat_company} · MST ${vat.vat_tax_code} · ${vat.vat_address} · ${vat.vat_email}`.slice(0, 500)
+    : null;
 
   if (priced.couponError) {
     c.coupon = null;
@@ -104,7 +124,10 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     user_id: req.session.user ? req.session.user.id : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date,
-    card_message: card_message || null, note: note || null, invoice_info: invoice_info || null,
+    card_message: card_message || null, note: note || null, invoice_info,
+    needs_vat, vat_company: vat.vat_company || null, vat_tax_code: vat.vat_tax_code || null,
+    vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,
+    ...payment.snapshot(payment.accountFromSettings(needs_vat ? 'company' : 'personal', res.locals.s)),
     payment_method, payment_status: 'pending', status: 'new',
     subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee, total: priced.total,
     coupon_code: priced.coupon ? priced.coupon.code : null,
@@ -171,17 +194,14 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
       to: order.email,
       subject: `Lunar Lucky đã nhận đơn hàng ${order.code}`,
       template: 'order-confirmation',
-      data: { order, items, s: res.locals.s, qr: qrFor(order, res.locals.s) },
+      data: { order, items, s: res.locals.s, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s) },
     });
   }
   res.redirect(`/don-hang/${order.code}?moi=1`);
 });
 
 function qrFor(order, s) {
-  if (order.payment_method !== 'bank') return null;
-  return vietQrUrl({
-    bankId: s.bank_id, account: s.bank_account, holder: s.bank_holder, amount: order.total, info: order.code,
-  });
+  return payment.qrForOrder(order, s);
 }
 
 router.get('/don-hang/:code', async (req, res, next) => {
@@ -196,7 +216,9 @@ router.get('/don-hang/:code', async (req, res, next) => {
   const items = await db('order_items').where({ order_id: order.id });
   res.locals.seo.title = `Đơn hàng ${order.code} · Lunar Lucky`;
   res.locals.seo.noindex = true;
-  res.render('shop/order', { order, items, qr: qrFor(order, res.locals.s), isNew: req.query.moi === '1' });
+  res.render('shop/order', {
+    order, items, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s), isNew: req.query.moi === '1',
+  });
 });
 
 router.get('/tra-cuu-don', (req, res) => {

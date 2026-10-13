@@ -20,15 +20,21 @@
     <div>
       <h2 id="pay-title" class="h3">Quét mã để thanh toán</h2>
       <p class="muted small" style="margin:6px 0 16px">Mở ứng dụng ngân hàng, quét mã QR. Số tiền và nội dung đã được điền sẵn.</p>
+      <% if (order.needs_vat) { %><div class="flash flash-info" style="margin:0 0 12px"><svg class="icon"><use href="#i-file"/></svg><span>Đơn xuất hóa đơn VAT: vui lòng chuyển khoản vào <b>tài khoản công ty</b> bên dưới<%= s.company_name ? ' (' + s.company_name + ')' : '' %>. Hóa đơn sẽ gửi về <b><%= order.vat_email %></b>.</span></div><% } %>
       <div class="bank-rows">
-        <div class="bank-row"><span>Ngân hàng</span><b><%= s.bank_name %></b></div>
-        <div class="bank-row"><span>Số tài khoản</span><span style="display:flex;gap:8px;align-items:center"><b><%= s.bank_account %></b><button type="button" class="copy-btn" data-copy="<%= s.bank_account %>" aria-label="Sao chép số tài khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
-        <div class="bank-row"><span>Chủ tài khoản</span><b><%= s.bank_holder %></b></div>
+        <div class="bank-row"><span>Ngân hàng</span><b><%= payee.bankName || payee.bankId %></b></div>
+        <div class="bank-row"><span>Số tài khoản</span><span style="display:flex;gap:8px;align-items:center"><b><%= payee.account %></b><button type="button" class="copy-btn" data-copy="<%= payee.account %>" aria-label="Sao chép số tài khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
+        <div class="bank-row"><span>Chủ tài khoản</span><b><%= payee.holder %></b></div>
         <div class="bank-row"><span>Số tiền</span><span style="display:flex;gap:8px;align-items:center"><b style="color:var(--lacquer-700)"><%= money(order.total) %></b><button type="button" class="copy-btn" data-copy="<%= order.total %>" aria-label="Sao chép số tiền"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
         <div class="bank-row"><span>Nội dung</span><span style="display:flex;gap:8px;align-items:center"><b><%= order.code %></b><button type="button" class="copy-btn" data-copy="<%= order.code %>" aria-label="Sao chép nội dung chuyển khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
       </div>
       <p class="small muted" style="margin-top:12px">Vui lòng giữ nguyên nội dung <b><%= order.code %></b> để Lunar Lucky đối soát nhanh.</p>
     </div>
+  </section>
+  <% } else if (needPay && order.needs_vat) { %>
+  <section class="card" style="border-color:var(--gold-500)">
+    <h2 class="h3">Thông tin chuyển khoản sẽ được gửi riêng</h2>
+    <p class="muted" style="margin-top:8px">Đơn xuất hóa đơn VAT được thanh toán vào tài khoản công ty. Lunar Lucky sẽ liên hệ qua số <b><%= order.phone %></b> hoặc email <b><%= order.vat_email %></b> để gửi thông tin chuyển khoản trong giờ làm việc.</p>
   </section>
   <% } %>
 
@@ -56,6 +62,7 @@
           <dt>Địa chỉ</dt><dd><%= order.address %>, <%= order.province %></dd>
         <% } %>
         <dt>Ngày giao</dt><dd><%= fmt.ymd(order.delivery_date) %></dd>
+        <% if (order.needs_vat) { %><dt>Hóa đơn VAT</dt><dd><%= order.vat_company %><br><span class="small muted">MST <%= order.vat_tax_code %> · gửi về <%= order.vat_email %></span></dd><% } %>
         <% if (order.card_message) { %><dt>Thiệp</dt><dd class="serif" style="font-size:19px;font-style:italic">“<%= order.card_message %>”</dd><% } %>
         <% if (order.note) { %><dt>Ghi chú</dt><dd><%= order.note %></dd><% } %>
       </dl>

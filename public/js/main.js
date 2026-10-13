@@ -173,6 +173,25 @@
     giftToggle.addEventListener('change', sync);
     sync();
   }
+  /* Checkout: xuất VAT → hiện form công ty, chỉ cho chuyển khoản */
+  const vatToggle = $('[data-vat-toggle]');
+  if (vatToggle) {
+    const fields = $('[data-vat-fields]');
+    const cod = $('[data-cod-option]');
+    const syncVat = () => {
+      const on = vatToggle.checked;
+      fields.hidden = !on;
+      $$('input', fields).forEach((i) => (i.required = on));
+      cod.hidden = on;
+      if (on) {
+        const codInput = $('input', cod);
+        if (codInput.checked) $('input[name=payment_method][value=bank]').checked = true;
+      }
+    };
+    vatToggle.addEventListener('change', syncVat);
+    syncVat();
+  }
+
   const checkout = $('[data-checkout]');
   if (checkout) {
     checkout.addEventListener('submit', () => {
