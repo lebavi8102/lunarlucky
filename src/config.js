@@ -89,7 +89,7 @@ module.exports = {
 
   // SePay: tự xác nhận chuyển khoản (đơn CK chỉ báo vào nhóm khi đã nhận tiền). Trống = xác nhận tay
   sepay: {
-    apiKey: process.env.SEPAY_API_KEY || '',
+    apiKey: String(process.env.SEPAY_API_KEY || '').trim(),
   },
 
   telegram: {
