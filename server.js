@@ -24,6 +24,10 @@ async function start() {
       .catch((err) => console.error('[telegram] không đăng ký được webhook:', err.message));
   });
 
+  // Render đứng sau proxy giữ kết nối lâu: để Node giữ lâu hơn proxy, tránh lỗi 502 ngắt quãng
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+
   const shutdown = () => {
     server.close(() => db.destroy().finally(() => process.exit(0)));
     setTimeout(() => process.exit(1), 8000).unref();
@@ -31,6 +35,9 @@ async function start() {
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
+
+// Một lỗi lẻ (mất mạng tới Telegram, email...) chỉ ghi log, không làm sập cả web
+process.on('unhandledRejection', (err) => console.error('[lỗi chưa xử lý]', err));
 
 start().catch((err) => {
   console.error('Không khởi động được server:', err);

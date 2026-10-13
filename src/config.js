@@ -64,6 +64,9 @@ module.exports = {
             database: required('DB_NAME', 'lunar'),
             charset: 'utf8mb4',
             dateStrings: false,
+            connectTimeout: 10000,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 10000,
             // Database cloud (Aiven, TiDB...) bắt buộc SSL. DB_SSL_CA: nội dung file ca.pem
             ssl:
               process.env.DB_SSL === 'true'

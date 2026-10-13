@@ -1,5 +1,6 @@
-# Gọi website mỗi 10 phút để Render (gói free) không "ngủ"
-# và database Aiven không bị tắt vì không hoạt động.
+# Giám sát website: kiểm tra web + database định kỳ.
+# Lỗi liên tục 3 lần → báo vào nhóm Telegram (nếu đã thêm secret TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+# và đánh dấu lần chạy thất bại → GitHub tự gửi email cho chủ repo.
 name: keep-alive
 
 on:
@@ -10,10 +11,31 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
-      - name: Ping website
+      - name: Kiểm tra website
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          check() {
+            for i in 1 2 3; do
+              code=$(curl -s -m 60 -o /dev/null -w "%{http_code}" "$1")
+              echo "$code $1 (lần $i)"
+              [ "$code" = "200" ] && return 0
+              sleep 20
+            done
+            return 1
+          }
+          failed=""
           for url in "https://lunarlucky.onrender.com/healthz?db=1" "https://lunarlucky.onrender.com/"; do
-            curl -fsS -m 90 -o /dev/null -w "%{http_code} %{time_total}s $url\n" "$url" || echo "lỗi: $url"
+            check "$url" || failed="$failed $url"
           done
+          if [ -n "$failed" ]; then
+            if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ]; then
+              curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+                --data-urlencode "chat_id=$TG_CHAT" \
+                --data-urlencode "text=⚠️ Website Lunar Lucky đang lỗi:$failed — kiểm tra Render/Aiven." > /dev/null
+            fi
+            exit 1
+          fi
