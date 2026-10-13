@@ -9,7 +9,8 @@
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "create-admin": "node scripts/create-admin.js",
-    "setup": "node scripts/migrate.js && node scripts/seed.js"
+    "setup": "node scripts/migrate.js && node scripts/seed.js",
+    "test": "node test/smoke.js"
   },
   "author": "",
   "license": "UNLICENSED",

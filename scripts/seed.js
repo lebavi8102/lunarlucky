@@ -167,7 +167,7 @@ async function seed({ reset = false, demo = true } = {}) {
       const image_id = await svg(art.productArt({ palette, composition, peach: cat === 'hop-qua-nho-xinh', id: `p${i}` }), `${slugify(name)}.svg`);
       const alt = await svg(art.productArt({ palette: palette === 'cream' ? 'lacquer' : 'cream', composition: composition === 'box' ? 'stack' : 'box', id: `pa${i}` }), `${slugify(name)}-2.svg`);
       await db('products').insert({
-        category_id: catIds[cat], name, slug: slugify(name), short_desc: short, price, compare_price: compare,
+        category_id: catIds[cat], name, slug: slugify(name), sku: `LL${String(i + 1).padStart(3, '0')}`, short_desc: short, price, compare_price: compare,
         stock: i === 2 ? 4 : 40 + i * 7, badge, image_id, gallery: JSON.stringify([alt]), is_featured: featured,
         contents: contents.join('\n'), sold: [86, 142, 12, 210, 64, 38, 175, 51, 33, 97, 44, 29][i], sort: i,
         description: `**${name}** là lời chúc được Lunar Lucky chuẩn bị tỉ mỉ cho mùa Tết.\n\n${short}\n\nMỗi giỏ quà được xếp tay, lót giấy lụa, thắt nơ và kèm thiệp chúc viết tay theo lời nhắn của bạn. Các sản phẩm đều có nguồn gốc rõ ràng, hạn sử dụng tối thiểu 3 tháng kể từ ngày giao.\n\n*Lưu ý: một số món có thể được thay bằng sản phẩm tương đương về giá trị tùy thời điểm.*`,

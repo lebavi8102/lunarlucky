@@ -188,7 +188,8 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   req.session.cart = { lines: [], coupon: null };
   rememberOrder(req, order.code);
 
-  require('../lib/telegram-orders').sendNewOrder(order, items);
+  const tgOrders = require('../lib/telegram-orders');
+  tgOrders.sendNewOrder(order, items).then(() => tgOrders.stockAlertsAfterOrder(items)).catch(() => {});
   if (order.email) {
     notify.sendMail({
       to: order.email,

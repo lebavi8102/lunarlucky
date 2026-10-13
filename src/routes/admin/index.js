@@ -191,6 +191,9 @@ const SETTING_GROUPS = [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
   ]],
+  ['Kho hàng', [
+    ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
+  ]],
   ['Trang chủ', [
     ['announcement', 'Dòng thông báo trên cùng'], ['hero_eyebrow', 'Dòng nhỏ trên tiêu đề'],
     ['hero_title', 'Tiêu đề lớn'], ['hero_subtitle', 'Mô tả dưới tiêu đề', 'textarea'],
@@ -272,11 +275,12 @@ const categoryOptions = async () =>
 router.use(
   resource({
     path: 'san-pham', table: 'products', title: 'Sản phẩm', singular: 'sản phẩm', titleField: 'name',
-    searchable: ['name', 'slug'],
+    searchable: ['name', 'slug', 'sku'],
     orderBy: [{ column: 'sort' }, { column: 'id', order: 'desc' }],
     viewUrl: (p) => `/san-pham/${p.slug}`,
     columns: [
       { key: 'image_id', label: '', format: 'image' },
+      { key: 'sku', label: 'Mã SP' },
       { key: 'name', label: 'Tên', format: 'title' },
       { key: 'category_id', label: 'Danh mục', format: 'lookup', lookup: 'categories' },
       { key: 'price', label: 'Giá', format: 'money' },
@@ -287,6 +291,7 @@ router.use(
     lookups: async () => ({ categories: Object.fromEntries((await db('categories')).map((c) => [c.id, c.name])) }),
     fields: [
       { name: 'name', label: 'Tên sản phẩm', type: 'text', required: true, max: 160 },
+      { name: 'sku', label: 'Mã SP', type: 'text', max: 40, help: 'Dùng cho lệnh kho trên Telegram, VD: /nhap LL001 20. Để trống để tự tạo.' },
       { name: 'slug', label: 'Đường dẫn (slug)', type: 'slug', help: 'Để trống để tự tạo từ tên.' },
       { name: 'category_id', label: 'Danh mục', type: 'select', options: categoryOptions, numeric: true },
       { name: 'price', label: 'Giá bán (₫)', type: 'money', required: true },
@@ -304,8 +309,15 @@ router.use(
       { name: 'seo_title', label: 'Tiêu đề SEO', type: 'text', max: 180 },
       { name: 'seo_desc', label: 'Mô tả SEO', type: 'textarea', max: 300 },
     ],
-    validate: (v) => {
+    validate: async (v, existing) => {
       const e = {};
+      if (v.sku) {
+        v.sku = String(v.sku).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        const dup = await db('products').where({ sku: v.sku }).modify((q) => existing && q.whereNot({ id: existing.id })).first();
+        if (dup) e.sku = `Mã ${v.sku} đã dùng cho "${dup.name}".`;
+      } else {
+        v.sku = (existing && existing.sku) || (await require('../../lib/inventory').nextSku());
+      }
       if (v.price != null && v.price < 0) e.price = 'Giá không hợp lệ.';
       if (v.stock == null) v.stock = 0;
       if (v.sort == null) v.sort = 0;
