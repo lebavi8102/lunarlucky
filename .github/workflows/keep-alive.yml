@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+    inputs:
+      test_telegram:
+        description: 'Gửi tin thử vào nhóm Telegram'
+        type: boolean
+        default: false
 
 jobs:
   ping:
@@ -17,7 +22,13 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEST_TG: ${{ inputs.test_telegram }}
         run: |
+          if [ "$TEST_TG" = "true" ]; then
+            [ -z "$TG_TOKEN" ] && echo "Thiếu secret TELEGRAM_BOT_TOKEN" && exit 1
+            [ -z "$TG_CHAT" ] && echo "Thiếu secret TELEGRAM_CHAT_ID" && exit 1
+            curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage"               --data-urlencode "chat_id=$TG_CHAT"               --data-urlencode "text=✅ Thử báo lỗi: giám sát website Lunar Lucky đã kết nối nhóm. Khi web lỗi, tin cảnh báo sẽ gửi vào đây."               | grep -q '"ok":true' && echo "Đã gửi tin thử" || { echo "Telegram từ chối — kiểm tra token/mã nhóm"; exit 1; }
+          fi
           check() {
             for i in 1 2 3; do
               code=$(curl -s -m 60 -o /dev/null -w "%{http_code}" "$1")
