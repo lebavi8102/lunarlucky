@@ -2,24 +2,31 @@
 <% const steps = [['new','Đã đặt'],['confirmed','Xác nhận'],['packing','Đóng gói'],['shipping','Đang giao'],['completed','Hoàn tất']];
    const idx = steps.findIndex(x => x[0] === order.status);
    const cancelled = order.status === 'cancelled';
-   const needPay = order.payment_method === 'bank' && order.payment_status === 'pending' && !cancelled; %>
+   const needPay = order.payment_method === 'bank' && order.payment_status === 'pending' && !cancelled;
+   const codQr = order.payment_method === 'cod' && order.payment_status === 'pending' && !cancelled && qr;
+   const justPaid = order.payment_status === 'paid' && !cancelled && order.status === 'new'; %>
 <div class="container" style="max-width:920px">
   <div class="order-hero">
     <div class="seal"><svg class="icon"><use href="#i-<%= cancelled ? 'x' : 'check' %>"/></svg></div>
     <span class="eyebrow center"><%= isNew ? 'Đặt hàng thành công' : 'Chi tiết đơn hàng' %></span>
     <h1 class="h2" style="margin-top:12px"><%= isNew ? `Cảm ơn ${order.customer_name}!` : (cancelled ? 'Đơn hàng đã hủy' : 'Đơn quà của bạn') %></h1>
-    <% if (isNew) { %><p class="lead" style="margin:16px auto 0">Lunar Lucky sẽ gọi xác nhận trong giờ làm việc. <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
+    <% if (isNew) { %><p class="lead" style="margin:16px auto 0"><%= needPay ? 'Đơn sẽ được chuẩn bị và giao ngay khi Lunar Lucky nhận được chuyển khoản.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %> <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
     <div class="order-code">Mã đơn: <span data-copy-text><%= order.code %></span>
       <button type="button" class="copy-btn" data-copy="<%= order.code %>"><svg class="icon icon-sm"><use href="#i-copy"/></svg> Sao chép</button>
     </div>
   </div>
 
-  <% if (needPay && qr) { %>
-  <section class="qr-card" aria-labelledby="pay-title">
+  <% if (justPaid) { %>
+  <div class="flash flash-success" role="status" style="margin-bottom:24px"><svg class="icon"><use href="#i-check"/></svg><span><b>Đã nhận thanh toán <%= money(order.total) %>.</b> Lunar Lucky đang chuẩn bị đơn quà của bạn.</span></div>
+  <% } %>
+
+  <% if ((needPay || codQr) && qr) { %>
+  <section class="qr-card" aria-labelledby="pay-title" <% if (autoConfirm) { %>data-pay-poll="/don-hang/<%= order.code %>/thanh-toan"<% } %>>
     <img src="<%= qr %>" alt="Mã VietQR chuyển khoản <%= money(order.total) %> cho đơn <%= order.code %>" width="260" height="300">
     <div>
-      <h2 id="pay-title" class="h3">Quét mã để thanh toán</h2>
-      <p class="muted small" style="margin:6px 0 16px">Mở ứng dụng ngân hàng, quét mã QR. Số tiền và nội dung đã được điền sẵn.</p>
+      <h2 id="pay-title" class="h3"><%= codQr ? 'Muốn chuyển khoản trước?' : 'Quét mã để thanh toán' %></h2>
+      <p class="muted small" style="margin:6px 0 16px"><%= codQr ? 'Không bắt buộc — đơn của bạn trả tiền mặt khi nhận hàng. Nếu muốn chuyển khoản trước, quét mã bên dưới.' : 'Mở ứng dụng ngân hàng, quét mã QR. Số tiền và nội dung đã được điền sẵn.' %></p>
+      <% if (needPay && autoConfirm) { %><div class="flash flash-info" style="margin:0 0 12px" data-pay-wait><svg class="icon"><use href="#i-clock"/></svg><span><b>Đang chờ thanh toán…</b> Trang tự cập nhật khi nhận được tiền (thường dưới 1 phút). Đơn được giữ hàng trong <%= holdHours %> giờ.</span></div><% } %>
       <% if (order.needs_vat) { %><div class="flash flash-info" style="margin:0 0 12px"><svg class="icon"><use href="#i-file"/></svg><span>Đơn xuất hóa đơn VAT: số tiền bên dưới đã gồm phí xuất hóa đơn. Hóa đơn điện tử sẽ gửi về <b><%= order.vat_email %></b>.<% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %></span></div><% } %>
       <div class="bank-rows">
         <div class="bank-row"><span>Ngân hàng</span><b><%= payee.bankName || payee.bankId %></b></div>

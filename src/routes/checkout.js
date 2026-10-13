@@ -5,6 +5,7 @@ const db = require('../db');
 const cart = require('../lib/cart');
 const notify = require('../lib/notify');
 const payment = require('../lib/payment');
+const bankPayments = require('../lib/bank-payments');
 const { Form } = require('../lib/validate');
 const { normalizePhone, todayVN } = require('../lib/format');
 const { flash } = require('../middleware/locals');
@@ -192,7 +193,11 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   rememberOrder(req, order.code);
 
   const tgOrders = require('../lib/telegram-orders');
-  tgOrders.sendNewOrder(order, items).then(() => tgOrders.stockAlertsAfterOrder(items)).catch(() => {});
+  // Đơn chuyển khoản (đã bật tự xác nhận) chỉ báo nhóm khi nhận được tiền; COD báo ngay
+  const holdForPayment = order.payment_method === 'bank' && require('../lib/bank-payments').enabled();
+  (holdForPayment ? Promise.resolve() : tgOrders.sendNewOrder(order, items))
+    .then(() => tgOrders.stockAlertsAfterOrder(items))
+    .catch(() => {});
   if (order.email) {
     notify.sendMail({
       to: order.email,
@@ -208,20 +213,29 @@ function qrFor(order, s) {
   return payment.qrForOrder(order, s);
 }
 
+function canView(req, order) {
+  const u = req.session.user;
+  return (req.session.myOrders || []).includes(order.code) || (u && (u.role === 'admin' || u.id === order.user_id));
+}
+
+// Trang đơn hỏi định kỳ: đã nhận tiền chưa? (để tự chuyển sang "Đã thanh toán")
+router.get('/don-hang/:code/thanh-toan', async (req, res) => {
+  const order = await db('orders').where({ code: String(req.params.code).toUpperCase() }).first();
+  if (!order || !canView(req, order)) return res.status(404).json({});
+  res.set('Cache-Control', 'no-store').json({ paid: order.payment_status === 'paid', cancelled: order.status === 'cancelled' });
+});
+
 router.get('/don-hang/:code', async (req, res, next) => {
   const code = String(req.params.code).toUpperCase();
   const order = await db('orders').where({ code }).first();
   if (!order) return next();
-  const u = req.session.user;
-  const allowed =
-    (req.session.myOrders || []).includes(code) ||
-    (u && (u.role === 'admin' || u.id === order.user_id));
-  if (!allowed) return res.redirect(`/tra-cuu-don?ma=${encodeURIComponent(code)}`);
+  if (!canView(req, order)) return res.redirect(`/tra-cuu-don?ma=${encodeURIComponent(code)}`);
   const items = await db('order_items').where({ order_id: order.id });
   res.locals.seo.title = `Đơn hàng ${order.code} · Lunar Lucky`;
   res.locals.seo.noindex = true;
   res.render('shop/order', {
     order, items, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s), isNew: req.query.moi === '1',
+    autoConfirm: bankPayments.enabled(), holdHours: bankPayments.holdHours(res.locals.s),
   });
 });
 

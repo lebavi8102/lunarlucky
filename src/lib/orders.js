@@ -57,6 +57,8 @@ async function updateOrder(id, changes, { by } = {}) {
 
   const update = { status, payment_status, handled_log: log || null, updated_at: new Date() };
   if (changes.admin_note !== undefined) update.admin_note = changes.admin_note;
+  const becamePaid = payment_status === 'paid' && order.payment_status !== 'paid';
+  if (becamePaid) update.paid_at = new Date();
 
   await db.transaction(async (trx) => {
     const goingCancelled = status === 'cancelled' && order.status !== 'cancelled';
@@ -80,6 +82,10 @@ async function updateOrder(id, changes, { by } = {}) {
       template: 'order-status',
       data: { order: { ...order, status }, statusLabel: ORDER_STATUS[status], s: await settings.all() },
     });
+  }
+  // Đã nhận tiền: đơn chuyển khoản chưa báo nhóm thì giờ mới báo "ĐƠN MỚI"
+  if (becamePaid) {
+    await require('./bank-payments').afterPaid(order.id).catch((err) => console.error('[thanh toán] báo nhóm lỗi:', err.message));
   }
   return { before: order, order: { ...order, ...update }, items, changed: events.length > 0 };
 }

@@ -182,7 +182,8 @@ const SETTING_GROUPS = [
     ['bank_id', 'Ngân hàng', 'bank'], ['bank_name', 'Tên ngân hàng hiển thị cho khách'],
     ['bank_account', 'Số tài khoản'], ['bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
   ], 'qr:bank'],
-  ['Hóa đơn VAT', [
+  ['Thanh toán & hóa đơn VAT', [
+    ['payment_hold_hours', 'Giữ hàng cho đơn chuyển khoản chưa trả tiền (giờ) — quá hạn tự hủy, trả lại kho. Chỉ áp dụng khi đã nối SePay'],
     ['vat_fee_percent', 'Phí xuất hóa đơn VAT khách chịu (%) — cộng vào tổng đơn, VD: 11. Tiền thu vào tài khoản bán lẻ ở trên'],
   ]],
   ['Giao hàng', [

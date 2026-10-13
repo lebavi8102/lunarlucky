@@ -87,6 +87,19 @@ app.post('/telegram/webhook', (req, res) => {
   tg.handleUpdate(req.body || {}).catch((err) => console.error('[telegram] webhook lỗi:', err.message));
 });
 
+// Webhook SePay: báo tiền vào tài khoản → tự xác nhận đơn chuyển khoản. Đặt trước session/CSRF.
+app.post('/thanh-toan/sepay-webhook', async (req, res) => {
+  const bank = require('./lib/bank-payments');
+  if (!bank.authorized(req)) return res.status(401).json({ success: false });
+  try {
+    const r = await bank.handleSepay(req.body || {});
+    res.status(200).json({ success: true, result: r.result });
+  } catch (err) {
+    console.error('[sepay] webhook lỗi:', err.message);
+    res.status(500).json({ success: false }); // SePay sẽ gửi lại
+  }
+});
+
 app.use(
   session({
     name: 'lunar.sid',

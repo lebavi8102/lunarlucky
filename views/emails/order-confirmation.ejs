@@ -1,12 +1,12 @@
 <%- include('_layout-top') %>
 <h1 style="font-family:Georgia,serif;font-weight:normal;font-size:26px;margin:0 0 8px">Cảm ơn <%= order.customer_name %>!</h1>
-<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar Lucky đã nhận đơn quà <b><%= order.code %></b> và sẽ gọi xác nhận trong giờ làm việc.</p>
+<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar Lucky đã nhận đơn quà <b><%= order.code %></b>. <%= order.payment_method === 'bank' ? 'Đơn sẽ được chuẩn bị và giao ngay khi nhận được chuyển khoản.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %></p>
 
 <% if (qr) { %>
 <table role="presentation" width="100%" style="border:1px solid #c9a15a;border-radius:10px;margin-bottom:24px"><tr>
 <td style="padding:16px;text-align:center" width="200"><img src="<%= qr %>" width="180" alt="Mã VietQR" style="display:block;margin:auto"></td>
 <td style="padding:16px;font-size:14px;line-height:1.8">
-  <b>Chuyển khoản để hoàn tất đơn</b><br>
+  <b><%= order.payment_method === 'bank' ? 'Chuyển khoản để hoàn tất đơn' : 'Muốn chuyển khoản trước thay vì trả tiền mặt? (không bắt buộc)' %></b><br>
   <% if (order.needs_vat) { %>Đơn xuất hóa đơn VAT — số tiền đã gồm phí xuất hóa đơn. Cần chuyển vào tài khoản công ty xuất hóa đơn? Nhắn Zalo Lunar Lucky<% if (typeof s !== "undefined" && s.zalo_url) { %>: <a href="<%= s.zalo_url %>"><%= s.zalo_url %></a><% } %><br><% } %>
   Ngân hàng: <%= payee.bankName || payee.bankId %><br>
   Số TK: <b><%= payee.account %></b><br>

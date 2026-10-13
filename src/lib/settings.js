@@ -28,6 +28,7 @@ const DEFAULTS = {
   company_bank_account: '',
   company_bank_holder: '',
   vat_fee_percent: '11',
+  payment_hold_hours: '24',
   shipping_fee: '35000',
   free_ship_threshold: '1500000',
   min_delivery_days: '1',

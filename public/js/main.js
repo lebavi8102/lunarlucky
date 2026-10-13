@@ -210,6 +210,24 @@
   }
   $('[data-focus-on-load]')?.focus();
 
+  /* Trang đơn: tự kiểm tra đã nhận chuyển khoản chưa (SePay báo về) → tải lại để hiện "Đã thanh toán" */
+  const poll = $('[data-pay-poll]');
+  if (poll) {
+    const started = Date.now();
+    const tick = async () => {
+      if (Date.now() - started > 30 * 60000) return; // dừng sau 30 phút
+      if (!document.hidden) {
+        try {
+          const r = await fetch(poll.dataset.payPoll, { headers: { accept: 'application/json' }, cache: 'no-store' });
+          const d = await r.json();
+          if (d.paid || d.cancelled) return location.reload();
+        } catch { /* mạng chập chờn: thử lại lần sau */ }
+      }
+      setTimeout(tick, 5000);
+    };
+    setTimeout(tick, 5000);
+  }
+
   /* Sao chép */
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-copy]');

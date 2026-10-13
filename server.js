@@ -22,6 +22,7 @@ async function start() {
       .ensureWebhook()
       .then((r) => r.ok && console.log('[telegram] webhook:', r.url))
       .catch((err) => console.error('[telegram] không đăng ký được webhook:', err.message));
+    require('./src/lib/bank-payments').startExpiryTimer();
   });
 
   // Render đứng sau proxy giữ kết nối lâu: để Node giữ lâu hơn proxy, tránh lỗi 502 ngắt quãng

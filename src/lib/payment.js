@@ -54,7 +54,7 @@ function accountForOrder(order, s) {
 }
 
 function qrForOrder(order, s) {
-  if (order.payment_method !== 'bank') return null;
+  // Cả đơn COD cũng có QR: khách đổi ý muốn chuyển khoản trước vẫn quét được
   const acc = accountForOrder(order, s);
   if (!isConfigured(acc)) return null;
   return vietQrUrl({ bankId: acc.bankId, account: acc.account, holder: acc.holder, amount: order.total, info: order.code });

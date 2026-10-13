@@ -87,6 +87,11 @@ module.exports = {
     from: process.env.MAIL_FROM || 'Lunar Lucky <no-reply@lunarlucky.vn>',
   },
 
+  // SePay: tự xác nhận chuyển khoản (đơn CK chỉ báo vào nhóm khi đã nhận tiền). Trống = xác nhận tay
+  sepay: {
+    apiKey: process.env.SEPAY_API_KEY || '',
+  },
+
   telegram: {
     token: process.env.TELEGRAM_BOT_TOKEN,
     chatId: process.env.TELEGRAM_CHAT_ID,
