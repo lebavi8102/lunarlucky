@@ -68,9 +68,11 @@
           <svg class="icon"><use href="#i-file"/></svg>
           <span>
             <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị cung cấp<%= s.company_name ? ' ' + s.company_name : '' %>.
-            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> tính trên tổng giá trị đơn (tiền hàng sau giảm giá + phí giao),
-            khoản phí này <b>được cộng vào tổng thanh toán</b> (xem phần Tổng cộng).
-            Đơn xuất VAT thanh toán bằng chuyển khoản vào tài khoản công ty; hóa đơn điện tử gửi về email bạn cung cấp.
+            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> trên giá trị đơn (tiền hàng sau giảm giá + phí giao).
+            Phí này <b>đã được cộng vào số tiền cần thanh toán</b>.
+            Đơn xuất VAT thanh toán bằng chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.
+            <% const vf = Math.round(cart.total * vatPercent / 100); %>
+            <span style="display:block;margin-top:8px">Giá trị đơn <%= money(cart.total) %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
           </span>
         </div>
         <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">

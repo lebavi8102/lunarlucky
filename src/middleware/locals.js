@@ -3,6 +3,25 @@ const settings = require('../lib/settings');
 const fmt = require('../lib/format');
 const { cartCount } = require('../lib/cart');
 
+/**
+ * Mã phiên bản file tĩnh = hash nội dung CSS/JS lúc khởi động.
+ * Đổi code → mã đổi → trình duyệt (nhất là điện thoại) tải bản mới thay vì dùng bản cũ trong bộ nhớ đệm.
+ */
+const ASSET_VERSION = (() => {
+  const fs = require('fs');
+  const path = require('path');
+  const h = require('crypto').createHash('sha1');
+  for (const dir of ['css', 'js']) {
+    const abs = path.join(__dirname, '../../public', dir);
+    for (const f of fs.readdirSync(abs).sort()) h.update(fs.readFileSync(path.join(abs, f)));
+  }
+  return h.digest('hex').slice(0, 10);
+})();
+
+function asset(p) {
+  return `${p}?v=${ASSET_VERSION}`;
+}
+
 function img(id, fallback = '/img/placeholder.svg') {
   return id ? `/media/${id}` : fallback;
 }
@@ -14,6 +33,7 @@ module.exports = async function locals(req, res, next) {
   res.locals.fmt = fmt;
   res.locals.money = fmt.money;
   res.locals.img = img;
+  res.locals.asset = asset;
   res.locals.siteUrl = config.siteUrl;
   res.locals.path = req.path;
   res.locals.user = req.session.user || null;
