@@ -70,16 +70,33 @@ async function telegramChatId() {
 }
 
 /** Gửi tin; trả về message Telegram (có message_id) hoặc false nếu chưa cấu hình/lỗi. */
+/**
+ * extra.topic: 'order' (mặc định) | 'stock' — gửi vào đúng chủ đề (Topics) của nhóm nếu đã chọn bằng /chondon, /chonkho.
+ */
 async function telegram(html, chatIdOverride, extra = {}) {
   const chatId = chatIdOverride || (await telegramChatId());
+  const { topic = 'order', ...rest } = extra;
+  extra = rest;
+  if (!chatIdOverride && extra.message_thread_id === undefined) {
+    const thread = (await require('./settings').all())[`telegram_${topic}_thread`];
+    if (thread) extra.message_thread_id = Number(thread);
+  }
   if (!config.telegram.token || !chatId) {
     console.log('[telegram] (chưa cấu hình)\n' + html.replace(/<[^>]+>/g, ''));
     return false;
   }
   try {
-    return await tgApi('sendMessage', {
-      chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...extra,
-    });
+    const send = (x) => tgApi('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...x });
+    try {
+      return await send(extra);
+    } catch (err) {
+      // Chủ đề đã bị xóa/đóng → gửi vào nhóm chung để không mất tin
+      if (extra.message_thread_id && /thread|topic/i.test(err.message)) {
+        const { message_thread_id, ...noThread } = extra;
+        return await send(noThread);
+      }
+      throw err;
+    }
   } catch (err) {
     console.error('[telegram] gửi thất bại:', err.message);
     if (chatIdOverride) throw err;

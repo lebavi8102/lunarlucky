@@ -9,6 +9,8 @@ const DEFAULTS = {
   telegram_chat_id: '',
   telegram_seen_chats: '',
   low_stock_threshold: '5',
+  telegram_order_thread: '',
+  telegram_stock_thread: '',
   shop_tagline: 'Luxury Gifts & Hampers',
   shop_phone: '096 900 09 10',
   shop_email: 'hello@lunarlucky.vn',

@@ -245,7 +245,8 @@ router.post('/telegram/chon', async (req, res) => {
     flash(req, 'error', 'Chat ID không hợp lệ.');
     return res.redirect('/admin/telegram');
   }
-  await settings.save({ telegram_chat_id: id });
+  const prev = String(await notify.telegramChatId());
+  await settings.save(prev === id ? { telegram_chat_id: id } : { telegram_chat_id: id, telegram_order_thread: '', telegram_stock_thread: '' });
   try {
     await require('../../lib/telegram-orders').ensureWebhook();
     await notify.telegram('✅ <b>Lunar Lucky</b> đã kết nối. Từ giờ đơn hàng mới và yêu cầu báo giá sẽ được báo tại đây.', id);
