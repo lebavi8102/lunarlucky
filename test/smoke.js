@@ -95,7 +95,19 @@ async function addToCart(c, slug, qty = 1) {
     province: 'Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Công ty TNHH Thử',
     vat_tax_code: '0101234567', vat_address: '1 Tràng Tiền, Hà Nội', vat_email: 'kt@thu.vn', payment_method: 'cod' } });
   ok(vat.status === 302, 'Đặt đơn VAT (chọn COD vẫn được chuyển sang chuyển khoản)');
-  ok(/Hóa đơn VAT|tài khoản công ty/.test((await c3(vat.location)).text), 'Trang đơn VAT ghi rõ thanh toán TK công ty');
+  const vatPage = (await c3(vat.location)).text;
+  ok(/Hóa đơn VAT|tài khoản công ty/.test(vatPage), 'Trang đơn VAT ghi rõ thanh toán TK công ty');
+  const num = (s) => Number(String(s).replace(/[^\d]/g, ''));
+  const sub = num((vatPage.match(/Tạm tính<\/span><span>([\d.]+)₫/) || [])[1]);
+  const ship = /Phí giao hàng<\/span><span>Miễn phí/.test(vatPage) ? 0 : num((vatPage.match(/Phí giao hàng<\/span><span>([\d.]+)₫/) || [])[1]);
+  const fee = num((vatPage.match(/Phí xuất hóa đơn VAT[^<]*<\/span><span>([\d.]+)₫/) || [])[1]);
+  const total = num((vatPage.match(/Tổng cộng<\/span><span>([\d.]+)₫/) || [])[1]);
+  ok(fee === Math.round((sub + ship) * 0.11) && total === sub + ship + fee,
+    `Đơn VAT cộng phí 11%: ${sub} + ${ship} + ${fee} = ${total}`);
+  await addToCart(c3, 'gio-an-khang', 1);
+  const ck = (await c3('/thanh-toan')).text;
+  ok(/Về hóa đơn VAT/.test(ck) && /data-with-vat="\d+"/.test(ck), 'Trang thanh toán có mục giải thích phí VAT + tổng đã cộng phí');
+  ok(!/Phí xuất hóa đơn VAT[^<]*<\/span><span>[\d.]+₫/.test(orderPage.text), 'Đơn bán lẻ không có phí VAT');
 
   // 7. Báo giá doanh nghiệp
   const biz = await c2('/qua-tang-doanh-nghiep');

@@ -62,8 +62,17 @@
         <legend><span class="num">4</span> Thanh toán</legend>
         <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
           <input type="checkbox" name="needs_vat" value="1" <%= values.needs_vat ? 'checked' : '' %> data-vat-toggle>
-          <span><b>Tôi cần xuất hóa đơn VAT</b><br><span class="small muted">Dành cho doanh nghiệp. Đơn xuất VAT thanh toán bằng chuyển khoản vào tài khoản công ty<%= s.company_name ? ' ' + s.company_name : '' %>.</span></span>
+          <span><b>Tôi cần xuất hóa đơn VAT</b> <span class="small muted">(+<%= vatPercent %>% phí xuất hóa đơn)</span><br><span class="small muted">Dành cho doanh nghiệp, thanh toán bằng chuyển khoản.</span></span>
         </label>
+        <div class="flash flash-info" data-vat-notice <%= values.needs_vat ? '' : 'hidden' %> style="margin:0 0 16px">
+          <svg class="icon"><use href="#i-file"/></svg>
+          <span>
+            <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị cung cấp<%= s.company_name ? ' ' + s.company_name : '' %>.
+            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> tính trên tổng giá trị đơn (tiền hàng sau giảm giá + phí giao),
+            khoản phí này <b>được cộng vào tổng thanh toán</b> (xem phần Tổng cộng).
+            Đơn xuất VAT thanh toán bằng chuyển khoản vào tài khoản công ty; hóa đơn điện tử gửi về email bạn cung cấp.
+          </span>
+        </div>
         <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">
           <%- include('../partials/field', { name: 'vat_company', label: 'Tên công ty', autocomplete: 'organization', maxlength: 200 }) %>
           <div class="grid-2" style="margin-top:16px">
@@ -101,7 +110,9 @@
       <div class="sum-row"><span>Tạm tính</span><span><%= money(cart.subtotal) %></span></div>
       <% if (cart.discount) { %><div class="sum-row"><span>Mã <%= cart.coupon.code %></span><span class="disc">−<%= money(cart.discount) %></span></div><% } %>
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
-      <div class="sum-row total"><span>Tổng cộng</span><span><%= money(cart.total) %></span></div>
+      <% const vatFeePreview = Math.round(cart.total * vatPercent / 100); %>
+      <div class="sum-row" data-vat-row <%= values.needs_vat ? '' : 'hidden' %>><span>Phí xuất hóa đơn VAT (<%= vatPercent %>%)</span><span><%= money(vatFeePreview) %></span></div>
+      <div class="sum-row total"><span>Tổng cộng</span><span data-total data-base="<%= cart.total %>" data-with-vat="<%= cart.total + vatFeePreview %>"><%= money(values.needs_vat ? cart.total + vatFeePreview : cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
       <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>
     </aside>

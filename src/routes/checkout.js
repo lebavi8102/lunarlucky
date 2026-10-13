@@ -49,7 +49,7 @@ router.get('/thanh-toan', async (req, res) => {
   res.locals.seo.noindex = true;
   const minDays = Number(res.locals.s.min_delivery_days) || 1;
   res.render('shop/checkout', {
-    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: PROVINCES,
+    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
     minDate: todayVN(minDays), maxDate: todayVN(180),
   });
 });
@@ -114,7 +114,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     res.locals.seo.title = 'Thanh toán · Lunar Lucky';
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
-      cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES,
+      cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
       minDate: todayVN(minDays), maxDate: todayVN(180),
     });
   }
@@ -129,7 +129,10 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,
     ...payment.snapshot(payment.accountFromSettings(needs_vat ? 'company' : 'personal', res.locals.s)),
     payment_method, payment_status: 'pending', status: 'new',
-    subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee, total: priced.total,
+    subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee,
+    vat_fee: needs_vat ? payment.vatFee(priced.total, res.locals.s) : 0,
+    vat_fee_percent: needs_vat ? payment.vatFeePercent(res.locals.s) : null,
+    total: priced.total + (needs_vat ? payment.vatFee(priced.total, res.locals.s) : 0),
     coupon_code: priced.coupon ? priced.coupon.code : null,
   };
   const items = priced.lines.map((l) => ({

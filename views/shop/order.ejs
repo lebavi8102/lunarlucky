@@ -77,6 +77,7 @@
       <div class="sum-row"><span>Tạm tính</span><span><%= money(order.subtotal) %></span></div>
       <% if (order.discount) { %><div class="sum-row"><span>Giảm giá (<%= order.coupon_code %>)</span><span class="disc">−<%= money(order.discount) %></span></div><% } %>
       <div class="sum-row"><span>Phí giao hàng</span><span><%= order.shipping_fee ? money(order.shipping_fee) : 'Miễn phí' %></span></div>
+      <% if (order.vat_fee) { %><div class="sum-row"><span>Phí xuất hóa đơn VAT<%= order.vat_fee_percent ? ' (' + Number(order.vat_fee_percent) + '%)' : '' %></span><span><%= money(order.vat_fee) %></span></div><% } %>
       <div class="sum-row total"><span>Tổng cộng</span><span><%= money(order.total) %></span></div>
     </section>
   </div>

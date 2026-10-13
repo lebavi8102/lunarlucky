@@ -66,4 +66,15 @@ function maskAccount(no) {
   return s.length > 4 ? `****${s.slice(-4)}` : s;
 }
 
-module.exports = { BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };
+/** Phí xuất hóa đơn VAT khách chịu: % × (tiền hàng − giảm giá + phí giao). */
+function vatFeePercent(s) {
+  const raw = String(s.vat_fee_percent ?? '').trim().replace(',', '.');
+  if (!raw) return 11;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : 11;
+}
+function vatFee(baseTotal, s) {
+  return Math.round((Number(baseTotal) || 0) * vatFeePercent(s) / 100);
+}
+
+module.exports = { vatFeePercent, vatFee, BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };

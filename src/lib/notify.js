@@ -144,6 +144,7 @@ function orderTelegram(order, items) {
     '',
     order.discount ? `Giảm giá (${e(order.coupon_code)}): −${money(order.discount)}` : null,
     `Phí giao: ${money(order.shipping_fee)}`,
+    order.vat_fee ? `Phí xuất VAT${order.vat_fee_percent ? ` (${Number(order.vat_fee_percent)}%)` : ''}: ${money(order.vat_fee)}` : null,
     `<b>Tổng: ${money(order.total)}</b> · ${order.payment_method === 'bank' ? 'Chuyển khoản' : 'COD'}`,
     order.card_message ? `💌 Thiệp: “${e(order.card_message)}”` : null,
     order.note ? `📝 ${e(order.note)}` : null,

@@ -183,6 +183,15 @@
       fields.hidden = !on;
       $$('input', fields).forEach((i) => (i.required = on));
       cod.hidden = on;
+      const notice = $('[data-vat-notice]');
+      const row = $('[data-vat-row]');
+      const total = $('[data-total]');
+      if (notice) notice.hidden = !on;
+      if (row) row.hidden = !on;
+      if (total) {
+        const v = Number(on ? total.dataset.withVat : total.dataset.base);
+        total.textContent = new Intl.NumberFormat('vi-VN').format(v) + '₫';
+      }
       if (on) {
         const codInput = $('input', cod);
         if (codInput.checked) $('input[name=payment_method][value=bank]').checked = true;

@@ -186,6 +186,7 @@ const SETTING_GROUPS = [
     ['company_name', 'Tên công ty xuất hóa đơn'],
     ['company_bank_id', 'Ngân hàng', 'bank'], ['company_bank_name', 'Tên ngân hàng hiển thị cho khách'],
     ['company_bank_account', 'Số tài khoản'], ['company_bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
+    ['vat_fee_percent', 'Phí xuất hóa đơn VAT khách chịu (%) — cộng vào tổng đơn, VD: 11'],
   ], 'qr:company_bank'],
   ['Giao hàng', [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
