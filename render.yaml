@@ -1,10 +1,10 @@
-# Cấu hình deploy Lunar Lucky lên Render (gói Free).
+# Cấu hình deploy Lunar Lucky lên Render (gói Starter ~7 USD/tháng — không "ngủ"; sau Tết có thể đổi lại free).
 # Render đọc file này khi tạo "Blueprint" từ repo GitHub.
 services:
   - type: web
     name: lunarlucky
     runtime: node
-    plan: free
+    plan: starter
     region: singapore
     branch: main
     buildCommand: npm ci --omit=optional
