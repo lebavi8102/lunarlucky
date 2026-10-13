@@ -1,7 +1,7 @@
 /**
- * Chọn tài khoản nhận tiền cho đơn:
- * - Đơn cần xuất hóa đơn VAT → tài khoản công ty (đúng pháp nhân xuất hóa đơn)
- * - Đơn bán lẻ → tài khoản cá nhân
+ * Tài khoản nhận tiền cho đơn: mọi đơn (kể cả đơn xuất VAT) thu vào tài khoản cá nhân,
+ * shop tự thanh toán cho đơn vị xuất hóa đơn → không lộ thông tin công ty trên web.
+ * (Vẫn giữ loại 'company' để đơn cũ đã lưu TK công ty hiển thị đúng.)
  */
 const { vietQrUrl } = require('./vietqr');
 
@@ -50,7 +50,7 @@ function accountForOrder(order, s) {
       label: order.pay_account === 'company' ? 'Tài khoản công ty (xuất VAT)' : 'Tài khoản bán lẻ',
     };
   }
-  return accountFromSettings(order.needs_vat ? 'company' : 'personal', s);
+  return accountFromSettings('personal', s);
 }
 
 function qrForOrder(order, s) {

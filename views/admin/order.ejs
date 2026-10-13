@@ -59,7 +59,7 @@
   </div>
 
   <aside class="form-side">
-    <% if (order.payment_method === 'bank' && order.payment_status !== 'paid' && order.status !== 'cancelled') { const other = payee.type === 'company' ? 'personal' : 'company'; %>
+    <% if (order.payment_method === 'bank' && order.payment_status !== 'paid' && order.status !== 'cancelled' && (companyReady || payee.type === 'company')) { const other = payee.type === 'company' ? 'personal' : 'company'; %>
     <form class="form-card" action="/admin/don-hang/<%= order.id %>/tai-khoan" method="post">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="pay_account" value="<%= other %>">

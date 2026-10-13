@@ -7,7 +7,7 @@
 <td style="padding:16px;text-align:center" width="200"><img src="<%= qr %>" width="180" alt="Mã VietQR" style="display:block;margin:auto"></td>
 <td style="padding:16px;font-size:14px;line-height:1.8">
   <b>Chuyển khoản để hoàn tất đơn</b><br>
-  <% if (order.needs_vat) { %>Thanh toán vào tài khoản công ty (đơn xuất hóa đơn VAT)<br><% } %>
+  <% if (order.needs_vat) { %>Đơn xuất hóa đơn VAT — số tiền đã gồm phí xuất hóa đơn. Cần chuyển vào tài khoản công ty xuất hóa đơn? Nhắn Zalo Lunar Lucky<% if (typeof s !== "undefined" && s.zalo_url) { %>: <a href="<%= s.zalo_url %>"><%= s.zalo_url %></a><% } %><br><% } %>
   Ngân hàng: <%= payee.bankName || payee.bankId %><br>
   Số TK: <b><%= payee.account %></b><br>
   Chủ TK: <%= payee.holder %><br>

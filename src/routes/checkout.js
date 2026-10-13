@@ -80,7 +80,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
   const card_message = f.text('card_message', { max: 300 });
   const note = f.text('note', { max: 500 });
-  // Xuất hóa đơn VAT → bắt buộc chuyển khoản vào tài khoản công ty
+  // Xuất hóa đơn VAT → bắt buộc chuyển khoản (thu vào TK bán lẻ; khách muốn TK công ty thì nhắn Zalo)
   const needs_vat = f.bool('needs_vat');
   let vat = {};
   if (needs_vat) {
@@ -127,7 +127,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     card_message: card_message || null, note: note || null, invoice_info,
     needs_vat, vat_company: vat.vat_company || null, vat_tax_code: vat.vat_tax_code || null,
     vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,
-    ...payment.snapshot(payment.accountFromSettings(needs_vat ? 'company' : 'personal', res.locals.s)),
+    ...payment.snapshot(payment.accountFromSettings('personal', res.locals.s)),
     payment_method, payment_status: 'pending', status: 'new',
     subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee,
     vat_fee: needs_vat ? payment.vatFee(priced.total, res.locals.s) : 0,

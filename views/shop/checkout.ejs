@@ -67,11 +67,12 @@
         <div class="flash flash-info" data-vat-notice <%= values.needs_vat ? '' : 'hidden' %> style="margin:0 0 16px">
           <svg class="icon"><use href="#i-file"/></svg>
           <span>
-            <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị cung cấp<%= s.company_name ? ' ' + s.company_name : '' %>.
+            <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị đối tác của Lunar Lucky.
             Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> trên giá trị đơn (tiền hàng sau giảm giá + phí giao).
             Phí này <b>đã được cộng vào số tiền cần thanh toán</b>.
             Đơn xuất VAT thanh toán bằng chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.
             <% const vf = Math.round(cart.total * vatPercent / 100); %>
+            <% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %>
             <span style="display:block;margin-top:8px">Giá trị đơn <%= money(cart.total) %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
           </span>
         </div>
