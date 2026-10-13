@@ -124,7 +124,7 @@ async function expireUnpaid() {
 }
 
 /**
- * Gửi bù tin "ĐƠN MỚI" cho đơn cần báo nhóm (COD, hoặc đã thanh toán) mà lần trước gửi Telegram lỗi.
+ * (chạy mỗi phút) Gửi bù tin "ĐƠN MỚI" cho đơn cần báo nhóm (COD, hoặc đã thanh toán) mà lần trước gửi Telegram lỗi.
  * Chỉ xét đơn trong 6 giờ gần nhất để không gửi lại đơn cũ / đơn thử.
  */
 async function resendMissed() {
@@ -155,7 +155,7 @@ function startExpiryTimer() {
     if (enabled()) await expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
   };
   setTimeout(run, 30000).unref();
-  setInterval(run, 5 * 60000).unref();
+  setInterval(run, 60000).unref();
 }
 
 module.exports = { resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };
