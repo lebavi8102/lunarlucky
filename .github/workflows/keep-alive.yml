@@ -24,15 +24,23 @@ jobs:
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
           TEST_TG: ${{ inputs.test_telegram }}
         run: |
+          # Gửi tin Telegram; nhóm được nâng lên supergroup (bật Topics) thì tự dùng mã nhóm mới
+          tg() {
+            r=$(curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" --data-urlencode "chat_id=$TG_CHAT" --data-urlencode "text=$1")
+            new=$(echo "$r" | grep -o '"migrate_to_chat_id":-\?[0-9]*' | cut -d: -f2)
+            if [ -n "$new" ]; then
+              echo "Nhóm đã đổi mã thành $new — cập nhật secret TELEGRAM_CHAT_ID thành giá trị này"
+              TG_CHAT=$new
+              r=$(curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" --data-urlencode "chat_id=$TG_CHAT" --data-urlencode "text=$1")
+            fi
+            echo "$r" | grep -q '"ok":true' && return 0
+            echo "Telegram từ chối: $(echo "$r" | grep -o '"description":"[^"]*"')"
+            return 1
+          }
           if [ "$TEST_TG" = "true" ]; then
             [ -z "$TG_TOKEN" ] && echo "Thiếu secret TELEGRAM_BOT_TOKEN" && exit 1
             [ -z "$TG_CHAT" ] && echo "Thiếu secret TELEGRAM_CHAT_ID" && exit 1
-            res=$(curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" --data-urlencode "chat_id=$TG_CHAT" --data-urlencode "text=✅ Thử báo lỗi: giám sát website Lunar Lucky đã kết nối nhóm. Khi web lỗi, tin cảnh báo sẽ gửi vào đây.")
-            if echo "$res" | grep -q '"ok":true'; then echo "Đã gửi tin thử"; else
-              echo "Telegram từ chối: $(echo "$res" | grep -o '"description":"[^"]*"')"
-              echo "Độ dài mã nhóm: ${#TG_CHAT} ký tự, bắt đầu bằng: ${TG_CHAT:0:2}"
-              exit 1
-            fi
+            tg "✅ Thử báo lỗi: giám sát website Lunar Lucky đã kết nối nhóm. Khi web lỗi, tin cảnh báo sẽ gửi vào đây." && echo "Đã gửi tin thử" || exit 1
           fi
           check() {
             for i in 1 2 3; do
@@ -49,9 +57,7 @@ jobs:
           done
           if [ -n "$failed" ]; then
             if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ]; then
-              curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
-                --data-urlencode "chat_id=$TG_CHAT" \
-                --data-urlencode "text=⚠️ Website Lunar Lucky đang lỗi:$failed — kiểm tra Render/Aiven." > /dev/null
+              tg "⚠️ Website Lunar Lucky đang lỗi:$failed — kiểm tra Render/Aiven." || true
             fi
             exit 1
           fi
