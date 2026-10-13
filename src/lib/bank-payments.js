@@ -123,11 +123,39 @@ async function expireUnpaid() {
   return rows.length;
 }
 
-function startExpiryTimer() {
-  if (!enabled()) return;
-  const run = () => expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
-  setTimeout(run, 60000).unref();
-  setInterval(run, 10 * 60000).unref();
+/**
+ * Gửi bù tin "ĐƠN MỚI" cho đơn cần báo nhóm (COD, hoặc đã thanh toán) mà lần trước gửi Telegram lỗi.
+ * Chỉ xét đơn trong 6 giờ gần nhất để không gửi lại đơn cũ / đơn thử.
+ */
+async function resendMissed() {
+  if (!config.telegram.token) return 0;
+  const since = new Date(Date.now() - 6 * 3600000);
+  const rows = await db('orders')
+    .whereNull('tg_message_id')
+    .whereNot('status', 'cancelled')
+    .andWhere('created_at', '>', since)
+    .andWhere((w) => {
+      w.where('payment_method', 'cod').orWhere('payment_status', 'paid');
+      if (!enabled()) w.orWhere('payment_method', 'bank'); // chưa bật SePay: đơn CK cũng báo ngay
+    });
+  const tg = require('./telegram-orders');
+  let n = 0;
+  for (const o of rows) {
+    const items = await db('order_items').where({ order_id: o.id });
+    await tg.sendNewOrder(o, items);
+    if ((await db('orders').where({ id: o.id }).first()).tg_message_id) n++;
+  }
+  if (n) console.log(`[telegram] đã gửi bù ${n} đơn`);
+  return n;
 }
 
-module.exports = { enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };
+function startExpiryTimer() {
+  const run = async () => {
+    await resendMissed().catch((err) => console.error('[telegram] gửi bù lỗi:', err.message));
+    if (enabled()) await expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
+  };
+  setTimeout(run, 30000).unref();
+  setInterval(run, 5 * 60000).unref();
+}
+
+module.exports = { resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };

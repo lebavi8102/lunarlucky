@@ -1,3 +1,5 @@
+// Máy chủ Render đôi khi lỗi kết nối IPv6 tới API bên ngoài (Telegram) → ưu tiên IPv4
+require('dns').setDefaultResultOrder('ipv4first');
 const config = require('./src/config');
 const db = require('./src/db');
 const app = require('./src/app');

@@ -109,6 +109,18 @@ const tx = (n, amount, content, type = 'in') => ({ id: 900000 + n, transferType:
   r = await bank.handleSepay(tx(5, 100000, 'LN261013QQQQ'));
   ok(r.result === 'unknown_order' && texts().some((t) => /không tìm thấy đơn/.test(t)), 'Mã đơn không tồn tại → báo nhóm kiểm tra');
 
+  // Gửi Telegram lỗi lúc thanh toán → lần quét sau gửi bù (chỉ đơn cần báo, không gửi đơn CK chưa trả)
+  const o4 = await makeOrder({ payment_status: 'paid' });
+  const o5 = await makeOrder();
+  made.push(o4.id, o5.id);
+  sent.length = 0;
+  await bank.resendMissed();
+  const ids = sent.filter((x) => x.method === 'sendMessage').map((x) => x.body.text);
+  ok(ids.some((t) => t.includes(o4.code)) && !ids.some((t) => t.includes(o5.code)), 'Gửi bù đơn đã thanh toán bị lỡ, không gửi đơn chưa trả tiền');
+  sent.length = 0;
+  await bank.resendMissed();
+  ok(!sent.some((x) => x.body.text && x.body.text.includes(o4.code)), 'Đã gửi bù rồi thì không gửi lặp');
+
   // Dọn dữ liệu thử
   await db('order_items').whereIn('order_id', made).del();
   await db('orders').whereIn('id', made).del();

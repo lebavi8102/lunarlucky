@@ -47,12 +47,22 @@ function escapeTg(s) {
 async function tgApi(method, body) {
   const { token } = config.telegram;
   if (!token) throw new Error('Chưa đặt TELEGRAM_BOT_TOKEN trên máy chủ.');
-  const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body || {}),
-    signal: AbortSignal.timeout(10000),
-  });
+  // Mạng từ máy chủ tới Telegram đôi khi chập chờn ("fetch failed") → thử lại tối đa 3 lần
+  let r;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body || {}),
+        signal: AbortSignal.timeout(10000),
+      });
+      break;
+    } catch (err) {
+      if (attempt >= 3) throw err;
+      await new Promise((ok) => setTimeout(ok, attempt * 1500));
+    }
+  }
   const data = await r.json().catch(() => ({}));
   if (!data.ok) {
     if (r.status === 401) throw new Error('Token bot không đúng. Kiểm tra lại TELEGRAM_BOT_TOKEN trên Render.');
