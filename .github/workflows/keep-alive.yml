@@ -27,7 +27,12 @@ jobs:
           if [ "$TEST_TG" = "true" ]; then
             [ -z "$TG_TOKEN" ] && echo "Thiếu secret TELEGRAM_BOT_TOKEN" && exit 1
             [ -z "$TG_CHAT" ] && echo "Thiếu secret TELEGRAM_CHAT_ID" && exit 1
-            curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage"               --data-urlencode "chat_id=$TG_CHAT"               --data-urlencode "text=✅ Thử báo lỗi: giám sát website Lunar Lucky đã kết nối nhóm. Khi web lỗi, tin cảnh báo sẽ gửi vào đây."               | grep -q '"ok":true' && echo "Đã gửi tin thử" || { echo "Telegram từ chối — kiểm tra token/mã nhóm"; exit 1; }
+            res=$(curl -s -m 20 "https://api.telegram.org/bot$TG_TOKEN/sendMessage" --data-urlencode "chat_id=$TG_CHAT" --data-urlencode "text=✅ Thử báo lỗi: giám sát website Lunar Lucky đã kết nối nhóm. Khi web lỗi, tin cảnh báo sẽ gửi vào đây.")
+            if echo "$res" | grep -q '"ok":true'; then echo "Đã gửi tin thử"; else
+              echo "Telegram từ chối: $(echo "$res" | grep -o '"description":"[^"]*"')"
+              echo "Độ dài mã nhóm: ${#TG_CHAT} ký tự, bắt đầu bằng: ${TG_CHAT:0:2}"
+              exit 1
+            fi
           fi
           check() {
             for i in 1 2 3; do
