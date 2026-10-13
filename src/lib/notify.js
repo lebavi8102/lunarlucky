@@ -59,7 +59,10 @@ async function tgApi(method, body) {
     if (/chat not found|bot was blocked|not a member/i.test(data.description || '')) {
       throw new Error('Bot chưa thể nhắn vào cuộc trò chuyện này. Hãy bấm Start với bot hoặc thêm bot vào nhóm.');
     }
-    throw new Error(data.description || `Telegram trả về lỗi ${r.status}`);
+    const err = new Error(data.description || `Telegram trả về lỗi ${r.status}`);
+    // Nhóm được nâng lên supergroup (bật Topics…) → Telegram báo mã nhóm mới
+    if (data.parameters && data.parameters.migrate_to_chat_id) err.migrateTo = String(data.parameters.migrate_to_chat_id);
+    throw err;
   }
   return data.result;
 }
@@ -85,11 +88,20 @@ async function telegram(html, chatIdOverride, extra = {}) {
     console.log('[telegram] (chưa cấu hình)\n' + html.replace(/<[^>]+>/g, ''));
     return false;
   }
+  let chatId2 = chatId;
   try {
-    const send = (x) => tgApi('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...x });
+    const send = (x) => tgApi('sendMessage', { chat_id: chatId2, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...x });
     try {
       return await send(extra);
     } catch (err) {
+      // Nhóm đổi mã (lỡ không nhận được tin báo đổi mã qua webhook) → lưu mã mới, gửi lại
+      if (err.migrateTo && !chatIdOverride && !config.telegram.chatId) {
+        chatId2 = err.migrateTo;
+        await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '' });
+        console.log(`[telegram] nhóm chuyển mã ${chatId} → ${chatId2}, đã cập nhật`);
+        const { message_thread_id, ...noThread } = extra;
+        return await send(noThread);
+      }
       // Chủ đề đã bị xóa/đóng → gửi vào nhóm chung để không mất tin
       if (extra.message_thread_id && /thread|topic/i.test(err.message)) {
         const { message_thread_id, ...noThread } = extra;

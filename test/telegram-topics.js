@@ -19,10 +19,15 @@ const OLD = -5000001;
 const GROUP = -1005000001;
 const sent = [];
 let failThread = false;
+let migrateFrom = null; // giả lập: gửi vào mã nhóm cũ → Telegram báo đã lên supergroup
+const MIGRATED = -1009000009;
 config.telegram.token = 'test-token';
 global.fetch = async (url, opt) => {
   const body = JSON.parse(opt.body || '{}');
   const method = url.split('/').pop();
+  if (migrateFrom && String(body.chat_id) === String(migrateFrom)) {
+    return { ok: false, status: 400, json: async () => ({ ok: false, description: 'Bad Request: group chat was upgraded to a supergroup chat', parameters: { migrate_to_chat_id: MIGRATED } }) };
+  }
   if (failThread && body.message_thread_id) {
     return { ok: false, status: 400, json: async () => ({ ok: false, description: 'Bad Request: message thread not found' }) };
   }
@@ -94,6 +99,15 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   await tg.handleUpdate({ message: { message_id: 999, chat: { id: -1, type: 'group' }, from: { first_name: 'X' }, text: `/nhap ${p.sku} 50` } });
   ok(!lastSend() && (await db('products').where({ id: p.id }).first()).stock === 13, 'Nhóm lạ gõ lệnh → bỏ qua');
+
+  // Nhóm đổi mã mà web không nhận được tin báo → lúc gửi đơn tự chuyển sang mã mới
+  await settings.save({ telegram_chat_id: String(OLD), telegram_order_thread: '', telegram_stock_thread: '' });
+  migrateFrom = OLD;
+  sent.length = 0;
+  const r = await notify.telegram('<b>Đơn thử</b>');
+  ok(r && String(lastSend()?.body.chat_id) === String(MIGRATED), 'Gửi vào mã nhóm cũ → tự gửi lại vào mã mới');
+  ok(String(await notify.telegramChatId()) === String(MIGRATED), 'Lưu mã nhóm mới cho các lần sau');
+  migrateFrom = null;
 
   // khôi phục
   await db('products').where({ id: p.id }).update({ stock: stock0 });
