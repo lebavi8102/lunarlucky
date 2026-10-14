@@ -1,11 +1,12 @@
 <%- include('_layout-top') %>
 <h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:26px;margin:0 0 8px">Cảm ơn <%= order.customer_name %>!</h1>
-<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar Lucky đã nhận đơn quà <b><%= order.code %></b>. <%= order.payment_method === 'bank' ? 'Đơn sẽ được chuẩn bị và giao ngay khi nhận được chuyển khoản.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %></p>
+<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar Lucky đã nhận đơn quà <b><%= order.code %></b>. <%= order.payment_method === 'bank' ? 'Đơn sẽ được chuẩn bị và giao ngay khi nhận được chuyển khoản.' : Number(order.deposit_amount) > 0 ? 'Đơn sẽ được giữ và chuẩn bị ngay khi nhận được tiền cọc.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %></p>
 
 <% if (qr) { %>
 <table role="presentation" width="100%" style="border:1px solid #c9a15a;border-radius:10px;margin-bottom:24px">
 <tr><td style="padding:16px 16px 0;text-align:center">
-  <b style="font-size:15px"><%= order.payment_method === 'bank' ? 'Chuyển khoản để hoàn tất đơn' : 'Muốn chuyển khoản trước thay vì trả tiền mặt? (không bắt buộc)' %></b>
+  <% const isDep = order.payment_method === 'cod' && Number(order.deposit_amount) > 0 && order.payment_status === 'pending'; %>
+  <b style="font-size:15px"><%= order.payment_method === 'bank' ? 'Chuyển khoản để hoàn tất đơn' : isDep ? 'Đặt cọc ' + money(order.deposit_amount) + ' để giữ đơn — phần còn lại ' + money(order.total - order.deposit_amount) + ' trả khi nhận' : 'Muốn chuyển khoản trước thay vì trả tiền mặt? (không bắt buộc)' %></b>
   <img src="<%= qr %>" width="200" alt="Mã VietQR" style="display:block;margin:12px auto 0;max-width:100%;height:auto">
   <span style="display:block;font-size:12px;color:#75685e;margin-top:6px">Nhấn giữ ảnh QR → Lưu ảnh → mở app ngân hàng, quét QR từ thư viện ảnh</span>
 </td></tr>
@@ -14,7 +15,7 @@
   Ngân hàng: <%= payee.bankName || payee.bankId %><br>
   Số TK: <b><%= payee.account %></b><br>
   Chủ TK: <%= payee.holder %><br>
-  Số tiền: <b style="color:#7a1622"><%= money(order.total) %></b><br>
+  Số tiền: <b style="color:#7a1622"><%= money(isDep ? order.deposit_amount : order.total) %></b><br>
   Nội dung: <b><%= order.code %></b>
 </td></tr></table>
 <% } %>

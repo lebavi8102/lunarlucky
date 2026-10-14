@@ -118,7 +118,8 @@
           <label class="radio-card" data-cod-option <%= values.needs_vat || values.is_gift ? 'hidden' : '' %>>
             <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
             <span class="dot"></span>
-            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao</span></span>
+            <% const dr = pay.depositRule(s); %>
+            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.<% if (dr.percent) { %> Đơn từ <%= dr.minQty %> giỏ hoặc trên <%= money(dr.minTotal) %>: đặt cọc <%= dr.percent %>% qua mã QR, phần còn lại trả khi nhận.<% } %></span></span>
           </label>
         </div>
       </fieldset>
@@ -161,6 +162,11 @@
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
       <% const vatFeePreview = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
       <div class="sum-row" data-vat-row <%= values.needs_vat ? '' : 'hidden' %>><span>Phí xuất hóa đơn VAT (<%= vatPercent %>%)</span><span><%= money(vatFeePreview) %></span></div>
+      <% const codDep = pay.depositFor({ goods: cart.subtotal - cart.discount, qty: cart.count, total: cart.total }, s); %>
+      <% if (codDep) { %>
+      <div class="sum-row" data-deposit-row hidden><span>Đặt cọc trước (COD)</span><span><b><%= money(codDep) %></b></span></div>
+      <div class="sum-row" data-deposit-row hidden><span>Trả khi nhận hàng</span><span><%= money(cart.total - codDep) %></span></div>
+      <% } %>
       <div class="sum-row total"><span>Tổng cộng</span><span data-total data-base="<%= cart.total %>" data-with-vat="<%= cart.total + vatFeePreview %>"><%= money(values.needs_vat ? cart.total + vatFeePreview : cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
       <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>

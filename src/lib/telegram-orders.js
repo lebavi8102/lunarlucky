@@ -38,7 +38,9 @@ function messageText(order, items) {
       ? `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
       : order.payment_status === 'paid'
         ? '💵 COD · đã thu tiền'
-        : `💵 <b>COD · thu ${require('./format').money(order.total)} khi giao</b>`;
+        : payment.awaitingMoney(order)
+          ? `⏳ COD · <b>chờ cọc ${require('./format').money(order.deposit_amount)}</b> — chưa soạn hàng`
+          : `💵 <b>COD · thu ${require('./format').money(payment.codDue(order))} khi giao</b>${order.payment_status === 'deposit' ? ` (đã cọc ${require('./format').money(order.deposit_amount)})` : ''}`;
   let account = null;
   if (order.payment_method === 'bank') {
     const acc = payment.accountForOrder(order, {});
@@ -109,7 +111,9 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false } = {})
     rows.push(next.slice(i, i + 2).map(([, code, label]) => ({ text: label, callback_data: `o:${id}:${code}` })));
   }
   const extra = [];
-  if (order.payment_status !== 'paid') {
+  if (order.payment_method === 'cod' && Number(order.deposit_amount) > 0 && order.payment_status === 'pending') {
+    extra.push({ text: '💰 Đã nhận cọc', callback_data: `o:${id}:dp` });
+  } else if (order.payment_status !== 'paid') {
     extra.push({ text: order.payment_method === 'bank' ? '💰 Đã nhận CK' : '💵 Đã thu COD', callback_data: `o:${id}:$` });
   }
   extra.push({ text: '❌ Hủy', callback_data: `o:${id}:x` });
@@ -405,6 +409,7 @@ async function handleUpdate(update) {
   else if (action === 'xx') changes = { status: 'cancelled' };
   else if (action === 'rr') changes = { status: 'confirmed' };
   else if (action === '$') changes = { payment_status: 'paid' };
+  else if (action === 'dp') changes = { payment_status: 'deposit' };
   if (!changes) return answer(cb, 'Lệnh không hợp lệ.');
 
   const r = await updateOrder(id, changes, { by: `${by} (Telegram)` });

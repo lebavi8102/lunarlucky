@@ -4,7 +4,8 @@
  */
 const db = require('../db');
 
-const isReady = (o) => o.status !== 'cancelled' && (o.payment_method === 'cod' || o.payment_status === 'paid');
+const payment = require('./payment');
+const isReady = (o) => o.status !== 'cancelled' && !payment.awaitingMoney(o);
 
 async function forDate(day) {
   const orders = await db('orders').where({ delivery_date: day }).whereNot('status', 'cancelled').orderBy('id');
@@ -35,7 +36,7 @@ async function forDate(day) {
     picking: [...pick.values()].sort((a, b) => b.qty - a.qty),
     baskets: ready.reduce((a, o) => a + o.items.reduce((x, i) => x + i.qty, 0), 0),
     cards: ready.filter((o) => o.card_message).length,
-    codTotal: ready.filter((o) => o.payment_method === 'cod' && o.payment_status !== 'paid').reduce((a, o) => a + Number(o.total), 0),
+    codTotal: ready.reduce((a, o) => a + payment.codDue(o), 0),
     hanoi: ready.filter((o) => area(o) === 'Hà Nội').length,
     provinces: ready.filter((o) => area(o) !== 'Hà Nội').length,
     area,
@@ -49,6 +50,6 @@ function shipTo(o) {
     : { name: o.customer_name, phone: o.phone, address: `${o.address || ''}, ${o.province || ''}` };
 }
 
-const codDue = (o) => (o.payment_method === 'cod' && o.payment_status !== 'paid' ? Number(o.total) : 0);
+const codDue = (o) => payment.codDue(o);
 
 module.exports = { forDate, shipTo, codDue, isReady };

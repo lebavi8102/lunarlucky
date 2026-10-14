@@ -6,7 +6,7 @@
         <% if (order.is_gift) { %><p><b><%= order.recipient_name %></b><br><%= order.recipient_phone %><br><%= order.recipient_address %>, <%= order.province %></p>
         <% } else { %><p><b><%= order.customer_name %></b><br><%= order.phone %><br><%= order.address %>, <%= order.province %></p><% } %>
       </div>
-      <div><h3>Thu hộ (COD)</h3><p class="cod"><%= order.payment_method === 'cod' && order.payment_status !== 'paid' ? money(order.total) : (order.payment_status === 'paid' ? '0₫ — đã thanh toán' : 'CHƯA THANH TOÁN — KHÔNG GIAO') %></p>
+      <div><h3>Thu hộ (COD)</h3><p class="cod"><%= pay.awaitingMoney(order) ? (order.payment_method === 'cod' ? 'CHƯA CỌC — KHÔNG GIAO' : 'CHƯA THANH TOÁN — KHÔNG GIAO') : pay.codDue(order) ? money(pay.codDue(order)) : '0₫ — đã thanh toán' %></p><% if (order.payment_status === 'deposit') { %><p class="note">Khách đã cọc <%= money(order.deposit_amount) %></p><% } %>
         <% if (order.is_gift) { %><p class="note">Đơn gửi tặng: không đưa hóa đơn giá tiền cho người nhận.</p><% } %>
       </div>
     </div>

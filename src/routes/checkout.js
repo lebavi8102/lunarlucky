@@ -160,6 +160,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     total: priced.total + (needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0),
     coupon_code: priced.coupon ? priced.coupon.code : null,
   };
+  order.deposit_amount = order.payment_method === 'cod'
+    ? payment.depositFor({ goods: priced.subtotal - priced.discount, qty: priced.count, total: order.total }, res.locals.s)
+    : 0;
   const items = priced.lines.map((l) => ({
     product_id: l.productId,
     name: l.name,
@@ -219,7 +222,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
 
   const tgOrders = require('../lib/telegram-orders');
   // Đơn chuyển khoản (đã bật tự xác nhận) chỉ báo nhóm khi nhận được tiền; COD báo ngay
-  const holdForPayment = order.payment_method === 'bank' && require('../lib/bank-payments').enabled();
+  const holdForPayment = payment.awaitingMoney({ ...order, status: 'new' }) && require('../lib/bank-payments').enabled();
   (holdForPayment ? require('../lib/bank-payments').notifyWaiting(order) : tgOrders.sendNewOrder(order, items))
     .then(() => tgOrders.stockAlertsAfterOrder(items))
     .catch(() => {});
@@ -247,7 +250,7 @@ function canView(req, order) {
 router.get('/don-hang/:code/thanh-toan', async (req, res) => {
   const order = await db('orders').where({ code: String(req.params.code).toUpperCase() }).first();
   if (!order || !canView(req, order)) return res.status(404).json({});
-  res.set('Cache-Control', 'no-store').json({ paid: order.payment_status === 'paid', cancelled: order.status === 'cancelled' });
+  res.set('Cache-Control', 'no-store').json({ paid: ['paid', 'deposit'].includes(order.payment_status), cancelled: order.status === 'cancelled' });
 });
 
 // Ảnh QR tải về máy: khách đặt bằng điện thoại lưu ảnh → mở app ngân hàng → quét từ thư viện ảnh

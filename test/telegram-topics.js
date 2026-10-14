@@ -193,6 +193,18 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('orders').whereIn('id', ids).del();
   }
 
+  // COD chờ cọc: nút "💰 Đã nhận cọc" (xác nhận tay khi khách chuyển ngoài SePay)
+  {
+    const [x] = await db('orders').insert({ code: 'LN261014DPQQ', customer_name: 'Cọc', phone: '0912', address: 'x', province: 'Hà Nội', delivery_date: '2026-12-01',
+      payment_method: 'cod', payment_status: 'pending', status: 'new', subtotal: 1, discount: 0, shipping_fee: 0, total: 1000000, deposit_amount: 300000, tg_chat_id: String(GROUP), tg_message_id: 98 });
+    const id = typeof x === 'object' ? x.id : x;
+    const kb = JSON.stringify(require('../src/lib/telegram-orders').keyboard(await db('orders').where({ id }).first()));
+    ok(kb.includes(`o:${id}:dp`), 'Đơn COD chờ cọc có nút "💰 Đã nhận cọc"');
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${id}:dp`, from: { first_name: 'Lan' }, message: { message_id: 98, chat: { id: GROUP } } } });
+    ok((await db('orders').where({ id }).first()).payment_status === 'deposit', 'Bấm "Đã nhận cọc" → đơn chuyển "Đã cọc"');
+    await db('orders').where({ id }).del();
+  }
+
   // Khách để lại SĐT → báo nhóm; bấm "✅ Đã gọi" → đánh dấu xong, sửa tin
   sent.length = 0;
   const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });

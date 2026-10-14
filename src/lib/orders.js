@@ -11,7 +11,7 @@ const ORDER_STATUS = {
   completed: 'Hoàn tất',
   cancelled: 'Đã hủy',
 };
-const PAYMENT_STATUS = { pending: 'Chưa thanh toán', paid: 'Đã thanh toán', refunded: 'Đã hoàn tiền' };
+const PAYMENT_STATUS = { pending: 'Chưa thanh toán', deposit: 'Đã cọc', paid: 'Đã thanh toán', refunded: 'Đã hoàn tiền' };
 
 async function loadOrder(id) {
   const order = await db('orders').where({ id: Number(id) }).first();
@@ -59,6 +59,10 @@ async function updateOrder(id, changes, { by } = {}) {
   if (changes.admin_note !== undefined) update.admin_note = changes.admin_note;
   const becamePaid = payment_status === 'paid' && order.payment_status !== 'paid';
   if (becamePaid) update.paid_at = new Date();
+  if (payment_status === 'deposit' && order.payment_status !== 'deposit') update.deposit_paid_at = new Date();
+  // Đơn "sẵn sàng" (đã trả hoặc đã cọc) lần đầu → báo nhóm ĐƠN MỚI
+  const ready = (st) => st === 'paid' || st === 'deposit';
+  const becameReady = ready(payment_status) && !ready(order.payment_status);
 
   await db.transaction(async (trx) => {
     const goingCancelled = status === 'cancelled' && order.status !== 'cancelled';
@@ -84,7 +88,7 @@ async function updateOrder(id, changes, { by } = {}) {
     });
   }
   // Đã nhận tiền: đơn chuyển khoản chưa báo nhóm thì giờ mới báo "ĐƠN MỚI"
-  if (becamePaid) {
+  if (becameReady) {
     await require('./bank-payments').afterPaid(order.id).catch((err) => console.error('[thanh toán] báo nhóm lỗi:', err.message));
   }
   return { before: order, order: { ...order, ...update }, items, changed: events.length > 0 };

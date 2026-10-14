@@ -237,6 +237,7 @@
         const vb = doc.querySelector('[data-vat-breakdown]');
         if (vb && $('[data-vat-breakdown]')) $('[data-vat-breakdown]').innerHTML = vb.innerHTML;
         $('[data-vat-toggle]')?.dispatchEvent(new Event('change')); // tính lại tổng nếu đang chọn xuất VAT
+        window.__syncDeposit?.();
       } catch {
         showToast('Không cập nhật được số lượng, vui lòng thử lại.');
       } finally {
@@ -351,6 +352,18 @@
       $('button', buyBar).tabIndex = show ? 0 : -1;
       document.body.classList.toggle('has-buy-bar', show);
     }).observe(buyRow);
+  }
+
+  /* Thanh toán: chọn COD ở đơn cần cọc → hiện "Đặt cọc trước / Trả khi nhận" */
+  const syncDeposit = () => {
+    const cod = $('input[name=payment_method][value=cod]');
+    const on = !!(cod && cod.checked && !cod.closest('[hidden]'));
+    $$('[data-deposit-row]').forEach((r) => (r.hidden = !on));
+  };
+  if ($('[data-checkout]')) {
+    document.addEventListener('change', (e) => { if (e.target.matches('input[name=payment_method], [data-vat-toggle], [data-gift-toggle]')) syncDeposit(); });
+    syncDeposit();
+    window.__syncDeposit = syncDeposit;
   }
 
   const checkout = $('[data-checkout]');

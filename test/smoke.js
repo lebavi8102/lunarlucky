@@ -112,6 +112,24 @@ async function addToCart(c, slug, qty = 1) {
     ok(gift.status === 302 && /Chuyển khoản · /.test(gpage.text) && !/COD · /.test(gpage.text), 'Đơn gửi tặng chọn COD → tự chuyển sang chuyển khoản');
   }
 
+  // 4d. Cọc COD: 2 giỏ → phải cọc 30%; 1 giỏ dưới 1 triệu → không cọc
+  {
+    const cheap = (await c('/bo-suu-tap?sap_xep=gia-tang')).text.match(/name="product_id" value="(\d+)"/)[1];
+    const place = async (qty) => {
+      const g = client();
+      const gp = await g('/bo-suu-tap');
+      await g('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(gp.text), product_id: cheap, qty } });
+      const ck = await g('/thanh-toan');
+      const r = await g('/thanh-toan', { method: 'POST', form: { _csrf: csrf(ck.text), customer_name: 'Khách COD', phone: '0912345678', province: 'Hà Nội', address: '3 Phố Huế', delivery_date: deliveryDate, payment_method: 'cod' } });
+      return { ck: ck.text, page: (await g(r.location || '/')).text };
+    };
+    const two = await place(2);
+    ok(/Đặt cọc trước \(COD\)/.test(two.ck), 'Trang đặt hàng 2 giỏ: hiện dòng "Đặt cọc trước"');
+    ok(/Đặt cọc [\d.]+₫ để giữ đơn/.test(two.page) && /Trả khi nhận hàng/.test(two.page), 'Đơn COD 2 giỏ → trang đơn yêu cầu đặt cọc, ghi phần trả khi nhận');
+    const one = await place(1);
+    ok(!/để giữ đơn/.test(one.page) && !/Đặt cọc trước/.test(one.ck), 'Đơn COD 1 giỏ dưới 1 triệu → không cọc');
+  }
+
   // 5. Tra cứu đơn từ phiên khác
   const c2 = client();
   ok((await c2(`/don-hang/${code}`)).status === 302, 'Người lạ không xem được đơn');

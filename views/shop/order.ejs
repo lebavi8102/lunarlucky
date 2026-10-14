@@ -2,15 +2,17 @@
 <% const steps = [['new','Đã đặt'],['confirmed','Xác nhận'],['packing','Đóng gói'],['shipping','Đang giao'],['completed','Hoàn tất']];
    const idx = steps.findIndex(x => x[0] === order.status);
    const cancelled = order.status === 'cancelled';
-   const needPay = order.payment_method === 'bank' && order.payment_status === 'pending' && !cancelled;
-   const codQr = order.payment_method === 'cod' && order.payment_status === 'pending' && !cancelled && qr;
-   const justPaid = order.payment_status === 'paid' && !cancelled && order.status === 'new'; %>
+   const needPay = pay.awaitingMoney(order); // chuyển khoản chưa trả, hoặc COD chờ cọc
+   const isDeposit = needPay && order.payment_method === 'cod';
+   const due = pay.amountDue(order);
+   const codQr = order.payment_method === 'cod' && !needPay && order.payment_status !== 'paid' && !cancelled && qr;
+   const justPaid = ['paid', 'deposit'].includes(order.payment_status) && !cancelled && order.status === 'new'; %>
 <div class="container" style="max-width:920px">
   <div class="order-hero">
     <div class="seal"><svg class="icon"><use href="#i-<%= cancelled ? 'x' : 'check' %>"/></svg></div>
     <span class="eyebrow center"><%= isNew ? 'Đặt hàng thành công' : 'Chi tiết đơn hàng' %></span>
     <h1 class="h2" style="margin-top:12px"><%= isNew ? `Cảm ơn ${order.customer_name}!` : (cancelled ? 'Đơn hàng đã hủy' : 'Đơn quà của bạn') %></h1>
-    <% if (isNew) { %><p class="lead" style="margin:16px auto 0"><%= needPay ? 'Đơn sẽ được chuẩn bị và giao ngay khi Lunar Lucky nhận được chuyển khoản.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %> <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
+    <% if (isNew) { %><p class="lead" style="margin:16px auto 0"><%= isDeposit ? 'Đơn sẽ được giữ và chuẩn bị ngay khi Lunar Lucky nhận được tiền cọc.' : needPay ? 'Đơn sẽ được chuẩn bị và giao ngay khi Lunar Lucky nhận được chuyển khoản.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %> <%= order.email ? 'Thông tin đơn đã được gửi đến ' + order.email + '.' : '' %></p><% } %>
     <div class="order-code">Mã đơn: <span data-copy-text><%= order.code %></span>
       <button type="button" class="copy-btn" data-copy="<%= order.code %>"><svg class="icon icon-sm"><use href="#i-copy"/></svg> Sao chép</button>
     </div>
@@ -20,20 +22,21 @@
   </div>
 
   <% if (justPaid) { %>
-  <div class="flash flash-success" role="status" style="margin-bottom:24px"><svg class="icon"><use href="#i-check"/></svg><span><b>Đã nhận thanh toán <%= money(order.total) %>.</b> Lunar Lucky đang chuẩn bị đơn quà của bạn.</span></div>
+  <div class="flash flash-success" role="status" style="margin-bottom:24px"><svg class="icon"><use href="#i-check"/></svg><span><% if (order.payment_status === 'deposit') { %><b>Đã nhận cọc <%= money(order.deposit_amount) %>.</b> Lunar Lucky đang chuẩn bị đơn quà. Bạn thanh toán <b><%= money(order.total - order.deposit_amount) %></b> khi nhận hàng.<% } else { %><b>Đã nhận thanh toán <%= money(order.total) %>.</b> Lunar Lucky đang chuẩn bị đơn quà của bạn.<% } %></span></div>
   <% } %>
 
   <% if ((needPay || codQr) && qr) { %>
   <section class="qr-card" aria-labelledby="pay-title" <% if (autoConfirm) { %>data-pay-poll="/don-hang/<%= order.code %>/thanh-toan"<% } %>>
-    <img src="<%= qr %>" alt="Mã VietQR chuyển khoản <%= money(order.total) %> cho đơn <%= order.code %>" width="260" height="300">
+    <img src="<%= qr %>" alt="Mã VietQR chuyển khoản <%= money(due) %> cho đơn <%= order.code %>" width="260" height="300">
     <div>
-      <h2 id="pay-title" class="h3"><%= codQr ? 'Muốn chuyển khoản trước?' : 'Quét mã để thanh toán' %></h2>
+      <h2 id="pay-title" class="h3"><%= isDeposit ? `Đặt cọc ${money(due)} để giữ đơn` : codQr ? 'Muốn chuyển khoản trước?' : 'Quét mã để thanh toán' %></h2>
+      <% if (isDeposit) { %><p class="small" style="margin:6px 0 0">Đơn từ <%= pay.depositRule(s).minQty %> giỏ hoặc trên <%= money(pay.depositRule(s).minTotal) %> cần cọc <%= pay.depositRule(s).percent %>% để Lunar Lucky giữ hàng và viết thiệp riêng cho bạn. <b>Phần còn lại <%= money(order.total - order.deposit_amount) %> trả khi nhận hàng.</b> Hoàn cọc 100% nếu shop không giao được.</p><% } %>
       <p class="muted small" style="margin:6px 0 12px"><%= codQr ? 'Không bắt buộc — đơn của bạn trả tiền mặt khi nhận hàng. Nếu muốn chuyển khoản trước, làm theo hướng dẫn dưới.' : 'Số tiền và nội dung chuyển khoản đã được điền sẵn trong mã QR.' %></p>
       <a class="btn btn-block" href="/don-hang/<%= order.code %>/qr.png" download="QR-<%= order.code %>.png" style="margin-bottom:10px"><svg class="icon icon-sm"><use href="#i-qr"/></svg> Lưu mã QR về máy</a>
       <ol class="pay-steps small">
         <li><b>Lưu mã QR</b> (nút trên, hoặc nhấn giữ vào ảnh QR → Lưu ảnh).</li>
         <li>Mở <b>ứng dụng ngân hàng</b> → chọn <b>Quét QR</b> → bấm biểu tượng <b>ảnh/thư viện</b> → chọn ảnh vừa lưu.</li>
-        <li>Kiểm tra số tiền <b><%= money(order.total) %></b> rồi xác nhận chuyển.</li>
+        <li>Kiểm tra số tiền <b><%= money(due) %></b> rồi xác nhận chuyển.</li>
       </ol>
       <p class="tiny muted" style="margin:0 0 12px">Hoặc chuyển khoản thủ công bằng các thông tin dưới đây (bấm biểu tượng để sao chép).</p>
       <% if (needPay && autoConfirm) { %><div class="flash flash-info" style="margin:0 0 12px" data-pay-wait><svg class="icon"><use href="#i-clock"/></svg><span><b>Đang chờ thanh toán…</b> Trang tự cập nhật khi nhận được tiền (thường dưới 1 phút). Đơn được giữ hàng trong <%= holdHours %> giờ.</span></div><% } %>
@@ -42,7 +45,7 @@
         <div class="bank-row"><span>Ngân hàng</span><b><%= payee.bankName || payee.bankId %></b></div>
         <div class="bank-row"><span>Số tài khoản</span><span style="display:flex;gap:8px;align-items:center"><b><%= payee.account %></b><button type="button" class="copy-btn" data-copy="<%= payee.account %>" aria-label="Sao chép số tài khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
         <div class="bank-row"><span>Chủ tài khoản</span><b><%= payee.holder %></b></div>
-        <div class="bank-row"><span>Số tiền</span><span style="display:flex;gap:8px;align-items:center"><b style="color:var(--lacquer-700)"><%= money(order.total) %></b><button type="button" class="copy-btn" data-copy="<%= order.total %>" aria-label="Sao chép số tiền"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
+        <div class="bank-row"><span>Số tiền</span><span style="display:flex;gap:8px;align-items:center"><b style="color:var(--lacquer-700)"><%= money(due) %></b><button type="button" class="copy-btn" data-copy="<%= due %>" aria-label="Sao chép số tiền"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
         <div class="bank-row"><span>Nội dung</span><span style="display:flex;gap:8px;align-items:center"><b><%= order.code %></b><button type="button" class="copy-btn" data-copy="<%= order.code %>" aria-label="Sao chép nội dung chuyển khoản"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button></span></div>
       </div>
       <p class="small muted" style="margin-top:12px">Vui lòng giữ nguyên nội dung <b><%= order.code %></b> để Lunar Lucky đối soát nhanh.</p>
@@ -96,6 +99,7 @@
       <div class="sum-row"><span>Phí giao hàng</span><span><%= order.shipping_fee ? money(order.shipping_fee) : 'Miễn phí' %></span></div>
       <% if (order.vat_fee) { %><div class="sum-row"><span>Phí xuất hóa đơn VAT<%= order.vat_fee_percent ? ' (' + Number(order.vat_fee_percent) + '%)' : '' %></span><span><%= money(order.vat_fee) %></span></div><% } %>
       <div class="sum-row total"><span>Tổng cộng</span><span><%= money(order.total) %></span></div>
+      <% if (Number(order.deposit_amount) > 0) { %><div class="sum-row"><span>Đặt cọc<%= order.payment_status === 'pending' ? ' (chưa nhận)' : '' %></span><span><%= money(order.deposit_amount) %></span></div><div class="sum-row"><span>Trả khi nhận hàng</span><span><%= money(order.total - order.deposit_amount) %></span></div><% } %>
     </section>
   </div>
 

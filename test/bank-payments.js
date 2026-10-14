@@ -118,6 +118,38 @@ const tx = (n, amount, content, type = 'in') => ({ id: 900000 + n, transferType:
   ok(row.status === 'new' && row.payment_status === 'paid', 'Đơn đã tự hủy mà khách vẫn chuyển → khôi phục, đã thanh toán');
   ok((await db('products').where({ id: o2.product.id }).first()).stock === stockBefore, 'Khôi phục đơn → trừ lại kho');
 
+  // ĐƠN COD CẦN CỌC: cọc 300k / tổng 1.000.000
+  {
+    const pay = require('../src/lib/payment');
+    const oc = await makeOrder({ payment_method: 'cod', deposit_amount: 300000, total: 1000000, subtotal: 1000000 });
+    made.push(oc.id);
+    let row = await db('orders').where({ id: oc.id }).first();
+    ok(pay.awaitingMoney(row) && pay.amountDue(row) === 300000, 'COD cần cọc: đang chờ cọc, mã QR = 300.000');
+    sent.length = 0;
+    let r = await bank.handleSepay(tx(20, 100000, oc.code));
+    ok(r.result === 'underpaid' && texts().some((t) => /tiền cọc/.test(t)), 'Chuyển thiếu tiền cọc → báo nhóm');
+    sent.length = 0;
+    r = await bank.handleSepay(tx(21, 300000, oc.code));
+    row = await db('orders').where({ id: oc.id }).first();
+    ok(r.result === 'deposit' && row.payment_status === 'deposit' && row.deposit_paid_at, 'Nhận đủ cọc → trạng thái "Đã cọc"');
+    ok(texts().some((t) => /ĐƠN MỚI/.test(t) && t.includes(oc.code) && /thu 700\.000/.test(t)), 'Báo ĐƠN MỚI, shipper thu 700.000 khi giao');
+    ok(pay.codDue(row) === 700000 && !pay.awaitingMoney(row), 'Tiền thu COD = tổng − cọc; đơn sẵn sàng giao');
+    r = await bank.handleSepay(tx(22, 700000, oc.code));
+    row = await db('orders').where({ id: oc.id }).first();
+    ok(r.result === 'paid' && row.payment_status === 'paid' && pay.codDue(row) === 0, 'Khách chuyển nốt phần còn lại → đã thanh toán, shipper không thu');
+    // COD chờ cọc quá hạn → tự hủy
+    const oe = await makeOrder({ payment_method: 'cod', deposit_amount: 300000, total: 1000000, created_at: new Date(Date.now() - 30 * 3600000) });
+    made.push(oe.id);
+    await bank.expireUnpaid();
+    ok((await db('orders').where({ id: oe.id }).first()).status === 'cancelled', 'COD chờ cọc quá 24 giờ → tự hủy');
+    // COD không cần cọc: không bị giữ, không bị tự hủy
+    const on = await makeOrder({ payment_method: 'cod', deposit_amount: 0, created_at: new Date(Date.now() - 30 * 3600000) });
+    made.push(on.id);
+    await bank.expireUnpaid();
+    const rn = await db('orders').where({ id: on.id }).first();
+    ok(rn.status === 'new' && !pay.awaitingMoney(rn), 'COD 1 giỏ dưới 1 triệu: không chờ cọc, không tự hủy');
+  }
+
   // Mã không có đơn
   sent.length = 0;
   r = await bank.handleSepay(tx(5, 100000, 'LN261013QQQQ'));

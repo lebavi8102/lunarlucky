@@ -9,6 +9,7 @@ const db = require('../db');
 const notify = require('./notify');
 const settings = require('./settings');
 const { updateOrder } = require('./orders');
+const payment = require('./payment');
 
 const CODE_RE = /LN\d{6}[A-Z2-9]{4}/;
 
@@ -71,23 +72,27 @@ async function handleSepay(tx) {
     await notify.telegram(`💸 Đơn <b>${code}</b> đã thanh toán trước đó, nay nhận thêm <b>${money(amount)}</b> — kiểm tra khách chuyển trùng.`);
     return { result: 'already_paid' };
   }
-  if (amount < Number(order.total)) {
+  // Số tiền cần lúc này: cả đơn (CK), tiền cọc (COD chờ cọc), hoặc phần còn lại (COD đã cọc)
+  const due = payment.amountDue(order);
+  const remaining = Number(order.total) - (order.payment_status === 'deposit' ? Number(order.deposit_amount) : 0);
+  if (amount < due) {
     await save('underpaid', order.id);
     await notify.telegram(
-      `⚠️ Đơn <b>${code}</b> chuyển thiếu: nhận <b>${money(amount)}</b> / cần ${money(order.total)} (thiếu ${money(order.total - amount)}).\nLiên hệ khách: ${notify.escapeTg(order.customer_name)} · ${notify.escapeTg(order.phone)}`,
+      `⚠️ Đơn <b>${code}</b> chuyển thiếu: nhận <b>${money(amount)}</b> / cần ${money(due)}${due !== Number(order.total) ? ' (tiền cọc)' : ''} (thiếu ${money(due - amount)}).\nLiên hệ khách: ${notify.escapeTg(order.customer_name)} · ${notify.escapeTg(order.phone)}`,
     );
     return { result: 'underpaid' };
   }
 
-  // Đơn đã tự hủy vì quá hạn mà khách vẫn chuyển → khôi phục đơn
-  const changes = { payment_status: 'paid' };
+  // Đủ cả đơn → đã thanh toán; mới đủ tiền cọc → đã cọc. Đơn tự hủy vì quá hạn mà khách vẫn chuyển → khôi phục
+  const changes = { payment_status: amount >= remaining ? 'paid' : 'deposit' };
   if (order.status === 'cancelled') changes.status = 'new';
   await updateOrder(order.id, changes, { by: `SePay tự động (${require('./format').money(amount)})` });
-  await save(order.status === 'cancelled' ? 'paid_restored' : 'paid', order.id);
-  if (amount > Number(order.total)) {
-    await notify.telegram(`ℹ️ Đơn <b>${code}</b> khách chuyển dư ${money(amount - order.total)}.`);
+  await save(`${changes.payment_status}${order.status === 'cancelled' ? '_restored' : ''}`, order.id);
+  const over = changes.payment_status === 'paid' ? amount - remaining : amount - due;
+  if (over > 0 && changes.payment_status === 'paid') {
+    await notify.telegram(`ℹ️ Đơn <b>${code}</b> khách chuyển dư ${money(over)}.`);
   }
-  return { result: 'paid', orderId: order.id };
+  return { result: changes.payment_status, orderId: order.id };
 }
 
 /** Sau khi đơn chuyển sang "Đã thanh toán": đơn chưa báo nhóm thì báo (ĐƠN MỚI), đã báo thì cập nhật tin. */
@@ -95,8 +100,10 @@ const money2 = (n) => require('./format').money(n);
 
 function waitText(order, state) {
   const head = {
-    wait: `⏳ <b>CHỜ CHUYỂN KHOẢN</b> · ${order.code}`,
-    paid: `✅ <b>ĐÃ NHẬN TIỀN</b> · ${order.code} → xem tin ĐƠN MỚI bên dưới để xử lý`,
+    wait: Number(order.deposit_amount) > 0 && order.payment_method === 'cod'
+      ? `⏳ <b>CHỜ CỌC</b> ${money2(order.deposit_amount)} · ${order.code} (COD)`
+      : `⏳ <b>CHỜ CHUYỂN KHOẢN</b> · ${order.code}`,
+    paid: `✅ <b>${order.payment_status === 'deposit' ? 'ĐÃ NHẬN CỌC' : 'ĐÃ NHẬN TIỀN'}</b> · ${order.code} → xem tin ĐƠN MỚI bên dưới để xử lý`,
     expired: `❌ <b>TỰ HỦY</b> · ${order.code} — quá hạn chưa chuyển khoản, hàng đã trả về kho`,
   }[state];
   return [
@@ -149,7 +156,8 @@ async function expireUnpaid() {
   const hours = holdHours(await settings.all());
   const before = new Date(Date.now() - hours * 3600000);
   const rows = await db('orders')
-    .where({ payment_method: 'bank', payment_status: 'pending', status: 'new' })
+    .where({ payment_status: 'pending', status: 'new' })
+    .andWhere((w) => w.where('payment_method', 'bank').orWhere((x) => x.where('payment_method', 'cod').andWhere('deposit_amount', '>', 0)))
     .whereNull('tg_message_id')
     .andWhere('created_at', '<', before)
     .select('id');
@@ -172,7 +180,7 @@ async function resendMissed() {
     .whereNot('status', 'cancelled')
     .andWhere('created_at', '>', since)
     .andWhere((w) => {
-      w.where('payment_method', 'cod').orWhere('payment_status', 'paid');
+      w.where((x) => x.where('payment_method', 'cod').andWhere('deposit_amount', 0)).orWhereIn('payment_status', ['paid', 'deposit']);
       if (!enabled()) w.orWhere('payment_method', 'bank'); // chưa bật SePay: đơn CK cũng báo ngay
     });
   const tg = require('./telegram-orders');

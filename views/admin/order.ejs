@@ -48,7 +48,7 @@
           <dt>Địa chỉ</dt><dd><%= order.address %>, <%= order.province %></dd>
         <% } %>
         <dt>Ngày giao</dt><dd><b><%= fmt.ymd(order.delivery_date) %></b></dd>
-        <dt>Thanh toán</dt><dd><%= order.payment_method === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản VietQR, nội dung ' + order.code %></dd>
+        <dt>Thanh toán</dt><dd><%= order.payment_method === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản VietQR, nội dung ' + order.code %><% if (Number(order.deposit_amount) > 0) { %><br><b>Cọc <%= money(order.deposit_amount) %></b> · <%= order.payment_status === 'pending' ? 'chưa nhận cọc — chưa soạn hàng' : order.payment_status === 'deposit' ? 'đã nhận cọc' : 'đã thanh toán đủ' %> · thu khi giao: <b><%= money(pay.codDue(order)) %></b><% } %></dd>
         <% if (order.card_message) { %><dt>Lời chúc thiệp</dt><dd class="serif" style="font-size:19px;font-style:italic">“<%= order.card_message %>”</dd><% } %>
         <% if (order.note) { %><dt>Ghi chú</dt><dd><%= order.note %></dd><% } %>
         <% if (order.needs_vat) { %><dt>Xuất VAT</dt><dd><b><%= order.vat_company %></b><br>MST <span class="mono"><%= order.vat_tax_code %></span><br><%= order.vat_address %><br><%= order.vat_email %></dd>

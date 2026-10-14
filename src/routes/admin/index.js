@@ -74,15 +74,18 @@ router.get('/don-hang', async (req, res) => {
   const page = Math.max(1, Number(req.query.trang) || 1);
   let query = db('orders');
   if (status) query = query.where({ status });
-  if (req.query.chua_tt) query = query.where({ payment_method: 'bank', payment_status: 'pending' }).whereNot('status', 'cancelled');
+  // Chờ tiền: chuyển khoản chưa trả, hoặc COD chờ cọc
+  const awaiting = (w) => w.where('payment_status', 'pending').andWhere((x) => x.where('payment_method', 'bank').orWhere('deposit_amount', '>', 0));
+  const readyNew = (w) => w.where({ status: 'new' }).andWhere((x) => x.whereIn('payment_status', ['paid', 'deposit']).orWhere((y) => y.where({ payment_method: 'cod', deposit_amount: 0 })));
+  if (req.query.chua_tt) query = query.where(awaiting).whereNot('status', 'cancelled');
   // Cần xử lý: đơn mới đã sẵn sàng (COD hoặc đã thanh toán) — không lẫn đơn chuyển khoản chưa trả tiền
-  if (req.query.can_xu_ly) query = query.where({ status: 'new' }).andWhere((w) => w.where('payment_method', 'cod').orWhere('payment_status', 'paid'));
+  if (req.query.can_xu_ly) query = query.where(readyNew);
   const ngay = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.ngay || '')) ? String(req.query.ngay) : '';
   if (ngay) query = query.where({ delivery_date: ngay });
   if (q) query = query.andWhere((w) => w.where('code', 'like', `%${q}%`).orWhere('phone', 'like', `%${q}%`).orWhere('customer_name', 'like', `%${q}%`));
   const [{ n }] = await query.clone().count({ n: '*' });
   const orders = await query.orderBy('id', 'desc').limit(30).offset((page - 1) * 30);
-  const [{ n: todo }] = await db('orders').where({ status: 'new' }).andWhere((w) => w.where('payment_method', 'cod').orWhere('payment_status', 'paid')).count({ n: '*' });
+  const [{ n: todo }] = await db('orders').where(readyNew).count({ n: '*' });
   const counts = Object.fromEntries(
     (await db('orders').select('status').count({ n: '*' }).groupBy('status')).map((r) => [r.status, Number(r.n)]),
   );
@@ -188,7 +191,10 @@ const SETTING_GROUPS = [
     ['bank_account', 'Số tài khoản'], ['bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
   ], 'qr:bank'],
   ['Thanh toán & hóa đơn VAT', [
-    ['payment_hold_hours', 'Giữ hàng cho đơn chuyển khoản chưa trả tiền (giờ) — quá hạn tự hủy, trả lại kho. Chỉ áp dụng khi đã nối SePay'],
+    ['payment_hold_hours', 'Giữ hàng cho đơn chuyển khoản / chờ cọc chưa trả tiền (giờ) — quá hạn tự hủy, trả lại kho. Chỉ áp dụng khi đã nối SePay'],
+    ['cod_deposit_percent', 'Đơn COD cần cọc: tỉ lệ cọc (%) — để 0 nếu không thu cọc'],
+    ['cod_deposit_min_total', 'Đơn COD cần cọc khi tiền hàng TRÊN (₫)'],
+    ['cod_deposit_min_qty', 'Hoặc khi số giỏ TỪ (giỏ trở lên)'],
     ['vat_fee_percent', 'Phí xuất hóa đơn VAT khách chịu (%) — cộng vào tổng đơn, VD: 11. Tiền thu vào tài khoản bán lẻ ở trên'],
   ]],
   ['Giao hàng', [

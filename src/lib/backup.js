@@ -45,6 +45,7 @@ const ORDER_COLUMNS = [
   { header: 'Phí giao', key: 'shipping_fee', type: 'money', width: 11 },
   { header: 'Phí VAT', key: 'vat_fee', type: 'money', width: 11 },
   { header: 'Tổng cộng', key: 'total', type: 'money', width: 13 },
+  { header: 'Tiền cọc', key: 'deposit_amount', type: 'money', width: 12 },
   { header: 'Xuất VAT', key: 'vat', width: 8 },
   { header: 'Tên công ty', key: 'vat_company', width: 26 },
   { header: 'Mã số thuế', key: 'vat_tax_code', width: 13 },

@@ -53,11 +53,53 @@ function accountForOrder(order, s) {
   return accountFromSettings('personal', s);
 }
 
+/* ---------- Đặt cọc đơn COD ----------
+ * Đơn COD có tiền hàng (sau giảm giá) TRÊN mốc tiền, hoặc số giỏ TỪ mốc số lượng → cọc trước X%,
+ * phần còn lại trả khi nhận. 1 giỏ dưới mốc tiền: COD bình thường, không cọc.
+ */
+function depositRule(s) {
+  const num = (v, d) => {
+    const n = Number(String(v ?? '').replace(/[^\d]/g, ''));
+    return String(v ?? '').trim() === '' || !Number.isFinite(n) ? d : n;
+  };
+  return { percent: Math.min(100, num(s.cod_deposit_percent, 30)), minTotal: num(s.cod_deposit_min_total, 1000000), minQty: num(s.cod_deposit_min_qty, 2) };
+}
+/** Số tiền cọc cho đơn COD (0 = không cần cọc). Làm tròn lên nghìn đồng. */
+function depositFor({ goods, qty, total }, s) {
+  const r = depositRule(s);
+  if (!r.percent) return 0;
+  const need = goods > r.minTotal || (r.minQty > 0 && qty >= r.minQty);
+  return need ? Math.min(Number(total), Math.ceil((Number(total) * r.percent) / 100 / 1000) * 1000) : 0;
+}
+/** Đơn đang chờ tiền (chưa được soạn/giao): chuyển khoản chưa trả, hoặc COD chờ cọc. */
+function awaitingMoney(o) {
+  if (o.status === 'cancelled') return false;
+  if (o.payment_method === 'bank') return o.payment_status === 'pending';
+  return Number(o.deposit_amount) > 0 && o.payment_status === 'pending';
+}
+/** Số tiền khách cần chuyển NGAY (dùng cho mã QR). */
+function amountDue(o) {
+  if (o.payment_status === 'paid') return 0;
+  if (o.payment_method === 'cod') {
+    if (Number(o.deposit_amount) > 0 && o.payment_status === 'pending') return Number(o.deposit_amount);
+    if (o.payment_status === 'deposit') return Number(o.total) - Number(o.deposit_amount);
+  }
+  return Number(o.total);
+}
+/** Tiền shipper thu khi giao. */
+function codDue(o) {
+  if (o.payment_method !== 'cod' || o.payment_status === 'paid') return 0;
+  if (o.payment_status === 'deposit') return Number(o.total) - Number(o.deposit_amount);
+  return Number(o.total);
+}
+
 function qrForOrder(order, s) {
-  // Cả đơn COD cũng có QR: khách đổi ý muốn chuyển khoản trước vẫn quét được
+  // Cả đơn COD cũng có QR: tiền cọc (nếu cần cọc), hoặc khách muốn chuyển khoản trước
   const acc = accountForOrder(order, s);
   if (!isConfigured(acc)) return null;
-  return vietQrUrl({ bankId: acc.bankId, account: acc.account, holder: acc.holder, amount: order.total, info: order.code });
+  const amount = amountDue(order);
+  if (!amount) return null;
+  return vietQrUrl({ bankId: acc.bankId, account: acc.account, holder: acc.holder, amount, info: order.code });
 }
 
 /** "****1234" — dùng trong Telegram để không lộ trọn số tài khoản. */
@@ -77,4 +119,4 @@ function vatFee(baseTotal, s) {
   return Math.round((Number(baseTotal) || 0) * vatFeePercent(s) / 100);
 }
 
-module.exports = { vatFeePercent, vatFee, BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };
+module.exports = { depositRule, depositFor, awaitingMoney, amountDue, codDue, vatFeePercent, vatFee, BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };

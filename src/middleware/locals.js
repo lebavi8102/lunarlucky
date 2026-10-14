@@ -18,6 +18,9 @@ const ASSET_VERSION = (() => {
   return h.digest('hex').slice(0, 10);
 })();
 
+const { awaitingMoney, amountDue, codDue, depositRule, depositFor } = require('../lib/payment');
+const PAY = { awaitingMoney, amountDue, codDue, depositRule, depositFor };
+
 function asset(p) {
   return `${p}?v=${ASSET_VERSION}`;
 }
@@ -34,6 +37,7 @@ module.exports = async function locals(req, res, next) {
   res.locals.money = fmt.money;
   res.locals.img = img;
   res.locals.asset = asset;
+  res.locals.pay = PAY; // tiền cọc / tiền cần trả / tiền thu COD dùng trong giao diện
   res.locals.siteUrl = config.siteUrl;
   res.locals.path = req.path;
   res.locals.user = req.session.user || null;
