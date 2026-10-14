@@ -59,6 +59,7 @@ function messageText(order, items) {
     '',
     vat,
     `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
+    order.status === 'cancelled' && order.payment_status === 'paid' ? '⚠️ <b>Khách đã thanh toán — cần hoàn tiền</b>' : null,
     pay,
     account,
     log ? `\n<i>Lịch sử xử lý</i>\n${log}` : null,
@@ -67,7 +68,7 @@ function messageText(order, items) {
     .join('\n');
 }
 
-function keyboard(order, { confirmCancel = false } = {}) {
+function keyboard(order, { confirmCancel = false, confirmRestore = false } = {}) {
   const id = order.id;
   const openBtn = { text: '🔗 Mở đơn', url: `${config.publicUrl}/admin/don-hang/${id}` };
   if (confirmCancel) {
@@ -81,10 +82,23 @@ function keyboard(order, { confirmCancel = false } = {}) {
       ],
     };
   }
-  if (order.status === 'cancelled' || order.status === 'completed') {
-    const row = [openBtn];
-    if (order.status === 'cancelled') row.unshift({ text: '↩️ Khôi phục đơn', callback_data: `o:${id}:r` });
-    return { inline_keyboard: [row] };
+  if (confirmRestore) {
+    return {
+      inline_keyboard: [
+        [{ text: `↩️ Khôi phục đơn ${order.code}?`, callback_data: `o:${id}:noop` }],
+        [
+          { text: 'Có, khôi phục', callback_data: `o:${id}:rr` },
+          { text: 'Không', callback_data: `o:${id}:back` },
+        ],
+      ],
+    };
+  }
+  if (order.status === 'cancelled') {
+    return { inline_keyboard: [[{ text: '↩️ Khôi phục đơn', callback_data: `o:${id}:r` }, openBtn]] };
+  }
+  // Đơn đã hoàn tất vẫn hủy được (khách trả hàng, đơn thử...)
+  if (order.status === 'completed') {
+    return { inline_keyboard: [[{ text: '❌ Hủy', callback_data: `o:${id}:x` }, openBtn]] };
   }
   const idx = STEPS.findIndex((s) => s[0] === order.status);
   const next = STEPS.slice(idx + 1);
@@ -322,6 +336,10 @@ async function handleUpdate(update) {
     await refreshOrderMessage(id, { confirmCancel: true });
     return answer(cb, 'Bấm "Có, hủy đơn" để xác nhận.');
   }
+  if (action === 'r') {
+    await refreshOrderMessage(id, { confirmRestore: true });
+    return answer(cb, 'Bấm "Có, khôi phục" để xác nhận.');
+  }
   if (action === 'back') {
     await refreshOrderMessage(id);
     return answer(cb, 'Đã giữ nguyên đơn.');
@@ -330,13 +348,16 @@ async function handleUpdate(update) {
   let changes = null;
   if (ACTIONS[action]) changes = { status: ACTIONS[action] };
   else if (action === 'xx') changes = { status: 'cancelled' };
-  else if (action === 'r') changes = { status: 'confirmed' };
+  else if (action === 'rr') changes = { status: 'confirmed' };
   else if (action === '$') changes = { payment_status: 'paid' };
   if (!changes) return answer(cb, 'Lệnh không hợp lệ.');
 
   const r = await updateOrder(id, changes, { by: `${by} (Telegram)` });
   await refreshOrderMessage(id);
   const label = changes.status ? ORDER_STATUS[changes.status] : PAYMENT_STATUS[changes.payment_status];
+  if (r && r.changed && changes.status === 'cancelled' && r.order.payment_status === 'paid') {
+    return answer(cb, `Đã hủy đơn ${r.order.code}. Đơn đã thanh toán — nhớ hoàn tiền cho khách.`, true);
+  }
   return answer(cb, r && r.changed ? `Đã cập nhật: ${label}` : 'Đơn đã ở trạng thái này.');
 }
 

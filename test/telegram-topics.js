@@ -100,6 +100,37 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   await tg.handleUpdate({ message: { message_id: 999, chat: { id: -1, type: 'group' }, from: { first_name: 'X' }, text: `/nhap ${p.sku} 50` } });
   ok(!lastSend() && (await db('products').where({ id: p.id }).first()).stock === 13, 'Nhóm lạ gõ lệnh → bỏ qua');
 
+  // Hủy đơn đã HOÀN TẤT từ Telegram → đơn trên web cũng hủy, trả kho; khôi phục phải xác nhận
+  {
+    const prod = await db('products').where({ id: p.id }).first();
+    const [oidRaw] = await db('orders').insert({
+      code: 'LN261014TGXQ', customer_name: 'Thử hủy', phone: '0912345678', address: 'x', province: 'Hà Nội', delivery_date: '2026-12-01',
+      payment_method: 'bank', payment_status: 'paid', status: 'completed', subtotal: 100000, discount: 0, shipping_fee: 0, total: 100000,
+      tg_chat_id: String(GROUP), tg_message_id: 99,
+    });
+    const oid = typeof oidRaw === 'object' ? oidRaw.id : oidRaw;
+    await db('order_items').insert({ order_id: oid, product_id: p.id, name: prod.name, price: 100000, qty: 2, line_total: 200000 });
+    const kb0 = JSON.stringify(require('../src/lib/telegram-orders').keyboard({ id: oid, code: 'LN261014TGXQ', status: 'completed' }));
+    ok(kb0.includes(`o:${oid}:x`), 'Đơn đã Hoàn tất vẫn có nút ❌ Hủy trên Telegram');
+    const press = (data) => tg.handleUpdate({ callback_query: { id: 'q', data, from: { first_name: 'Lan' }, message: { message_id: 99, chat: { id: GROUP } } } });
+    await press(`o:${oid}:x`);
+    ok((await db('orders').where({ id: oid }).first()).status === 'completed', 'Bấm Hủy lần 1 → chỉ hỏi xác nhận, chưa hủy');
+    sent.length = 0;
+    await press(`o:${oid}:xx`);
+    const cancelled = await db('orders').where({ id: oid }).first();
+    ok(cancelled.status === 'cancelled', 'Bấm "Có, hủy đơn" → đơn trên web chuyển Đã hủy');
+    ok((await db('products').where({ id: p.id }).first()).stock === prod.stock + 2, 'Hủy đơn → trả 2 giỏ về kho');
+    ok(sent.some((x) => x.method === 'answerCallbackQuery' && /hoàn tiền/.test(x.body.text)), 'Đơn đã thanh toán bị hủy → nhắc hoàn tiền');
+    ok(sent.some((x) => x.method === 'editMessageText' && /cần hoàn tiền/.test(x.body.text)), 'Tin đơn trong nhóm ghi "cần hoàn tiền"');
+    await press(`o:${oid}:r`);
+    ok((await db('orders').where({ id: oid }).first()).status === 'cancelled', 'Bấm Khôi phục lần 1 → chỉ hỏi xác nhận');
+    await press(`o:${oid}:rr`);
+    ok((await db('orders').where({ id: oid }).first()).status === 'confirmed', 'Bấm "Có, khôi phục" → đơn sống lại');
+    await db('order_items').where({ order_id: oid }).del();
+    await db('orders').where({ id: oid }).del();
+    await db('products').where({ id: p.id }).update({ stock: prod.stock });
+  }
+
   // Khách để lại SĐT → báo nhóm; bấm "✅ Đã gọi" → đánh dấu xong, sửa tin
   sent.length = 0;
   const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });
