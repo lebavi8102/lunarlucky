@@ -349,7 +349,10 @@ async function handleUpdate(update) {
   if (update.message) {
     await rememberChat(update.message.chat);
     if (/^\/anhgiao/i.test(String(update.message.caption || update.message.text || ''))) {
-      if (String(update.message.chat.id) !== String(await notify.telegramChatId())) return;
+      console.log(`[telegram] /anhgiao từ nhóm ${update.message.chat.id} · ảnh: ${update.message.photo ? 'có' : update.message.reply_to_message?.photo ? 'trả lời ảnh' : 'không'}`);
+      if (String(update.message.chat.id) !== String(await notify.telegramChatId())) {
+        return reply(update.message, 'Nhóm này chưa được chọn làm nơi nhận đơn (admin → Telegram).');
+      }
       try {
         const text = await require('./testimonials').fromTelegram(update.message);
         if (text) await reply(update.message, text);

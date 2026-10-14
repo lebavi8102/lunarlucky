@@ -28,10 +28,15 @@ async function downloadTelegramPhoto(photos) {
 
 /** Xử lý tin có ảnh + chú thích /anhgiao. Trả về câu trả lời gửi lại nhóm. */
 async function fromTelegram(msg) {
-  const caption = String(msg.caption || '').trim();
+  // Lệnh nằm ở chú thích ảnh, hoặc là tin chữ TRẢ LỜI (reply) vào một ảnh đã gửi trước đó
+  const caption = String(msg.caption || msg.text || '').trim();
   const m = /^\/anhgiao(?:@\w+)?\s*([A-Z0-9]*)\s*([\s\S]*)$/i.exec(caption);
   if (!m) return null;
-  if (!msg.photo || !msg.photo.length) return 'Gửi <b>ảnh</b> kèm chú thích: <code>/anhgiao MÃĐƠN lời khách nhận xét</code>';
+  const photo = (msg.photo && msg.photo.length && msg.photo) || (msg.reply_to_message && msg.reply_to_message.photo) || null;
+  if (!photo) {
+    return 'Chưa thấy ảnh. Cách gửi:\n1) Gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khen</code>, hoặc\n2) Gửi ảnh trước, rồi <b>trả lời (reply) vào ảnh</b> bằng <code>/anhgiao MÃĐƠN lời khen</code>';
+  }
+  msg = { ...msg, photo };
   const code = m[1].toUpperCase();
   const content = m[2].trim().slice(0, 400) || null;
   const order = code ? await db('orders').where({ code }).first() : null;

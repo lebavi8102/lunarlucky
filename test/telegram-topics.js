@@ -158,6 +158,14 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await tg.handleUpdate({ message: { message_id: 51, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' },
       photo: [{ file_id: 'x', width: 90, height: 90 }], caption: '/anhgiao LN000000ZZZZ' } });
     ok(sent.some((x) => /Không tìm thấy đơn/.test(x.body.text || '')), 'Sai mã đơn → bot báo lại');
+    // Cách dự phòng: gửi ảnh trước, rồi TRẢ LỜI ảnh bằng tin chữ /anhgiao MÃĐƠN
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 52, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' },
+      text: '/anhgiao LN261014PHTQ', reply_to_message: { message_id: 49, photo: [{ file_id: 'r', width: 800, height: 800, file_size: 5000 }] } } });
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 2, 'Trả lời (reply) vào ảnh bằng /anhgiao MÃĐƠN → cũng lưu được');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 53, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' }, text: '/anhgiao LN261014PHTQ' } });
+    ok(sent.some((x) => /Chưa thấy ảnh/.test(x.body.text || '')), 'Gõ /anhgiao không kèm ảnh → bot hướng dẫn cách gửi');
     const listed = await require('../src/lib/testimonials').listActive();
     ok(!listed.some((x) => x.id === t.id), 'Ảnh chưa duyệt không hiện trên web');
     await db('testimonials').where({ order_code: 'LN261014PHTQ' }).del();
