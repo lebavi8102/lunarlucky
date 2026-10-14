@@ -56,15 +56,15 @@ router.post('/gio-hang/ma-giam-gia', couponLimiter, async (req, res) => {
   const code = String(req.body.code || '').trim().toUpperCase().slice(0, 40);
   if (req.body.remove || !code) {
     c.coupon = null;
+    if (wantsJson(req)) return res.json({ ok: true, removed: true });
     return res.redirect(req.body.from === 'checkout' ? '/thanh-toan' : '/gio-hang');
   }
   const priced = await cart.priceCart({ ...c, coupon: null, lines: [...c.lines] });
   const r = await cart.validateCoupon(code, priced.subtotal);
+  if (!r.error) c.coupon = r.coupon.code;
+  if (wantsJson(req)) return res.status(r.error ? 422 : 200).json(r.error ? { ok: false, error: r.error } : { ok: true, code: r.coupon.code });
   if (r.error) flash(req, 'error', r.error);
-  else {
-    c.coupon = r.coupon.code;
-    flash(req, 'success', `Đã áp dụng mã ${r.coupon.code}.`);
-  }
+  else flash(req, 'success', `Đã áp dụng mã ${r.coupon.code}.`);
   res.redirect(req.body.from === 'checkout' ? '/thanh-toan' : '/gio-hang');
 });
 

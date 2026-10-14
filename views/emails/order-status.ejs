@@ -1,5 +1,5 @@
 <%- include('_layout-top') %>
-<h1 style="font-family:Georgia,serif;font-weight:normal;font-size:24px;margin:0 0 12px">Đơn <%= order.code %>: <%= statusLabel %></h1>
+<h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:24px;margin:0 0 12px">Đơn <%= order.code %>: <%= statusLabel %></h1>
 <p style="margin:0;line-height:1.7;color:#4a3f38">
   Chào <%= order.customer_name %>,<br>
   <% if (order.status === 'confirmed') { %>Lunar Lucky đã xác nhận đơn quà của bạn và đang chuẩn bị đóng gói.<% } %>

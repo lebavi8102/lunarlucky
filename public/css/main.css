@@ -604,6 +604,11 @@ ul, ol { margin: 0; padding: 0; }
 .review-card blockquote { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-700); }
 .ship-promise { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--cream-100); font-size: 14px; line-height: 1.5; color: var(--ink-700); }
 .ship-promise .icon { color: var(--lacquer-700); margin-top: 3px; flex: none; }
+.coupon-box { margin: 4px 0 12px; }
+.coupon-box > summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 14px; list-style: none; }
+.coupon-box > summary::-webkit-details-marker { display: none; }
+.coupon-inline { display: flex; gap: 8px; margin-top: 8px; }
+.coupon-inline .input { min-width: 0; text-transform: uppercase; }
 .secure-note { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: var(--space-4); font-size: 13px; color: var(--text-muted); }
 [hidden] { display: none !important; }
 

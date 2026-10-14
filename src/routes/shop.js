@@ -137,7 +137,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
 });
 
 router.get('/tim-kiem', async (req, res) => {
-  const q = String(req.query.q || '').trim().slice(0, 80);
+  const q = String(req.query.q || '').normalize('NFC').trim().slice(0, 80);
   let products = [];
   if (q) {
     // Dùng "!" làm ký tự escape để câu LIKE chạy giống nhau trên MySQL và SQLite

@@ -207,19 +207,22 @@
     const token = $('[data-checkout] input[name=_csrf]').value;
     let busy = false;
     let timer;
+    // url = null: chỉ tải lại khung Đơn hàng (VD sau khi áp mã giảm giá)
     const send = async (url, body) => {
       if (busy) return;
       busy = true;
       summary.classList.add('is-updating');
       try {
-        const r = await fetch(url, {
-          method: 'POST',
-          headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'x-csrf-token': token },
-          body: new URLSearchParams(body),
-        });
-        const d = await r.json();
-        if (!d.count) return void (location.href = '/gio-hang');
-        $$('[data-cart-count]').forEach((el) => { el.textContent = d.count; el.dataset.count = d.count; });
+        if (url) {
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'x-csrf-token': token },
+            body: new URLSearchParams(body),
+          });
+          const d = await r.json();
+          if (d.count === 0) return void (location.href = '/gio-hang');
+          if (d.count) $$('[data-cart-count]').forEach((el) => { el.textContent = d.count; el.dataset.count = d.count; });
+        }
         const html = await (await fetch('/thanh-toan', { headers: { accept: 'text/html' }, cache: 'no-store' })).text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
         const fresh = doc.querySelector('.summary[aria-label]');
@@ -241,9 +244,29 @@
       clearTimeout(timer);
       timer = setTimeout(() => send('/gio-hang/cap-nhat', { key: input.dataset.checkoutQty, qty: input.value }), 350);
     });
-    summary.addEventListener('click', (e) => {
+    summary.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-checkout-remove]');
-      if (b) send('/gio-hang/xoa', { key: b.dataset.checkoutRemove });
+      if (b) return send('/gio-hang/xoa', { key: b.dataset.checkoutRemove });
+      if (e.target.closest('[data-coupon-remove]')) return send('/gio-hang/ma-giam-gia', { remove: '1', from: 'checkout' });
+      if (e.target.closest('[data-coupon-apply]')) {
+        const code = ($('[data-coupon-input]', summary).value || '').trim();
+        const msg = $('[data-coupon-msg]', summary);
+        if (!code) return msg && (msg.textContent = 'Vui lòng nhập mã giảm giá.');
+        const r = await fetch('/gio-hang/ma-giam-gia', {
+          method: 'POST',
+          headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'x-csrf-token': token },
+          body: new URLSearchParams({ code, from: 'checkout' }),
+        }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Mất kết nối, vui lòng thử lại.' }));
+        if (!r.ok) return msg && (msg.textContent = r.error || 'Mã không hợp lệ.');
+        showToast(`Đã áp dụng mã ${r.code}`);
+        await send(null); // làm mới khung Đơn hàng với giá đã giảm
+      }
+    });
+    summary.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.matches('[data-coupon-input]')) {
+        e.preventDefault(); // không gửi nhầm cả đơn
+        $('[data-coupon-apply]', summary)?.click();
+      }
     });
   }
 

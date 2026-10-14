@@ -4,7 +4,8 @@ const PHONE_RE = /^(0|\+84)(3|5|7|8|9|2)\d{8}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function str(v, max = 255) {
-  return String(v ?? '').trim().slice(0, max);
+  // NFC: gom dấu tiếng Việt về ký tự liền (một số bàn phím gõ dấu rời → hiển thị lỗi, tìm kiếm sai)
+  return String(v ?? '').normalize('NFC').trim().slice(0, max);
 }
 
 /**

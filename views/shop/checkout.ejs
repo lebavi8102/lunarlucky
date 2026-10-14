@@ -147,7 +147,17 @@
         <% }) %>
       </ul>
       <div class="sum-row"><span>Tạm tính</span><span><%= money(cart.subtotal) %></span></div>
-      <% if (cart.discount) { %><div class="sum-row"><span>Mã <%= cart.coupon.code %></span><span class="disc">−<%= money(cart.discount) %></span></div><% } %>
+      <% if (cart.discount) { %><div class="sum-row"><span>Mã <%= cart.coupon.code %> <button type="button" class="link-btn small" data-coupon-remove>Bỏ mã</button></span><span class="disc">−<%= money(cart.discount) %></span></div><% } else { %>
+      <details class="coupon-box" <%= cart.couponError ? 'open' : '' %>>
+        <summary>Có mã giảm giá?</summary>
+        <div class="coupon-inline">
+          <label class="sr-only" for="ck-coupon">Mã giảm giá</label>
+          <input class="input" id="ck-coupon" placeholder="Nhập mã" autocomplete="off" maxlength="40" data-coupon-input>
+          <button type="button" class="btn btn-sm" data-coupon-apply>Áp dụng</button>
+        </div>
+        <p class="small" role="status" aria-live="polite" data-coupon-msg style="color:var(--lacquer-700);margin-top:6px"><%= cart.couponError || '' %></p>
+      </details>
+      <% } %>
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
       <% const vatFeePreview = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
       <div class="sum-row" data-vat-row <%= values.needs_vat ? '' : 'hidden' %>><span>Phí xuất hóa đơn VAT (<%= vatPercent %>%)</span><span><%= money(vatFeePreview) %></span></div>
