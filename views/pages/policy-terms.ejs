@@ -3,19 +3,31 @@
   <div class="container">
     <span class="eyebrow">Chính sách</span>
     <h1><%= page.title %></h1>
-    <p class="muted small">Cập nhật lần cuối: 12/10/2026</p>
+    <p class="muted small">Cập nhật lần cuối: 14/10/2026</p>
   </div>
 </section>
 <section class="section-tight">
   <div class="container"><div class="prose">
-<h2>Đặt hàng</h2>
-<p>Đơn hàng được xác lập khi Lunar Lucky gọi hoặc nhắn xác nhận với bạn. Lunar Lucky có quyền từ chối đơn trong trường hợp hết hàng hoặc thông tin giao hàng không hợp lệ, và sẽ hoàn tiền đầy đủ nếu bạn đã thanh toán.</p>
+<h2>Về Lunar Lucky</h2>
+<p>Lunar Lucky là cửa hàng quà Tết bán hàng <strong>trực tuyến</strong> qua website, fanpage và Zalo, giao hàng trong nội thành Hà Nội. Lunar Lucky không có cửa hàng trưng bày.</p>
+<h2>Đặt hàng và xác lập đơn</h2>
+<ul>
+  <li><strong>Đơn chuyển khoản:</strong> đơn được xác lập khi Lunar Lucky nhận đủ tiền với nội dung là mã đơn. Hệ thống tự xác nhận và trang đơn hàng của bạn chuyển sang "Đã thanh toán". Đơn chưa thanh toán được giữ hàng trong 24 giờ, sau đó tự hủy.</li>
+  <li><strong>Đơn COD:</strong> đơn được xác lập khi Lunar Lucky gọi hoặc nhắn xác nhận với bạn.</li>
+  <li>Lunar Lucky có quyền từ chối đơn khi hết hàng, ngoài khu vực giao hoặc thông tin không hợp lệ, và hoàn tiền đầy đủ nếu bạn đã thanh toán.</li>
+</ul>
 <h2>Giá và thanh toán</h2>
-<p>Giá hiển thị bằng Việt Nam đồng, đã bao gồm hộp quà, thiệp và đóng gói. Lunar Lucky nhận thanh toán khi nhận hàng (COD) hoặc chuyển khoản qua VietQR. Với đơn chuyển khoản, đơn được xử lý sau khi Lunar Lucky nhận được thanh toán.</p>
-<h2>Hình ảnh sản phẩm</h2>
-<p>Do sản phẩm là hàng tuyển chọn theo mùa, một số món trong giỏ có thể được thay thế bằng món tương đương về giá trị và chất lượng. Lunar Lucky sẽ thông báo trước nếu có thay đổi.</p>
+<ul>
+  <li>Giá hiển thị bằng Việt Nam đồng, đã bao gồm hộp quà, thiệp và đóng gói; chưa bao gồm phí giao hàng (nếu có).</li>
+  <li>Phương thức: <strong>chuyển khoản qua VietQR</strong> (khuyến khích) hoặc <strong>thanh toán khi nhận hàng (COD)</strong>.</li>
+  <li>Vui lòng ghi đúng <strong>mã đơn</strong> trong nội dung chuyển khoản. Chuyển thiếu, Lunar Lucky sẽ liên hệ để bổ sung; chuyển dư sẽ được hoàn lại.</li>
+</ul>
+<h2>Hóa đơn VAT</h2>
+<p>Đơn cần hóa đơn VAT được xuất qua đơn vị đối tác của Lunar Lucky. Khách hàng chịu phí xuất hóa đơn hiển thị ở bước thanh toán; phí đã cộng vào tổng tiền. Đơn xuất VAT chỉ áp dụng thanh toán chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.</p>
+<h2>Sản phẩm và hình ảnh</h2>
+<p>Sản phẩm là hàng tuyển chọn theo mùa. Một số món trong giỏ có thể được thay bằng món tương đương về giá trị và chất lượng; Lunar Lucky sẽ báo trước nếu có thay đổi. Màu sắc thực tế có thể chênh lệch nhẹ so với ảnh.</p>
 <h2>Liên hệ</h2>
-<p>Mọi thắc mắc vui lòng liên hệ hotline <%= s.shop_phone %> hoặc email <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a>.</p>
+<p>Mọi thắc mắc vui lòng liên hệ hotline <%= s.shop_phone %>, <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Zalo</a> hoặc email <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a>.</p>
   </div></div>
 </section>
 <%- include('../partials/bottom') %>

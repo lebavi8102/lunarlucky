@@ -17,7 +17,7 @@ module.exports = [
   },
   {
     q: 'Phí giao hàng được tính thế nào?',
-    a: 'Lunar Lucky áp dụng phí giao đồng giá, và miễn phí giao hàng cho đơn đạt giá trị tối thiểu hiển thị trên website. Đơn đi tỉnh xa có thể phát sinh phụ phí, Lunar Lucky sẽ báo trước khi giao.',
+    a: 'Lunar Lucky giao nội thành Hà Nội bằng Ahamove hoặc tự giao: đồng giá 50.000₫ mỗi đơn, miễn phí cho đơn từ 1.500.000₫. Khu vực khác vui lòng nhắn Zalo để được báo phí.',
   },
   {
     q: 'Doanh nghiệp đặt số lượng lớn có được ưu đãi và in logo không?',
@@ -25,6 +25,6 @@ module.exports = [
   },
   {
     q: 'Nếu giỏ quà bị hư hỏng khi nhận thì sao?',
-    a: 'Vui lòng quay video khi mở hàng và liên hệ Lunar Lucky trong 24 giờ. Chúng tôi sẽ đổi mới món bị hư hỏng hoặc hoàn tiền tương ứng.',
+    a: 'Vui lòng kiểm tra giỏ khi nhận, quay video khi mở hàng và liên hệ Lunar Lucky trong 24 giờ. Chúng tôi sẽ đổi mới món bị hư hỏng hoặc hoàn tiền tương ứng qua chuyển khoản.',
   },
 ];

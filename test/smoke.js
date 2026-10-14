@@ -67,10 +67,12 @@ async function addToCart(c, slug, qty = 1) {
   ok(/không tồn tại/.test((await c('/gio-hang')).text), 'Mã giảm giá sai báo lỗi');
 
   // 4. Thanh toán: lỗi, rồi đơn bán lẻ
-  const bad = await c('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'A', phone: '123', province: 'Hà Nội' } });
+  const bad = await c('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'A', phone: '123', province: 'Cầu Giấy, Hà Nội' } });
   ok(bad.status === 422 && /aria-invalid="true"/.test(bad.text), 'Thiếu thông tin thanh toán → báo lỗi tại ô');
+  const far = await c('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'A', phone: '0912345678', province: 'TP. Hồ Chí Minh', address: '1 Lê Lợi' } });
+  ok(far.status === 422 && /nội thành Hà Nội/.test(far.text), 'Địa chỉ ngoài nội thành Hà Nội → không cho đặt, gợi ý nhắn Zalo');
   const place = await c('/thanh-toan', { method: 'POST', form: {
-    _csrf: t, customer_name: 'Khách Thử', phone: '0912345678', province: 'Hà Nội', address: '12 Phố Huế',
+    _csrf: t, customer_name: 'Khách Thử', phone: '0912345678', province: 'Cầu Giấy, Hà Nội', address: '12 Phố Huế',
     delivery_date: deliveryDate, card_message: 'Chúc mừng năm mới', payment_method: 'bank' } });
   ok(place.status === 302 && /^\/don-hang\/LN/.test(place.location || ''), `Đặt đơn bán lẻ → ${place.location}`);
   const code = (place.location || '').split('/')[2]?.split('?')[0];
@@ -88,11 +90,11 @@ async function addToCart(c, slug, qty = 1) {
   const c3 = client();
   const { t: t3 } = await addToCart(c3, 'gio-an-khang', 1);
   const vatBad = await c3('/thanh-toan', { method: 'POST', form: { _csrf: t3, customer_name: 'Kế toán', phone: '0912345678',
-    province: 'Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Cty X',
+    province: 'Cầu Giấy, Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Cty X',
     vat_tax_code: '123', vat_address: '1 Tràng Tiền', vat_email: 'kt@x.vn', payment_method: 'bank' } });
   ok(vatBad.status === 422 && /Mã số thuế gồm 10 số/.test(vatBad.text), 'Mã số thuế sai → báo lỗi');
   const vat = await c3('/thanh-toan', { method: 'POST', form: { _csrf: t3, customer_name: 'Kế toán', phone: '0912345678',
-    province: 'Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Công ty TNHH Thử',
+    province: 'Cầu Giấy, Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Công ty TNHH Thử',
     vat_tax_code: '0101234567', vat_address: '1 Tràng Tiền, Hà Nội', vat_email: 'kt@thu.vn', payment_method: 'cod' } });
   ok(vat.status === 302, 'Đặt đơn VAT (chọn COD vẫn được chuyển sang chuyển khoản)');
   const vatPage = (await c3(vat.location)).text;

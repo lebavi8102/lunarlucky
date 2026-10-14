@@ -12,13 +12,17 @@ const { flash } = require('../middleware/locals');
 
 const router = express.Router();
 
-const PROVINCES = [
-  'TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Huế', 'An Giang', 'Bắc Ninh',
-  'Cà Mau', 'Cao Bằng', 'Đắk Lắk', 'Điện Biên', 'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Tĩnh',
-  'Hưng Yên', 'Khánh Hòa', 'Lai Châu', 'Lâm Đồng', 'Lạng Sơn', 'Lào Cai', 'Nghệ An', 'Ninh Bình',
-  'Phú Thọ', 'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị', 'Sơn La', 'Tây Ninh', 'Thái Nguyên',
-  'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long',
+/**
+ * Khu vực giao: chỉ nội thành Hà Nội (giao bằng Ahamove hoặc shop tự giao).
+ * Hà Nội đã bỏ cấp quận từ 7/2025 nhưng khách vẫn quen gọi theo quận cũ → chọn theo quận cũ.
+ * Lưu vào cột province dạng "Cầu Giấy, Hà Nội".
+ */
+const AREAS = [
+  'Ba Đình', 'Hoàn Kiếm', 'Đống Đa', 'Hai Bà Trưng', 'Tây Hồ', 'Cầu Giấy',
+  'Thanh Xuân', 'Hoàng Mai', 'Long Biên', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông',
 ];
+const PROVINCES = AREAS.map((a) => `${a}, Hà Nội`);
+const AREA_OPTIONS = AREAS.map((a) => ({ value: `${a}, Hà Nội`, label: `${a} (Hà Nội)` }));
 
 const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, standardHeaders: true, legacyHeaders: false });
 const trackLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
@@ -39,7 +43,7 @@ function checkoutDefaults(req) {
   const u = req.session.user;
   return {
     customer_name: u ? u.name : '', phone: u ? u.phone || '' : '', email: u ? u.email : '',
-    address: u ? u.address || '' : '', province: 'TP. Hồ Chí Minh', payment_method: 'bank', is_gift: false,
+    address: u ? u.address || '' : '', province: '', payment_method: 'bank', is_gift: false,
   };
 }
 
@@ -50,7 +54,7 @@ router.get('/thanh-toan', async (req, res) => {
   res.locals.seo.noindex = true;
   const minDays = Number(res.locals.s.min_delivery_days) || 1;
   res.render('shop/checkout', {
-    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: AREA_OPTIONS, vatPercent: payment.vatFeePercent(res.locals.s),
     minDate: todayVN(minDays), maxDate: todayVN(180),
   });
 });
@@ -68,7 +72,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const is_gift = f.bool('is_gift');
   let address = f.text('address', { label: 'địa chỉ nhận hàng', required: !is_gift, min: 6, max: 255 });
   const province = f.oneOf('province', PROVINCES, '');
-  if (!province) f.errors.province = 'Vui lòng chọn tỉnh/thành phố.';
+  if (!province) f.errors.province = 'Vui lòng chọn khu vực giao trong nội thành Hà Nội.';
   let recipient_name = null;
   let recipient_phone = null;
   let recipient_address = null;
@@ -115,7 +119,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     res.locals.seo.title = 'Thanh toán · Lunar Lucky';
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
-      cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+      cart: priced, values: f.values, errors: f.errors, provinces: AREA_OPTIONS, vatPercent: payment.vatFeePercent(res.locals.s),
       minDate: todayVN(minDays), maxDate: todayVN(180),
     });
   }

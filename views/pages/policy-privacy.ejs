@@ -3,20 +3,33 @@
   <div class="container">
     <span class="eyebrow">Chính sách</span>
     <h1><%= page.title %></h1>
-    <p class="muted small">Cập nhật lần cuối: 12/10/2026</p>
+    <p class="muted small">Cập nhật lần cuối: 14/10/2026</p>
   </div>
 </section>
 <section class="section-tight">
   <div class="container"><div class="prose">
 <h2>Thông tin Lunar Lucky thu thập</h2>
-<p>Khi bạn đặt hàng hoặc tạo tài khoản, Lunar Lucky thu thập: họ tên, số điện thoại, email, địa chỉ giao hàng, thông tin người nhận quà và lời nhắn trên thiệp.</p>
+<p>Khi bạn đặt hàng hoặc tạo tài khoản, Lunar Lucky thu thập: họ tên, số điện thoại, email, địa chỉ giao hàng, thông tin người nhận quà và lời chúc trên thiệp. Với đơn xuất hóa đơn VAT: tên công ty, mã số thuế, địa chỉ công ty và email nhận hóa đơn.</p>
 <h2>Mục đích sử dụng</h2>
-<ul><li>Xử lý, giao đơn hàng và liên hệ xác nhận.</li><li>Gửi email xác nhận và cập nhật trạng thái đơn.</li><li>Hỗ trợ sau bán hàng.</li></ul>
-<p>Lunar Lucky <strong>không bán hay chia sẻ</strong> thông tin cá nhân của bạn cho bên thứ ba, trừ đơn vị vận chuyển (chỉ tên, số điện thoại, địa chỉ người nhận) để giao hàng.</p>
+<ul>
+  <li>Xử lý đơn, liên hệ xác nhận và giao hàng.</li>
+  <li>Đối soát thanh toán chuyển khoản.</li>
+  <li>Gửi email xác nhận, cập nhật trạng thái đơn và hỗ trợ sau bán hàng.</li>
+  <li>Xuất hóa đơn VAT khi bạn yêu cầu.</li>
+</ul>
+<h2>Chia sẻ thông tin</h2>
+<p>Lunar Lucky <strong>không bán</strong> thông tin cá nhân của bạn. Thông tin chỉ được chia sẻ ở mức cần thiết với:</p>
+<ul>
+  <li><strong>Đơn vị giao hàng (Ahamove):</strong> tên, số điện thoại, địa chỉ người nhận và số tiền thu hộ (với đơn COD).</li>
+  <li><strong>Đơn vị xuất hóa đơn:</strong> thông tin công ty để xuất hóa đơn VAT theo yêu cầu của bạn.</li>
+  <li><strong>Ngân hàng và dịch vụ đối soát thanh toán:</strong> nội dung chuyển khoản (mã đơn) để xác nhận bạn đã thanh toán.</li>
+</ul>
 <h2>Bảo mật</h2>
-<p>Website sử dụng kết nối mã hóa HTTPS. Mật khẩu được mã hóa một chiều, nhân viên Lunar Lucky không thể xem. Lunar Lucky không lưu thông tin thẻ hay tài khoản ngân hàng của khách hàng.</p>
+<p>Website sử dụng kết nối mã hóa HTTPS. Mật khẩu tài khoản được mã hóa một chiều, nhân viên không thể xem. Lunar Lucky <strong>không thu thập</strong> thông tin thẻ, mật khẩu hay mã OTP ngân hàng của bạn; bạn thanh toán trực tiếp trong ứng dụng ngân hàng của mình. Chỉ nhân viên xử lý đơn mới được xem thông tin đơn hàng.</p>
+<h2>Lưu trữ</h2>
+<p>Thông tin đơn hàng được lưu để phục vụ bảo hành, đối soát và nghĩa vụ kế toán. Bạn có thể yêu cầu xóa thông tin tài khoản bất kỳ lúc nào.</p>
 <h2>Quyền của bạn</h2>
-<p>Bạn có thể yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân bằng cách liên hệ <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a>.</p>
+<p>Bạn có thể yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân bằng cách liên hệ <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a> hoặc hotline <%= s.shop_phone %>.</p>
   </div></div>
 </section>
 <%- include('../partials/bottom') %>

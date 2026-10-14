@@ -29,7 +29,7 @@ const DEFAULTS = {
   company_bank_holder: '',
   vat_fee_percent: '11',
   payment_hold_hours: '24',
-  shipping_fee: '35000',
+  shipping_fee: '50000',
   free_ship_threshold: '1500000',
   min_delivery_days: '1',
   announcement: 'Miễn phí giao hàng nội thành cho đơn từ 1.500.000₫ · Đặt trước Tết để chọn ngày giao',
