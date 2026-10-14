@@ -201,6 +201,52 @@
     syncVat();
   }
 
+  /* Trang thanh toán: + / − / xóa món trong khung Đơn hàng (cập nhật tại chỗ, giữ nguyên thông tin đã điền) */
+  const summary = $('.summary[aria-label]');
+  if (summary && $('[data-checkout]')) {
+    const token = $('[data-checkout] input[name=_csrf]').value;
+    let busy = false;
+    let timer;
+    const send = async (url, body) => {
+      if (busy) return;
+      busy = true;
+      summary.classList.add('is-updating');
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'x-csrf-token': token },
+          body: new URLSearchParams(body),
+        });
+        const d = await r.json();
+        if (!d.count) return void (location.href = '/gio-hang');
+        $$('[data-cart-count]').forEach((el) => { el.textContent = d.count; el.dataset.count = d.count; });
+        const html = await (await fetch('/thanh-toan', { headers: { accept: 'text/html' }, cache: 'no-store' })).text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const fresh = doc.querySelector('.summary[aria-label]');
+        if (fresh) summary.innerHTML = fresh.innerHTML;
+        // Dòng "Tiền hàng + phí VAT = Cần thanh toán" ở khung VAT cũng tính lại theo số lượng mới
+        const vb = doc.querySelector('[data-vat-breakdown]');
+        if (vb && $('[data-vat-breakdown]')) $('[data-vat-breakdown]').innerHTML = vb.innerHTML;
+        $('[data-vat-toggle]')?.dispatchEvent(new Event('change')); // tính lại tổng nếu đang chọn xuất VAT
+      } catch {
+        showToast('Không cập nhật được số lượng, vui lòng thử lại.');
+      } finally {
+        busy = false;
+        summary.classList.remove('is-updating');
+      }
+    };
+    summary.addEventListener('change', (e) => {
+      const input = e.target.closest('[data-checkout-qty]');
+      if (!input) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => send('/gio-hang/cap-nhat', { key: input.dataset.checkoutQty, qty: input.value }), 350);
+    });
+    summary.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-checkout-remove]');
+      if (b) send('/gio-hang/xoa', { key: b.dataset.checkoutRemove });
+    });
+  }
+
   const checkout = $('[data-checkout]');
   if (checkout) {
     checkout.addEventListener('submit', () => {

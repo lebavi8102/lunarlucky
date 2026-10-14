@@ -74,7 +74,7 @@
             Đơn xuất VAT thanh toán bằng chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.
             <% const vf = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
             <% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %>
-            <span style="display:block;margin-top:8px">Tiền hàng <%= money(cart.subtotal - cart.discount) %><% if (cart.shippingFee) { %> + phí giao <%= money(cart.shippingFee) %><% } %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
+            <span style="display:block;margin-top:8px" data-vat-breakdown>Tiền hàng <%= money(cart.subtotal - cart.discount) %><% if (cart.shippingFee) { %> + phí giao <%= money(cart.shippingFee) %><% } %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
           </span>
         </div>
         <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">
@@ -89,7 +89,7 @@
           <label class="radio-card">
             <input type="radio" name="payment_method" value="bank" <%= values.payment_method !== 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
-            <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle">Khuyên dùng</span></strong><span>Quét mã QR sau khi đặt — nhận tiền là chuẩn bị &amp; giao ngay</span></span>
+            <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;white-space:nowrap;display:inline-block">Khuyên dùng</span></strong><span>Quét mã QR sau khi đặt — nhận tiền là chuẩn bị &amp; giao ngay</span></span>
           </label>
           <label class="radio-card" data-cod-option <%= values.needs_vat ? 'hidden' : '' %>>
             <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
@@ -102,11 +102,22 @@
 
     <aside class="summary card" aria-label="Đơn hàng của bạn">
       <h2>Đơn hàng</h2>
-      <ul class="summary-items">
+      <% if (cart.notices && cart.notices.length) { %><p class="small" style="color:var(--lacquer-700);margin:-8px 0 12px"><%= cart.notices.join(' ') %></p><% } %>
+      <ul class="summary-items" data-summary-items>
         <% cart.lines.forEach(l => { %>
-        <li>
+        <li data-line="<%= l.key %>">
           <span class="thumb"><img src="<%= img(l.image_id) %>" alt="" width="60" height="75" loading="lazy"><span class="q"><%= l.qty %></span></span>
-          <span><%= l.name %></span>
+          <span class="s-info">
+            <span class="s-name"><%= l.name %></span>
+            <span class="s-ctrl">
+              <span class="qty xs" data-qty>
+                <button type="button" aria-label="Giảm số lượng <%= l.name %>" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
+                <input type="number" inputmode="numeric" min="1" max="<%= l.maxQty %>" value="<%= l.qty %>" aria-label="Số lượng <%= l.name %>" data-checkout-qty="<%= l.key %>">
+                <button type="button" aria-label="Tăng số lượng <%= l.name %>" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
+              </span>
+              <button type="button" class="s-remove" data-checkout-remove="<%= l.key %>" aria-label="Xóa <%= l.name %> khỏi đơn"><svg class="icon icon-sm"><use href="#i-trash"/></svg></button>
+            </span>
+          </span>
           <span class="line-total"><%= money(l.lineTotal) %></span>
         </li>
         <% }) %>

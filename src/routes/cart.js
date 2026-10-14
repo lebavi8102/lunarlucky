@@ -40,12 +40,14 @@ router.post('/gio-hang/them', async (req, res) => {
 router.post('/gio-hang/cap-nhat', (req, res) => {
   const c = cart.getCart(req);
   cart.updateQty(c, String(req.body.key), req.body.qty);
+  if (wantsJson(req)) return res.json({ ok: true, count: cart.cartCount(req) });
   res.redirect('/gio-hang');
 });
 
 router.post('/gio-hang/xoa', (req, res) => {
   const c = cart.getCart(req);
   cart.removeLine(c, String(req.body.key));
+  if (wantsJson(req)) return res.json({ ok: true, count: cart.cartCount(req) });
   res.redirect('/gio-hang');
 });
 
