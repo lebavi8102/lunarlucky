@@ -21,7 +21,7 @@ module.exports = [
   },
   {
     q: 'Doanh nghiệp đặt số lượng lớn có được ưu đãi và in logo không?',
-    a: 'Có. Với đơn từ 20 giỏ, Lunar Lucky tư vấn ngân sách, in logo lên hộp và thiệp, xuất hóa đơn VAT và giao hàng loạt theo danh sách. Gửi yêu cầu tại trang Quà tặng doanh nghiệp để nhận báo giá trong 24 giờ.',
+    a: 'Có. Lunar Lucky nhận đơn doanh nghiệp từ 5 giỏ: tư vấn ngân sách, in logo lên hộp và thiệp, xuất hóa đơn VAT và giao hàng loạt theo danh sách; từ 20 giỏ có giá ưu đãi theo số lượng. Gửi yêu cầu tại trang Quà tặng doanh nghiệp để nhận báo giá trong 24 giờ.',
   },
   {
     q: 'Nếu giỏ quà bị hư hỏng khi nhận thì sao?',
