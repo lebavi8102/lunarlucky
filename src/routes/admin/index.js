@@ -74,16 +74,21 @@ router.get('/don-hang', async (req, res) => {
   const page = Math.max(1, Number(req.query.trang) || 1);
   let query = db('orders');
   if (status) query = query.where({ status });
-  if (req.query.chua_tt) query = query.where({ payment_method: 'bank', payment_status: 'pending' });
+  if (req.query.chua_tt) query = query.where({ payment_method: 'bank', payment_status: 'pending' }).whereNot('status', 'cancelled');
+  // Cần xử lý: đơn mới đã sẵn sàng (COD hoặc đã thanh toán) — không lẫn đơn chuyển khoản chưa trả tiền
+  if (req.query.can_xu_ly) query = query.where({ status: 'new' }).andWhere((w) => w.where('payment_method', 'cod').orWhere('payment_status', 'paid'));
+  const ngay = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.ngay || '')) ? String(req.query.ngay) : '';
+  if (ngay) query = query.where({ delivery_date: ngay });
   if (q) query = query.andWhere((w) => w.where('code', 'like', `%${q}%`).orWhere('phone', 'like', `%${q}%`).orWhere('customer_name', 'like', `%${q}%`));
   const [{ n }] = await query.clone().count({ n: '*' });
   const orders = await query.orderBy('id', 'desc').limit(30).offset((page - 1) * 30);
+  const [{ n: todo }] = await db('orders').where({ status: 'new' }).andWhere((w) => w.where('payment_method', 'cod').orWhere('payment_status', 'paid')).count({ n: '*' });
   const counts = Object.fromEntries(
     (await db('orders').select('status').count({ n: '*' }).groupBy('status')).map((r) => [r.status, Number(r.n)]),
   );
   res.render('admin/orders', {
     title: 'Đơn hàng', orders, status, q, page, pages: Math.max(1, Math.ceil(Number(n) / 30)), counts,
-    unpaidOnly: !!req.query.chua_tt,
+    unpaidOnly: !!req.query.chua_tt, todoOnly: !!req.query.can_xu_ly, todo: Number(todo), ngay,
   });
 });
 
@@ -470,6 +475,62 @@ router.get('/bao-cao', async (req, res) => {
     range = profit.presetRange(preset);
   }
   res.render('admin/report', { title: 'Báo cáo lợi nhuận', r: await profit.report(range), preset });
+});
+
+/* ---------- Giao hàng theo ngày (mùa cao điểm) ---------- */
+const delivery = require('../../lib/delivery');
+const pickDay = (q) => (/^\d{4}-\d{2}-\d{2}$/.test(String(q || '')) ? String(q) : todayVN());
+
+router.get('/giao-hang', async (req, res) => {
+  const day = pickDay(req.query.ngay);
+  const quick = [[todayVN(), 'Hôm nay'], [todayVN(1), 'Ngày mai'], [todayVN(2), 'Ngày kia']];
+  res.render('admin/delivery', { title: 'Giao hàng theo ngày', plan: await delivery.forDate(day), quick, shipTo: delivery.shipTo, codDue: delivery.codDue });
+});
+
+router.get('/giao-hang/in', async (req, res) => {
+  const day = pickDay(req.query.ngay);
+  const plan = await delivery.forDate(day);
+  res.render('admin/delivery-print', { day, orders: plan.ready });
+});
+
+router.get('/giao-hang/excel', async (req, res) => {
+  const day = pickDay(req.query.ngay);
+  const plan = await delivery.forDate(day);
+  const { buildXlsx } = require('../../lib/xlsx');
+  const rows = plan.ready.map((o, i) => {
+    const t = delivery.shipTo(o);
+    return {
+      stt: i + 1, code: o.code, name: t.name, phone: t.phone, address: t.address, area: plan.area(o),
+      items: o.items.map((x) => `${x.name} × ${x.qty}`).join(', '), cod: delivery.codDue(o),
+      gift: o.is_gift ? 'Gửi tặng – không kèm hóa đơn giá' : '', note: o.note || '', card: o.card_message || '',
+    };
+  });
+  const buf = buildXlsx([
+    {
+      name: `Giao ${day.slice(8)}-${day.slice(5, 7)}`,
+      columns: [
+        { header: 'STT', key: 'stt', type: 'number', width: 5 },
+        { header: 'Mã đơn', key: 'code', width: 15 },
+        { header: 'Người nhận', key: 'name', width: 20 },
+        { header: 'SĐT', key: 'phone', width: 13 },
+        { header: 'Địa chỉ giao', key: 'address', width: 40 },
+        { header: 'Khu vực', key: 'area', width: 10 },
+        { header: 'Giỏ quà', key: 'items', width: 30 },
+        { header: 'Thu COD', key: 'cod', type: 'money', width: 13 },
+        { header: 'Lưu ý', key: 'gift', width: 22 },
+        { header: 'Ghi chú khách', key: 'note', width: 26 },
+        { header: 'Lời chúc trên thiệp', key: 'card', width: 34 },
+      ],
+      rows,
+    },
+    { name: 'Soạn hàng', columns: [{ header: 'Giỏ quà', key: 'name', width: 30 }, { header: 'Mã SP', key: 'sku', width: 9 }, { header: 'Số giỏ', key: 'qty', type: 'number', width: 9 }, { header: 'Số đơn', key: 'orders', type: 'number', width: 9 }], rows: plan.picking },
+  ]);
+  res.set({
+    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'Content-Disposition': `attachment; filename="LunarLucky_GiaoHang_${day}.xlsx"`,
+    'Cache-Control': 'no-store',
+  });
+  res.send(buf);
 });
 
 /* ---------- Khách đã nhận quà ---------- */

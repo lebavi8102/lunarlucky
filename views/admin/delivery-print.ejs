@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Phiếu giao ngày <%= day %></title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Cormorant+Garamond:ital,wght@0,600;1,500&display=swap&subset=vietnamese">
+  <link rel="stylesheet" href="<%= asset('/css/print.css') %>">
+  <script src="<%= asset('/js/print.js') %>" defer></script>
+</head>
+<body>
+  <% orders.forEach(o => { %><%- include('_slip', { order: o, items: o.items }) %><% }) %>
+  <% if (!orders.length) { %><p style="text-align:center;padding:40px">Không có đơn cần giao ngày này.</p><% } %>
+</body>
+</html>

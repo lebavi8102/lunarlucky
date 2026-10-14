@@ -2,7 +2,8 @@
 <div class="admin-head"><h1>Đơn hàng</h1><div class="actions"><a class="btn btn-sm btn-quiet" href="/admin/sao-luu/tai-ve?loai=don-hang"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Xuất Excel</a></div></div>
 <div class="list-tools">
   <nav aria-label="Lọc theo trạng thái"><ul class="chips">
-    <li><a class="chip" href="/admin/don-hang" aria-current="<%= !status && !unpaidOnly %>">Tất cả</a></li>
+    <li><a class="chip" href="/admin/don-hang" aria-current="<%= !status && !unpaidOnly && !todoOnly && !ngay %>">Tất cả</a></li>
+    <li><a class="chip" href="?can_xu_ly=1" aria-current="<%= todoOnly %>">🔥 Cần xử lý<% if (todo) { %>&nbsp;<b><%= todo %></b><% } %></a></li>
     <% Object.entries(ORDER_STATUS).forEach(([k, v]) => { %><li><a class="chip" href="?status=<%= k %>" aria-current="<%= status === k %>"><%= v %><% if (counts[k]) { %>&nbsp;<b><%= counts[k] %></b><% } %></a></li><% }) %>
     <li><a class="chip" href="?chua_tt=1" aria-current="<%= unpaidOnly %>">Chờ chuyển khoản</a></li>
   </ul></nav>
@@ -12,6 +13,8 @@
     <% if (status) { %><input type="hidden" name="status" value="<%= status %>"><% } %>
     <label class="sr-only" for="oq">Tìm đơn</label>
     <input class="input" id="oq" type="search" name="q" value="<%= q %>" placeholder="Mã đơn, SĐT, tên khách">
+    <label class="sr-only" for="ongay">Ngày giao</label>
+    <input class="input" id="ongay" type="date" name="ngay" value="<%= ngay %>" title="Lọc theo ngày giao" style="width:auto">
     <button class="btn btn-sm btn-ghost" type="submit">Tìm</button>
   </form>
 </div>
@@ -25,7 +28,7 @@
         <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.is_gift) { %> <svg class="icon icon-sm" style="display:inline;vertical-align:-3px;color:var(--gold-700)" aria-label="Gửi tặng"><use href="#i-gift"/></svg><% } %></td>
         <td><%= fmt.dateTime(o.created_at) %></td>
         <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %></span></td>
-        <td><%= fmt.ymd(o.delivery_date) %></td>
+        <td><a href="?ngay=<%= o.delivery_date %>" title="Xem các đơn giao cùng ngày"><%= fmt.ymd(o.delivery_date) %></a><br><span class="tiny muted"><%= (o.province || '').split(',')[0] %></span></td>
         <td><span class="status status-<%= o.payment_status %>"><%= o.payment_method === 'cod' ? 'COD' : 'CK' %> · <%= PAYMENT_STATUS[o.payment_status] %></span></td>
         <td><span class="status status-<%= o.status %>"><%= ORDER_STATUS[o.status] %></span></td>
         <td class="num"><b><%= money(o.total) %></b></td>
@@ -34,5 +37,5 @@
     </tbody>
   </table>
 </div>
-<%- include('../partials/pagination', { baseQuery: { status, q, chua_tt: unpaidOnly ? '1' : '' } }) %>
+<%- include('../partials/pagination', { baseQuery: { status, q, chua_tt: unpaidOnly ? '1' : '', can_xu_ly: todoOnly ? '1' : '', ngay } }) %>
 <%- include('_bottom') %>

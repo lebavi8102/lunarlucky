@@ -166,6 +166,33 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('orders').where({ id: oId }).del();
   }
 
+  // /giao 25/1: danh sách giao cho shipper — chỉ đơn sẵn sàng (COD/đã trả), cảnh báo đơn CK chưa trả
+  {
+    const day = `${new Date().getFullYear()}-01-25`;
+    const mk = async (over) => {
+      const [x] = await db('orders').insert({ customer_name: 'Khách', phone: '0912000000', address: '1 Phố Huế', province: 'Hà Nội', delivery_date: day,
+        payment_method: 'cod', payment_status: 'pending', status: 'new', subtotal: 1, discount: 0, shipping_fee: 0, total: 500000, ...over });
+      const id = typeof x === 'object' ? x.id : x;
+      await db('order_items').insert({ order_id: id, product_id: p.id, name: p.name, price: 500000, qty: 1, line_total: 500000 });
+      return id;
+    };
+    const ids = [
+      await mk({ code: 'LN260125GA2A' }),
+      await mk({ code: 'LN260125GB2B', payment_method: 'bank', payment_status: 'paid', is_gift: true, recipient_name: 'Chú Hai', recipient_phone: '0987', recipient_address: '5 Hàng Bông' }),
+      await mk({ code: 'LN260125GC2C', payment_method: 'bank', payment_status: 'pending' }),
+      await mk({ code: 'LN260125GD2D', status: 'cancelled' }),
+    ];
+    sent.length = 0;
+    await tg.handleUpdate(msg('/giao 25/1', { is_topic_message: true, message_thread_id: 11 }));
+    const t = lastSend()?.body.text || '';
+    ok(/GIAO NGÀY 25\/01/.test(t) && /2 đơn/.test(t), '/giao 25/1 → đếm đúng 2 đơn sẵn sàng giao');
+    ok(/LN260125GA2A[\s\S]*thu 500\.000/.test(t), 'Đơn COD ghi số tiền cần thu');
+    ok(/LN260125GB2B<\/b> 🎁 tặng[\s\S]*Chú Hai[\s\S]*5 Hàng Bông/.test(t), 'Đơn tặng ghi người nhận + địa chỉ nhận');
+    ok(/chưa thanh toán[\s\S]*LN260125GC2C/.test(t) && !/LN260125GD2D/.test(t), 'Đơn CK chưa trả → cảnh báo; đơn hủy không hiện');
+    await db('order_items').whereIn('order_id', ids).del();
+    await db('orders').whereIn('id', ids).del();
+  }
+
   // Khách để lại SĐT → báo nhóm; bấm "✅ Đã gọi" → đánh dấu xong, sửa tin
   sent.length = 0;
   const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });

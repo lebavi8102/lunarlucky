@@ -16,3 +16,4 @@ ul { margin: 4px 0 0 22px; padding: 0; font-size: 12px; }
 .card-print .ornament { color: #c9a15a; font-size: 22px; }
 .card-print .msg { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px; line-height: 1.5; color: #5a1018; max-width: 110mm; margin: 14px 0; white-space: pre-line; }
 @media print { body { background: #fff; } .slip, .card-print { margin: 0; } @page { size: A6 landscape; margin: 0; } }
+.slip + .slip, .card-print + .slip { page-break-before: always; }

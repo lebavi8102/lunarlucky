@@ -191,8 +191,47 @@ const KHO_HELP = [
   '',
   '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho.',
   '',
+  '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
 ].join('\n');
+
+/** /giao [mai | kia | dd/mm] → danh sách giao trong ngày cho shipper. */
+async function deliveryList(args) {
+  const { todayVN, money } = require('./format');
+  const delivery = require('./delivery');
+  const a = String(args || '').trim().toLowerCase();
+  let day = todayVN();
+  if (/^(mai|ngay mai|ngày mai)$/.test(a)) day = todayVN(1);
+  else if (/^(kia|ngay kia|ngày kia)$/.test(a)) day = todayVN(2);
+  else {
+    const m = /^(\d{1,2})[/-](\d{1,2})$/.exec(a);
+    if (m) day = `${todayVN().slice(0, 4)}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  const plan = await delivery.forDate(day);
+  const head = `🚚 <b>GIAO NGÀY ${day.slice(8)}/${day.slice(5, 7)}</b> · ${plan.ready.length} đơn · ${plan.baskets} giỏ${plan.codTotal ? ` · thu COD ${money(plan.codTotal)}` : ''}`;
+  if (!plan.ready.length && !plan.unpaid.length) return `${head}\nKhông có đơn nào.`;
+  const lines = plan.ready.map((o, i) => {
+    const t = delivery.shipTo(o);
+    const cod = delivery.codDue(o);
+    return [
+      `<b>${i + 1}. ${e(o.code)}</b>${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}`,
+      `   ${e(t.name)} · ${e(t.phone)}`,
+      `   📍 ${e(t.address)}`,
+      `   ${o.items.map((x) => `${e(x.name)} ×${x.qty}`).join(', ')} · ${cod ? `<b>thu ${money(cod)}</b>` : 'đã thanh toán'}`,
+    ].join('\n');
+  });
+  let text = head;
+  let shown = 0;
+  for (const l of lines) {
+    if ((text + '\n\n' + l).length > 3500) break;
+    text += '\n\n' + l;
+    shown++;
+  }
+  if (shown < lines.length) text += `\n\n… và ${lines.length - shown} đơn nữa.`;
+  if (plan.unpaid.length) text += `\n\n⚠️ ${plan.unpaid.length} đơn chuyển khoản <b>chưa thanh toán</b> — chưa giao: ${plan.unpaid.map((o) => e(o.code)).join(', ')}`;
+  text += `\n\nXem / in phiếu: ${config.publicUrl}/admin/giao-hang?ngay=${day}`;
+  return text;
+}
 
 async function reply(msg, html) {
   try {
@@ -232,7 +271,7 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'giao'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -250,6 +289,7 @@ async function handleCommand(msg) {
       : '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.');
   }
   if (cmd === 'ton') return reply(msg, await stockList(args));
+  if (cmd === 'giao') return reply(msg, await deliveryList(args));
 
   const parts = args.split(/\s+/).filter(Boolean);
   const qty = Number(parts[parts.length - 1]);
@@ -390,6 +430,7 @@ async function ensureWebhook() {
   // Menu lệnh hiện khi gõ "/" trong Telegram
   await notify.tgApi('setMyCommands', {
     commands: [
+      { command: 'giao', description: 'Danh sách giao hôm nay (gõ: /giao mai, /giao 25/1)' },
       { command: 'ton', description: 'Xem tồn kho (thêm mã/tên để xem 1 sản phẩm)' },
       { command: 'nhap', description: 'Nhập thêm hàng: /nhap LL001 20' },
       { command: 'giam', description: 'Trừ hàng: /giam LL001 2' },
