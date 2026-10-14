@@ -194,14 +194,16 @@ async function asPhotoCommand(msg) {
   if (!thread || String(msg.message_thread_id) !== String(thread)) return msg;
   const hasPhoto = (msg.photo && msg.photo.length) || (msg.reply_to_message && msg.reply_to_message.photo);
   if (!hasPhoto) return msg;
-  const m = /LN\d{6}[A-Z2-9]{4}/i.exec(text);
+  // Mã đơn, hoặc SĐT khách (shipper lớn tuổi dễ ghi SĐT hơn)
+  const m = /LN\d{6}[A-Z2-9]{4}/i.exec(text) || require('./testimonials').PHONE_IN_TEXT.exec(text);
   if (!m) {
-    // Ảnh không có mã: nhắc shipper trả lời ảnh bằng mã đơn (chỉ nhắc với ảnh, không nhắc tin chữ)
-    if (msg.photo) await reply(msg, '📸 Ảnh này chưa có <b>mã đơn</b>. Trả lời (reply) vào ảnh bằng mã đơn, vd <code>LN261014ABCD</code>.');
+    // Ảnh không có mã/SĐT: nhắc shipper (chỉ nhắc với ảnh, không nhắc tin chữ)
+    if (msg.photo) await reply(msg, '📸 Ảnh này chưa có <b>SĐT khách</b>. Trả lời (reply) vào ảnh bằng số điện thoại khách, vd <code>0912345678</code>.');
     return msg;
   }
+  const key = /^LN/i.test(m[0]) ? m[0].toUpperCase() : m[0].replace(/\D/g, '').replace(/^84/, '0');
   const rest = (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim();
-  return { ...msg, caption: `/anhgiao ${m[0].toUpperCase()} ${rest}`.trim(), text: undefined };
+  return { ...msg, caption: `/anhgiao ${key} ${rest}`.trim(), text: undefined };
 }
 
 /** Xử lý một update từ Telegram webhook. */
@@ -218,7 +220,7 @@ const KHO_HELP = [
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
-  '   Gõ <code>/chonanh</code> trong chủ đề ảnh giao hàng → ở đó chỉ cần gửi ảnh kèm <b>mã đơn</b>, không cần gõ lệnh.',
+  '   Gõ <code>/chonanh</code> trong chủ đề ảnh giao hàng → ở đó chỉ cần gửi ảnh kèm <b>SĐT khách</b>, không cần gõ lệnh.',
 ].join('\n');
 
 /** /giao [mai | kia | dd/mm] → danh sách giao trong ngày cho shipper. */
@@ -313,7 +315,7 @@ async function handleCommand(msg) {
     return reply(msg, {
       chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
-      chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm mã đơn</b> (vd <code>LN261014ABCD khách khen giỏ đẹp</code>) → bot lưu vào web, chờ duyệt.\nQuên ghi mã? Trả lời (reply) vào ảnh bằng mã đơn.',
+      chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm số điện thoại khách</b> (vd <code>0912345678 khách khen giỏ đẹp</code>) → bot tự tìm đơn, lưu vào web chờ duyệt.\nQuên ghi số? Trả lời (reply) vào ảnh bằng SĐT khách.',
     }[cmd]);
   }
   if (cmd === 'ton') return reply(msg, await stockList(args));

@@ -6,6 +6,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env'), quiet: true });
 const db = require('../src/db');
 const settings = require('../src/lib/settings');
+const { todayVN } = require('../src/lib/format');
 const config = require('../src/config');
 const tg = require('../src/lib/telegram-orders');
 const notify = require('../src/lib/notify');
@@ -176,14 +177,41 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     sent.length = 0;
     await tg.handleUpdate({ message: { message_id: 62, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
       photo: [{ file_id: 'q', width: 800, height: 800 }] } });
-    ok(sent.some((x) => /chưa có <b>mã đơn/.test(x.body.text || '') && x.body.message_thread_id === 65), 'Ảnh không mã → nhắc trả lời bằng mã đơn, ngay trong chủ đề');
+    ok(sent.some((x) => /chưa có <b>SĐT khách/.test(x.body.text || '') && x.body.message_thread_id === 65), 'Ảnh không mã/SĐT → nhắc trả lời bằng SĐT khách, ngay trong chủ đề');
     await tg.handleUpdate({ message: { message_id: 63, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
       text: 'LN261014PHTQ', reply_to_message: { message_id: 62, photo: [{ file_id: 'q', width: 800, height: 800 }] } } });
     ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 4, 'Trả lời ảnh bằng mã đơn → lưu');
+    // Shipper ghi SĐT khách thay mã đơn (có dấu cách/chấm cũng được)
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 70, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 's', width: 800, height: 800 }], caption: '0912.345.678 khách khen' } });
+    const t5 = await db('testimonials').where({ order_code: 'LN261014PHTQ' }).orderBy('id', 'desc').first();
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 5 && t5.content === 'khách khen', 'Ảnh + SĐT khách → tự tìm đúng đơn, lưu lời khen');
+    ok(sent.some((x) => /LN261014PHTQ<\/b> · Nguyễn Thanh Huyền/.test(x.body.text || '')), 'Bot báo lại mã đơn + tên khách để đối chiếu');
+    await tg.handleUpdate({ message: { message_id: 71, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      text: '+84 912 345 678', reply_to_message: { message_id: 62, photo: [{ file_id: 'q', width: 800, height: 800 }] } } });
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 6, 'Trả lời ảnh bằng SĐT dạng +84 → cũng khớp');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 72, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'u', width: 800, height: 800 }], caption: '0987000111' } });
+    ok(sent.some((x) => /Không tìm thấy đơn nào có SĐT/.test(x.body.text || '')), 'SĐT không có đơn → bot báo lại');
+    // Đơn tặng: SĐT người nhận cũng khớp; nhiều đơn cùng SĐT → ưu tiên đơn đang giao
+    const [gRaw] = await db('orders').insert({
+      code: 'LN261014GIFT', customer_name: 'Trần Văn B', phone: '0900000001', address: 'x', province: 'Hà Nội', is_gift: true,
+      recipient_name: 'Lê Thị C', recipient_phone: '0977111222', recipient_address: 'y',
+      delivery_date: todayVN(), payment_method: 'cod', payment_status: 'pending', status: 'shipping', subtotal: 1, discount: 0, shipping_fee: 0, total: 1,
+    });
+    const [oldRaw] = await db('orders').insert({
+      code: 'LN250101OLDD', customer_name: 'Lê Thị C', phone: '0977111222', address: 'z', province: 'Hà Nội',
+      delivery_date: '2025-01-01', payment_method: 'cod', payment_status: 'paid', status: 'completed', subtotal: 1, discount: 0, shipping_fee: 0, total: 1,
+    });
+    const found = await require('../src/lib/testimonials').findOrderByPhone('0977 111 222');
+    ok(found && found.code === 'LN261014GIFT', `SĐT người nhận quà khớp, ưu tiên đơn đang giao hôm nay (${found && found.code})`);
+    await db('orders').whereIn('id', [gRaw, oldRaw].map((x) => (typeof x === 'object' ? x.id : x))).del();
     sent.length = 0;
     await tg.handleUpdate({ message: { message_id: 64, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 36, from: { first_name: 'Shipper' },
       photo: [{ file_id: 'z', width: 80, height: 80 }], caption: 'LN261014PHTQ' } });
-    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 4 && !sent.length, 'Ảnh ở chủ đề khác → bot bỏ qua');
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 6 && !sent.length, 'Ảnh ở chủ đề khác → bot bỏ qua');
     await settings.save({ telegram_photo_thread: '' });
     const listed = await require('../src/lib/testimonials').listActive();
     ok(!listed.some((x) => x.id === t.id), 'Ảnh chưa duyệt không hiện trên web');

@@ -7,6 +7,7 @@ const db = require('../db');
 const config = require('../config');
 const notify = require('./notify');
 const { saveBuffer, sniff } = require('./media');
+const { todayVN } = require('./format');
 
 /** "Nguyễn Thanh Huyền" + "Hà Nội" → "Chị Huyền · Hà Nội" kiểu ẩn bớt: "Khách Thanh H. · Hà Nội" */
 function displayName(fullName, province) {
@@ -26,6 +27,26 @@ async function downloadTelegramPhoto(photos) {
   return Buffer.from(await r.arrayBuffer());
 }
 
+const PHONE_IN_TEXT = /(?:\+?84|0)[\s.-]?(?:\d[\s.-]?){8}\d/;
+
+/**
+ * Shipper ghi SĐT khách thay cho mã đơn → tìm đơn khớp (SĐT người đặt hoặc người nhận quà).
+ * Nhiều đơn cùng SĐT: ưu tiên đơn đang giao / vừa giao, ngày giao gần hôm nay nhất.
+ */
+async function findOrderByPhone(phone) {
+  const tail = String(phone || '').replace(/\D/g, '').slice(-9);
+  if (tail.length < 9) return null;
+  const rows = await db('orders')
+    .whereNot('status', 'cancelled')
+    .andWhere((w) => w.where('phone', 'like', `%${tail}`).orWhere('recipient_phone', 'like', `%${tail}`))
+    .orderBy('id', 'desc').limit(30);
+  if (!rows.length) return null;
+  const today = Date.parse(todayVN());
+  const rank = (o) => ({ shipping: 0, completed: 1, packing: 2, confirmed: 3, new: 4 }[o.status] ?? 5);
+  const dist = (o) => (o.delivery_date ? Math.abs((o.delivery_date instanceof Date ? o.delivery_date.getTime() : Date.parse(String(o.delivery_date).slice(0, 10))) - today) : Infinity);
+  return rows.sort((a, b) => rank(a) - rank(b) || dist(a) - dist(b) || b.id - a.id)[0];
+}
+
 /** Xử lý tin có ảnh + chú thích /anhgiao. Trả về câu trả lời gửi lại nhóm. */
 async function fromTelegram(msg) {
   // Lệnh nằm ở chú thích ảnh, hoặc là tin chữ TRẢ LỜI (reply) vào một ảnh đã gửi trước đó
@@ -37,10 +58,17 @@ async function fromTelegram(msg) {
     return 'Chưa thấy ảnh. Cách gửi:\n1) Gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khen</code>, hoặc\n2) Gửi ảnh trước, rồi <b>trả lời (reply) vào ảnh</b> bằng <code>/anhgiao MÃĐƠN lời khen</code>';
   }
   msg = { ...msg, photo };
-  const code = m[1].toUpperCase();
+  let code = m[1].toUpperCase();
   const content = m[2].trim().slice(0, 400) || null;
-  const order = code ? await db('orders').where({ code }).first() : null;
-  if (code && !order) return `Không tìm thấy đơn <b>${notify.escapeTg(code)}</b>. Kiểm tra lại mã đơn trong chú thích ảnh.`;
+  // Ghi SĐT khách thay cho mã đơn
+  const byPhone = /^\+?\d{9,12}$/.test(code);
+  const order = !code ? null : byPhone ? await findOrderByPhone(code) : await db('orders').where({ code }).first();
+  if (code && !order) {
+    return byPhone
+      ? `Không tìm thấy đơn nào có SĐT <b>${notify.escapeTg(code)}</b>. Kiểm tra lại số, hoặc ghi mã đơn.`
+      : `Không tìm thấy đơn <b>${notify.escapeTg(code)}</b>. Kiểm tra lại mã đơn trong chú thích ảnh.`;
+  }
+  if (order) code = order.code;
 
   const buf = await downloadTelegramPhoto(msg.photo);
   const mime = sniff(buf) || 'image/jpeg';
@@ -53,7 +81,7 @@ async function fromTelegram(msg) {
   });
   const tid = typeof id === 'object' ? id.id : id;
   return [
-    `📸 Đã lưu ảnh giao ${order ? `đơn <b>${order.code}</b>` : 'hàng'} vào web — <b>chờ duyệt</b>.`,
+    `📸 Đã lưu ảnh giao ${order ? `đơn <b>${order.code}</b> · ${notify.escapeTg(order.is_gift ? order.recipient_name || order.customer_name : order.customer_name)}` : 'hàng'} vào web — <b>chờ duyệt</b>.`,
     'Chỉ bật hiển thị khi khách <b>đồng ý</b> đăng ảnh.',
     `Duyệt tại: ${config.publicUrl}/admin/khach-nhan-qua/${tid}`,
   ].join('\n');
@@ -68,4 +96,4 @@ async function listActive({ productId, limit = 8 } = {}) {
     .limit(limit);
 }
 
-module.exports = { fromTelegram, listActive, displayName };
+module.exports = { fromTelegram, listActive, displayName, findOrderByPhone, PHONE_IN_TEXT };
