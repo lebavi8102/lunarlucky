@@ -9,28 +9,30 @@
 <section class="section-tight">
   <div class="container"><div class="prose">
 <h2>Khu vực giao hàng</h2>
-<p>Lunar Lucky hiện giao hàng trong <strong>nội thành Hà Nội</strong>: Ba Đình, Hoàn Kiếm, Đống Đa, Hai Bà Trưng, Tây Hồ, Cầu Giấy, Thanh Xuân, Hoàng Mai, Long Biên, Nam Từ Liêm, Bắc Từ Liêm và Hà Đông.</p>
-<p>Bạn ở khu vực khác hoặc muốn gửi quà về tỉnh? Vui lòng nhắn <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Zalo</a> hoặc gọi <%= s.shop_phone %> để Lunar Lucky báo phí và tạo đơn riêng.</p>
+<p>Lunar Lucky giao hàng <strong>toàn quốc</strong>:</p>
+<ul>
+  <li><strong>Nội thành Hà Nội:</strong> giao bằng Ahamove hoặc nhân viên Lunar Lucky tự giao, <strong>đúng ngày</strong> bạn chọn.</li>
+  <li><strong>Ngoại thành Hà Nội và các tỉnh thành khác:</strong> giao qua đơn vị vận chuyển, thời gian 2–4 ngày. Lunar Lucky báo ngày giao dự kiến khi xác nhận đơn.</li>
+</ul>
 <h2>Phí giao hàng</h2>
 <ul>
-  <li>Đồng giá <strong><%= money(s.shipping_fee) %></strong> mỗi đơn trong nội thành Hà Nội.</li>
+  <li>Đồng giá <strong><%= money(s.shipping_fee) %></strong> mỗi đơn.</li>
   <li><strong>Miễn phí giao hàng</strong> cho đơn từ <strong><%= money(s.free_ship_threshold) %></strong> (tính trên tiền hàng sau giảm giá).</li>
+  <li>Đơn đi huyện đảo, vùng sâu có thể phát sinh phụ phí; Lunar Lucky sẽ báo trước khi giao.</li>
 </ul>
-<h2>Đơn vị giao hàng</h2>
-<p>Lunar Lucky giao bằng <strong>Ahamove</strong> hoặc nhân viên Lunar Lucky tự giao, tùy thời điểm và số lượng đơn. Đơn thanh toán khi nhận hàng (COD) được tài xế Ahamove thu tiền hộ khi giao.</p>
 <h2>Thời gian giao</h2>
-<p>Bạn chọn <strong>ngày giao mong muốn</strong> khi đặt hàng. Lunar Lucky giao trong khung <strong>8:00 – 20:00</strong> của ngày đó và gọi cho người nhận trước khi giao.</p>
+<p>Bạn chọn <strong>ngày giao mong muốn</strong> khi đặt hàng. Lunar Lucky giao trong khung <strong>8:00 – 20:00</strong> và gọi cho người nhận trước khi giao.</p>
 <ul>
   <li><strong>Đơn chuyển khoản:</strong> được chuẩn bị và giao ngay sau khi Lunar Lucky nhận được thanh toán.</li>
-  <li><strong>Đơn COD:</strong> Lunar Lucky gọi xác nhận trước khi chuẩn bị và giao.</li>
-  <li>Mùa cao điểm (từ 15 tháng Chạp), bạn nên đặt trước 5–7 ngày để chắc chắn giao đúng ngày.</li>
+  <li><strong>Đơn COD:</strong> Lunar Lucky gọi xác nhận trước khi chuẩn bị và giao; tiền được tài xế (Ahamove hoặc đơn vị vận chuyển) thu hộ khi giao.</li>
+  <li>Mùa cao điểm (từ 15 tháng Chạp), bạn nên đặt trước 5–7 ngày, đơn đi tỉnh nên đặt sớm hơn.</li>
 </ul>
 <h2>Gửi tặng trực tiếp</h2>
 <p>Với đơn gửi tặng, Lunar Lucky giao đến người nhận, <strong>không kèm hóa đơn giá tiền</strong>, và báo cho người đặt sau khi giao thành công.</p>
 <h2>Kiểm tra hàng khi nhận</h2>
 <p>Người nhận được kiểm tra tình trạng giỏ quà (hộp, nơ, các món bên ngoài) trước khi ký nhận hoặc trả tiền COD. Nếu giỏ bị móp, vỡ do vận chuyển, vui lòng chụp ảnh và báo ngay cho Lunar Lucky.</p>
 <h2>Không liên lạc được người nhận</h2>
-<p>Lunar Lucky sẽ liên hệ người đặt để hẹn giao lại. Giao lại lần hai trong cùng ngày hoặc ngày kế tiếp được miễn phí; từ lần thứ ba tính thêm phí giao theo đồng giá.</p>
+<p>Lunar Lucky sẽ liên hệ người đặt để hẹn giao lại. Giao lại lần hai được miễn phí; từ lần thứ ba tính thêm phí giao theo đồng giá.</p>
   </div></div>
 </section>
 <%- include('../partials/bottom') %>

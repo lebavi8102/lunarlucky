@@ -17,7 +17,7 @@ module.exports = [
   },
   {
     q: 'Phí giao hàng được tính thế nào?',
-    a: 'Lunar Lucky giao nội thành Hà Nội bằng Ahamove hoặc tự giao: đồng giá 50.000₫ mỗi đơn, miễn phí cho đơn từ 1.500.000₫. Khu vực khác vui lòng nhắn Zalo để được báo phí.',
+    a: 'Phí giao đồng giá 50.000₫ mỗi đơn, miễn phí cho đơn từ 1.500.000₫. Nội thành Hà Nội giao bằng Ahamove hoặc Lunar Lucky tự giao, đúng ngày bạn chọn; các tỉnh khác giao qua đơn vị vận chuyển trong 2–4 ngày.',
   },
   {
     q: 'Doanh nghiệp đặt số lượng lớn có được ưu đãi và in logo không?',

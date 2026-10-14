@@ -33,8 +33,8 @@
           <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền.</span></span>
         </label>
 
-        <%- include('../partials/field', { name: 'province', label: 'Khu vực giao (nội thành Hà Nội)', as: 'select', required: true, options: [{ value: '', label: '— Chọn quận —' }, ...provinces] }) %>
-        <p class="small muted" style="margin-top:8px">Lunar Lucky hiện giao <b>nội thành Hà Nội</b>: đồng giá <%= money(s.shipping_fee) %>, <b>miễn phí cho đơn từ <%= money(s.free_ship_threshold) %></b>.<% if (s.zalo_url) { %> Giao khu vực khác? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline">Nhắn Zalo</a> để Lunar Lucky báo phí.<% } %></p>
+        <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
+        <p class="small muted" style="margin-top:8px">Phí giao đồng giá <%= money(s.shipping_fee) %>, <b>miễn phí cho đơn từ <%= money(s.free_ship_threshold) %></b>. Nội thành Hà Nội giao đúng ngày bạn chọn; tỉnh khác 2–4 ngày.</p>
         <div data-buyer-address <%= values.is_gift ? 'hidden' : '' %> style="margin-top:16px">
           <%- include('../partials/field', { name: 'address', label: 'Địa chỉ nhận hàng', required: true, autocomplete: 'street-address', placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %>
         </div>
