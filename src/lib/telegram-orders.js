@@ -188,6 +188,8 @@ const KHO_HELP = [
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
   '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho.',
+  '',
+  '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
 ].join('\n');
 
 async function reply(msg, html) {
@@ -208,7 +210,7 @@ async function stockList(query) {
   let rows;
   if (query) {
     rows = await inventory.findProducts(query);
-    if (!rows.length) return `Không tìm thấy sản phẩm "${e(query)}". Gõ <code>/ton</code> để xem tất cả mã.`;
+    if (!rows.length) return `Không tìm thấy sản phẩm "${e(query)}". Gõ <code>/ton</code> để xem tất cả mã.\n\n📸 Ảnh giao hàng: gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code>`;
   } else {
     rows = await db('products').where({ is_active: true }).select('id', 'sku', 'name', 'stock');
   }
@@ -300,6 +302,17 @@ async function handleUpdate(update) {
   }
   if (update.message) {
     await rememberChat(update.message.chat);
+    if (/^\/anhgiao/i.test(String(update.message.caption || update.message.text || ''))) {
+      if (String(update.message.chat.id) !== String(await notify.telegramChatId())) return;
+      try {
+        const text = await require('./testimonials').fromTelegram(update.message);
+        if (text) await reply(update.message, text);
+      } catch (err) {
+        console.error('[telegram] lưu ảnh giao lỗi:', err.message);
+        await reply(update.message, `Chưa lưu được ảnh: ${notify.escapeTg(err.message)}`);
+      }
+      return;
+    }
     if (String(update.message.text || '').startsWith('/')) return handleCommand(update.message);
     return;
   }

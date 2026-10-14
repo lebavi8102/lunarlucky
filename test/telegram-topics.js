@@ -31,6 +31,11 @@ global.fetch = async (url, opt) => {
   if (failThread && body.message_thread_id) {
     return { ok: false, status: 400, json: async () => ({ ok: false, description: 'Bad Request: message thread not found' }) };
   }
+  if (url.includes('/file/bot')) {
+    // ảnh JPEG giả (đủ "magic bytes")
+    return { ok: true, status: 200, arrayBuffer: async () => Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0]) };
+  }
+  if (method === 'getFile') return { ok: true, status: 200, json: async () => ({ ok: true, result: { file_path: 'photos/a.jpg' } }) };
   sent.push({ method, body });
   return { ok: true, status: 200, json: async () => ({ ok: true, result: { message_id: 1, chat: { id: body.chat_id } } }) };
 };
@@ -47,6 +52,7 @@ const msg = (text, extra = {}) => ({
 const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage');
 
 (async () => {
+  await db.migrate.latest();
   const backup = await settings.all();
   await settings.save({ telegram_chat_id: String(OLD), telegram_order_thread: '', telegram_stock_thread: '' });
 
@@ -131,6 +137,35 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('products').where({ id: p.id }).update({ stock: prod.stock });
   }
 
+  // Shipper gửi ảnh giao hàng: ảnh + chú thích /anhgiao MÃĐƠN lời khen → lưu web, chờ duyệt
+  {
+    const [oRaw] = await db('orders').insert({
+      code: 'LN261014PHTQ', customer_name: 'Nguyễn Thanh Huyền', phone: '0912345678', address: 'x', province: 'Cầu Giấy, Hà Nội',
+      delivery_date: '2026-12-01', payment_method: 'cod', payment_status: 'paid', status: 'completed', subtotal: 1, discount: 0, shipping_fee: 0, total: 1,
+    });
+    const oId = typeof oRaw === 'object' ? oRaw.id : oRaw;
+    await db('order_items').insert({ order_id: oId, product_id: p.id, name: p.name, price: 1, qty: 1, line_total: 1 });
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 50, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'small', width: 90, height: 90, file_size: 100 }, { file_id: 'big', width: 1280, height: 1280, file_size: 90000 }],
+      caption: '/anhgiao ln261014phtq Giỏ đẹp lắm, cảm ơn shop!' } });
+    const t = await db('testimonials').where({ order_code: 'LN261014PHTQ' }).first();
+    ok(t && t.image_id && t.is_active == false, 'Ảnh giao hàng từ Telegram → lưu vào web ở trạng thái chờ duyệt');
+    ok(t && t.customer_name === 'Thanh H. · Cầu Giấy' && t.content === 'Giỏ đẹp lắm, cảm ơn shop!', `Tên khách được ẩn bớt: "${t && t.customer_name}"`);
+    ok(t && t.product_id === p.id, 'Tự gắn giỏ quà của đơn');
+    ok(sent.some((x) => x.method === 'sendMessage' && /chờ duyệt/.test(x.body.text)), 'Bot trả lời "đã lưu, chờ duyệt"');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 51, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'x', width: 90, height: 90 }], caption: '/anhgiao LN000000ZZZZ' } });
+    ok(sent.some((x) => /Không tìm thấy đơn/.test(x.body.text || '')), 'Sai mã đơn → bot báo lại');
+    const listed = await require('../src/lib/testimonials').listActive();
+    ok(!listed.some((x) => x.id === t.id), 'Ảnh chưa duyệt không hiện trên web');
+    await db('testimonials').where({ order_code: 'LN261014PHTQ' }).del();
+    if (t) await db('media').where({ id: t.image_id }).del();
+    await db('order_items').where({ order_id: oId }).del();
+    await db('orders').where({ id: oId }).del();
+  }
+
   // Khách để lại SĐT → báo nhóm; bấm "✅ Đã gọi" → đánh dấu xong, sửa tin
   sent.length = 0;
   const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });
@@ -163,7 +198,8 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   console.log(fails ? `\n${fails} kiểm thử thất bại` : '\nTất cả kiểm thử đều đạt');
   process.exitCode = fails ? 1 : 0;
   await db.destroy();
-})().catch((e) => {
+})().catch(async (e) => {
   console.error(e);
   process.exitCode = 1;
+  await db.destroy(); // không treo tiến trình khi lỗi
 });

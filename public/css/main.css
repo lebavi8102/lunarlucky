@@ -592,6 +592,12 @@ ul, ol { margin: 0; padding: 0; }
   body.has-buy-bar .toast { bottom: 88px; }
 }
 .pay-steps { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 4px; line-height: 1.5; }
+.review-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 960px) { .review-grid { grid-template-columns: repeat(4, 1fr); } }
+.review-card { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; }
+.review-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; background: var(--cream-200); }
+.review-card figcaption { padding: 12px 14px 14px; display: grid; gap: 6px; }
+.review-card blockquote { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-700); }
 .secure-note { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: var(--space-4); font-size: 13px; color: var(--text-muted); }
 [hidden] { display: none !important; }
 

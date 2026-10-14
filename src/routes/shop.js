@@ -1,4 +1,5 @@
 const express = require('express');
+const testimonials = require('../lib/testimonials');
 const db = require('../db');
 const { render: md } = require('../lib/markdown');
 const { lines, parseJson, truncate } = require('../lib/format');
@@ -24,11 +25,12 @@ function activeProducts() {
 }
 
 router.get('/', async (req, res) => {
-  const [featured, categories, bestsellers, posts] = await Promise.all([
+  const [featured, categories, bestsellers, posts, reviews] = await Promise.all([
     activeProducts().andWhere({ is_featured: true }).orderBy([{ column: 'sort' }, { column: 'id', order: 'desc' }]).limit(8),
     db('categories').where({ is_active: true }).orderBy('sort'),
     activeProducts().orderBy([{ column: 'sold', order: 'desc' }]).limit(4),
     db('posts').where({ is_published: true }).orderBy('published_at', 'desc').limit(3),
+    testimonials.listActive({ limit: 8 }),
   ]);
   const s = res.locals.s;
   res.locals.seo.title = `${s.shop_name} · Giỏ quà Tết cao cấp, giao tận nơi`;
@@ -43,7 +45,7 @@ router.get('/', async (req, res) => {
     logo: `${res.locals.siteUrl}/img/logo-mark.svg`,
     sameAs: [s.fanpage_url].filter(Boolean),
   });
-  res.render('shop/home', { featured, categories, bestsellers, posts });
+  res.render('shop/home', { reviews, featured, categories, bestsellers, posts });
 });
 
 async function listing(req, res, category) {
@@ -127,6 +129,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
 
   res.render('shop/product', {
     product, category, related, gallery,
+    reviews: await testimonials.listActive({ productId: product.id, limit: 4 }),
     contents: lines(product.contents),
     descriptionHtml: md(product.description),
   });

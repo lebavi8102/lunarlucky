@@ -123,6 +123,20 @@
 </section>
 <% } %>
 
+<% if (reviews && reviews.length) { %>
+<section class="section" style="padding-top:0" aria-labelledby="reviews-title">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="stack">
+        <span class="eyebrow">Ảnh thật lúc giao</span>
+        <h2 class="h2" id="reviews-title">Khách đã <em>nhận quà</em></h2>
+      </div>
+    </div>
+    <%- include('../partials/reviews', { reviews }) %>
+  </div>
+</section>
+<% } %>
+
 <section class="section" style="padding-top:0">
   <div class="container">
     <div class="b2b-card reveal">

@@ -472,6 +472,35 @@ router.get('/bao-cao', async (req, res) => {
   res.render('admin/report', { title: 'Báo cáo lợi nhuận', r: await profit.report(range), preset });
 });
 
+/* ---------- Khách đã nhận quà ---------- */
+const productOptions = async () =>
+  (await db('products').orderBy('name')).map((p) => ({ value: p.id, label: `${p.sku ? p.sku + ' · ' : ''}${p.name}` }));
+
+router.use(
+  resource({
+    path: 'khach-nhan-qua', table: 'testimonials', title: 'Khách đã nhận quà', singular: 'ảnh khách nhận quà', titleField: 'customer_name',
+    searchable: ['customer_name', 'content', 'order_code'],
+    orderBy: [{ column: 'is_active', order: 'asc' }, { column: 'id', order: 'desc' }],
+    columns: [
+      { key: 'image_id', label: '', format: 'image' },
+      { key: 'customer_name', label: 'Khách', format: 'title' },
+      { key: 'content', label: 'Nhận xét' },
+      { key: 'order_code', label: 'Mã đơn' },
+      { key: 'is_active', label: 'Đang hiển thị', format: 'bool' },
+    ],
+    fields: [
+      { name: 'image_id', label: 'Ảnh giao hàng', type: 'image', help: 'Shipper có thể gửi ảnh vào nhóm Telegram kèm chú thích /anhgiao MÃĐƠN — ảnh tự vào đây.' },
+      { name: 'customer_name', label: 'Tên hiển thị', type: 'text', required: true, max: 120, help: 'Nên ẩn bớt, VD: "Chị Huyền · Cầu Giấy".' },
+      { name: 'content', label: 'Lời khách nhận xét', type: 'textarea', max: 400 },
+      { name: 'product_id', label: 'Giỏ quà trong ảnh', type: 'select', options: productOptions, numeric: true },
+      { name: 'order_code', label: 'Mã đơn', type: 'text', max: 20 },
+      { name: 'is_active', label: 'Hiển thị trên web (khách đã đồng ý đăng ảnh)', type: 'checkbox' },
+      { name: 'sort', label: 'Ưu tiên (số lớn hiện trước)', type: 'number', default: 0 },
+    ],
+    validate: (v) => { if (v.sort == null) v.sort = 0; return {}; },
+  }),
+);
+
 /* ---------- Yêu cầu gọi lại ---------- */
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);

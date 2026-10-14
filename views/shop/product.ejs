@@ -86,6 +86,13 @@
   </section>
   <% } %>
 
+  <% if (reviews && reviews.length) { %>
+  <section class="section-tight" style="border-top:1px solid var(--line)" aria-labelledby="pr-reviews">
+    <div class="section-head"><div class="stack"><span class="eyebrow">Ảnh thật lúc giao</span><h2 class="h2" id="pr-reviews">Khách đã nhận <em><%= product.name %></em></h2></div></div>
+    <%- include('../partials/reviews', { reviews }) %>
+  </section>
+  <% } %>
+
   <% if (related.length) { %>
   <section class="section" style="border-top:1px solid var(--line)">
     <div class="section-head"><div class="stack"><span class="eyebrow">Có thể bạn thích</span><h2 class="h2">Giỏ quà <em>tương tự</em></h2></div></div>
