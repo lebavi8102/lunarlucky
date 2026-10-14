@@ -220,7 +220,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const tgOrders = require('../lib/telegram-orders');
   // Đơn chuyển khoản (đã bật tự xác nhận) chỉ báo nhóm khi nhận được tiền; COD báo ngay
   const holdForPayment = order.payment_method === 'bank' && require('../lib/bank-payments').enabled();
-  (holdForPayment ? Promise.resolve() : tgOrders.sendNewOrder(order, items))
+  (holdForPayment ? require('../lib/bank-payments').notifyWaiting(order) : tgOrders.sendNewOrder(order, items))
     .then(() => tgOrders.stockAlertsAfterOrder(items))
     .catch(() => {});
   if (order.email) {

@@ -60,6 +60,20 @@ const tx = (n, amount, content, type = 'in') => ({ id: 900000 + n, transferType:
   ok(bank.authorized(req('Apikey khoa-thu-123')), 'Đúng khóa API → nhận');
   ok(!bank.authorized(req('Apikey sai')) && !bank.authorized(req(undefined)), 'Sai/thiếu khóa API → từ chối');
 
+  // Đơn CK vừa đặt → nhóm nhận tin "⏳ CHỜ CHUYỂN KHOẢN"; nhận tiền → tin đổi thành "✅ ĐÃ NHẬN TIỀN"
+  {
+    const ow = await makeOrder();
+    made.push(ow.id);
+    sent.length = 0;
+    await bank.notifyWaiting(await db('orders').where({ id: ow.id }).first());
+    ok(texts().some((t) => /CHỜ CHUYỂN KHOẢN/.test(t) && t.includes(ow.code)), 'Đơn CK vừa đặt → nhóm thấy tin "⏳ CHỜ CHUYỂN KHOẢN"');
+    ok(Number((await db('orders').where({ id: ow.id }).first()).tg_wait_message_id) === 77, 'Lưu tin chờ để sửa sau');
+    sent.length = 0;
+    await bank.handleSepay(tx(7, 100000, ow.code));
+    ok(sent.some((x) => x.method === 'editMessageText' && /ĐÃ NHẬN TIỀN/.test(x.body.text)), 'Nhận tiền → tin chờ đổi thành "✅ ĐÃ NHẬN TIỀN"');
+    ok(texts().some((t) => /ĐƠN MỚI/.test(t) && t.includes(ow.code)), 'Và gửi tin ĐƠN MỚI đầy đủ nút xử lý');
+  }
+
   // Chuyển thiếu
   const o1 = await makeOrder();
   made.push(o1.id);

@@ -54,6 +54,7 @@ async function handleSepay(tx) {
   }
   const save = (result, orderId = null) => db('bank_transactions').where({ id }).update({ result, order_id: orderId });
 
+  console.log(`[sepay] tiền vào ${amount} · "${content.slice(0, 80)}"`);
   const code = findCode(content) || findCode(tx.code);
   if (!code) {
     await save('no_code');
@@ -90,10 +91,45 @@ async function handleSepay(tx) {
 }
 
 /** Sau khi đơn chuyển sang "Đã thanh toán": đơn chưa báo nhóm thì báo (ĐƠN MỚI), đã báo thì cập nhật tin. */
+const money2 = (n) => require('./format').money(n);
+
+function waitText(order, state) {
+  const head = {
+    wait: `⏳ <b>CHỜ CHUYỂN KHOẢN</b> · ${order.code}`,
+    paid: `✅ <b>ĐÃ NHẬN TIỀN</b> · ${order.code} → xem tin ĐƠN MỚI bên dưới để xử lý`,
+    expired: `❌ <b>TỰ HỦY</b> · ${order.code} — quá hạn chưa chuyển khoản, hàng đã trả về kho`,
+  }[state];
+  return [
+    head,
+    `👤 ${notify.escapeTg(order.customer_name)} · ${notify.escapeTg(order.phone)}`,
+    `💰 ${money2(order.total)} · giao ${require('./format').ymd(order.delivery_date)}`,
+    state === 'wait' ? '<i>Chưa soạn hàng. Bot báo ĐƠN MỚI khi nhận được tiền. Có thể gọi nhắc khách.</i>' : null,
+  ].filter(Boolean).join('\n');
+}
+
+/** Đơn chuyển khoản vừa đặt (đang giữ chờ tiền): báo nhóm biết có khách, chưa có nút xử lý. */
+async function notifyWaiting(order) {
+  try {
+    const msg = await notify.telegram(waitText(order, 'wait'));
+    if (msg && msg.message_id) await db('orders').where({ id: order.id }).update({ tg_wait_message_id: msg.message_id });
+  } catch (err) {
+    console.error('[telegram] báo đơn chờ CK lỗi:', err.message);
+  }
+}
+
+async function updateWaiting(order, state) {
+  if (!order.tg_wait_message_id || !config.telegram.token) return;
+  const chat = await notify.telegramChatId();
+  await notify
+    .tgApi('editMessageText', { chat_id: chat, message_id: Number(order.tg_wait_message_id), text: waitText(order, state), parse_mode: 'HTML' })
+    .catch(() => {});
+}
+
 async function afterPaid(orderId) {
   const tg = require('./telegram-orders');
   const order = await db('orders').where({ id: orderId }).first();
   if (!order) return;
+  await updateWaiting(order, 'paid');
   if (!order.tg_message_id) {
     const items = await db('order_items').where({ order_id: order.id });
     await tg.sendNewOrder(order, items);
@@ -119,6 +155,7 @@ async function expireUnpaid() {
     .select('id');
   for (const r of rows) {
     await updateOrder(r.id, { status: 'cancelled' }, { by: `Tự hủy: quá ${hours} giờ chưa thanh toán` });
+    await updateWaiting(await db('orders').where({ id: r.id }).first(), 'expired');
   }
   return rows.length;
 }
@@ -158,4 +195,4 @@ function startExpiryTimer() {
   setInterval(run, 60000).unref();
 }
 
-module.exports = { resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };
+module.exports = { notifyWaiting, resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };
