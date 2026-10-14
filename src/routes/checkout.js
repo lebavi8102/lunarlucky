@@ -228,6 +228,27 @@ router.get('/don-hang/:code/thanh-toan', async (req, res) => {
   res.set('Cache-Control', 'no-store').json({ paid: order.payment_status === 'paid', cancelled: order.status === 'cancelled' });
 });
 
+// Ảnh QR tải về máy: khách đặt bằng điện thoại lưu ảnh → mở app ngân hàng → quét từ thư viện ảnh
+router.get('/don-hang/:code/qr.png', async (req, res, next) => {
+  const order = await db('orders').where({ code: String(req.params.code).toUpperCase() }).first();
+  if (!order || !canView(req, order)) return next();
+  const url = qrFor(order, res.locals.s);
+  if (!url) return next();
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error(`VietQR ${r.status}`);
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Disposition': `attachment; filename="QR-${order.code}.png"`,
+      'Cache-Control': 'private, max-age=600',
+    });
+    res.send(Buffer.from(await r.arrayBuffer()));
+  } catch (err) {
+    console.error('[qr] tải ảnh lỗi:', err.message);
+    res.redirect(url); // dự phòng: mở thẳng ảnh gốc, khách nhấn giữ để lưu
+  }
+});
+
 router.get('/don-hang/:code', async (req, res, next) => {
   const code = String(req.params.code).toUpperCase();
   const order = await db('orders').where({ code }).first();

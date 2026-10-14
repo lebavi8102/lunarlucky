@@ -81,10 +81,14 @@ async function addToCart(c, slug, qty = 1) {
   const code = (place.location || '').split('/')[2]?.split('?')[0];
   const orderPage = await c(place.location);
   ok(orderPage.status === 200, 'Trang đơn hàng hiển thị');
+  ok(/Lưu mã QR về máy/.test(orderPage.text) && /Quét QR/.test(orderPage.text), 'Trang đơn có nút lưu QR + hướng dẫn 3 bước');
+  const qrDl = await c(`/don-hang/${code}/qr.png`);
+  ok(qrDl.status === 200 || qrDl.status === 302, `Tải ảnh QR của đơn mình → ${qrDl.status}`);
 
   // 5. Tra cứu đơn từ phiên khác
   const c2 = client();
   ok((await c2(`/don-hang/${code}`)).status === 302, 'Người lạ không xem được đơn');
+  ok((await c2(`/don-hang/${code}/qr.png`)).status === 404, 'Người lạ không tải được ảnh QR của đơn');
   const tk = csrf((await c2('/tra-cuu-don')).text);
   ok((await c2('/tra-cuu-don', { method: 'POST', form: { _csrf: tk, code, phone: '0900000001' } })).status === 404, 'Tra cứu sai SĐT bị từ chối');
   ok((await c2('/tra-cuu-don', { method: 'POST', form: { _csrf: tk, code, phone: '0912 345 678' } })).status === 302, 'Tra cứu đúng SĐT');

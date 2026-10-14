@@ -14,6 +14,9 @@
     <div class="order-code">Mã đơn: <span data-copy-text><%= order.code %></span>
       <button type="button" class="copy-btn" data-copy="<%= order.code %>"><svg class="icon icon-sm"><use href="#i-copy"/></svg> Sao chép</button>
     </div>
+    <% if (isNew && s.zalo_url) { %>
+      <p class="small" style="margin-top:14px"><a href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="Lunar Lucky ơi, mình vừa đặt đơn <%= order.code %> (<%= money(order.total) %>), nhờ shop kiểm tra giúp." style="color:var(--primary);font-weight:600;text-decoration:underline">Nhắn Zalo cho shop kèm mã đơn</a> · <span class="muted">chụp màn hình trang này để lưu mã đơn</span></p>
+    <% } %>
   </div>
 
   <% if (justPaid) { %>
@@ -25,7 +28,14 @@
     <img src="<%= qr %>" alt="Mã VietQR chuyển khoản <%= money(order.total) %> cho đơn <%= order.code %>" width="260" height="300">
     <div>
       <h2 id="pay-title" class="h3"><%= codQr ? 'Muốn chuyển khoản trước?' : 'Quét mã để thanh toán' %></h2>
-      <p class="muted small" style="margin:6px 0 16px"><%= codQr ? 'Không bắt buộc — đơn của bạn trả tiền mặt khi nhận hàng. Nếu muốn chuyển khoản trước, quét mã bên dưới.' : 'Mở ứng dụng ngân hàng, quét mã QR. Số tiền và nội dung đã được điền sẵn.' %></p>
+      <p class="muted small" style="margin:6px 0 12px"><%= codQr ? 'Không bắt buộc — đơn của bạn trả tiền mặt khi nhận hàng. Nếu muốn chuyển khoản trước, làm theo hướng dẫn dưới.' : 'Số tiền và nội dung chuyển khoản đã được điền sẵn trong mã QR.' %></p>
+      <a class="btn btn-block" href="/don-hang/<%= order.code %>/qr.png" download="QR-<%= order.code %>.png" style="margin-bottom:10px"><svg class="icon icon-sm"><use href="#i-qr"/></svg> Lưu mã QR về máy</a>
+      <ol class="pay-steps small">
+        <li><b>Lưu mã QR</b> (nút trên, hoặc nhấn giữ vào ảnh QR → Lưu ảnh).</li>
+        <li>Mở <b>ứng dụng ngân hàng</b> → chọn <b>Quét QR</b> → bấm biểu tượng <b>ảnh/thư viện</b> → chọn ảnh vừa lưu.</li>
+        <li>Kiểm tra số tiền <b><%= money(order.total) %></b> rồi xác nhận chuyển.</li>
+      </ol>
+      <p class="tiny muted" style="margin:0 0 12px">Hoặc chuyển khoản thủ công bằng các thông tin dưới đây (bấm biểu tượng để sao chép).</p>
       <% if (needPay && autoConfirm) { %><div class="flash flash-info" style="margin:0 0 12px" data-pay-wait><svg class="icon"><use href="#i-clock"/></svg><span><b>Đang chờ thanh toán…</b> Trang tự cập nhật khi nhận được tiền (thường dưới 1 phút). Đơn được giữ hàng trong <%= holdHours %> giờ.</span></div><% } %>
       <% if (order.needs_vat) { %><div class="flash flash-info" style="margin:0 0 12px"><svg class="icon"><use href="#i-file"/></svg><span>Đơn xuất hóa đơn VAT: số tiền bên dưới đã gồm phí xuất hóa đơn. Hóa đơn điện tử sẽ gửi về <b><%= order.vat_email %></b>.<% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %></span></div><% } %>
       <div class="bank-rows">

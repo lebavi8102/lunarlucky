@@ -21,7 +21,12 @@ async function saveFile(file, alt) {
   if (!file || !file.buffer || !file.size) return null;
   const mime = sniff(file.buffer);
   if (!mime) {
-    const err = new Error(`Tệp "${file.originalname}" không phải ảnh JPG/PNG/WebP/AVIF hợp lệ.`);
+    const heic = file.buffer.toString('ascii', 4, 8) === 'ftyp' && /hei[cfsx]|mif1|msf1/.test(file.buffer.toString('ascii', 8, 12));
+    const err = new Error(
+      heic
+        ? `Ảnh "${file.originalname}" là định dạng HEIC của iPhone. Vào Cài đặt → Camera → Định dạng → chọn "Tương thích nhất", hoặc gửi ảnh qua Zalo/Telegram rồi tải lại.`
+        : `Tệp "${file.originalname}" không phải ảnh JPG/PNG/WebP/AVIF hợp lệ.`,
+    );
     err.status = 400;
     throw err;
   }
