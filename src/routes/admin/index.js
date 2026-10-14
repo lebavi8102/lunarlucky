@@ -209,8 +209,8 @@ router.get('/cai-dat', async (req, res) => {
 router.post('/email-thu', async (req, res) => {
   const to = String(req.body.to || req.session.user.email || '').trim();
   try {
-    await notify.testMail(to);
-    flash(req, 'success', `Đã gửi email thử tới ${to}. Kiểm tra hộp thư (cả mục Spam).`);
+    const info = await notify.testMail(to);
+    flash(req, 'success', `Gmail đã nhận thư gửi tới ${to} (${String(info.response).slice(0, 60)}). Kiểm tra hộp thư của đúng địa chỉ này, cả mục Spam.`);
   } catch (err) {
     flash(req, 'error', err.message);
   }

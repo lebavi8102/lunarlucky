@@ -30,7 +30,8 @@ async function sendMail({ to, subject, template, data }) {
     return;
   }
   try {
-    await t.sendMail({ from: config.mail.from, to, subject, html });
+    const info = await t.sendMail({ from: config.mail.from, to, subject, html });
+    console.log(`[mail] → ${to}: ${subject} · ${info.response}`);
   } catch (err) {
     console.error('[mail] gửi thất bại:', err.message);
   }
@@ -41,13 +42,17 @@ async function testMail(to) {
   const t = getTransport();
   if (!t) throw new Error('Chưa cài email: thiếu SMTP_HOST / SMTP_USER / SMTP_PASS trên Render.');
   try {
-    await t.sendMail({
+    const info = await t.sendMail({
       from: config.mail.from,
       to,
       subject: 'Lunar Lucky: email thử thành công',
       html: '<p>Email xác nhận đơn hàng của Lunar Lucky đã hoạt động. Khách đặt hàng có nhập email sẽ nhận được thư xác nhận.</p>',
     });
+    console.log(`[mail] thử → ${to}: ${info.response} (nhận: ${info.accepted.join(', ') || 'không'}; từ chối: ${info.rejected.join(', ') || 'không'})`);
+    if (!info.accepted.length) throw new Error(`Máy chủ email từ chối người nhận ${to}`);
+    return info;
   } catch (err) {
+    if (/từ chối người nhận/.test(err.message)) throw err;
     if (/Invalid login|535|Username and Password not accepted/i.test(err.message)) {
       throw new Error('Gmail từ chối đăng nhập: kiểm tra SMTP_USER và mật khẩu ứng dụng (không phải mật khẩu Gmail thường).');
     }
