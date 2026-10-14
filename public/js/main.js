@@ -167,6 +167,12 @@
     const sync = () => {
       giftFields.hidden = !giftToggle.checked;
       buyerAddr.hidden = giftToggle.checked;
+      // Gửi tặng: ẩn COD (không để tài xế thu tiền người được tặng), chọn sẵn chuyển khoản
+      const codOpt = $('[data-cod-option]');
+      if (codOpt) {
+        codOpt.hidden = giftToggle.checked || !!$('[data-vat-toggle]')?.checked;
+        if (codOpt.hidden && $('input', codOpt).checked) $('input[name=payment_method][value=bank]').checked = true;
+      }
       $$('input', giftFields).forEach((i) => (i.required = giftToggle.checked));
       $$('input', buyerAddr).forEach((i) => (i.required = !giftToggle.checked));
     };
@@ -182,7 +188,7 @@
       const on = vatToggle.checked;
       fields.hidden = !on;
       $$('input', fields).forEach((i) => (i.required = on));
-      cod.hidden = on;
+      cod.hidden = on || !!$('[data-gift-toggle]')?.checked;
       const notice = $('[data-vat-notice]');
       const row = $('[data-vat-row]');
       const total = $('[data-total]');

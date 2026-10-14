@@ -183,9 +183,9 @@ function orderTelegram(order, items) {
   const list = items.map((i) => `• ${e(i.name)} × ${i.qty} = ${money(i.line_total)}`).join('\n');
   return [
     `🧧 <b>ĐƠN MỚI ${e(order.code)}</b>`,
-    `👤 ${e(order.customer_name)} · ${e(order.phone)}`,
-    `📍 ${e(order.address)}${order.province ? ', ' + e(order.province) : ''}`,
-    order.is_gift ? `🎁 Gửi tặng: ${e(order.recipient_name)} · ${e(order.recipient_phone)}\n    ${e(order.recipient_address)}` : null,
+    order.is_gift
+      ? `🎁 <b>GIAO TẶNG</b> → ${e(order.recipient_name)} · ${e(order.recipient_phone)}\n📍 ${e(order.recipient_address)}${order.province ? ', ' + e(order.province) : ''}\n👤 Người đặt: ${e(order.customer_name)} · ${e(order.phone)} (không kèm hóa đơn giá)`
+      : `👤 ${e(order.customer_name)} · ${e(order.phone)}\n📍 ${e(order.address)}${order.province ? ', ' + e(order.province) : ''}`,
     order.delivery_date ? `📅 Giao ngày: ${ymd(order.delivery_date)}` : null,
     '',
     list,

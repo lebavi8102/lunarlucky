@@ -119,8 +119,8 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     }
   }
   let payment_method = f.oneOf('payment_method', ['cod', 'bank'], 'bank');
-  if (needs_vat && payment_method === 'cod') {
-    payment_method = 'bank';
+  if ((needs_vat || is_gift) && payment_method === 'cod') {
+    payment_method = 'bank'; // VAT: phải chuyển khoản; gửi tặng: không thu tiền người nhận quà
     f.values.payment_method = 'bank';
   }
   const invoice_info = needs_vat

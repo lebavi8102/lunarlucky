@@ -36,7 +36,9 @@ function messageText(order, items) {
   const pay =
     order.payment_method === 'bank'
       ? `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
-      : `💵 COD${order.payment_status === 'paid' ? ' · đã thu tiền' : ''}`;
+      : order.payment_status === 'paid'
+        ? '💵 COD · đã thu tiền'
+        : `💵 <b>COD · thu ${require('./format').money(order.total)} khi giao</b>`;
   let account = null;
   if (order.payment_method === 'bank') {
     const acc = payment.accountForOrder(order, {});

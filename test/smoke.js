@@ -99,6 +99,19 @@ async function addToCart(c, slug, qty = 1) {
     ok(again.status === 302 && /\/don-hang\//.test(again.location || ''), 'Bấm "Đặt hàng" lần nữa → tạo đơn thành công');
   }
 
+  // 4c. Đơn gửi tặng chọn COD → tự chuyển khoản (không để tài xế thu tiền người được tặng)
+  {
+    const g = client();
+    const prod = (await c('/bo-suu-tap')).text.match(/name="product_id" value="(\d+)"/)[1];
+    const gp = await g('/san-pham/gio-an-khang');
+    await g('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(gp.text), product_id: prod, qty: 1 } });
+    const ck = await g('/thanh-toan');
+    const gift = await g('/thanh-toan', { method: 'POST', form: { _csrf: csrf(ck.text), customer_name: 'Người Tặng', phone: '0912345678', province: 'Hà Nội',
+      is_gift: '1', recipient_name: 'Chú Hai', recipient_phone: '0987654321', recipient_address: '5 Hàng Bông', delivery_date: deliveryDate, payment_method: 'cod' } });
+    const gpage = await g(gift.location || '/');
+    ok(gift.status === 302 && /Chuyển khoản · /.test(gpage.text) && !/COD · /.test(gpage.text), 'Đơn gửi tặng chọn COD → tự chuyển sang chuyển khoản');
+  }
+
   // 5. Tra cứu đơn từ phiên khác
   const c2 = client();
   ok((await c2(`/don-hang/${code}`)).status === 302, 'Người lạ không xem được đơn');

@@ -32,7 +32,7 @@
         <legend><span class="num">2</span> Giao hàng</legend>
         <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
           <input type="checkbox" name="is_gift" value="1" <%= values.is_gift ? 'checked' : '' %> data-gift-toggle>
-          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền.</span></span>
+          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền. Đơn gửi tặng thanh toán chuyển khoản trước để người nhận không phải trả tiền.</span></span>
         </label>
 
         <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
@@ -115,7 +115,7 @@
             <span class="dot"></span>
             <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;white-space:nowrap;display:inline-block">Khuyên dùng</span></strong><span>Quét mã QR sau khi đặt — nhận tiền là chuẩn bị &amp; giao ngay</span></span>
           </label>
-          <label class="radio-card" data-cod-option <%= values.needs_vat ? 'hidden' : '' %>>
+          <label class="radio-card" data-cod-option <%= values.needs_vat || values.is_gift ? 'hidden' : '' %>>
             <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
             <span class="dot"></span>
             <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao</span></span>
