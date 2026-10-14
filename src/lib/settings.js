@@ -13,7 +13,7 @@ const DEFAULTS = {
   telegram_stock_thread: '',
   shop_tagline: 'Luxury Gifts & Hampers',
   shop_phone: '096 900 09 10',
-  shop_email: 'hello@lunarlucky.vn',
+  shop_email: 'lunarlucky.cskh@gmail.com',
   shop_hours: '8:00 – 21:00, tất cả các ngày',
   fanpage_url: 'https://www.facebook.com/Lunarlucky.vn',
   messenger_url: 'https://m.me/Lunarlucky.vn',
