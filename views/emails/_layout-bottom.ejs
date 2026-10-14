@@ -1,6 +1,6 @@
 </td></tr>
 <tr><td style="background:#fdfaf5;padding:20px 32px;font-size:13px;color:#75685e;text-align:center;border-top:1px solid #efe4d2">
-  Hotline <%= s.shop_phone %> · <a href="<%= s.zalo_url %>" style="color:#7a1622">Zalo</a> · <a href="<%= s.fanpage_url %>" style="color:#7a1622">Fanpage</a><br>
+  Hotline <%= s.shop_phone %> · <a href="<%= s.zalo_url %>" style="color:#7a1622">Zalo</a> · <a href="<%= s.fanpage_url %>" style="color:#7a1622">Fanpage</a><% if (s.shop_email) { %> · <a href="mailto:<%= s.shop_email %>" style="color:#7a1622"><%= s.shop_email %></a><% } %><br>
   <a href="<%= siteUrl %>" style="color:#75685e"><%= siteUrl.replace(/^https?:\/\//, '') %></a>
 </td></tr>
 </table>

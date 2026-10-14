@@ -30,7 +30,9 @@ async function sendMail({ to, subject, template, data }) {
     return;
   }
   try {
-    const info = await t.sendMail({ from: config.mail.from, to, subject, html });
+    // Khách bấm "Trả lời" → về đúng email chăm sóc khách hàng của shop
+    const replyTo = (data && data.s && data.s.shop_email) || undefined;
+    const info = await t.sendMail({ from: config.mail.from, replyTo, to, subject, html });
     console.log(`[mail] → ${to}: ${subject} · ${info.response}`);
   } catch (err) {
     console.error('[mail] gửi thất bại:', err.message);
