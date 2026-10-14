@@ -169,6 +169,38 @@ async function expireUnpaid() {
 }
 
 /**
+ * Đơn chờ chuyển khoản/cọc đã qua nửa thời gian giữ mà chưa trả → email nhắc 1 lần (kèm QR, giờ hết hạn).
+ * Khách hay quên sau khi đặt; nhắc kịp lúc cứu được đơn thay vì để tự hủy.
+ */
+async function remindUnpaid() {
+  const s = await settings.all();
+  const hours = holdHours(s);
+  const now = Date.now();
+  const rows = await db('orders')
+    .where({ payment_status: 'pending', status: 'new' })
+    .andWhere((w) => w.where('payment_method', 'bank').orWhere((x) => x.where('payment_method', 'cod').andWhere('deposit_amount', '>', 0)))
+    .whereNull('tg_message_id')
+    .whereNull('pay_reminded_at')
+    .whereNotNull('email').whereNot('email', '')
+    .andWhere('created_at', '<', new Date(now - (hours / 2) * 3600000))
+    .andWhere('created_at', '>', new Date(now - (hours - 1) * 3600000));
+  for (const order of rows) {
+    await db('orders').where({ id: order.id }).update({ pay_reminded_at: new Date() });
+    const items = await db('order_items').where({ order_id: order.id });
+    const deadline = new Date(new Date(order.created_at).getTime() + hours * 3600000);
+    const until = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(deadline);
+    const isDep = order.payment_method === 'cod';
+    notify.sendMail({
+      to: order.email,
+      subject: `Nhắc ${isDep ? 'đặt cọc' : 'thanh toán'} đơn ${order.code} — Lunar Lucky giữ giỏ quà đến ${until}`,
+      template: 'order-confirmation',
+      data: { order, items, s, reminder: { until }, qr: payment.qrForOrder(order, s), payee: payment.accountForOrder(order, s) },
+    });
+  }
+  return rows.length;
+}
+
+/**
  * (chạy mỗi phút) Gửi bù tin "ĐƠN MỚI" cho đơn cần báo nhóm (COD, hoặc đã thanh toán) mà lần trước gửi Telegram lỗi.
  * Chỉ xét đơn trong 6 giờ gần nhất để không gửi lại đơn cũ / đơn thử.
  */
@@ -197,10 +229,13 @@ async function resendMissed() {
 function startExpiryTimer() {
   const run = async () => {
     await resendMissed().catch((err) => console.error('[telegram] gửi bù lỗi:', err.message));
-    if (enabled()) await expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
+    if (enabled()) {
+      await remindUnpaid().catch((err) => console.error('[thanh toán] email nhắc lỗi:', err.message));
+      await expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
+    }
   };
   setTimeout(run, 30000).unref();
   setInterval(run, 60000).unref();
 }
 
-module.exports = { notifyWaiting, resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, startExpiryTimer, holdHours };
+module.exports = { notifyWaiting, resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, remindUnpaid, startExpiryTimer, holdHours };

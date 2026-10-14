@@ -1,6 +1,11 @@
 <%- include('_layout-top') %>
+<% if (typeof reminder !== 'undefined' && reminder) { %>
+<h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:26px;margin:0 0 8px">Giỏ quà của bạn vẫn đang được giữ</h1>
+<p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Chào <%= order.customer_name %>, Lunar Lucky chưa nhận được <%= order.payment_method === 'cod' ? 'tiền cọc' : 'chuyển khoản' %> cho đơn <b><%= order.code %></b>. Giỏ quà được giữ đến <b><%= reminder.until %></b>; sau thời gian này đơn sẽ tự hủy để nhường hàng cho khách khác. Nếu bạn đã chuyển rồi, hãy bỏ qua email này hoặc trả lời kèm ảnh giao dịch.</p>
+<% } else { %>
 <h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:26px;margin:0 0 8px">Cảm ơn <%= order.customer_name %>!</h1>
 <p style="margin:0 0 20px;line-height:1.6;color:#4a3f38">Lunar Lucky đã nhận đơn quà <b><%= order.code %></b>. <%= order.payment_method === 'bank' ? 'Đơn sẽ được chuẩn bị và giao ngay khi nhận được chuyển khoản.' : Number(order.deposit_amount) > 0 ? 'Đơn sẽ được giữ và chuẩn bị ngay khi nhận được tiền cọc.' : 'Lunar Lucky sẽ gọi xác nhận trước khi giao.' %></p>
+<% } %>
 
 <% if (qr) { %>
 <table role="presentation" width="100%" style="border:1px solid #c9a15a;border-radius:10px;margin-bottom:24px">

@@ -84,7 +84,7 @@ async function updateOrder(id, changes, { by } = {}) {
       to: order.email,
       subject: `Đơn hàng ${order.code}: ${ORDER_STATUS[status]}`,
       template: 'order-status',
-      data: { order: { ...order, status }, statusLabel: ORDER_STATUS[status], s: await settings.all() },
+      data: { order: { ...order, status, payment_status }, statusLabel: ORDER_STATUS[status], s: await settings.all(), expired: /^Tự hủy/.test(by || '') },
     });
   }
   // Đã nhận tiền: đơn chuyển khoản chưa báo nhóm thì giờ mới báo "ĐƠN MỚI"

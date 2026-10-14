@@ -32,7 +32,7 @@ const texts = () => sent.filter((x) => x.method === 'sendMessage').map((x) => x.
 let seq = 0;
 async function makeOrder(over = {}) {
   const p = await db('products').first();
-  const code = `LN261013T${'ABCDEFGHJK'[++seq]}XY`;
+  const code = `LN261013T${'ABCDEFGHJKLMNPRSTUVW'[++seq]}XY`;
   const [id] = await db('orders').insert({
     code, customer_name: 'Khách thử', phone: '0912345678', address: '1 Phố Huế', province: 'Hà Nội',
     delivery_date: '2027-01-20', payment_method: 'bank', payment_status: 'pending', status: 'new',
@@ -112,11 +112,41 @@ const tx = (n, amount, content, type = 'in') => ({ id: 900000 + n, transferType:
   await bank.expireUnpaid();
   ok((await db('orders').where({ id: o3.id }).first()).status === 'new', 'Đơn mới đặt chưa quá hạn → giữ nguyên');
 
+
   sent.length = 0;
   r = await bank.handleSepay(tx(4, 100000, o2.code));
   row = await db('orders').where({ id: o2.id }).first();
   ok(row.status === 'new' && row.payment_status === 'paid', 'Đơn đã tự hủy mà khách vẫn chuyển → khôi phục, đã thanh toán');
   ok((await db('products').where({ id: o2.product.id }).first()).stock === stockBefore, 'Khôi phục đơn → trừ lại kho');
+
+  // Qua nửa thời gian giữ mà chưa trả → email nhắc 1 lần (kèm QR); hết hạn → email báo tự hủy + nút đặt lại
+  {
+    const notify = require('../src/lib/notify');
+    const ejs = require('ejs');
+    const realMail = notify.sendMail;
+    const mails = [];
+    notify.sendMail = async (m) => {
+      const html = await ejs.renderFile(require('path').join(__dirname, '../views/emails', `${m.template}.ejs`), { ...m.data, money: require('../src/lib/format').money, ymd: require('../src/lib/format').ymd, siteUrl: 'http://x' });
+      mails.push({ ...m, html });
+    };
+    const o4 = await makeOrder({ email: 'khach@example.com', created_at: new Date(Date.now() - 14 * 3600000) });
+    const o5 = await makeOrder({ email: 'moi@example.com' });
+    made.push(o4.id, o5.id);
+    await bank.remindUnpaid();
+    await new Promise((r) => setTimeout(r, 200));
+    const rm = mails.filter((m) => m.to === 'khach@example.com');
+    ok(rm.length === 1 && /Nhắc thanh toán/.test(rm[0].subject) && /vẫn đang được giữ/.test(rm[0].html) && /Mã VietQR/.test(rm[0].html), 'Quá nửa thời gian giữ chưa chuyển khoản → email nhắc kèm QR');
+    ok(!mails.some((m) => m.to === 'moi@example.com'), 'Đơn vừa đặt → chưa nhắc');
+    await bank.remindUnpaid();
+    await new Promise((r) => setTimeout(r, 200));
+    ok(mails.filter((m) => m.to === 'khach@example.com').length === 1, 'Chỉ nhắc 1 lần');
+    await db('orders').where({ id: o4.id }).update({ created_at: new Date(Date.now() - 30 * 3600000) });
+    await bank.expireUnpaid();
+    await new Promise((r) => setTimeout(r, 200));
+    const cm = mails.filter((m) => m.to === 'khach@example.com').pop();
+    ok(cm && /tự hủy vì quá thời gian giữ/.test(cm.html) && /Đặt lại giỏ quà/.test(cm.html) && !/hoàn tiền/.test(cm.html), 'Tự hủy → email nói rõ lý do, không nhắc "hoàn tiền", có nút đặt lại');
+    notify.sendMail = realMail;
+  }
 
   // ĐƠN COD CẦN CỌC: cọc 300k / tổng 1.000.000
   {

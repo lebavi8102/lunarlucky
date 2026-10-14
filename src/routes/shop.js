@@ -2,6 +2,7 @@ const express = require('express');
 const testimonials = require('../lib/testimonials');
 const db = require('../db');
 const { render: md } = require('../lib/markdown');
+const { search } = require('../lib/search');
 const { lines, parseJson, truncate, todayVN } = require('../lib/format');
 
 const router = express.Router();
@@ -140,13 +141,9 @@ router.get('/tim-kiem', async (req, res) => {
   const q = String(req.query.q || '').normalize('NFC').trim().slice(0, 80);
   let products = [];
   if (q) {
-    // Dùng "!" làm ký tự escape để câu LIKE chạy giống nhau trên MySQL và SQLite
-    const like = `%${q.replace(/[%_!]/g, (c) => '!' + c)}%`;
-    const cond = (col) => [`${col} LIKE ? ESCAPE '!'`, [like]];
-    products = await activeProducts()
-      .andWhere((w) => w.whereRaw(...cond('name')).orWhereRaw(...cond('short_desc')).orWhereRaw(...cond('contents')))
-      .orderBy('sold', 'desc')
-      .limit(24);
+    // Khách hay gõ không dấu / kèm giá ("gio tet duoi 1tr") → tìm mềm trong bộ nhớ
+    const [all, cats] = await Promise.all([activeProducts(), db('categories').select('id', 'name')]);
+    products = search(all, q, cats).slice(0, 24);
   }
   res.locals.seo.title = q ? `Tìm “${q}” · Lunar Lucky` : 'Tìm kiếm · Lunar Lucky';
   res.locals.seo.noindex = true;
