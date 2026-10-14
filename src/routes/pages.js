@@ -6,7 +6,7 @@ const PAGES = {
   'gioi-thieu': {
     view: 'about',
     title: 'Câu chuyện Lunar Lucky',
-    description: 'Lunar Lucky tuyển chọn đặc sản ba miền, đóng hộp sơn mài thủ công để mỗi giỏ quà Tết là một lời chúc trọn vẹn.',
+    description: 'Lunar Lucky làm việc trực tiếp với các xưởng sản xuất, tuyển chọn kỹ lưỡng từng sản phẩm và đóng hộp sơn mài thủ công để mỗi giỏ quà Tết là một lời chúc trọn vẹn.',
   },
   'lien-he': { view: 'contact', title: 'Liên hệ', description: 'Liên hệ Lunar Lucky qua hotline, Zalo, Messenger hoặc email để được tư vấn giỏ quà Tết.' },
   'cau-hoi-thuong-gap': { view: 'faq', title: 'Câu hỏi thường gặp', description: 'Giải đáp về đặt hàng, giao hàng, thanh toán và đổi trả giỏ quà Tết tại Lunar Lucky.' },

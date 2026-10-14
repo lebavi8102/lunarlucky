@@ -36,7 +36,7 @@ const DEFAULTS = {
   hero_eyebrow: 'Quà Tết an khang, trao trọn phú quý',
   hero_title: 'Trao lời chúc trọn vẹn trong từng giỏ quà',
   hero_subtitle:
-    'Giỏ quà Tết tuyển chọn thủ công từ đặc sản ba miền, đóng hộp sơn mài, kèm thiệp chúc viết tay và giao tận nơi đúng ngày bạn chọn.',
+    'Giỏ quà Tết tuyển chọn kỹ lưỡng từ các xưởng sản xuất uy tín, đóng hộp sơn mài, kèm thiệp chúc viết tay và giao tận nơi đúng ngày bạn chọn.',
 };
 
 let cache = null;
