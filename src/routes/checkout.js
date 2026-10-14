@@ -58,10 +58,32 @@ router.get('/thanh-toan', async (req, res) => {
 
 router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const c = cart.getCart(req);
+  // Phiên bị mất (mở lâu, trình duyệt trong Zalo/Facebook xóa cookie…) → dựng lại giỏ từ bản chụp gửi kèm form
+  if (!c.lines.length && req.body.cart_snapshot) {
+    try {
+      for (const l of JSON.parse(String(req.body.cart_snapshot)).slice(0, 30)) cart.addProduct(c, l.id, l.qty);
+    } catch {
+      /* bản chụp hỏng: bỏ qua */
+    }
+  }
   const priced = await cart.priceCart(c);
   if (!priced.lines.length) return res.redirect('/gio-hang');
 
   const minDays = Number(res.locals.s.min_delivery_days) || 1;
+  if (req.csrfFailed) {
+    res.status(409);
+    res.locals.seo.title = 'Thanh toán · Lunar Lucky';
+    res.locals.seo.noindex = true;
+    res.locals.flash = { type: 'info', message: 'Trang đã mở khá lâu nên cần xác nhận lại. Thông tin của bạn vẫn còn — kiểm tra rồi bấm "Đặt hàng" lần nữa.' };
+    const values = { ...checkoutDefaults(req), ...req.body };
+    delete values._csrf;
+    delete values.cart_snapshot;
+    return res.render('shop/checkout', {
+      cart: priced, values, errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+      quickDates: [0, 1, 2].map((i) => todayVN(minDays + i)),
+      minDate: todayVN(minDays), maxDate: todayVN(180),
+    });
+  }
   const f = new Form(req.body);
   const customer_name = f.text('customer_name', { label: 'họ tên', required: true, min: 2, max: 120 });
   const phone = f.phone('phone');

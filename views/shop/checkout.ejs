@@ -16,6 +16,7 @@
 
   <form class="cart-layout" action="/thanh-toan" method="post" novalidate data-checkout>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="cart_snapshot" value="<%= JSON.stringify(cart.lines.filter(l => l.productId).map(l => ({ id: l.productId, qty: l.qty }))) %>">
     <div>
       <fieldset class="fieldset">
         <legend><span class="num">1</span> Thông tin người đặt</legend>

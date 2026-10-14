@@ -21,6 +21,11 @@ function csrfProtection(req, res, next) {
     sent.length === req.session.csrf.length &&
     crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(req.session.csrf));
   if (ok) return next();
+  // Đặt hàng: không tạo đơn, nhưng hiện lại form với thông tin khách đã điền để bấm lại (không mất đơn)
+  if (req.method === 'POST' && req.path === '/thanh-toan') {
+    req.csrfFailed = true;
+    return next();
+  }
   const err = new Error('Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.');
   err.status = 403;
   next(err);

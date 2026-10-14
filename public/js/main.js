@@ -316,7 +316,7 @@
   const buyRow = $('#buy-form .buy-row');
   if (buyBar && buyRow && 'IntersectionObserver' in window) {
     new IntersectionObserver(([en]) => {
-      const show = !en.isIntersecting && en.boundingClientRect.top < 0;
+      const show = !en.isIntersecting; // nút mua đang khuất (ở dưới hoặc đã cuộn qua) → hiện thanh Mua ngay
       buyBar.classList.toggle('show', show);
       buyBar.setAttribute('aria-hidden', String(!show));
       $('button', buyBar).tabIndex = show ? 0 : -1;

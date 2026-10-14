@@ -85,6 +85,20 @@ async function addToCart(c, slug, qty = 1) {
   const qrDl = await c(`/don-hang/${code}/qr.png`);
   ok(qrDl.status === 200 || qrDl.status === 302, `Tải ảnh QR của đơn mình → ${qrDl.status}`);
 
+  // 4b. Mất phiên khi đang đặt (mở lâu, Zalo/Facebook xóa cookie) → không mất thông tin, bấm lại là đặt được
+  {
+    const fresh = client();
+    const prod = (await c('/bo-suu-tap')).text.match(/name="product_id" value="(\d+)"/)[1];
+    const lost = await fresh('/thanh-toan', { method: 'POST', form: {
+      _csrf: 'het-han', cart_snapshot: JSON.stringify([{ id: Number(prod), qty: 2 }]),
+      customer_name: 'Khách Mất Phiên', phone: '0912345678', province: 'Hà Nội', address: '9 Phố Huế', delivery_date: deliveryDate, payment_method: 'cod' } });
+    ok(lost.status === 409 && /Khách Mất Phiên/.test(lost.text) && /cần xác nhận lại/.test(lost.text), 'Hết phiên khi đặt → hiện lại form, giữ nguyên thông tin đã điền');
+    ok(/summary-items[\s\S]*?data-checkout-qty="[^"]+"[^>]*value="2"|value="2"[^>]*data-checkout-qty/.test(lost.text), 'Giỏ hàng được dựng lại (2 giỏ)');
+    const again = await fresh('/thanh-toan', { method: 'POST', form: {
+      _csrf: csrf(lost.text), customer_name: 'Khách Mất Phiên', phone: '0912345678', province: 'Hà Nội', address: '9 Phố Huế', delivery_date: deliveryDate, payment_method: 'cod' } });
+    ok(again.status === 302 && /\/don-hang\//.test(again.location || ''), 'Bấm "Đặt hàng" lần nữa → tạo đơn thành công');
+  }
+
   // 5. Tra cứu đơn từ phiên khác
   const c2 = client();
   ok((await c2(`/don-hang/${code}`)).status === 302, 'Người lạ không xem được đơn');

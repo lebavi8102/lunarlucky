@@ -308,7 +308,10 @@ ul, ol { margin: 0; padding: 0; }
   opacity: 0; transform: translateY(8px); transition: opacity 250ms var(--ease), transform 250ms var(--ease);
 }
 .p-card:hover .p-quick, .p-quick:focus-within { opacity: 1; transform: none; }
-@media (hover: none) { .p-quick { display: none; } }
+@media (hover: none) {
+  .p-quick { opacity: 1; transform: none; left: auto; right: 8px; bottom: 8px; z-index: 2; }
+  .p-quick .btn { width: auto; min-height: 40px; padding: 8px 12px; font-size: 13px; box-shadow: 0 2px 8px rgb(0 0 0 / 0.15); }
+}
 .p-quick .btn { width: 100%; background: rgb(253 250 245 / 0.94); color: var(--ink-900); border-color: transparent; backdrop-filter: blur(6px); }
 .p-quick .btn:hover { background: var(--lacquer-700); color: #fff; }
 .p-body { padding-top: var(--space-4); display: flex; flex-direction: column; gap: 4px; }
@@ -442,6 +445,7 @@ ul, ol { margin: 0; padding: 0; }
 @media (min-width: 960px) { .pdp { grid-template-columns: 1.1fr 1fr; gap: var(--space-8); } .pdp-info { position: sticky; top: calc(var(--header-h) + 24px); align-self: start; } }
 .gallery-main { aspect-ratio: 4 / 5; border-radius: var(--radius-lg); overflow: hidden; background: var(--cream-200); }
 .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 959px) { .gallery-main { aspect-ratio: auto; height: min(58vh, 420px); } }
 .thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; padding-bottom: 4px; list-style: none; }
 .thumbs button { flex: none; width: 76px; height: 92px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--cream-200); opacity: 0.7; transition: opacity 200ms, border-color 200ms; }
 .thumbs button[aria-current='true'], .thumbs button:hover { opacity: 1; border-color: var(--ink-900); }
@@ -598,6 +602,8 @@ ul, ol { margin: 0; padding: 0; }
 .review-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; background: var(--cream-200); }
 .review-card figcaption { padding: 12px 14px 14px; display: grid; gap: 6px; }
 .review-card blockquote { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-700); }
+.ship-promise { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--cream-100); font-size: 14px; line-height: 1.5; color: var(--ink-700); }
+.ship-promise .icon { color: var(--lacquer-700); margin-top: 3px; flex: none; }
 .secure-note { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: var(--space-4); font-size: 13px; color: var(--text-muted); }
 [hidden] { display: none !important; }
 

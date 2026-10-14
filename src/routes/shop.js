@@ -2,7 +2,7 @@ const express = require('express');
 const testimonials = require('../lib/testimonials');
 const db = require('../db');
 const { render: md } = require('../lib/markdown');
-const { lines, parseJson, truncate } = require('../lib/format');
+const { lines, parseJson, truncate, todayVN } = require('../lib/format');
 
 const router = express.Router();
 
@@ -82,7 +82,7 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   if (!category) return next();
   const data = await listing(req, res, category);
   res.locals.seo.title = `${category.name} · Lunar Lucky`;
-  res.locals.seo.description = category.tagline || truncate(category.description, 160);
+  res.locals.seo.description = truncate(`${category.name}: ${category.tagline || category.description || 'giỏ quà Tết tuyển chọn'}. Giỏ quà Tết Lunar Lucky đóng hộp sơn mài, thiệp viết tay, giao toàn quốc, miễn phí giao từ 1.500.000₫.`, 160);
   if (category.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${category.image_id}`;
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
   res.render('shop/collection', { ...data, category, sorts: Object.keys(SORTS), ranges: Object.keys(PRICE_RANGES) });
@@ -130,6 +130,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
   res.render('shop/product', {
     product, category, related, gallery,
     reviews: await testimonials.listActive({ productId: product.id, limit: 4 }),
+    earliest: todayVN(Number(res.locals.s.min_delivery_days) || 1),
     contents: lines(product.contents),
     descriptionHtml: md(product.description),
   });
