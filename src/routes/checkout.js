@@ -142,6 +142,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     price: l.unitPrice,
     qty: l.qty,
     line_total: l.lineTotal,
+    unit_cost: l.unitCost ?? null, // giá vốn lúc đặt — để báo cáo lợi nhuận
   }));
 
   try {

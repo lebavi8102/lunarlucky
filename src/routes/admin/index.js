@@ -298,6 +298,7 @@ router.use(
       { key: 'name', label: 'Tên', format: 'title' },
       { key: 'category_id', label: 'Danh mục', format: 'lookup', lookup: 'categories' },
       { key: 'price', label: 'Giá', format: 'money' },
+      { key: 'cost_price', label: 'Giá vốn', format: 'money' },
       { key: 'stock', label: 'Tồn kho', format: 'stock' },
       { key: 'sold', label: 'Đã bán' },
       { key: 'is_active', label: 'Hiển thị', format: 'bool' },
@@ -310,6 +311,7 @@ router.use(
       { name: 'category_id', label: 'Danh mục', type: 'select', options: categoryOptions, numeric: true },
       { name: 'price', label: 'Giá bán (₫)', type: 'money', required: true },
       { name: 'compare_price', label: 'Giá gốc (₫)', type: 'money', help: 'Hiển thị gạch ngang nếu lớn hơn giá bán.' },
+      { name: 'cost_price', label: 'Giá vốn / giá nhập (₫)', type: 'money', help: 'Chỉ hiện trong admin, dùng để tính lợi nhuận. Khách không thấy.' },
       { name: 'stock', label: 'Tồn kho', type: 'number', required: true, default: 0 },
       { name: 'badge', label: 'Nhãn', type: 'text', max: 40, help: 'VD: Bán chạy, Mới, Giới hạn' },
       { name: 'short_desc', label: 'Mô tả ngắn', type: 'textarea', max: 300 },
@@ -429,5 +431,45 @@ router.use(
     },
   }),
 );
+
+/* ---------- Chi phí & báo cáo lợi nhuận ---------- */
+const profit = require('../../lib/profit');
+
+router.use(
+  resource({
+    path: 'chi-phi', table: 'expenses', title: 'Chi phí', singular: 'khoản chi', titleField: 'category',
+    searchable: ['category', 'note'], orderBy: [{ column: 'spent_on', order: 'desc' }, { column: 'id', order: 'desc' }],
+    columns: [
+      { key: 'spent_on', label: 'Ngày', format: 'ymd' },
+      { key: 'category', label: 'Loại chi phí', format: 'title' },
+      { key: 'amount', label: 'Số tiền', format: 'money' },
+      { key: 'note', label: 'Ghi chú' },
+    ],
+    fields: [
+      { name: 'spent_on', label: 'Ngày chi', type: 'date', required: true, get default() { return todayVN(); } },
+      {
+        name: 'category', label: 'Loại chi phí', type: 'select', required: true,
+        options: profit.EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c })), default: profit.EXPENSE_CATEGORIES[0],
+      },
+      { name: 'amount', label: 'Số tiền (₫)', type: 'money', required: true },
+      { name: 'note', label: 'Ghi chú', type: 'text', max: 300, help: 'VD: Ship GHTK 12 đơn tuần 2/12, in 200 thiệp...' },
+    ],
+    validate: (v) => (v.amount != null && v.amount <= 0 ? { amount: 'Số tiền phải lớn hơn 0.' } : {}),
+  }),
+);
+
+router.get('/bao-cao', async (req, res) => {
+  const valid = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
+  let range;
+  let preset = String(req.query.ky || '');
+  if (valid(req.query.tu) && valid(req.query.den) && req.query.tu <= req.query.den) {
+    range = { from: req.query.tu, to: req.query.den };
+    preset = 'tuy-chon';
+  } else {
+    if (!['hom-nay', '7-ngay', '30-ngay', 'thang-nay', 'thang-truoc', 'nam-nay'].includes(preset)) preset = 'thang-nay';
+    range = profit.presetRange(preset);
+  }
+  res.render('admin/report', { title: 'Báo cáo lợi nhuận', r: await profit.report(range), preset });
+});
 
 module.exports = router;

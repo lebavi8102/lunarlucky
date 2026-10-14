@@ -86,7 +86,7 @@ async function priceCart(cart) {
       lines.push({
         key: l.key, type: 'product', productId: p.id, name: p.name, url: `/san-pham/${p.slug}`,
         image_id: p.image_id, unitPrice: p.price, comparePrice: p.compare_price, qty: l.qty,
-        lineTotal: p.price * l.qty, maxQty: Math.min(p.stock, MAX_QTY),
+        lineTotal: p.price * l.qty, maxQty: Math.min(p.stock, MAX_QTY), unitCost: p.cost_price ?? null,
       });
     }
   }

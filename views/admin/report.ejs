@@ -1,0 +1,88 @@
+<%- include('_top') %>
+<% const pct = (x) => (x * 100).toFixed(1).replace('.', ',') + '%';
+   const presets = [['hom-nay', 'Hôm nay'], ['7-ngay', '7 ngày'], ['30-ngay', '30 ngày'], ['thang-nay', 'Tháng này'], ['thang-truoc', 'Tháng trước'], ['nam-nay', 'Năm nay']];
+   const maxS = Math.max(1, ...r.series.map(s => s.revenue)); %>
+<div class="admin-head">
+  <h1>Báo cáo lợi nhuận</h1>
+  <div class="actions"><a class="btn btn-sm" href="/admin/chi-phi/moi"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm chi phí</a></div>
+</div>
+
+<form class="panel" method="get" action="/admin/bao-cao" style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <% presets.forEach(([k, label]) => { %><a class="btn btn-sm <%= preset === k ? '' : 'btn-quiet' %>" href="/admin/bao-cao?ky=<%= k %>"><%= label %></a><% }) %>
+  </div>
+  <div class="field" style="margin:0"><label class="label" for="tu">Từ ngày</label><input class="input" type="date" id="tu" name="tu" value="<%= r.from %>"></div>
+  <div class="field" style="margin:0"><label class="label" for="den">Đến ngày</label><input class="input" type="date" id="den" name="den" value="<%= r.to %>"></div>
+  <button class="btn btn-sm" type="submit">Xem</button>
+</form>
+
+<% if (r.missingCost) { %>
+<div class="flash flash-error" role="alert" style="margin-bottom:20px"><svg class="icon"><use href="#i-alert"/></svg><span><b><%= r.missingCost %> giỏ đã bán chưa có giá vốn</b> nên lợi nhuận đang bị tính cao hơn thực tế. Vào <a href="/admin/san-pham" style="text-decoration:underline">Sản phẩm</a> nhập "Giá vốn / giá nhập" cho từng giỏ.</span></div>
+<% } %>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Doanh thu</div><div class="value"><%= money(r.revenue) %></div><div class="small muted"><%= r.orders %> đơn · TB <%= money(r.avgOrder) %>/đơn</div></div>
+  <div class="stat"><div class="label">Giá vốn hàng bán</div><div class="value"><%= r.cogs ? "−" : "" %><%= money(r.cogs) %></div></div>
+  <div class="stat"><div class="label">Lợi nhuận gộp</div><div class="value"><%= money(r.gross) %></div><div class="small muted">Biên <%= pct(r.grossMargin) %></div></div>
+  <div class="stat"><div class="label">Chi phí</div><div class="value"><%= r.expenses ? "−" : "" %><%= money(r.expenses) %></div></div>
+  <div class="stat hl"><div class="label">Lợi nhuận cuối</div><div class="value"><%= money(r.net) %></div><div class="small" style="opacity:.8">Biên <%= pct(r.netMargin) %></div></div>
+</div>
+
+<div class="panel-grid">
+  <section class="panel">
+    <h2>Cách tính <span class="small muted" style="font-weight:400"><%= fmt.ymd(r.from) %> – <%= fmt.ymd(r.to) %></span></h2>
+    <table class="table"><tbody>
+      <tr><td>Tiền hàng (sau giảm giá)</td><td class="num"><%= money(r.goods) %></td></tr>
+      <tr><td>+ Phí giao khách trả</td><td class="num"><%= money(r.shipping) %></td></tr>
+      <tr><td><b>= Doanh thu</b></td><td class="num"><b><%= money(r.revenue) %></b></td></tr>
+      <tr><td>− Giá vốn hàng bán</td><td class="num"><%= money(r.cogs) %></td></tr>
+      <tr><td><b>= Lợi nhuận gộp</b></td><td class="num"><b><%= money(r.gross) %></b></td></tr>
+      <% Object.entries(r.expenseByCat).forEach(([cat, amt]) => { %><tr><td>− <%= cat %></td><td class="num"><%= money(amt) %></td></tr><% }) %>
+      <% if (!r.expenses) { %><tr><td class="muted">− Chi phí (chưa nhập khoản nào trong kỳ)</td><td class="num">0₫</td></tr><% } %>
+      <tr><td><b>= Lợi nhuận cuối</b></td><td class="num"><b style="color:<%= r.net < 0 ? 'var(--lacquer-700)' : 'inherit' %>"><%= money(r.net) %></b></td></tr>
+    </tbody></table>
+    <p class="small muted" style="margin-top:12px">
+      Chỉ tính đơn <b>đã thu tiền</b> (chuyển khoản đã nhận, COD đã hoàn tất), không tính đơn hủy.
+      <% if (r.vatCollected) { %>Phí xuất VAT khách trả <b><%= money(r.vatCollected) %></b> là tiền thu hộ, đã loại khỏi doanh thu.<% } %>
+      <% if (r.pendingOrders) { %><br>Còn <b><%= r.pendingOrders %> đơn chưa thu tiền</b> (<%= money(r.pendingValue) %>) — sẽ được tính khi thu xong.<% } %>
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Theo <%= r.series.length && r.series[0].key.length === 7 ? 'tháng' : 'ngày' %></h2>
+    <% if (!r.series.length) { %><p class="muted small">Chưa có đơn đã thu tiền trong kỳ này.</p><% } else { %>
+    <div class="chart" role="list" aria-label="Doanh thu và lợi nhuận gộp theo thời gian">
+      <% r.series.forEach(s => { %>
+        <div class="bar" role="listitem" tabindex="0" style="height:<%= Math.max(1, Math.round(s.revenue / maxS * 100)) %>%" aria-label="<%= s.key %>: doanh thu <%= money(s.revenue) %>, lãi gộp <%= money(s.profit) %>">
+          <span class="tip"><%= s.key.length === 7 ? s.key : fmt.ymd(s.key).slice(0, 5) %> · <%= money(s.revenue) %> · lãi gộp <%= money(s.profit) %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="chart-x" aria-hidden="true"><% r.series.forEach(s => { %><span><%= s.key.length === 7 ? s.key.slice(5) : s.key.slice(8) %></span><% }) %></div>
+    <% } %>
+  </section>
+</div>
+
+<section class="panel" style="margin-top:20px">
+  <h2>Lợi nhuận theo sản phẩm</h2>
+  <% if (!r.products.length) { %><p class="muted small">Chưa có dữ liệu.</p><% } else { %>
+  <div class="table-wrap" style="border:0">
+    <table class="table">
+      <thead><tr><th scope="col">Sản phẩm</th><th scope="col" class="num">Đã bán</th><th scope="col" class="num">Doanh thu</th><th scope="col" class="num">Giá vốn</th><th scope="col" class="num">Lãi gộp</th><th scope="col" class="num">Biên</th></tr></thead>
+      <tbody>
+      <% r.products.forEach(p => { %>
+        <tr>
+          <td class="wrap"><%= p.name %><% if (p.sku) { %> <span class="small muted"><%= p.sku %></span><% } %><% if (p.missing) { %> <span class="status status-pending">thiếu giá vốn</span><% } %></td>
+          <td class="num"><%= p.qty %></td>
+          <td class="num"><%= money(p.revenue) %></td>
+          <td class="num"><%= money(p.cost) %></td>
+          <td class="num"><b><%= money(p.profit) %></b></td>
+          <td class="num"><%= p.revenue ? pct(p.profit / p.revenue) : '—' %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('_bottom') %>
