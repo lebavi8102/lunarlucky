@@ -183,6 +183,27 @@ async function answer(cb, text, alert = false) {
   }
 }
 
+/**
+ * Trong chủ đề ảnh giao hàng (/chonanh): ảnh kèm mã đơn — hoặc tin trả lời vào ảnh bằng mã đơn —
+ * được coi như /anhgiao MÃĐƠN lời khen, shipper không cần gõ lệnh.
+ */
+async function asPhotoCommand(msg) {
+  const text = String(msg.caption || msg.text || '').trim();
+  if (text.startsWith('/') || !msg.is_topic_message || !msg.message_thread_id) return msg;
+  const thread = (await settings.all()).telegram_photo_thread;
+  if (!thread || String(msg.message_thread_id) !== String(thread)) return msg;
+  const hasPhoto = (msg.photo && msg.photo.length) || (msg.reply_to_message && msg.reply_to_message.photo);
+  if (!hasPhoto) return msg;
+  const m = /LN\d{6}[A-Z2-9]{4}/i.exec(text);
+  if (!m) {
+    // Ảnh không có mã: nhắc shipper trả lời ảnh bằng mã đơn (chỉ nhắc với ảnh, không nhắc tin chữ)
+    if (msg.photo) await reply(msg, '📸 Ảnh này chưa có <b>mã đơn</b>. Trả lời (reply) vào ảnh bằng mã đơn, vd <code>LN261014ABCD</code>.');
+    return msg;
+  }
+  const rest = (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim();
+  return { ...msg, caption: `/anhgiao ${m[0].toUpperCase()} ${rest}`.trim(), text: undefined };
+}
+
 /** Xử lý một update từ Telegram webhook. */
 /* ---------- Lệnh kho: /ton /nhap /giam /dat ---------- */
 const KHO_HELP = [
@@ -197,6 +218,7 @@ const KHO_HELP = [
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
+  '   Gõ <code>/chonanh</code> trong chủ đề ảnh giao hàng → ở đó chỉ cần gửi ảnh kèm <b>mã đơn</b>, không cần gõ lệnh.',
 ].join('\n');
 
 /** /giao [mai | kia | dd/mm] → danh sách giao trong ngày cho shipper. */
@@ -275,22 +297,24 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'giao'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
-  if (cmd === 'chondon' || cmd === 'chonkho') {
+  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
     }
-    const key = cmd === 'chondon' ? 'telegram_order_thread' : 'telegram_stock_thread';
+    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
-    return reply(msg, cmd === 'chondon'
-      ? '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.'
-      : '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.');
+    return reply(msg, {
+      chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
+      chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
+      chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm mã đơn</b> (vd <code>LN261014ABCD khách khen giỏ đẹp</code>) → bot lưu vào web, chờ duyệt.\nQuên ghi mã? Trả lời (reply) vào ảnh bằng mã đơn.',
+    }[cmd]);
   }
   if (cmd === 'ton') return reply(msg, await stockList(args));
   if (cmd === 'giao') return reply(msg, await deliveryList(args));
@@ -341,13 +365,14 @@ async function handleUpdate(update) {
     const from = String(update.message.migrate_from_chat_id || update.message.chat.id);
     const to = String(update.message.migrate_to_chat_id || update.message.chat.id);
     if (current === from && from !== to) {
-      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '' });
+      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '' });
       console.log(`[telegram] nhóm chuyển mã ${from} → ${to}, đã cập nhật`);
     }
     return;
   }
   if (update.message) {
     await rememberChat(update.message.chat);
+    update = { ...update, message: await asPhotoCommand(update.message) };
     if (/^\/anhgiao/i.test(String(update.message.caption || update.message.text || ''))) {
       console.log(`[telegram] /anhgiao từ nhóm ${update.message.chat.id} · ảnh: ${update.message.photo ? 'có' : update.message.reply_to_message?.photo ? 'trả lời ảnh' : 'không'}`);
       if (String(update.message.chat.id) !== String(await notify.telegramChatId())) {
@@ -446,6 +471,7 @@ async function ensureWebhook() {
       { command: 'kho', description: 'Hướng dẫn lệnh kho' },
       { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới' },
       { command: 'chonkho', description: 'Chọn chủ đề này để nhận cảnh báo kho' },
+      { command: 'chonanh', description: 'Chọn chủ đề này để shipper gửi ảnh giao hàng' },
     ],
   }).catch((err) => console.error('[telegram] không đặt được menu lệnh:', err.message));
   return { ok: true, url };

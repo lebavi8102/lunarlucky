@@ -166,6 +166,25 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     sent.length = 0;
     await tg.handleUpdate({ message: { message_id: 53, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Shipper' }, text: '/anhgiao LN261014PHTQ' } });
     ok(sent.some((x) => /Chưa thấy ảnh/.test(x.body.text || '')), 'Gõ /anhgiao không kèm ảnh → bot hướng dẫn cách gửi');
+    // Chủ đề ảnh giao hàng: /chonanh, rồi chỉ cần ảnh + mã đơn (không gõ lệnh)
+    await tg.handleUpdate({ message: { message_id: 60, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'A' }, text: '/chonanh' } });
+    ok((await settings.all()).telegram_photo_thread === '65', '/chonanh lưu chủ đề ảnh giao hàng');
+    await tg.handleUpdate({ message: { message_id: 61, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'p', width: 800, height: 800, file_size: 5000 }], caption: 'đã giao ln261014phtq khách khen đẹp' } });
+    const t3 = await db('testimonials').where({ order_code: 'LN261014PHTQ' }).orderBy('id', 'desc').first();
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 3 && t3.content === 'đã giao khách khen đẹp', 'Trong chủ đề ảnh: ảnh + mã đơn → tự lưu, không cần /anhgiao');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 62, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'q', width: 800, height: 800 }] } });
+    ok(sent.some((x) => /chưa có <b>mã đơn/.test(x.body.text || '') && x.body.message_thread_id === 65), 'Ảnh không mã → nhắc trả lời bằng mã đơn, ngay trong chủ đề');
+    await tg.handleUpdate({ message: { message_id: 63, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 65, from: { first_name: 'Shipper' },
+      text: 'LN261014PHTQ', reply_to_message: { message_id: 62, photo: [{ file_id: 'q', width: 800, height: 800 }] } } });
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 4, 'Trả lời ảnh bằng mã đơn → lưu');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 64, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 36, from: { first_name: 'Shipper' },
+      photo: [{ file_id: 'z', width: 80, height: 80 }], caption: 'LN261014PHTQ' } });
+    ok((await db('testimonials').where({ order_code: 'LN261014PHTQ' })).length === 4 && !sent.length, 'Ảnh ở chủ đề khác → bot bỏ qua');
+    await settings.save({ telegram_photo_thread: '' });
     const listed = await require('../src/lib/testimonials').listActive();
     ok(!listed.some((x) => x.id === t.id), 'Ảnh chưa duyệt không hiện trên web');
     await db('testimonials').where({ order_code: 'LN261014PHTQ' }).del();
