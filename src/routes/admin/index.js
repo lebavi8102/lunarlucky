@@ -472,4 +472,28 @@ router.get('/bao-cao', async (req, res) => {
   res.render('admin/report', { title: 'Báo cáo lợi nhuận', r: await profit.report(range), preset });
 });
 
+/* ---------- Sao lưu: xuất Excel ---------- */
+router.get('/sao-luu', async (req, res) => {
+  const [orders, customers, products, expenses] = await Promise.all([
+    db('orders').count({ n: '*' }).first(), db('orders').countDistinct({ n: 'phone' }).first(),
+    db('products').count({ n: '*' }).first(), db('expenses').count({ n: '*' }).first(),
+  ]);
+  res.render('admin/backup', {
+    title: 'Sao lưu dữ liệu',
+    counts: { orders: Number(orders.n), customers: Number(customers.n), products: Number(products.n), expenses: Number(expenses.n) },
+  });
+});
+
+router.get('/sao-luu/tai-ve', async (req, res) => {
+  const kind = ['don-hang', 'khach-hang'].includes(req.query.loai) ? req.query.loai : 'tat-ca';
+  const buf = await require('../../lib/backup').exportXlsx(kind);
+  const name = { 'tat-ca': 'SaoLuu', 'don-hang': 'DonHang', 'khach-hang': 'KhachHang' }[kind];
+  res.set({
+    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'Content-Disposition': `attachment; filename="LunarLucky_${name}_${todayVN()}.xlsx"`,
+    'Cache-Control': 'no-store',
+  });
+  res.send(buf);
+});
+
 module.exports = router;

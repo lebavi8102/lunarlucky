@@ -1,0 +1,25 @@
+<%- include('_top') %>
+<div class="admin-head"><h1>Sao lưu dữ liệu</h1></div>
+
+<div class="panel-grid">
+  <section class="panel">
+    <h2>Tải bản sao lưu đầy đủ</h2>
+    <p class="small muted" style="margin-bottom:16px">Một file Excel gồm 5 trang: Đơn hàng, Chi tiết đơn, Khách hàng, Sản phẩm, Chi phí. Nên tải về máy hoặc lưu Google Drive <b>mỗi tuần</b> trong mùa cao điểm.</p>
+    <ul class="small" style="margin:0 0 20px;padding-left:18px;line-height:1.9">
+      <li><%= counts.orders %> đơn hàng</li>
+      <li>~<%= counts.customers %> khách hàng (gộp theo số điện thoại)</li>
+      <li><%= counts.products %> sản phẩm · <%= counts.expenses %> khoản chi phí</li>
+    </ul>
+    <a class="btn" href="/admin/sao-luu/tai-ve?loai=tat-ca"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Tải tất cả (.xlsx)</a>
+  </section>
+  <section class="panel">
+    <h2>Tải riêng từng phần</h2>
+    <p class="small muted" style="margin-bottom:16px">Dùng khi chỉ cần gửi danh sách cho kế toán hoặc nhân viên.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+      <a class="btn btn-quiet" href="/admin/sao-luu/tai-ve?loai=don-hang"><svg class="icon icon-sm"><use href="#i-package"/></svg> Excel đơn hàng (kèm chi tiết sản phẩm)</a>
+      <a class="btn btn-quiet" href="/admin/sao-luu/tai-ve?loai=khach-hang"><svg class="icon icon-sm"><use href="#i-users"/></svg> Excel khách hàng</a>
+    </div>
+    <p class="tiny muted" style="margin-top:20px">File chứa thông tin cá nhân của khách (tên, số điện thoại, địa chỉ). Chỉ lưu ở nơi an toàn, không gửi công khai.</p>
+  </section>
+</div>
+<%- include('_bottom') %>

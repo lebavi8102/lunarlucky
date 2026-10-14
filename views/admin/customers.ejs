@@ -1,5 +1,5 @@
 <%- include('_top') %>
-<div class="admin-head"><h1>Khách hàng</h1><span class="muted small"><%= users.length %> tài khoản</span></div>
+<div class="admin-head"><h1>Khách hàng</h1><div class="actions"><span class="muted small"><%= users.length %> tài khoản</span> <a class="btn btn-sm btn-quiet" href="/admin/sao-luu/tai-ve?loai=khach-hang"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Xuất Excel (tất cả khách đã mua)</a></div></div>
 <div class="table-wrap">
   <table class="table">
     <thead><tr><th scope="col">Tên</th><th scope="col">Email</th><th scope="col">Điện thoại</th><th scope="col">Ngày tạo</th><th scope="col" class="num">Số đơn</th><th scope="col" class="num">Tổng chi tiêu</th></tr></thead>

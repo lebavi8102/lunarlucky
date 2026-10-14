@@ -125,9 +125,13 @@ async function addToCart(c, slug, qty = 1) {
     const li = await a('/dang-nhap', { method: 'POST', form: { _csrf: csrf(lp.text), email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD } });
     ok(li.status === 302 && li.location === '/admin', 'Admin đăng nhập');
     for (const p of ['/admin', '/admin/don-hang', '/admin/bao-gia', '/admin/san-pham', '/admin/san-pham/moi', '/admin/danh-muc',
-      '/admin/ma-giam-gia', '/admin/bai-viet', '/admin/khach-hang', '/admin/telegram', '/admin/cai-dat', '/admin/bao-cao', '/admin/bao-cao?ky=nam-nay', '/admin/bao-cao?tu=2026-01-01&den=2026-12-31', '/admin/chi-phi', '/admin/chi-phi/moi']) {
+      '/admin/ma-giam-gia', '/admin/bai-viet', '/admin/khach-hang', '/admin/telegram', '/admin/cai-dat', '/admin/bao-cao', '/admin/bao-cao?ky=nam-nay', '/admin/bao-cao?tu=2026-01-01&den=2026-12-31', '/admin/chi-phi', '/admin/chi-phi/moi', '/admin/sao-luu']) {
       const r = await a(p);
       ok(r.status === 200, `GET ${p} → ${r.status}`);
+    }
+    for (const loai of ['tat-ca', 'don-hang', 'khach-hang']) {
+      const x = await a(`/admin/sao-luu/tai-ve?loai=${loai}`);
+      ok(x.status === 200 && x.text.startsWith('PK'), `Tải Excel sao lưu (${loai}) → file .xlsx`);
     }
     const prods = await a('/admin/san-pham');
     ok(/LL\d{3}/.test(prods.text), 'Danh sách sản phẩm có cột Mã SP');
