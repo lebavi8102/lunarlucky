@@ -50,7 +50,8 @@ router.get('/thanh-toan', async (req, res) => {
   res.locals.seo.noindex = true;
   const minDays = Number(res.locals.s.min_delivery_days) || 1;
   res.render('shop/checkout', {
-    cart: priced, values: checkoutDefaults(req), errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+    cart: priced, values: { ...checkoutDefaults(req), delivery_date: todayVN(minDays) }, errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+    quickDates: [0, 1, 2].map((i) => todayVN(minDays + i)),
     minDate: todayVN(minDays), maxDate: todayVN(180),
   });
 });
@@ -116,6 +117,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
       cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+      quickDates: [0, 1, 2].map((i) => todayVN(minDays + i)),
       minDate: todayVN(minDays), maxDate: todayVN(180),
     });
   }

@@ -247,6 +247,83 @@
     });
   }
 
+  /* Thanh toán: chọn nhanh ngày giao */
+  const dateInputWrap = $('[data-date-input]');
+  if (dateInputWrap) {
+    const input = $('input[name=delivery_date]', dateInputWrap);
+    const picks = $$('[data-date-pick], [data-date-other]');
+    const press = (btn) => picks.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    picks.forEach((b) =>
+      b.addEventListener('click', () => {
+        press(b);
+        if (b.dataset.datePick) {
+          input.value = b.dataset.datePick;
+          dateInputWrap.hidden = true;
+        } else {
+          dateInputWrap.hidden = false;
+          input.focus();
+          input.showPicker?.();
+        }
+      }),
+    );
+  }
+
+  /* Thanh toán: bấm chọn lời chúc có sẵn */
+  $$('[data-wish]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const ta = $('textarea[name=card_message]');
+      if (!ta) return;
+      ta.value = b.dataset.wish;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      $$('[data-wish]').forEach((x) => x.setAttribute('aria-current', String(x === b)));
+    }),
+  );
+
+  /* Thanh toán: ghi nhớ thông tin người đặt trên máy này (lần sau khỏi gõ lại) */
+  const ckForm = $('[data-checkout]');
+  if (ckForm) {
+    const KEY = 'll_buyer';
+    const FIELDS = ['customer_name', 'phone', 'email', 'province', 'address'];
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { saved = null; }
+    if (saved) {
+      let filled = false;
+      const hasErrors = !!$('[data-focus-on-load]'); // trang báo lỗi: giữ nguyên những gì khách vừa nhập
+      FIELDS.forEach((n) => {
+        const el = ckForm.elements[n];
+        if (!el || !saved[n]) return;
+        if (n === 'province') {
+          if (!hasErrors && [...el.options].some((o) => o.value === saved[n])) { el.value = saved[n]; filled = true; }
+        } else if (!el.value) { el.value = saved[n]; filled = true; }
+      });
+      if (filled) $('[data-remember-note]')?.removeAttribute('hidden');
+    }
+    $('[data-remember-clear]')?.addEventListener('click', () => {
+      try { localStorage.removeItem(KEY); } catch { /* bỏ qua */ }
+      FIELDS.forEach((n) => { const el = ckForm.elements[n]; if (el && n !== 'province') el.value = ''; });
+      $('[data-remember-note]').hidden = true;
+      ckForm.elements.customer_name?.focus();
+    });
+    ckForm.addEventListener('submit', () => {
+      const data = {};
+      FIELDS.forEach((n) => { const el = ckForm.elements[n]; if (el) data[n] = el.value; });
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* bỏ qua */ }
+    });
+  }
+
+  /* Trang sản phẩm (điện thoại): hiện thanh "Mua ngay" khi nút mua đã cuộn khỏi màn hình */
+  const buyBar = $('[data-buy-bar]');
+  const buyRow = $('#buy-form .buy-row');
+  if (buyBar && buyRow && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([en]) => {
+      const show = !en.isIntersecting && en.boundingClientRect.top < 0;
+      buyBar.classList.toggle('show', show);
+      buyBar.setAttribute('aria-hidden', String(!show));
+      $('button', buyBar).tabIndex = show ? 0 : -1;
+      document.body.classList.toggle('has-buy-bar', show);
+    }).observe(buyRow);
+  }
+
   const checkout = $('[data-checkout]');
   if (checkout) {
     checkout.addEventListener('submit', () => {

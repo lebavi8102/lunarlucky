@@ -39,7 +39,7 @@
       <% } %>
 
       <% if (product.stock > 0) { %>
-      <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page>
+      <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="product_id" value="<%= product.id %>">
         <div class="buy-row">
@@ -53,6 +53,10 @@
           <button class="btn btn-lg btn-ghost" type="submit" name="buy_now" value="1" data-no-ajax>Mua ngay</button>
         </div>
       </form>
+      <div class="buy-bar" data-buy-bar aria-hidden="true">
+        <div class="buy-bar-info"><span><%= product.name %></span><b><%= money(product.price) %></b></div>
+        <button class="btn" type="submit" form="buy-form" name="buy_now" value="1" data-no-ajax tabindex="-1">Mua ngay</button>
+      </div>
       <p class="stock-note <%= product.stock <= 5 ? 'low' : '' %>">
         <svg class="icon icon-sm"><use href="#i-<%= product.stock <= 5 ? 'alert' : 'check' %>"/></svg>
         <%= product.stock <= 5 ? `Chỉ còn ${product.stock} giỏ, đặt sớm để giữ hàng` : 'Còn hàng, sẵn sàng giao' %>
