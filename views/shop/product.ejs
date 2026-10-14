@@ -57,16 +57,18 @@
         <svg class="icon icon-sm"><use href="#i-<%= product.stock <= 5 ? 'alert' : 'check' %>"/></svg>
         <%= product.stock <= 5 ? `Chỉ còn ${product.stock} giỏ, đặt sớm để giữ hàng` : 'Còn hàng, sẵn sàng giao' %>
       </p>
+      <%- include('../partials/callback', { source: 'san-pham', productId: product.id }) %>
       <% } else { %>
         <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar Lucky để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
-        <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a></div>
+        <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="Lunar Lucky ơi, mình muốn hỏi giỏ <%= product.name %> khi nào có hàng lại? <%= siteUrl %>/san-pham/<%= product.slug %>">Nhắn Zalo tư vấn</a></div>
+        <%- include('../partials/callback', { source: 'san-pham', productId: product.id, title: 'Muốn được báo khi có hàng?' }) %>
       <% } %>
 
       <ul class="assure">
         <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày giao khi thanh toán, giao đúng hẹn</li>
         <li><svg class="icon"><use href="#i-pen"/></svg> Thiệp chúc viết tay miễn phí theo lời nhắn của bạn</li>
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
-        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Nhắn Zalo cho Lunar Lucky</a></li>
+        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></li>
       </ul>
     </div>
   </div>

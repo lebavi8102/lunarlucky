@@ -69,6 +69,11 @@ async function addToCart(c, slug, qty = 1) {
   // 4. Thanh toán: lỗi, rồi đơn bán lẻ
   const bad = await c('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'A', phone: '123', province: 'Hà Nội' } });
   ok(bad.status === 422 && /aria-invalid="true"/.test(bad.text), 'Thiếu thông tin thanh toán → báo lỗi tại ô');
+  // Ô "Để lại SĐT – gọi lại"
+  const cbBad = await c('/goi-lai', { method: 'POST', json: true, form: { _csrf: t, name: 'Lan', phone: '123', source: 'thanh-toan' } });
+  ok(cbBad.status === 422, 'Gọi lại: số điện thoại sai → báo lỗi');
+  const cbOk = await c('/goi-lai', { method: 'POST', json: true, form: { _csrf: t, name: 'Chị Lan Thử', phone: '0912345678', source: 'thanh-toan' } });
+  ok(cbOk.status === 200 && /gọi lại/.test(cbOk.text), 'Gọi lại: gửi tên + SĐT thành công');
   const place = await c('/thanh-toan', { method: 'POST', form: {
     _csrf: t, customer_name: 'Khách Thử', phone: '0912345678', province: 'Hà Nội', address: '12 Phố Huế',
     delivery_date: deliveryDate, card_message: 'Chúc mừng năm mới', payment_method: 'bank' } });
@@ -125,7 +130,7 @@ async function addToCart(c, slug, qty = 1) {
     const li = await a('/dang-nhap', { method: 'POST', form: { _csrf: csrf(lp.text), email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD } });
     ok(li.status === 302 && li.location === '/admin', 'Admin đăng nhập');
     for (const p of ['/admin', '/admin/don-hang', '/admin/bao-gia', '/admin/san-pham', '/admin/san-pham/moi', '/admin/danh-muc',
-      '/admin/ma-giam-gia', '/admin/bai-viet', '/admin/khach-hang', '/admin/telegram', '/admin/cai-dat', '/admin/bao-cao', '/admin/bao-cao?ky=nam-nay', '/admin/bao-cao?tu=2026-01-01&den=2026-12-31', '/admin/chi-phi', '/admin/chi-phi/moi', '/admin/sao-luu']) {
+      '/admin/ma-giam-gia', '/admin/bai-viet', '/admin/khach-hang', '/admin/telegram', '/admin/cai-dat', '/admin/bao-cao', '/admin/bao-cao?ky=nam-nay', '/admin/bao-cao?tu=2026-01-01&den=2026-12-31', '/admin/chi-phi', '/admin/chi-phi/moi', '/admin/sao-luu', '/admin/goi-lai']) {
       const r = await a(p);
       ok(r.status === 200, `GET ${p} → ${r.status}`);
     }

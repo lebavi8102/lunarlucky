@@ -472,6 +472,18 @@ router.get('/bao-cao', async (req, res) => {
   res.render('admin/report', { title: 'Báo cáo lợi nhuận', r: await profit.report(range), preset });
 });
 
+/* ---------- Yêu cầu gọi lại ---------- */
+router.get('/goi-lai', async (req, res) => {
+  const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
+  res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });
+});
+
+router.post('/goi-lai/:id/xong', async (req, res) => {
+  await require('../../lib/callbacks').markDone(req.params.id, req.session.user.name || req.session.user.email);
+  flash(req, 'success', 'Đã đánh dấu đã gọi.');
+  res.redirect('/admin/goi-lai');
+});
+
 /* ---------- Sao lưu: xuất Excel ---------- */
 router.get('/sao-luu', async (req, res) => {
   const [orders, customers, products, expenses] = await Promise.all([

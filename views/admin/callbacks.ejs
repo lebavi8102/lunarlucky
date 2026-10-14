@@ -1,0 +1,26 @@
+<%- include('_top') %>
+<% const pending = rows.filter(r => r.status === 'new').length; %>
+<div class="admin-head"><h1>Khách cần gọi lại</h1><span class="muted small"><%= pending %> chưa gọi</span></div>
+<p class="small muted" style="margin:-8px 0 16px">Khách để lại số ở trang sản phẩm, giỏ hàng hoặc thanh toán. Mỗi yêu cầu cũng được báo vào nhóm Telegram kèm nút "✅ Đã gọi".</p>
+<% if (!rows.length) { %>
+  <div class="panel"><p class="muted">Chưa có yêu cầu nào.</p></div>
+<% } else { %>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">Lúc</th><th scope="col">Khách</th><th scope="col">Điện thoại</th><th scope="col">Quan tâm</th><th scope="col">Trạng thái</th><th scope="col"></th></tr></thead>
+    <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><%= fmt.dateTime(r.created_at) %></td>
+        <td class="wrap"><%= r.name %><% if (r.note) { %><br><span class="small muted"><%= r.note %></span><% } %></td>
+        <td><a class="t" href="tel:<%= r.phone %>"><%= r.phone %></a></td>
+        <td class="wrap small"><%= r.interest || '—' %></td>
+        <td><span class="status <%= r.status === 'new' ? 'status-pending' : 'status-completed' %>"><%= r.status === 'new' ? 'Chưa gọi' : 'Đã gọi' %></span><% if (r.handled_by) { %><br><span class="tiny muted"><%= r.handled_by %></span><% } %></td>
+        <td><% if (r.status === 'new') { %><form action="/admin/goi-lai/<%= r.id %>/xong" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit">Đã gọi</button></form><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('_bottom') %>

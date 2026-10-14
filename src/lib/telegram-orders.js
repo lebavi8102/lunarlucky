@@ -293,6 +293,16 @@ async function handleUpdate(update) {
   const cb = update.callback_query;
   if (!cb || !cb.data || !cb.message) return;
 
+  const g = /^g:(\d+):d$/.exec(cb.data);
+  if (g) {
+    if (String(cb.message.chat.id) !== String(await notify.telegramChatId())) {
+      return answer(cb, 'Cuộc trò chuyện này không có quyền xử lý.', true);
+    }
+    const r = await require('./callbacks').markDone(g[1], personName(cb.from));
+    if (!r) return answer(cb, 'Không tìm thấy yêu cầu.', true);
+    return answer(cb, r.before.status === 'done' ? 'Yêu cầu này đã được xử lý.' : 'Đã đánh dấu: đã gọi khách.');
+  }
+
   const m = /^o:(\d+):(\w+|\$)$/.exec(cb.data);
   if (!m) return answer(cb, 'Lệnh không hợp lệ.');
   const [, id, action] = m;

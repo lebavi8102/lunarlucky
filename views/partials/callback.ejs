@@ -1,0 +1,25 @@
+<%#
+  Ô "Để lại SĐT – gọi lại trong 5 phút". Tham số: source ('san-pham'|'gio-hang'|'thanh-toan'), productId (tùy chọn), title (tùy chọn)
+%>
+<details class="callback-box" data-callback>
+  <summary>
+    <svg class="icon"><use href="#i-phone"/></svg>
+    <span><b><%= typeof title !== 'undefined' && title ? title : 'Cần gấp hoặc chưa biết chọn?' %></b><br><span class="small muted">Để lại số điện thoại, Lunar Lucky gọi lại tư vấn trong 5 phút.</span></span>
+    <svg class="icon icon-sm chev"><use href="#i-chevron-down"/></svg>
+  </summary>
+  <form action="/goi-lai" method="post" class="callback-form" data-callback-form novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="source" value="<%= source %>">
+    <input type="hidden" name="back" value="<%= path %>">
+    <% if (typeof productId !== 'undefined' && productId) { %><input type="hidden" name="product_id" value="<%= productId %>"><% } %>
+    <div class="callback-fields">
+      <label class="sr-only" for="cb-name-<%= source %>">Tên của bạn</label>
+      <input class="input" id="cb-name-<%= source %>" name="name" autocomplete="name" placeholder="Tên của bạn" maxlength="120" required value="<%= user ? user.name : '' %>">
+      <label class="sr-only" for="cb-phone-<%= source %>">Số điện thoại</label>
+      <input class="input" id="cb-phone-<%= source %>" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Số điện thoại" required value="<%= user && user.phone ? user.phone : '' %>">
+      <button class="btn" type="submit">Gọi lại cho tôi</button>
+    </div>
+    <p class="tiny muted" style="margin-top:8px">Giờ làm việc <%= s.shop_hours || '8:00 – 21:00' %>. Ngoài giờ, Lunar Lucky gọi lại sớm nhất vào sáng hôm sau.</p>
+    <p class="small" role="status" aria-live="polite" data-callback-msg></p>
+  </form>
+</details>

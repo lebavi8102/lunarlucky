@@ -100,6 +100,20 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   await tg.handleUpdate({ message: { message_id: 999, chat: { id: -1, type: 'group' }, from: { first_name: 'X' }, text: `/nhap ${p.sku} 50` } });
   ok(!lastSend() && (await db('products').where({ id: p.id }).first()).stock === 13, 'Nhóm lạ gõ lệnh → bỏ qua');
 
+  // Khách để lại SĐT → báo nhóm; bấm "✅ Đã gọi" → đánh dấu xong, sửa tin
+  sent.length = 0;
+  const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });
+  const cbMsg = lastSend();
+  ok(cbMsg && /KHÁCH CẦN GỌI LẠI/.test(cbMsg.body.text) && cbMsg.body.message_thread_id === 11, 'Khách để lại SĐT → báo vào chủ đề Đơn hàng');
+  const kb = JSON.stringify(cbMsg.body.reply_markup || {});
+  ok(kb.includes(`g:${cbReq.id}:d`), 'Tin gọi lại có nút "✅ Đã gọi"');
+  sent.length = 0;
+  await tg.handleUpdate({ callback_query: { id: 'q1', data: `g:${cbReq.id}:d`, from: { first_name: 'Lan' }, message: { message_id: 1, chat: { id: GROUP } } } });
+  const after = await db('callback_requests').where({ id: cbReq.id }).first();
+  ok(after.status === 'done' && after.handled_by === 'Lan', 'Bấm "Đã gọi" → lưu trạng thái và người xử lý');
+  ok(sent.some((x) => x.method === 'editMessageText' && /Đã gọi · Lan/.test(x.body.text)), 'Tin trong nhóm cập nhật "Đã gọi · Lan"');
+  await db('callback_requests').where({ id: cbReq.id }).del();
+
   // Nhóm đổi mã mà web không nhận được tin báo → lúc gửi đơn tự chuyển sang mã mới
   await settings.save({ telegram_chat_id: String(OLD), telegram_order_thread: '', telegram_stock_thread: '' });
   migrateFrom = OLD;

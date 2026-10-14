@@ -274,6 +274,47 @@
     setTimeout(tick, 5000);
   }
 
+  /* Ô "Để lại SĐT – gọi lại" */
+  $$('[data-callback-form]').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = $('[data-callback-msg]', form);
+      const btn = $('button[type=submit]', form);
+      btn.disabled = true;
+      msg.textContent = '';
+      try {
+        const r = await fetch(form.action, {
+          method: 'POST',
+          headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(new FormData(form)),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.ok) {
+          msg.style.color = 'var(--lacquer-700)';
+          msg.textContent = d.error || (r.status === 429 ? 'Bạn gửi quá nhiều lần, vui lòng thử lại sau ít phút.' : 'Chưa gửi được, vui lòng thử lại.');
+          return;
+        }
+        $('.callback-fields', form).hidden = true;
+        msg.style.color = 'var(--jade-700)';
+        msg.textContent = '✓ ' + d.message;
+      } catch {
+        msg.textContent = 'Mất kết nối, vui lòng thử lại.';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  /* "Hỏi nhanh qua Zalo": Zalo không cho điền sẵn tin nhắn → chép câu hỏi để khách chỉ việc dán */
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-ask]');
+    if (!a) return;
+    navigator.clipboard?.writeText(a.dataset.ask).then(
+      () => showToast('Đã chép câu hỏi — mở Zalo và dán vào ô chat để gửi.'),
+      () => {},
+    );
+  });
+
   /* Sao chép */
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-copy]');
