@@ -39,6 +39,23 @@
   </div>
 </section>
 
+<% if (featured.length) { %>
+<section class="section featured-first">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="stack">
+        <span class="eyebrow">Tuyển chọn mùa Tết</span>
+        <h2 class="h2">Giỏ quà <em>nổi bật</em></h2>
+      </div>
+      <a class="link-arrow" href="/bo-suu-tap">Xem tất cả <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="product-grid cols-4">
+      <% featured.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: catById[p.category_id] }) %><% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
 <section class="section-tight" aria-labelledby="budget-title" style="padding-bottom:0">
   <div class="container" style="text-align:center">
     <h2 id="budget-title" class="h3" style="margin-bottom:14px">Chọn nhanh theo ngân sách</h2>
@@ -72,20 +89,6 @@
 </section>
 <% } %>
 
-<section class="section" style="padding-top:0">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="stack">
-        <span class="eyebrow">Tuyển chọn mùa Tết</span>
-        <h2 class="h2">Giỏ quà <em>nổi bật</em></h2>
-      </div>
-      <a class="link-arrow" href="/bo-suu-tap">Xem tất cả <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
-    </div>
-    <div class="product-grid cols-4">
-      <% featured.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: catById[p.category_id] }) %><% }) %>
-    </div>
-  </div>
-</section>
 
 <section class="section lacquer">
   <div class="container split">

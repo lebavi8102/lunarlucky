@@ -704,6 +704,13 @@ ul, ol { margin: 0; padding: 0; }
   .float-contact a { width: 48px; height: 48px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
   .hero-float { left: 8px; bottom: 16px; }
   .hero-seal { width: 84px; height: 84px; font-size: 13px; right: 4px; }
+  /* Màn hình đầu trên điện thoại: chữ ngắn gọn, ảnh nhỏ lại để khách thấy giỏ quà sớm */
+  .hero { padding-block: var(--space-5) var(--space-6); }
+  .hero-grid { gap: var(--space-5); }
+  .hero-copy .lead { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .hero-trust { display: none; }
+  .hero-visual { max-width: 300px; }
+  .featured-first { padding-top: var(--space-6); }
   .hero-seal b { font-size: 21px; }
 }
 @media (max-width: 559px) {

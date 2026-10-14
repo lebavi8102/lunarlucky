@@ -80,6 +80,8 @@ app.use(express.urlencoded({ extended: false, limit: '200kb' }));
 app.use(express.json({ limit: '100kb' }));
 
 // Webhook Telegram: nút xử lý đơn trong nhóm. Đặt trước session/CSRF vì Telegram gọi trực tiếp.
+app.get('/favicon.ico', (req, res) => res.redirect(301, '/img/apple-touch-icon.png'));
+
 app.post('/telegram/webhook', (req, res) => {
   const tg = require('./lib/telegram-orders');
   if (req.get('x-telegram-bot-api-secret-token') !== tg.webhookSecret()) return res.status(403).end();
