@@ -36,6 +36,25 @@ async function sendMail({ to, subject, template, data }) {
   }
 }
 
+/** Gửi email thử (báo lỗi rõ ràng thay vì im lặng) — dùng ở admin → Cài đặt. */
+async function testMail(to) {
+  const t = getTransport();
+  if (!t) throw new Error('Chưa cài email: thiếu SMTP_HOST / SMTP_USER / SMTP_PASS trên Render.');
+  try {
+    await t.sendMail({
+      from: config.mail.from,
+      to,
+      subject: 'Lunar Lucky: email thử thành công',
+      html: '<p>Email xác nhận đơn hàng của Lunar Lucky đã hoạt động. Khách đặt hàng có nhập email sẽ nhận được thư xác nhận.</p>',
+    });
+  } catch (err) {
+    if (/Invalid login|535|Username and Password not accepted/i.test(err.message)) {
+      throw new Error('Gmail từ chối đăng nhập: kiểm tra SMTP_USER và mật khẩu ứng dụng (không phải mật khẩu Gmail thường).');
+    }
+    throw new Error(`Gửi thất bại: ${err.message}`);
+  }
+}
+
 function escapeTg(s) {
   return String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 }
@@ -193,4 +212,4 @@ function quoteTelegram(q) {
     .join('\n');
 }
 
-module.exports = { sendMail, telegram, tgApi, telegramDiscover, telegramChatId, orderTelegram, quoteTelegram, escapeTg };
+module.exports = { sendMail, testMail, telegram, tgApi, telegramDiscover, telegramChatId, orderTelegram, quoteTelegram, escapeTg };

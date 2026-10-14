@@ -1,5 +1,18 @@
 <%- include('_top') %>
 <div class="admin-head"><h1>Cài đặt</h1></div>
+<section class="form-card" style="margin-bottom:24px">
+  <h2>Email gửi khách</h2>
+  <% if (mailReady) { %>
+    <p class="small">✅ Đã cài email. Thư gửi từ: <b><%= mailFrom %></b></p>
+  <% } else { %>
+    <p class="small">⚠️ Chưa cài email — khách sẽ không nhận được thư xác nhận đơn. Cần thêm SMTP_HOST, SMTP_USER, SMTP_PASS trên Render.</p>
+  <% } %>
+  <form action="/admin/email-thu" method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field" style="flex:1;min-width:220px;margin:0"><label class="label" for="mail-to">Gửi email thử tới</label><input class="input" id="mail-to" name="to" type="email" value="<%= user.email %>"></div>
+    <button class="btn btn-sm" type="submit">Gửi email thử</button>
+  </form>
+</section>
 <form action="/admin/cai-dat" method="post" class="form-grid">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div>

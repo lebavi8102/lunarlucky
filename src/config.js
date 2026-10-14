@@ -78,13 +78,20 @@ module.exports = {
         : { filename: path.resolve(root, process.env.SQLITE_FILE || './data/lunar.sqlite') },
   },
 
+  // Gmail: SMTP_HOST=smtp.gmail.com, SMTP_USER=địa chỉ gmail, SMTP_PASS=mật khẩu ứng dụng 16 ký tự
   mail: {
-    host: process.env.SMTP_HOST,
+    host: String(process.env.SMTP_HOST || '').trim(),
     port: Number(process.env.SMTP_PORT) || 465,
     secure: (process.env.SMTP_SECURE || 'true') === 'true',
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    from: process.env.MAIL_FROM || 'Lunar Lucky <no-reply@lunarlucky.vn>',
+    user: String(process.env.SMTP_USER || '').trim(),
+    // Mật khẩu ứng dụng Gmail hiển thị có dấu cách ("abcd efgh ...") → bỏ dấu cách
+    pass: /gmail/i.test(process.env.SMTP_HOST || '')
+      ? String(process.env.SMTP_PASS || '').replace(/\s+/g, '')
+      : String(process.env.SMTP_PASS || '').trim(),
+    // Gmail chỉ cho gửi bằng chính địa chỉ gmail đó → mặc định "Lunar Lucky <gmail của shop>"
+    from:
+      process.env.MAIL_FROM ||
+      (process.env.SMTP_USER ? `Lunar Lucky <${String(process.env.SMTP_USER).trim()}>` : 'Lunar Lucky <no-reply@lunarlucky.vn>'),
   },
 
   // SePay: tự xác nhận chuyển khoản (đơn CK chỉ báo vào nhóm khi đã nhận tiền). Trống = xác nhận tay

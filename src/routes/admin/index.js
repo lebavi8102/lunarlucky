@@ -200,7 +200,21 @@ const SETTING_GROUPS = [
 ];
 
 router.get('/cai-dat', async (req, res) => {
-  res.render('admin/settings', { title: 'Cài đặt', groups: SETTING_GROUPS, values: await settings.all(), banks: require('../../lib/payment').BANKS });
+  res.render('admin/settings', {
+    title: 'Cài đặt', groups: SETTING_GROUPS, values: await settings.all(), banks: require('../../lib/payment').BANKS,
+    mailReady: !!(config.mail.host && config.mail.user && config.mail.pass), mailFrom: config.mail.from,
+  });
+});
+
+router.post('/email-thu', async (req, res) => {
+  const to = String(req.body.to || req.session.user.email || '').trim();
+  try {
+    await notify.testMail(to);
+    flash(req, 'success', `Đã gửi email thử tới ${to}. Kiểm tra hộp thư (cả mục Spam).`);
+  } catch (err) {
+    flash(req, 'error', err.message);
+  }
+  res.redirect('/admin/cai-dat');
 });
 
 router.post('/cai-dat', async (req, res) => {
