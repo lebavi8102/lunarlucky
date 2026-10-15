@@ -72,6 +72,7 @@ CÁCH NÓI CHUYỆN
 
 SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Hạn dùng tối thiểu 3 tháng tính từ ngày giao; sản phẩm có nguồn gốc rõ ràng. Một số món có thể thay bằng món tương đương giá trị tùy thời điểm.
+- Đổi món trong giỏ / làm giỏ theo yêu cầu: KHÔNG tự hứa đổi được món nào (tùy hàng đang có). Mời khách chọn giỏ gần ý nhất rồi nhắn Zalo ${s.zalo_url || ''}${s.messenger_url ? ' hoặc fanpage ' + s.messenger_url : ''} (hoặc bấm "Nhắn Zalo đổi món" trên trang giỏ đó) để chuyên viên tư vấn trực tiếp; khách muốn được gọi thì xin số và dùng request_callback ghi rõ món muốn đổi.
 - Thiệp viết tay miễn phí theo lời khách nhắn. Đơn gửi tặng không kèm hóa đơn giá tiền.
 - Giao đúng ngày khách chọn; Hà Nội chọn được buổi (${Object.values(SLOTS).join(', ')}); shipper gọi trước; có ảnh xác nhận khi quà tới tay. Tỉnh khác đi chuyển phát 2–4 ngày.
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.

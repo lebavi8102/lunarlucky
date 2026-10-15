@@ -35,6 +35,10 @@ function faq(s = {}) {
       a: `Phí giao đồng giá ${fee} mỗi đơn, miễn phí cho đơn từ ${free}. Nội thành Hà Nội giao bằng Ahamove hoặc Lunar Lucky tự giao, đúng ngày bạn chọn; các tỉnh khác giao qua đơn vị vận chuyển trong 2–4 ngày.`,
     },
     {
+      q: 'Tôi có thể đổi món trong giỏ hoặc làm giỏ theo yêu cầu không?',
+      a: 'Có. Bạn chọn giỏ gần ý mình nhất rồi nhắn Lunar Lucky qua Zalo hoặc Fanpage (nút "Nhắn Zalo đổi món" trên trang mỗi giỏ). Chuyên viên tư vấn đổi món theo hàng đang có và báo giá trực tiếp. Gần Tết hàng khan, việc đổi món có thể hạn chế hơn — đặt sớm để có nhiều lựa chọn.',
+    },
+    {
       q: 'Doanh nghiệp đặt số lượng lớn có được ưu đãi và in logo không?',
       a: 'Có. Lunar Lucky nhận đơn doanh nghiệp từ 5 giỏ: tư vấn ngân sách, xuất hóa đơn VAT và giao hàng loạt theo danh sách. In logo lên thiệp từ 5 giỏ, lên hộp và nơ từ 100 giỏ, thiết kế hộp riêng từ 500 giỏ; từ 20 giỏ có giá ưu đãi theo số lượng. Gửi yêu cầu tại trang Quà tặng doanh nghiệp để nhận báo giá trong 24 giờ.',
     },
