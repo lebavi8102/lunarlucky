@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const notify = require('../lib/notify');
 const config = require('../config');
@@ -10,7 +11,7 @@ const { requireUser, safeNext } = require('../middleware/auth');
 const { flash } = require('../middleware/locals');
 
 const router = express.Router();
-const authLimiter = rateLimit({ windowMs: 15 * 60000, limit: 15, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ ...limiterKey, windowMs: 15 * 60000, limit: 15, standardHeaders: true, legacyHeaders: false });
 
 function publicUser(u) {
   return { id: u.id, name: u.name, email: u.email, phone: u.phone, address: u.address, role: u.role };

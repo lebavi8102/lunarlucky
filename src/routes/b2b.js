@@ -1,11 +1,12 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const notify = require('../lib/notify');
 const { Form } = require('../lib/validate');
 
 const router = express.Router();
-const quoteLimiter = rateLimit({ windowMs: 30 * 60000, limit: 6, standardHeaders: true, legacyHeaders: false });
+const quoteLimiter = rateLimit({ ...limiterKey, windowMs: 30 * 60000, limit: 6, standardHeaders: true, legacyHeaders: false });
 
 async function render(res, data) {
   const products = await db('products')

@@ -1,10 +1,11 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const ai = require('../lib/ai-sales');
 
 const router = express.Router();
 // Chống spam: mỗi khách tối đa 20 tin / 5 phút
-const chatLimiter = rateLimit({
+const chatLimiter = rateLimit({ ...limiterKey,
   windowMs: 5 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false,
   handler: (req, res) => res.status(429).json({ reply: 'Anh/chị nhắn hơi nhanh, đợi em vài phút hoặc nhắn Zalo giúp em nhé!' }),
 });

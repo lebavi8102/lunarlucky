@@ -1,6 +1,7 @@
 /** Khách để lại tên + SĐT, Lunar Lucky gọi lại (dùng ở trang sản phẩm, giỏ hàng, thanh toán). */
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const cart = require('../lib/cart');
 const callbacks = require('../lib/callbacks');
@@ -8,7 +9,7 @@ const { Form } = require('../lib/validate');
 const { flash } = require('../middleware/locals');
 
 const router = express.Router();
-const limiter = rateLimit({ windowMs: 10 * 60000, limit: 5, standardHeaders: true, legacyHeaders: false });
+const limiter = rateLimit({ ...limiterKey, windowMs: 10 * 60000, limit: 5, standardHeaders: true, legacyHeaders: false });
 const wantsJson = (req) => (req.get('accept') || '').includes('application/json');
 
 router.post('/goi-lai', limiter, async (req, res) => {

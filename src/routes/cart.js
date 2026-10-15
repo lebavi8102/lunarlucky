@@ -1,5 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const cart = require('../lib/cart');
 const { flash } = require('../middleware/locals');
@@ -7,7 +8,7 @@ const { flash } = require('../middleware/locals');
 const router = express.Router();
 const wantsJson = (req) => (req.get('accept') || '').includes('application/json');
 
-const couponLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
+const couponLimiter = rateLimit({ ...limiterKey, windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
 router.get('/gio-hang', async (req, res) => {
   const c = cart.getCart(req);

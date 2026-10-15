@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const cart = require('../lib/cart');
 const notify = require('../lib/notify');
@@ -21,8 +22,8 @@ const PROVINCES = [
 ];
 
 const isStaff = (req) => !!(req.session.user && req.session.user.role === 'admin');
-const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, skipFailedRequests: true, skip: isStaff, standardHeaders: true, legacyHeaders: false });
-const trackLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
+const orderLimiter = rateLimit({ ...limiterKey, windowMs: 10 * 60000, limit: 10, skipFailedRequests: true, skip: isStaff, standardHeaders: true, legacyHeaders: false });
+const trackLimiter = rateLimit({ ...limiterKey, windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function newCode() {
