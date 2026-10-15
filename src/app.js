@@ -64,18 +64,38 @@ app.get('/healthz', async (req, res) => {
 });
 
 // Ảnh lưu trong DB — không mất khi deploy lại
+// Ảnh lưu trong database → giữ bản sao trong RAM (tối đa ~48MB) để cao điểm không đọc database mỗi lượt xem
+const mediaCache = new Map();
+let mediaCacheBytes = 0;
+const MEDIA_CACHE_MAX = 48 * 1024 * 1024;
 app.get('/media/:id', async (req, res, next) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return next();
-  const m = await db('media').where({ id }).first('mime', 'data', 'created_at');
-  if (!m) return res.status(404).end();
+  let m = mediaCache.get(id);
+  if (m) {
+    mediaCache.delete(id); // đưa lên cuối = mới dùng
+    mediaCache.set(id, m);
+  } else {
+    m = await db('media').where({ id }).first('mime', 'data', 'created_at');
+    if (!m) return res.status(404).end();
+    m = { mime: m.mime, data: Buffer.from(m.data) };
+    if (m.data.length < 4 * 1024 * 1024) {
+      mediaCache.set(id, m);
+      mediaCacheBytes += m.data.length;
+      while (mediaCacheBytes > MEDIA_CACHE_MAX && mediaCache.size) {
+        const [oldId, old] = mediaCache.entries().next().value;
+        mediaCache.delete(oldId);
+        mediaCacheBytes -= old.data.length;
+      }
+    }
+  }
   res.set({
     'Content-Type': m.mime,
     'Cache-Control': 'public, max-age=31536000, immutable',
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
     'X-Content-Type-Options': 'nosniff',
   });
-  res.send(Buffer.from(m.data));
+  res.send(m.data);
 });
 
 app.use(express.urlencoded({ extended: false, limit: '200kb' }));

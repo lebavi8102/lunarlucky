@@ -92,12 +92,14 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
 router.get('/san-pham/:slug', async (req, res, next) => {
   const product = await activeProducts().andWhere({ slug: req.params.slug }).first();
   if (!product) return next();
-  const category = product.category_id ? await db('categories').where({ id: product.category_id }).first() : null;
-  const related = await activeProducts()
-    .andWhere('id', '!=', product.id)
-    .modify((q) => category && q.andWhere({ category_id: category.id }))
-    .orderBy('sold', 'desc')
-    .limit(4);
+  const [category, related] = await Promise.all([
+    product.category_id ? db('categories').where({ id: product.category_id }).first() : null,
+    activeProducts()
+      .andWhere('id', '!=', product.id)
+      .modify((q) => product.category_id && q.andWhere({ category_id: product.category_id }))
+      .orderBy('sold', 'desc')
+      .limit(4),
+  ]);
   const gallery = [product.image_id, ...parseJson(product.gallery, [])].filter(Boolean);
   const url = `${res.locals.siteUrl}/san-pham/${product.slug}`;
 
