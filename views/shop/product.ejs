@@ -75,10 +75,12 @@
       <% } %>
 
       <ul class="assure">
-        <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày giao khi thanh toán, giao đúng hẹn</li>
+        <li><svg class="icon"><use href="#i-leaf"/></svg> Hạn dùng tối thiểu 3 tháng tính từ ngày giao</li>
+        <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày & buổi giao, kèm ảnh khi quà tới tay</li>
+        <li><svg class="icon"><use href="#i-shield"/></svg> Hư hỏng khi nhận: đổi mới trong 24 giờ</li>
         <li><svg class="icon"><use href="#i-pen"/></svg> Thiệp chúc viết tay miễn phí theo lời nhắn của bạn</li>
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
-        <li><svg class="icon"><use href="#i-chat"/></svg> Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></li>
+        <li><svg class="icon"><use href="#i-chat"/></svg> <span>Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></span></li>
       </ul>
     </div>
   </div>
