@@ -138,6 +138,47 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('products').where({ id: p.id }).update({ stock: prod.stock });
   }
 
+  // Bàn giao người xử lý ↔ shipper: nhận đi giao, giao xong + thu COD, giao không được, /thu
+  {
+    const [r1] = await db('orders').insert({ code: 'LN261015SHIP', customer_name: 'Khách Ship', phone: '0944555666', address: 'x', province: 'Hà Nội',
+      delivery_date: todayVN(), payment_method: 'cod', payment_status: 'pending', status: 'packing', subtotal: 1040000, discount: 0, shipping_fee: 0, total: 1040000,
+      tg_chat_id: String(GROUP), tg_message_id: 501 });
+    const sid = typeof r1 === 'object' ? r1.id : r1;
+    const tap = (data, who = 'Tuấn') => tg.handleUpdate({ callback_query: { id: 'q', data, from: { first_name: who }, message: { message_id: 501, chat: { id: GROUP } } } });
+    const lastKb = () => [...sent].reverse().find((x) => x.method === 'editMessageText');
+    const kbText = () => lastKb().body.reply_markup.inline_keyboard.flat().map((b) => b.text).join(' | ');
+    sent.length = 0;
+    await tap(`o:${sid}:s`);
+    let o = await db('orders').where({ id: sid }).first();
+    ok(o.status === 'shipping' && o.shipper === 'Tuấn', 'Bấm "Nhận đi giao" → ghi tên shipper');
+    ok(/Đang giao: Tuấn/.test(lastKb().body.text) && /Đã giao xong/.test(kbText()) && /Giao không được/.test(kbText()), 'Tin đơn hiện shipper + 2 nút "Đã giao xong" / "Giao không được"');
+    await tap(`o:${sid}:f`);
+    ok(/Khách hẹn giao ngày khác/.test(kbText()), 'Bấm "Giao không được" → hiện lý do để chọn');
+    sent.length = 0;
+    await tap(`o:${sid}:f2`);
+    o = await db('orders').where({ id: sid }).first();
+    ok(o.status === 'confirmed' && !o.shipper && /Không liên lạc được/.test(o.handled_log), 'Chọn lý do → đơn về "Đã xác nhận", ghi lý do vào lịch sử');
+    ok(sent.some((x) => x.method === 'sendMessage' && /giao không được/.test(x.body.text) && /0944555666/.test(x.body.text)), 'Báo nhóm: giao không được + SĐT khách để gọi lại');
+    await tap(`o:${sid}:s`, 'Hùng');
+    await tap(`o:${sid}:d`, 'Hùng');
+    ok(/Đã thu 1\.040\.000₫ — giao xong/.test(kbText()), 'Giao xong đơn COD → hỏi "Đã thu 1.040.000₫?"');
+    await tap(`o:${sid}:dc`, 'Hùng');
+    o = await db('orders').where({ id: sid }).first();
+    ok(o.status === 'completed' && o.payment_status === 'paid' && o.cod_collected_by === 'Hùng' && Number(o.cod_collected_amount) === 1040000, 'Đã thu → hoàn tất, ghi Hùng thu 1.040.000₫');
+    // Đơn thứ 2: giao xong nhưng chưa thu
+    const [r2] = await db('orders').insert({ code: 'LN261015OWE1', customer_name: 'Khách Nợ', phone: '0944555777', address: 'x', province: 'Hà Nội',
+      delivery_date: todayVN(), payment_method: 'cod', payment_status: 'pending', status: 'shipping', subtotal: 500000, discount: 0, shipping_fee: 0, total: 500000,
+      tg_chat_id: String(GROUP), tg_message_id: 502 });
+    const oid2 = typeof r2 === 'object' ? r2.id : r2;
+    await tap(`o:${oid2}:dn`, 'Hùng');
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 600, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Chủ' }, text: '/thu' } });
+    const rep = sent.find((x) => x.method === 'sendMessage');
+    ok(rep && /Hùng<\/b>: 1\.040\.000₫ \(1 đơn\)/.test(rep.body.text), '/thu → Hùng đã thu 1.040.000₫');
+    ok(rep && /CHƯA thu tiền/.test(rep.body.text) && /LN261015OWE1/.test(rep.body.text), '/thu → liệt kê đơn đã giao mà chưa thu');
+    await db('orders').whereIn('id', [sid, oid2]).del();
+  }
+
   // Ghi chú cho người xử lý: ngoài Hà Nội, khách quen, hay hủy, có thể trùng đơn
   {
     const mk = async (o) => {

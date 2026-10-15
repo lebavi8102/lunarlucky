@@ -22,8 +22,8 @@ function webhookSecret() {
 const STEPS = [
   ['confirmed', 'c', '✅ Xác nhận'],
   ['packing', 'p', '📦 Đóng gói'],
-  ['shipping', 's', '🚚 Đang giao'],
-  ['completed', 'd', '🎉 Hoàn tất'],
+  ['shipping', 's', '🚚 Nhận đi giao'],
+  ['completed', 'd', '🎉 Đã giao xong'],
 ];
 const ACTIONS = { c: 'confirmed', p: 'packing', s: 'shipping', d: 'completed' };
 const STATUS_ICON = { new: '🆕', confirmed: '✅', packing: '📦', shipping: '🚚', completed: '🎉', cancelled: '❌' };
@@ -68,7 +68,9 @@ function messageText(order, items, notes = null) {
       ? `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
       : order.payment_status === 'paid'
         ? '💵 COD · đã thu tiền'
-        : payment.awaitingMoney(order)
+        : order.status === 'completed' && payment.codDue(order) > 0
+          ? `⚠️ <b>Đã giao nhưng CHƯA thu COD ${require('./format').money(payment.codDue(order))}</b>`
+          : payment.awaitingMoney(order)
           ? `⏳ COD · <b>chờ cọc ${require('./format').money(order.deposit_amount)}</b> — chưa soạn hàng`
           : `💵 <b>COD · thu ${require('./format').money(payment.codDue(order))} khi giao</b>${order.payment_status === 'deposit' ? ` (đã cọc ${require('./format').money(order.deposit_amount)})` : ''}`;
   let account = null;
@@ -96,6 +98,8 @@ function messageText(order, items, notes = null) {
     `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
     order.status === 'cancelled' && order.payment_status === 'paid' ? '⚠️ <b>Khách đã thanh toán — cần hoàn tiền</b>' : null,
     pay,
+    order.cod_collected_by ? `💵 ${e(order.cod_collected_by)} đã thu ${require('./format').money(order.cod_collected_amount || 0)} — tiền đang ở shipper, nộp lại cuối ngày` : null,
+    order.shipper && order.status === 'shipping' ? `🛵 <b>Đang giao: ${e(order.shipper)}</b>` : null,
     account,
     log ? `\n<i>Lịch sử xử lý</i>\n${log}` : null,
   ]
@@ -103,9 +107,29 @@ function messageText(order, items, notes = null) {
     .join('\n');
 }
 
-function keyboard(order, { confirmCancel = false, confirmRestore = false } = {}) {
+const FAIL_REASONS = { f1: 'Khách hẹn giao ngày khác', f2: 'Không liên lạc được khách', f3: 'Khách từ chối nhận hàng' };
+
+function keyboard(order, { confirmCancel = false, confirmRestore = false, confirmDone = false, failReasons = false } = {}) {
   const id = order.id;
   const openBtn = { text: '🔗 Mở đơn', url: `${config.publicUrl}/admin/don-hang/${id}` };
+  if (confirmDone) {
+    const due = require('./format').money(payment.codDue(order));
+    return {
+      inline_keyboard: [
+        [{ text: `💵 Đã thu ${due} — giao xong`, callback_data: `o:${id}:dc` }],
+        [{ text: 'Giao xong nhưng CHƯA thu tiền', callback_data: `o:${id}:dn` }],
+        [{ text: '↩️ Quay lại', callback_data: `o:${id}:back` }],
+      ],
+    };
+  }
+  if (failReasons) {
+    return {
+      inline_keyboard: [
+        ...Object.entries(FAIL_REASONS).map(([k, t]) => [{ text: t, callback_data: `o:${id}:${k}` }]),
+        [{ text: '↩️ Quay lại', callback_data: `o:${id}:back` }],
+      ],
+    };
+  }
   if (confirmCancel) {
     return {
       inline_keyboard: [
@@ -138,8 +162,13 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false } = {})
   const idx = STEPS.findIndex((s) => s[0] === order.status);
   const next = STEPS.slice(idx + 1);
   const rows = [];
-  for (let i = 0; i < next.length; i += 2) {
-    rows.push(next.slice(i, i + 2).map(([, code, label]) => ({ text: label, callback_data: `o:${id}:${code}` })));
+  if (order.status === 'shipping') {
+    // Shipper đang giao: chỉ cần 2 nút chính
+    rows.push([{ text: '🎉 Đã giao xong', callback_data: `o:${id}:d` }, { text: '⚠️ Giao không được', callback_data: `o:${id}:f` }]);
+  } else {
+    for (let i = 0; i < next.length; i += 2) {
+      rows.push(next.slice(i, i + 2).map(([, code, label]) => ({ text: label, callback_data: `o:${id}:${code}` })));
+    }
   }
   const extra = [];
   if (order.payment_method === 'cod' && Number(order.deposit_amount) > 0 && order.payment_status === 'pending') {
@@ -251,9 +280,40 @@ const KHO_HELP = [
   '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho.',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
+  '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
   '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
   '   Gõ <code>/chonanh</code> trong chủ đề ảnh giao hàng → ở đó chỉ cần gửi ảnh kèm <b>SĐT khách</b>, không cần gõ lệnh.',
 ].join('\n');
+
+/** /thu [dd/mm] → đối soát COD: mỗi shipper đã thu bao nhiêu trong ngày + đơn đã giao mà chưa thu. */
+async function codReport(args) {
+  const { todayVN } = require('./format');
+  let day = todayVN();
+  const m = /^(\d{1,2})[/-](\d{1,2})$/.exec(String(args || '').trim());
+  if (m) day = `${todayVN().slice(0, 4)}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const from = new Date(`${day}T00:00:00+07:00`);
+  const to = new Date(from.getTime() + 86400000);
+  const fm = require('./format').money;
+  const got = await db('orders').where('cod_collected_at', '>=', from).andWhere('cod_collected_at', '<', to).select('code', 'cod_collected_by', 'cod_collected_amount');
+  const by = new Map();
+  for (const o of got) {
+    const r = by.get(o.cod_collected_by) || { n: 0, sum: 0, codes: [] };
+    r.n += 1;
+    r.sum += Number(o.cod_collected_amount) || 0;
+    r.codes.push(o.code);
+    by.set(o.cod_collected_by, r);
+  }
+  const owe = (await db('orders').where({ payment_method: 'cod', status: 'completed' }).whereNot('payment_status', 'paid')).filter((o) => payment.codDue(o) > 0);
+  const total = got.reduce((a, o) => a + (Number(o.cod_collected_amount) || 0), 0);
+  const lines = [`💵 <b>TIỀN COD NGÀY ${day.slice(8)}/${day.slice(5, 7)}</b> · tổng ${fm(total)}`];
+  if (!by.size) lines.push('Chưa ai thu tiền COD trong ngày.');
+  for (const [name, r] of by) lines.push(`• <b>${e(name)}</b>: ${fm(r.sum)} (${r.n} đơn) — ${r.codes.map(e).join(', ')}`);
+  if (owe.length) {
+    lines.push('', `⚠️ <b>Đã giao nhưng CHƯA thu tiền (${owe.length})</b>`);
+    for (const o of owe.slice(0, 20)) lines.push(`• ${e(o.code)} · ${e(o.customer_name)} · ${e(o.phone)} · còn ${fm(payment.codDue(o))}`);
+  }
+  return lines.join('\n');
+}
 
 /** /giao [mai | kia | dd/mm] → danh sách giao trong ngày cho shipper. */
 async function deliveryList(args) {
@@ -274,7 +334,7 @@ async function deliveryList(args) {
     const t = delivery.shipTo(o);
     const cod = delivery.codDue(o);
     return [
-      `<b>${i + 1}. ${e(o.code)}</b>${o.delivery_slot ? ` · ⏰ <b>${require('./format').slotLabel(o.delivery_slot)}</b>` : ''}${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}`,
+      `<b>${i + 1}. ${e(o.code)}</b>${o.delivery_slot ? ` · ⏰ <b>${require('./format').slotLabel(o.delivery_slot)}</b>` : ''}${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}${o.shipper && o.status === 'shipping' ? ` · 🛵 ${e(o.shipper)}` : ''}`,
       `   ${e(t.name)} · ${e(t.phone)}`,
       `   📍 ${e(t.address)}`,
       `   ${o.items.map((x) => `${e(x.name)} ×${x.qty}`).join(', ')} · ${cod ? `<b>thu ${money(cod)}</b>` : 'đã thanh toán'}`,
@@ -293,9 +353,10 @@ async function deliveryList(args) {
   return text;
 }
 
-async function reply(msg, html) {
+async function reply(msg, html, extra = {}) {
   try {
     await notify.tgApi('sendMessage', {
+      ...extra,
       chat_id: msg.chat.id, text: html, parse_mode: 'HTML', disable_web_page_preview: true,
       reply_to_message_id: msg.message_id, allow_sending_without_reply: true,
       ...(msg.is_topic_message && msg.message_thread_id ? { message_thread_id: msg.message_thread_id } : {}),
@@ -331,7 +392,7 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao', 'thu'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -352,6 +413,7 @@ async function handleCommand(msg) {
   }
   if (cmd === 'ton') return reply(msg, await stockList(args));
   if (cmd === 'giao') return reply(msg, await deliveryList(args));
+  if (cmd === 'thu') return reply(msg, await codReport(args));
 
   const parts = args.split(/\s+/).filter(Boolean);
   const qty = Number(parts[parts.length - 1]);
@@ -414,7 +476,13 @@ async function handleUpdate(update) {
       }
       try {
         const text = await require('./testimonials').fromTelegram(update.message);
-        if (text) await reply(update.message, text);
+        // Ảnh giao của đơn chưa hoàn tất → kèm nút "Đã giao xong" để shipper bấm luôn
+        const code = (/đơn <b>(LN\w+)<\/b>/.exec(text || '') || [])[1];
+        const o = code ? await db('orders').where({ code }).first() : null;
+        const markup = o && !['completed', 'cancelled'].includes(o.status)
+          ? { reply_markup: { inline_keyboard: [[{ text: `🎉 Đánh dấu đơn ${o.code} đã giao xong`, callback_data: `o:${o.id}:d` }]] } }
+          : {};
+        if (text) await reply(update.message, text, markup);
       } catch (err) {
         console.error('[telegram] lưu ảnh giao lỗi:', err.message);
         await reply(update.message, `Chưa lưu được ảnh: ${notify.escapeTg(err.message)}`);
@@ -465,17 +533,49 @@ async function handleUpdate(update) {
     await refreshOrderMessage(id);
     return answer(cb, 'Đã giữ nguyên đơn.');
   }
+  const o0 = data.order;
+  const codLeft = payment.codDue(o0);
+  // Giao xong đơn COD còn tiền thu → hỏi đã thu tiền chưa (để đối soát tiền shipper giữ)
+  if (action === 'd' && o0.payment_method === 'cod' && codLeft > 0 && o0.status !== 'completed') {
+    await refreshOrderMessage(id, { confirmDone: true });
+    return answer(cb, `Đã thu ${require('./format').money(codLeft)} của khách chưa?`);
+  }
+  if (action === 'f') {
+    await refreshOrderMessage(id, { failReasons: true });
+    return answer(cb, 'Chọn lý do giao không được.');
+  }
+  if (FAIL_REASONS[action]) {
+    if (o0.status !== 'shipping') return answer(cb, 'Đơn không ở trạng thái đang giao.', true);
+    await updateOrder(id, { status: 'confirmed' }, { by: `${by} (Telegram) · Giao không được: ${FAIL_REASONS[action]}` });
+    await db('orders').where({ id: o0.id }).update({ shipper: null });
+    await refreshOrderMessage(id);
+    await notify.tgApi('sendMessage', {
+      chat_id: cb.message.chat.id, parse_mode: 'HTML', disable_web_page_preview: true,
+      reply_to_message_id: cb.message.message_id, allow_sending_without_reply: true,
+      ...(cb.message.message_thread_id ? { message_thread_id: cb.message.message_thread_id } : {}),
+      text: `⚠️ <b>Đơn ${e(o0.code)} giao không được</b> — ${FAIL_REASONS[action]} (${e(by)}).\nNgười xử lý: gọi lại khách ${e(o0.is_gift ? o0.recipient_phone : o0.phone)}, hẹn lại ngày giao trong admin rồi bấm "Nhận đi giao" khi giao lại.`,
+    }).catch((err) => console.error('[telegram] báo giao lỗi thất bại:', err.message));
+    return answer(cb, 'Đã báo nhóm: giao không được. Đơn quay về "Đã xác nhận".');
+  }
 
   let changes = null;
   if (ACTIONS[action]) changes = { status: ACTIONS[action] };
   else if (action === 'xx') changes = { status: 'cancelled' };
   else if (action === 'rr') changes = { status: 'confirmed' };
   else if (action === '$') changes = { payment_status: 'paid' };
+  else if (action === 'dc') changes = { status: 'completed', payment_status: 'paid' };
+  else if (action === 'dn') changes = { status: 'completed' };
   else if (action === 'dp') changes = { payment_status: 'deposit' };
   if (!changes) return answer(cb, 'Lệnh không hợp lệ.');
 
-  const r = await updateOrder(id, changes, { by: `${by} (Telegram)` });
+  const r = await updateOrder(id, changes, { by: `${by} (Telegram)${action === 'dn' ? ' · CHƯA thu tiền' : ''}` });
+  // Ai đi giao / ai thu tiền COD → để cuối ngày đối soát (/thu)
+  if (r && r.changed && action === 's') await db('orders').where({ id: o0.id }).update({ shipper: by });
+  if (r && r.changed && o0.payment_method === 'cod' && codLeft > 0 && (action === 'dc' || action === '$')) {
+    await db('orders').where({ id: o0.id }).update({ cod_collected_by: by, cod_collected_amount: codLeft, cod_collected_at: new Date() });
+  }
   await refreshOrderMessage(id);
+  if (action === 'dn') return answer(cb, `Đã giao xong. Nhớ thu ${require('./format').money(codLeft)} — đơn sẽ hiện trong /thu mục "chưa thu".`, true);
   const label = changes.status ? ORDER_STATUS[changes.status] : PAYMENT_STATUS[changes.payment_status];
   if (r && r.changed && changes.status === 'cancelled' && r.order.payment_status === 'paid') {
     return answer(cb, `Đã hủy đơn ${r.order.code}. Đơn đã thanh toán — nhớ hoàn tiền cho khách.`, true);
@@ -498,6 +598,7 @@ async function ensureWebhook() {
   await notify.tgApi('setMyCommands', {
     commands: [
       { command: 'giao', description: 'Danh sách giao hôm nay (gõ: /giao mai, /giao 25/1)' },
+      { command: 'thu', description: 'Tiền COD shipper đã thu hôm nay + đơn chưa thu' },
       { command: 'ton', description: 'Xem tồn kho (thêm mã/tên để xem 1 sản phẩm)' },
       { command: 'nhap', description: 'Nhập thêm hàng: /nhap LL001 20' },
       { command: 'giam', description: 'Trừ hàng: /giam LL001 2' },
