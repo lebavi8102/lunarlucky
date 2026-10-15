@@ -277,6 +277,7 @@ async function chat(req, text) {
         output_config: { effort: 'low' }, // trò chuyện ngắn: effort thấp cho nhanh, rẻ
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
+        cache_control: { type: 'ephemeral' }, // lưu đệm cả lịch sử trò chuyện → các lượt sau rẻ hơn nhiều
         system,
         tools: toolDefs,
         messages: history,
@@ -287,7 +288,7 @@ async function chat(req, text) {
       req.session.aiChat = history;
       return { reply: `Em đang bị gián đoạn một chút. Anh/chị thử gửi lại, hoặc nhắn Zalo / gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true };
     }
-    if (res.usage) console.log(`[AI tư vấn] ${res.model} in=${res.usage.input_tokens} cache=${res.usage.cache_read_input_tokens || 0} out=${res.usage.output_tokens}`);
+    if (res.usage) console.log(`[AI tư vấn] ${res.model} in=${res.usage.input_tokens} cache=${res.usage.cache_read_input_tokens || 0} ghi=${res.usage.cache_creation_input_tokens || 0} out=${res.usage.output_tokens}`);
     if (res.stop_reason === 'refusal') {
       reply = 'Câu này em chưa hỗ trợ được. Anh/chị cần chọn quà Tết thì em tư vấn ngay ạ!';
       history.push({ role: 'assistant', content: reply });
