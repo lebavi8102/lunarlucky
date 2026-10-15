@@ -222,6 +222,43 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('orders').whereIn('id', [sid, oid2, pid3]).del();
   }
 
+  // Luồng gọn: mỗi lúc 1 nút; kho "Đã soạn xong" → thẻ giao hàng sang chủ đề SHIPPER
+  {
+    await tg.handleUpdate({ message: { message_id: 700, chat: { id: GROUP, type: 'supergroup' }, is_topic_message: true, message_thread_id: 88, from: { first_name: 'Chủ' }, text: '/chonship' } });
+    ok((await settings.all()).telegram_ship_thread === '88', '/chonship lưu chủ đề shipper');
+    const [rr] = await db('orders').insert({ code: 'LN261015FLOW', customer_name: 'Khách Luồng', phone: '0977000111', address: '12 Láng Hạ', province: 'Hà Nội',
+      delivery_date: todayVN(), delivery_slot: 'chieu', payment_method: 'cod', payment_status: 'pending', status: 'confirmed', subtotal: 990000, discount: 0,
+      shipping_fee: 50000, total: 1040000, tg_chat_id: String(GROUP), tg_message_id: 701 });
+    const fid = typeof rr === 'object' ? rr.id : rr;
+    await db('order_items').insert({ order_id: fid, product_id: null, name: 'Giỏ Cát Tường', price: 990000, qty: 1, line_total: 990000 });
+    const btns = (m) => m.body.reply_markup.inline_keyboard.flat().map((b) => b.text);
+    sent.length = 0;
+    await tg.refreshOrderMessage(fid);
+    let main = sent.find((x) => x.method === 'editMessageText');
+    ok(JSON.stringify(btns(main)) === JSON.stringify(['📦 Đã soạn xong', '⋯ Thêm']) && /KHO soạn hàng/.test(main.body.text), 'Đơn đã xác nhận: chỉ 1 nút "Đã soạn xong" + "⋯ Thêm"');
+    sent.length = 0;
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${fid}:m`, from: { id: 5, first_name: 'Chủ' }, message: { message_id: 701, chat: { id: GROUP, type: 'supergroup' } } } });
+    ok(/Hủy đơn/.test(btns(sent.find((x) => x.method === 'editMessageText')).join()), '"⋯ Thêm" → hiện Hủy đơn / nhảy bước / mở admin');
+    sent.length = 0;
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${fid}:p`, from: { id: 6, first_name: 'Kho Hà' }, message: { message_id: 701, chat: { id: GROUP, type: 'supergroup' } } } });
+    const card = sent.find((x) => x.method === 'sendMessage' && x.body.message_thread_id === 88);
+    ok(card && /GIAO HÀNG/.test(card.body.text) && /Chiều \(13h–17h\)/.test(card.body.text) && /THU 1\.040\.000₫/.test(card.body.text) && !/990\.000/.test(card.body.text),
+      'Kho bấm "Đã soạn xong" → thẻ giao hàng vào chủ đề SHIPPER (buổi, tiền thu, không giá từng món)');
+    ok(card && JSON.stringify(btns(card)) === JSON.stringify(['🚚 Nhận đi giao']), 'Thẻ shipper chỉ có nút "Nhận đi giao"');
+    await db('orders').where({ id: fid }).update({ tg_ship_message_id: 1 }); // giả lập Telegram trả message_id = 1
+    sent.length = 0;
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${fid}:s`, from: { id: 7, first_name: 'Hùng' }, message: { message_id: 1, chat: { id: GROUP, type: 'supergroup' } } } });
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${fid}:d`, from: { id: 7, first_name: 'Hùng' }, message: { message_id: 1, chat: { id: GROUP, type: 'supergroup' } } } });
+    const shipEdit = [...sent].reverse().find((x) => x.method === 'editMessageText' && x.body.message_id === 1);
+    ok(shipEdit && /Đã thu 1\.040\.000₫/.test(btns(shipEdit).join()), 'Shipper bấm trên thẻ → hỏi đã thu tiền ngay trên thẻ của mình');
+    await tg.handleUpdate({ callback_query: { id: 'q', data: `o:${fid}:dc`, from: { id: 7, first_name: 'Hùng' }, message: { message_id: 1, chat: { id: GROUP, type: 'supergroup' } } } });
+    const f1 = await db('orders').where({ id: fid }).first();
+    ok(f1.status === 'completed' && f1.cod_collected_by === 'Hùng', 'Giao xong + đã thu → hoàn tất, ghi Hùng thu tiền');
+    await settings.save({ telegram_ship_thread: '' });
+    await db('order_items').where({ order_id: fid }).del();
+    await db('orders').where({ id: fid }).del();
+  }
+
   // Ghi chú cho người xử lý: ngoài Hà Nội, khách quen, hay hủy, có thể trùng đơn
   {
     const mk = async (o) => {

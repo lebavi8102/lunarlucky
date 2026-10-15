@@ -69,6 +69,9 @@ async function addToCart(c) {
       codes.push(code2);
       const o2 = await db('orders').where({ code: code2 }).first();
       ok(o2 && o2.source === 'facebook' && o2.created_by && !o2.user_id, 'Đơn đặt hộ: kênh Facebook, ghi tên nhân viên, không gắn vào tài khoản nhân viên');
+      ok(o2 && o2.status === 'new', 'Đơn đặt hộ chưa chuyển khoản → giữ "Mới" (vẫn tự hủy nếu khách không trả)');
+      await require('../src/lib/orders').updateOrder(o2.id, { payment_status: 'paid' }, { by: 'SePay thử' });
+      ok((await db('orders').where({ id: o2.id }).first()).status === 'confirmed', 'Tiền về → đơn đặt hộ tự "Đã xác nhận", kho soạn ngay');
       const page = await a(r2.location);
       const link = (/(http[^"<\s]+\/don-hang\/LN\w+\?k=[\w-]+)/.exec(page.text) || [])[1];
       ok(/Gửi đơn cho khách/.test(page.text) && link, 'Trang đơn (nhân viên) có tin nhắn + link gửi khách');

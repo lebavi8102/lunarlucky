@@ -184,7 +184,10 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     needs_vat, vat_company: vat.vat_company || null, vat_tax_code: vat.vat_tax_code || null,
     vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,
     ...payment.snapshot(payment.accountFromSettings('personal', res.locals.s)),
-    payment_method, payment_status: 'pending', status: 'new',
+    payment_method, payment_status: 'pending',
+    // Chủ shop đặt hộ = đã chốt với khách → bỏ bước "Xác nhận", kho soạn ngay
+    // (đơn còn chờ chuyển khoản/cọc giữ "Mới" để vẫn tự hủy khi quá hạn; tiền về sẽ tự xác nhận)
+    status: 'new',
     subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee,
     vat_fee: needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0,
     vat_fee_percent: needs_vat ? payment.vatFeePercent(res.locals.s) : null,
@@ -194,6 +197,10 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   order.deposit_amount = order.payment_method === 'cod'
     ? payment.depositFor({ goods: priced.subtotal - priced.discount, qty: priced.count, total: order.total }, res.locals.s)
     : 0;
+  if (isStaff(req) && !payment.awaitingMoney(order)) {
+    order.status = 'confirmed';
+    order.handled_log = `${require('../lib/orders').logTime()} · Đã xác nhận (đặt hộ) · ${req.session.user.name}`;
+  }
   const items = priced.lines.map((l) => ({
     product_id: l.productId,
     name: l.name,

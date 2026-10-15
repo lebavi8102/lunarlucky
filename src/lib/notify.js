@@ -135,7 +135,7 @@ async function telegram(html, chatIdOverride, extra = {}) {
       // Nhóm đổi mã (lỡ không nhận được tin báo đổi mã qua webhook) → lưu mã mới, gửi lại
       if (err.migrateTo && !chatIdOverride && !config.telegram.chatId) {
         chatId2 = err.migrateTo;
-        await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '', telegram_ops_thread: '' });
+        await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '', telegram_ops_thread: '', telegram_ship_thread: '' });
         console.log(`[telegram] nhóm chuyển mã ${chatId} → ${chatId2}, đã cập nhật`);
         const { message_thread_id, ...noThread } = extra;
         return await send(noThread);

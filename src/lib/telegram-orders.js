@@ -20,8 +20,8 @@ function webhookSecret() {
 
 /** Thứ tự xử lý đơn và nút tương ứng. */
 const STEPS = [
-  ['confirmed', 'c', '✅ Xác nhận'],
-  ['packing', 'p', '📦 Đóng gói'],
+  ['confirmed', 'c', '✅ Xác nhận đơn'],
+  ['packing', 'p', '📦 Đã soạn xong'],
   ['shipping', 's', '🚚 Nhận đi giao'],
   ['completed', 'd', '🎉 Đã giao xong'],
 ];
@@ -56,6 +56,47 @@ async function opsNotes(order) {
     if (dup) notes.push(`⚠️ <b>Có thể trùng đơn</b> ${e(dup.code)} (cùng SĐT, đặt cách nhau dưới 2 giờ) — kiểm tra trước khi soạn`);
   }
   return notes.join('\n') || null;
+}
+
+// Trạng thái nói theo việc cần làm tiếp (kho / shipper đọc là hiểu)
+const TG_STATUS = {
+  new: 'Đơn mới — chờ xác nhận',
+  confirmed: 'Đã xác nhận — KHO soạn hàng',
+  packing: 'Đã soạn xong — chờ SHIPPER nhận giao',
+  shipping: 'Đang giao',
+  completed: 'Đã giao xong',
+  cancelled: 'Đã hủy',
+};
+
+/** Thẻ giao hàng gọn cho chủ đề SHIPPER: chỉ những gì cần khi đi giao (không giá từng món). */
+function shipCardText(order, items) {
+  const fm = require('./format');
+  const t = order.is_gift
+    ? { name: order.recipient_name, phone: order.recipient_phone, address: order.recipient_address }
+    : { name: order.customer_name, phone: order.phone, address: order.address };
+  const cod = payment.codDue(order);
+  const head = order.status === 'cancelled' ? '❌ <b>ĐÃ HỦY — KHÔNG GIAO</b>' : order.status === 'completed' ? '🎉 <b>ĐÃ GIAO XONG</b>' : '🚚 <b>GIAO HÀNG</b>';
+  return [
+    `${head} · ${e(order.code)}`,
+    `📅 <b>${fm.deliveryWhen(order)}</b>`,
+    `👤 ${e(t.name)} · ${e(t.phone)}${order.is_gift ? ' 🎁 quà tặng — không đưa hóa đơn' : ''}`,
+    `📍 ${e(t.address)}${order.province ? ', ' + e(order.province) : ''}`,
+    `📦 ${items.map((i) => `${e(i.name)} ×${i.qty}`).join(', ')}`,
+    cod > 0 ? `💵 <b>THU ${fm.money(cod)}</b>` : '✅ Khách đã thanh toán — KHÔNG thu tiền',
+    order.note ? `📝 ${e(order.note)}` : null,
+    order.status === 'shipping' && order.shipper ? `🛵 ${e(order.shipper)} đang giao` : null,
+    order.status === 'completed' && order.cod_collected_by ? `💵 ${e(order.cod_collected_by)} đã thu ${fm.money(order.cod_collected_amount || 0)}` : null,
+  ].filter((x) => x !== null).join('\n');
+}
+
+function shipKeyboard(order, opts = {}) {
+  const id = order.id;
+  if (opts.confirmDone || opts.failReasons) return keyboard(order, opts);
+  if (order.status === 'packing') return { inline_keyboard: [[{ text: '🚚 Nhận đi giao', callback_data: `o:${id}:s` }]] };
+  if (order.status === 'shipping') {
+    return { inline_keyboard: [[{ text: '🎉 Đã giao xong', callback_data: `o:${id}:d` }, { text: '⚠️ Giao không được', callback_data: `o:${id}:f` }]] };
+  }
+  return { inline_keyboard: [] };
 }
 
 function messageText(order, items, notes = null) {
@@ -95,7 +136,7 @@ function messageText(order, items, notes = null) {
     '',
     notes,
     vat,
-    `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
+    `${STATUS_ICON[order.status] || '•'} <b>${TG_STATUS[order.status] || ORDER_STATUS[order.status]}</b>`,
     order.status === 'cancelled' && ['paid', 'deposit'].includes(order.payment_status)
       ? `⚠️ <b>Khách đã ${order.payment_status === 'paid' ? 'thanh toán' : 'đặt cọc'} — cần hoàn ${require('./format').money(order.payment_status === 'paid' ? order.total : order.deposit_amount)}</b> (theo chính sách hoàn cọc)`
       : null,
@@ -111,9 +152,21 @@ function messageText(order, items, notes = null) {
 
 const FAIL_REASONS = { f1: 'Khách hẹn giao ngày khác', f2: 'Không liên lạc được khách', f3: 'Khách từ chối nhận hàng' };
 
-function keyboard(order, { confirmCancel = false, confirmRestore = false, confirmDone = false, failReasons = false } = {}) {
+function keyboard(order, { confirmCancel = false, confirmRestore = false, confirmDone = false, failReasons = false, more = false } = {}) {
   const id = order.id;
-  const openBtn = { text: '🔗 Mở đơn', url: `${config.publicUrl}/admin/don-hang/${id}` };
+  const openBtn = { text: '🔗 Mở đơn trong admin', url: `${config.publicUrl}/admin/don-hang/${id}` };
+  if (more) {
+    // Ít dùng: nhảy bước, thu COD, hủy, mở admin
+    const rows = [];
+    const others = STEPS.filter(([st]) => st !== order.status);
+    for (let i = 0; i < others.length; i += 2) {
+      rows.push(others.slice(i, i + 2).map(([st, code, label]) => ({ text: `→ ${ORDER_STATUS[st]}`, callback_data: `o:${id}:${code}` })));
+    }
+    if (order.payment_method === 'cod' && order.payment_status !== 'paid') rows.push([{ text: '💵 Đã thu COD', callback_data: `o:${id}:$` }]);
+    rows.push([{ text: '❌ Hủy đơn', callback_data: `o:${id}:x` }, openBtn]);
+    rows.push([{ text: '↩️ Thu gọn', callback_data: `o:${id}:back` }]);
+    return { inline_keyboard: rows };
+  }
   if (confirmDone) {
     const due = require('./format').money(payment.codDue(order));
     return {
@@ -163,25 +216,20 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false, confir
   if (order.status === 'completed') {
     return { inline_keyboard: [[{ text: '❌ Hủy', callback_data: `o:${id}:x` }, openBtn]] };
   }
-  const idx = STEPS.findIndex((s) => s[0] === order.status);
-  const next = STEPS.slice(idx + 1);
+  // Mỗi lúc chỉ 1 việc tiếp theo, nút to dễ bấm
   const rows = [];
-  if (order.status === 'shipping') {
-    // Shipper đang giao: chỉ cần 2 nút chính
+  if (payment.awaitingMoney(order)) {
+    // Chưa có tiền/cọc → kho CHƯA soạn; chỉ chủ shop xác nhận tiền
+    rows.push([{ text: order.payment_method === 'bank' ? '💰 Đã nhận chuyển khoản' : '💰 Đã nhận cọc', callback_data: `o:${id}:${order.payment_method === 'bank' ? '$' : 'dp'}` }]);
+  } else if (order.status === 'shipping') {
     rows.push([{ text: '🎉 Đã giao xong', callback_data: `o:${id}:d` }, { text: '⚠️ Giao không được', callback_data: `o:${id}:f` }]);
   } else {
-    for (let i = 0; i < next.length; i += 2) {
-      rows.push(next.slice(i, i + 2).map(([, code, label]) => ({ text: label, callback_data: `o:${id}:${code}` })));
-    }
+    const idx = STEPS.findIndex((st) => st[0] === order.status);
+    const nextStep = STEPS[idx + 1];
+    if (nextStep) rows.push([{ text: nextStep[2], callback_data: `o:${id}:${nextStep[1]}` }]);
   }
-  const extra = [];
-  if (order.payment_method === 'cod' && Number(order.deposit_amount) > 0 && order.payment_status === 'pending') {
-    extra.push({ text: '💰 Đã nhận cọc', callback_data: `o:${id}:dp` });
-  } else if (order.payment_status !== 'paid') {
-    extra.push({ text: order.payment_method === 'bank' ? '💰 Đã nhận CK' : '💵 Đã thu COD', callback_data: `o:${id}:$` });
-  }
-  extra.push({ text: '❌ Hủy', callback_data: `o:${id}:x` });
-  rows.push(extra);
+  rows.push([{ text: '⋯ Thêm', callback_data: `o:${id}:m` }]);
+  return { inline_keyboard: rows };
   rows.push([openBtn]);
   return { inline_keyboard: rows };
 }
@@ -203,20 +251,32 @@ async function sendNewOrder(order, items) {
 
 /** Sửa lại tin nhắn của đơn trong nhóm (gọi sau khi đổi trạng thái ở admin). */
 async function refreshOrderMessage(orderId, opts = {}) {
+  const data = await loadOrder(orderId).catch(() => null);
+  if (!data || !config.telegram.token) return;
+  const { order, items } = data;
+  const { target = 'main', ...o } = opts;
+  const edit = (chatId, messageId, text, markup) => notify.tgApi('editMessageText', {
+    chat_id: chatId, message_id: Number(messageId), text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: markup,
+  }).catch((err) => { if (!/message is not modified/i.test(err.message)) console.error('[telegram] sửa tin thất bại:', err.message); });
+  if (order.tg_message_id) {
+    await edit(order.tg_chat_id, order.tg_message_id, messageText(order, items, await opsNotes(order).catch(() => null)), keyboard(order, target === 'main' ? o : {}));
+  }
+  if (order.tg_ship_message_id) {
+    await edit(order.tg_ship_chat_id, order.tg_ship_message_id, shipCardText(order, items), shipKeyboard(order, target === 'ship' ? o : {}));
+  } else if (['packing', 'shipping'].includes(order.status)) {
+    await postShipCard(order, items);
+  }
+}
+
+/** Kho bấm "Đã soạn xong" → đăng thẻ giao hàng vào chủ đề SHIPPER (/chonship) để shipper nhận. */
+async function postShipCard(order, items) {
+  const thread = (await settings.all()).telegram_ship_thread;
+  if (!thread) return;
   try {
-    const data = await loadOrder(orderId);
-    if (!data || !data.order.tg_message_id || !config.telegram.token) return;
-    const { order, items } = data;
-    await notify.tgApi('editMessageText', {
-      chat_id: order.tg_chat_id,
-      message_id: Number(order.tg_message_id),
-      text: messageText(order, items, await opsNotes(order).catch(() => null)),
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      reply_markup: keyboard(order, opts),
-    });
+    const msg = await notify.telegram(shipCardText(order, items), null, { topic: 'ship', reply_markup: shipKeyboard(order) });
+    if (msg && msg.message_id) await db('orders').where({ id: order.id }).update({ tg_ship_chat_id: String(msg.chat.id), tg_ship_message_id: msg.message_id });
   } catch (err) {
-    if (!/message is not modified/i.test(err.message)) console.error('[telegram] sửa tin thất bại:', err.message);
+    console.error('[telegram] đăng thẻ giao hàng lỗi:', err.message);
   }
 }
 
@@ -306,7 +366,7 @@ const KHO_HELP = [
   '<code>/giam LL001 2</code> — trừ 2 giỏ (hỏng, bán ngoài web…)',
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
-  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc.',
+  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper.',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
@@ -443,22 +503,23 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
-  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac') {
+  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
     }
-    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread' }[cmd];
+    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
     return reply(msg, {
       chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
+      chonship: '✅ Đây là chủ đề <b>SHIPPER</b>. Khi kho bấm "📦 Đã soạn xong", thẻ giao hàng (người nhận, địa chỉ, tiền thu) hiện ở đây với nút <b>Nhận đi giao</b> → <b>Đã giao xong</b>.',
       chonnhac: '✅ Từ giờ <b>tin nhắc việc</b> sẽ gửi vào chủ đề này: 7h sáng việc hôm nay, nhắc đơn quá 2 giờ chưa xác nhận, 21h chốt ngày + tiền COD.',
       chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm số điện thoại khách</b> (vd <code>0912345678 khách khen giỏ đẹp</code>) → bot tự tìm đơn, lưu vào web chờ duyệt.\nQuên ghi số? Trả lời (reply) vào ảnh bằng SĐT khách.',
     }[cmd]);
@@ -514,7 +575,7 @@ async function handleUpdate(update) {
     const from = String(update.message.migrate_from_chat_id || update.message.chat.id);
     const to = String(update.message.migrate_to_chat_id || update.message.chat.id);
     if (current === from && from !== to) {
-      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '' });
+      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '', telegram_ship_thread: '' });
       console.log(`[telegram] nhóm chuyển mã ${from} → ${to}, đã cập nhật`);
     }
     return;
@@ -574,31 +635,38 @@ async function handleUpdate(update) {
   const by = personName(cb.from);
 
   if (action === 'noop') return answer(cb, '');
+  // Bấm trên thẻ giao hàng (chủ đề SHIPPER) → hỏi/đổi nút ngay trên thẻ đó
+  const onShip = data.order.tg_ship_message_id && Number(cb.message.message_id) === Number(data.order.tg_ship_message_id);
+  const view = (opts) => refreshOrderMessage(id, { ...opts, target: onShip ? 'ship' : 'main' });
   if (sensitive(action, data.order) && String((await settings.all()).telegram_admin_only) !== '0'
       && cb.message.chat.type !== 'private' && !(await isGroupAdmin(cb.message.chat.id, cb.from.id))) {
     return answer(cb, 'Chỉ quản trị viên nhóm mới được hủy/khôi phục đơn hoặc xác nhận đã nhận tiền. Nhờ chủ nhóm thêm bạn làm quản trị viên nếu bạn là người xử lý đơn.', true);
   }
   if (action === 'x') {
-    await refreshOrderMessage(id, { confirmCancel: true });
+    await view({ confirmCancel: true });
     return answer(cb, 'Bấm "Có, hủy đơn" để xác nhận.');
   }
   if (action === 'r') {
-    await refreshOrderMessage(id, { confirmRestore: true });
+    await view({ confirmRestore: true });
     return answer(cb, 'Bấm "Có, khôi phục" để xác nhận.');
   }
   if (action === 'back') {
     await refreshOrderMessage(id);
-    return answer(cb, 'Đã giữ nguyên đơn.');
+    return answer(cb, '');
+  }
+  if (action === 'm') {
+    await view({ more: true });
+    return answer(cb, '');
   }
   const o0 = data.order;
   const codLeft = payment.codDue(o0);
   // Giao xong đơn COD còn tiền thu → hỏi đã thu tiền chưa (để đối soát tiền shipper giữ)
   if (action === 'd' && o0.payment_method === 'cod' && codLeft > 0 && o0.status !== 'completed') {
-    await refreshOrderMessage(id, { confirmDone: true });
+    await view({ confirmDone: true });
     return answer(cb, `Đã thu ${require('./format').money(codLeft)} của khách chưa?`);
   }
   if (action === 'f') {
-    await refreshOrderMessage(id, { failReasons: true });
+    await view({ failReasons: true });
     return answer(cb, 'Chọn lý do giao không được.');
   }
   if (FAIL_REASONS[action]) {
@@ -606,11 +674,9 @@ async function handleUpdate(update) {
     await updateOrder(id, { status: 'confirmed' }, { by: `${by} (Telegram) · Giao không được: ${FAIL_REASONS[action]}` });
     await db('orders').where({ id: o0.id }).update({ shipper: null });
     await refreshOrderMessage(id);
-    await notify.tgApi('sendMessage', {
-      chat_id: cb.message.chat.id, parse_mode: 'HTML', disable_web_page_preview: true,
-      reply_to_message_id: cb.message.message_id, allow_sending_without_reply: true,
-      ...(cb.message.message_thread_id ? { message_thread_id: cb.message.message_thread_id } : {}),
-      text: `⚠️ <b>Đơn ${e(o0.code)} giao không được</b> — ${FAIL_REASONS[action]} (${e(by)}).\nNgười xử lý: gọi lại khách ${e(o0.is_gift ? o0.recipient_phone : o0.phone)}, hẹn lại ngày giao trong admin rồi bấm "Nhận đi giao" khi giao lại.`,
+    // Báo vào chủ đề ĐƠN HÀNG (người xử lý đơn), trả lời ngay dưới tin đơn
+    await notify.telegram(`⚠️ <b>Đơn ${e(o0.code)} giao không được</b> — ${FAIL_REASONS[action]} (${e(by)}).\nNgười xử lý: gọi lại khách ${e(o0.is_gift ? o0.recipient_phone : o0.phone)}, hẹn lại ngày (<code>/doingay ${e(o0.code)} dd/mm</code>) rồi bấm "Nhận đi giao" khi giao lại.`, null, {
+      ...(o0.tg_message_id ? { reply_to_message_id: Number(o0.tg_message_id), allow_sending_without_reply: true } : {}),
     }).catch((err) => console.error('[telegram] báo giao lỗi thất bại:', err.message));
     return answer(cb, 'Đã báo nhóm: giao không được. Đơn quay về "Đã xác nhận".');
   }
@@ -669,6 +735,7 @@ async function ensureWebhook() {
       { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới' },
       { command: 'chonkho', description: 'Chọn chủ đề này để nhận cảnh báo kho' },
       { command: 'chonanh', description: 'Chọn chủ đề này để shipper gửi ảnh giao hàng' },
+      { command: 'chonship', description: 'Chọn chủ đề này cho shipper nhận đơn đi giao' },
       { command: 'chonnhac', description: 'Chọn chủ đề này để nhận tin nhắc việc hằng ngày' },
     ],
   }).catch((err) => console.error('[telegram] không đặt được menu lệnh:', err.message));

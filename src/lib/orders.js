@@ -42,8 +42,11 @@ async function updateOrder(id, changes, { by } = {}) {
   const data = await loadOrder(id);
   if (!data) return null;
   const { order, items } = data;
-  const status = ORDER_STATUS[changes.status] ? changes.status : order.status;
+  let status = ORDER_STATUS[changes.status] ? changes.status : order.status;
   const payment_status = PAYMENT_STATUS[changes.payment_status] ? changes.payment_status : order.payment_status;
+  // Đơn chủ shop đặt hộ: tiền/cọc về là coi như đã chốt → tự "Đã xác nhận" để kho soạn ngay
+  const gotMoney = ['paid', 'deposit'].includes(payment_status) && !['paid', 'deposit'].includes(order.payment_status);
+  if (gotMoney && order.created_by && status === 'new') status = 'confirmed';
 
   const events = [];
   if (status !== order.status) events.push(ORDER_STATUS[status]);
