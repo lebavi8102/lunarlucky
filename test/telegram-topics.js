@@ -36,6 +36,7 @@ global.fetch = async (url, opt) => {
     // ảnh JPEG giả (đủ "magic bytes")
     return { ok: true, status: 200, arrayBuffer: async () => Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0]) };
   }
+  if (method === 'getChatMember') return { ok: true, status: 200, json: async () => ({ ok: true, result: { status: body.user_id === 777 ? 'member' : 'administrator' } }) };
   if (method === 'getFile') return { ok: true, status: 200, json: async () => ({ ok: true, result: { file_path: 'photos/a.jpg' } }) };
   sent.push({ method, body });
   return { ok: true, status: 200, json: async () => ({ ok: true, result: { message_id: 1, chat: { id: body.chat_id } } }) };
@@ -176,7 +177,32 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     const rep = sent.find((x) => x.method === 'sendMessage');
     ok(rep && /Hùng<\/b>: 1\.040\.000₫ \(1 đơn\)/.test(rep.body.text), '/thu → Hùng đã thu 1.040.000₫');
     ok(rep && /CHƯA thu tiền/.test(rep.body.text) && /LN261015OWE1/.test(rep.body.text), '/thu → liệt kê đơn đã giao mà chưa thu');
-    await db('orders').whereIn('id', [sid, oid2]).del();
+    // Quyền: shipper (không phải quản trị nhóm) không hủy đơn / không xác nhận chuyển khoản được
+    const [r3] = await db('orders').insert({ code: 'LN261015PERM', customer_name: 'Khách Quyền', phone: '0944555888', address: '9 Phố Huế', province: 'Hà Nội',
+      delivery_date: todayVN(), payment_method: 'bank', payment_status: 'pending', status: 'confirmed', subtotal: 1, discount: 0, shipping_fee: 0, total: 1,
+      tg_chat_id: String(GROUP), tg_message_id: 503 });
+    const pid3 = typeof r3 === 'object' ? r3.id : r3;
+    const tapAs = (data, uid) => tg.handleUpdate({ callback_query: { id: 'q', data, from: { id: uid, first_name: 'Ship' }, message: { message_id: 503, chat: { id: GROUP, type: 'supergroup' } } } });
+    sent.length = 0;
+    await tapAs(`o:${pid3}:xx`, 777);
+    await tapAs(`o:${pid3}:$`, 777);
+    let p3 = await db('orders').where({ id: pid3 }).first();
+    ok(p3.status === 'confirmed' && p3.payment_status === 'pending' && sent.some((x) => x.method === 'answerCallbackQuery' && /Chỉ quản trị viên/.test(x.body.text)),
+      'Shipper (không phải quản trị nhóm) bấm Hủy / Đã nhận CK → bị chặn, có giải thích');
+    await tapAs(`o:${pid3}:s`, 777);
+    ok((await db('orders').where({ id: pid3 }).first()).status === 'shipping', 'Shipper vẫn bấm "Nhận đi giao" được');
+    // Đổi ngày giao: /doingay MÃĐƠN dd/mm buổi
+    await db('orders').where({ id: pid3 }).update({ status: 'confirmed', delivery_date: '2026-12-20' });
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 610, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Lan' }, text: '/doingay LN261015PERM 22/12 chieu' } });
+    p3 = await db('orders').where({ id: pid3 }).first();
+    ok(String(p3.delivery_date).slice(0, 10) === '2026-12-22' && p3.delivery_slot === 'chieu' && /Đổi ngày giao: 20\/12\/2026 → 22\/12\/2026/.test(p3.handled_log),
+      '/doingay → đổi ngày + buổi, ghi lịch sử');
+    ok(sent.some((x) => x.method === 'sendMessage' && /đổi sang giao <b>22\/12\/2026 · Chiều/.test(x.body.text)), 'Bot xác nhận ngày mới');
+    ok(sent.some((x) => x.method === 'editMessageText'), 'Tin đơn trong nhóm được cập nhật ngày mới');
+    await tg.handleUpdate({ message: { message_id: 611, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Lan' }, text: '/doingay 0944 555 888 23/12' } });
+    ok(String((await db('orders').where({ id: pid3 }).first()).delivery_date).slice(0, 10) === '2026-12-23', '/doingay bằng SĐT khách cũng được');
+    await db('orders').whereIn('id', [sid, oid2, pid3]).del();
   }
 
   // Ghi chú cho người xử lý: ngoài Hà Nội, khách quen, hay hủy, có thể trùng đơn

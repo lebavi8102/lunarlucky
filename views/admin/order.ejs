@@ -55,6 +55,34 @@
         <% } else if (order.invoice_info) { %><dt>Xuất VAT</dt><dd style="white-space:pre-line"><%= order.invoice_info %></dd><% } %>
         <% if (order.payment_method === 'bank') { %><dt>Nhận tiền vào</dt><dd><span class="status <%= payee.type === 'company' ? 'status-confirmed' : 'status-completed' %>"><%= payee.label %></span><br><%= payee.bankName || payee.bankId || '—' %> · <span class="mono"><%= payee.account || 'chưa cài đặt' %></span> · <%= payee.holder || '' %></dd><% } %>
       </dl>
+      <% if (order.status !== 'cancelled' && order.status !== 'completed') { %>
+      <details id="sua-giao" style="margin-top:16px">
+        <summary class="btn btn-sm btn-quiet">✏️ Sửa ngày giao / địa chỉ / lời chúc</summary>
+        <form action="/admin/don-hang/<%= order.id %>/giao" method="post" style="margin-top:16px;display:grid;gap:12px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label class="label" for="dd">Ngày giao</label><input class="input" type="date" id="dd" name="delivery_date" value="<%= String(order.delivery_date || '').slice(0, 10) %>" required></div>
+            <div class="field"><label class="label" for="ds">Buổi giao</label><select class="select" id="ds" name="delivery_slot">
+              <% [['', 'Buổi nào cũng được'], ...Object.entries(fmt.SLOTS)].forEach(([k, v]) => { %><option value="<%= k %>" <%= (order.delivery_slot || '') === k ? 'selected' : '' %>><%= v %></option><% }) %>
+            </select></div>
+          </div>
+          <% if (order.is_gift) { %>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label class="label" for="rn">Người nhận</label><input class="input" id="rn" name="recipient_name" value="<%= order.recipient_name || '' %>" required></div>
+              <div class="field"><label class="label" for="rp">SĐT người nhận</label><input class="input" id="rp" name="recipient_phone" type="tel" value="<%= order.recipient_phone || '' %>" required></div>
+            </div>
+            <div class="field"><label class="label" for="ra">Địa chỉ nhận</label><input class="input" id="ra" name="recipient_address" value="<%= order.recipient_address || '' %>" required></div>
+          <% } else { %>
+            <div class="field"><label class="label" for="ph">SĐT người đặt</label><input class="input" id="ph" name="phone" type="tel" value="<%= order.phone || '' %>" required></div>
+            <div class="field"><label class="label" for="ad">Địa chỉ</label><input class="input" id="ad" name="address" value="<%= order.address || '' %>" required></div>
+          <% } %>
+          <div class="field"><label class="label" for="cm">Lời chúc trên thiệp</label><textarea class="textarea" id="cm" name="card_message" maxlength="300"><%= order.card_message || '' %></textarea></div>
+          <div class="field"><label class="label" for="nt">Ghi chú của khách</label><textarea class="textarea" id="nt" name="note" maxlength="500"><%= order.note || '' %></textarea></div>
+          <button class="btn btn-sm" type="submit">Lưu thông tin giao</button>
+          <p class="tiny muted">Thay đổi được ghi vào lịch sử và cập nhật tin đơn trong Telegram. Tỉnh/thành không đổi được ở đây (ảnh hưởng phí giao).</p>
+        </form>
+      </details>
+      <% } %>
     </section>
   </div>
 

@@ -136,6 +136,35 @@ router.post('/don-hang/:id', async (req, res, next) => {
   res.redirect(`/admin/don-hang/${r.order.id}`);
 });
 
+// Sửa thông tin giao: ngày, buổi, địa chỉ, SĐT, lời chúc…
+router.post('/don-hang/:id/giao', async (req, res, next) => {
+  const order = await db('orders').where({ id: Number(req.params.id) }).first();
+  if (!order) return next();
+  const { Form } = require('../../lib/validate');
+  const f = new Form(req.body);
+  const changes = {
+    delivery_date: f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: -30, maxOffset: 365 }),
+    delivery_slot: f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], ''),
+    card_message: f.text('card_message', { max: 300 }),
+    note: f.text('note', { max: 500 }),
+  };
+  if (order.is_gift) {
+    changes.recipient_name = f.text('recipient_name', { label: 'tên người nhận', required: true, min: 2, max: 120 });
+    changes.recipient_phone = f.phone('recipient_phone', { label: 'SĐT người nhận' });
+    changes.recipient_address = f.text('recipient_address', { label: 'địa chỉ người nhận', required: true, min: 6, max: 300 });
+  } else {
+    changes.phone = f.phone('phone');
+    changes.address = f.text('address', { label: 'địa chỉ', required: true, min: 6, max: 300 });
+  }
+  if (!f.ok) {
+    flash(req, 'error', Object.values(f.errors)[0]);
+    return res.redirect(`/admin/don-hang/${order.id}#sua-giao`);
+  }
+  const r = await require('../../lib/orders').updateDelivery(order.id, changes, { by: req.session.user.name });
+  flash(req, 'success', r.changed ? `Đã lưu: ${r.events.join('; ')}` : 'Không có gì thay đổi.');
+  res.redirect(`/admin/don-hang/${order.id}`);
+});
+
 router.post('/don-hang/:id/tai-khoan', async (req, res, next) => {
   const payment = require('../../lib/payment');
   const order = await db('orders').where({ id: Number(req.params.id) }).first();
@@ -219,6 +248,7 @@ const SETTING_GROUPS = [
   ]],
   ['Kho hàng', [
     ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
+    ['telegram_admin_only', 'Chỉ QUẢN TRỊ VIÊN nhóm Telegram được hủy đơn / xác nhận đã nhận tiền (1 = bật, 0 = ai trong nhóm cũng bấm được)'],
   ]],
   ['Trang chủ', [
     ['announcement', 'Dòng thông báo trên cùng'], ['hero_eyebrow', 'Dòng nhỏ trên tiêu đề'],

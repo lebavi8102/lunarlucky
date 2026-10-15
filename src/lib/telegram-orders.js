@@ -216,6 +216,31 @@ async function refreshOrderMessage(orderId, opts = {}) {
   }
 }
 
+/**
+ * Nút nhạy cảm (hủy/khôi phục đơn, xác nhận đã nhận chuyển khoản/cọc) chỉ cho QUẢN TRỊ VIÊN nhóm bấm.
+ * Shipper vẫn bấm được: nhận đi giao, đã giao xong, đã thu COD, giao không được.
+ * Tắt bằng cài đặt telegram_admin_only = 0.
+ */
+const adminCache = new Map();
+async function isGroupAdmin(chatId, userId) {
+  const key = `${chatId}:${userId}`;
+  const hit = adminCache.get(key);
+  if (hit && hit.until > Date.now()) return hit.ok;
+  let ok = false;
+  try {
+    const m = await notify.tgApi('getChatMember', { chat_id: chatId, user_id: userId });
+    ok = ['creator', 'administrator'].includes(m && m.status);
+  } catch {
+    ok = true; // Telegram lỗi mạng → không chặn người làm việc
+  }
+  adminCache.set(key, { ok, until: Date.now() + 10 * 60000 });
+  return ok;
+}
+function sensitive(action, order) {
+  if (['x', 'xx', 'r', 'rr', 'dp'].includes(action)) return true;
+  return action === '$' && order.payment_method === 'bank';
+}
+
 function personName(from) {
   return [from.first_name, from.last_name].filter(Boolean).join(' ') || (from.username ? '@' + from.username : 'Thành viên');
 }
@@ -281,9 +306,31 @@ const KHO_HELP = [
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
+  '📅 <code>/doingay LN261015ABCD 25/1 chieu</code> — đổi ngày (và buổi: sang/chieu/toi) khi khách hẹn lại',
   '📸 <b>Ảnh giao hàng:</b> gửi <b>ảnh</b> kèm chú thích <code>/anhgiao MÃĐƠN lời khách khen</code> → lưu vào web, chờ duyệt.',
   '   Gõ <code>/chonanh</code> trong chủ đề ảnh giao hàng → ở đó chỉ cần gửi ảnh kèm <b>SĐT khách</b>, không cần gõ lệnh.',
 ].join('\n');
+
+/** /doingay MÃĐƠN|SĐT dd/mm [sang|chieu|toi] → đổi ngày giao (khách hẹn lại). */
+async function changeDate(args, by) {
+  const { todayVN, slotLabel } = require('./format');
+  const m = /^(.+?)\s+(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?(?:\s+(sang|sáng|chieu|chiều|toi|tối))?\s*$/i.exec(String(args || '').trim());
+  if (!m) return 'Cách dùng: <code>/doingay LN261015ABCD 25/1</code> (thêm <code>sang</code>/<code>chieu</code>/<code>toi</code> nếu hẹn buổi). Có thể ghi SĐT khách thay mã đơn.';
+  const key = m[1].toUpperCase().replace(/(?<=\d)[\s.]+(?=\d)/g, '');
+  const order = /^LN/.test(key)
+    ? await db('orders').where({ code: key }).first()
+    : await require('./testimonials').findOrderByPhone(key);
+  if (!order) return `Không tìm thấy đơn <b>${e(key)}</b>.`;
+  if (['completed', 'cancelled'].includes(order.status)) return `Đơn ${e(order.code)} đã ${ORDER_STATUS[order.status].toLowerCase()}, không đổi ngày được.`;
+  let year = m[4] ? Number(m[4].length === 2 ? `20${m[4]}` : m[4]) : Number(todayVN().slice(0, 4));
+  let day = `${year}-${m[3].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  if (!m[4] && day < todayVN()) day = `${year + 1}${day.slice(4)}`; // 5/1 gõ vào tháng 12 → năm sau
+  if (Number.isNaN(Date.parse(day))) return 'Ngày không hợp lệ.';
+  const slotKey = m[5] ? { sang: 'sang', 'sáng': 'sang', chieu: 'chieu', 'chiều': 'chieu', toi: 'toi', 'tối': 'toi' }[m[5].toLowerCase()] : undefined;
+  const r = await require('./orders').updateDelivery(order.id, { delivery_date: day, ...(slotKey ? { delivery_slot: slotKey } : {}) }, { by: `${by} (Telegram)` });
+  if (!r.changed) return `Đơn ${e(order.code)} đã là ngày đó rồi.`;
+  return `📅 Đơn <b>${e(order.code)}</b> (${e(order.customer_name)}) đổi sang giao <b>${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}${slotKey ? ' · ' + slotLabel(slotKey) : ''}</b>.`;
+}
 
 /** /thu [dd/mm] → đối soát COD: mỗi shipper đã thu bao nhiêu trong ngày + đơn đã giao mà chưa thu. */
 async function codReport(args) {
@@ -392,7 +439,7 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao', 'thu'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -414,6 +461,7 @@ async function handleCommand(msg) {
   if (cmd === 'ton') return reply(msg, await stockList(args));
   if (cmd === 'giao') return reply(msg, await deliveryList(args));
   if (cmd === 'thu') return reply(msg, await codReport(args));
+  if (cmd === 'doingay') return reply(msg, await changeDate(args, personName(msg.from || {})));
 
   const parts = args.split(/\s+/).filter(Boolean);
   const qty = Number(parts[parts.length - 1]);
@@ -521,6 +569,10 @@ async function handleUpdate(update) {
   const by = personName(cb.from);
 
   if (action === 'noop') return answer(cb, '');
+  if (sensitive(action, data.order) && String((await settings.all()).telegram_admin_only) !== '0'
+      && cb.message.chat.type !== 'private' && !(await isGroupAdmin(cb.message.chat.id, cb.from.id))) {
+    return answer(cb, 'Chỉ quản trị viên nhóm mới được hủy/khôi phục đơn hoặc xác nhận đã nhận tiền. Nhờ chủ nhóm thêm bạn làm quản trị viên nếu bạn là người xử lý đơn.', true);
+  }
   if (action === 'x') {
     await refreshOrderMessage(id, { confirmCancel: true });
     return answer(cb, 'Bấm "Có, hủy đơn" để xác nhận.');
@@ -599,6 +651,7 @@ async function ensureWebhook() {
     commands: [
       { command: 'giao', description: 'Danh sách giao hôm nay (gõ: /giao mai, /giao 25/1)' },
       { command: 'thu', description: 'Tiền COD shipper đã thu hôm nay + đơn chưa thu' },
+      { command: 'doingay', description: 'Đổi ngày giao: /doingay MÃĐƠN 25/1 chieu' },
       { command: 'ton', description: 'Xem tồn kho (thêm mã/tên để xem 1 sản phẩm)' },
       { command: 'nhap', description: 'Nhập thêm hàng: /nhap LL001 20' },
       { command: 'giam', description: 'Trừ hàng: /giam LL001 2' },
