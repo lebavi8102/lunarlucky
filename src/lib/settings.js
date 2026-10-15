@@ -39,6 +39,8 @@ const DEFAULTS = {
   free_ship_threshold: '1500000',
   min_delivery_days: '1',
   province_min_days: '3',
+  // Hạn chót nhận đơn giao trước Tết (YYYY-MM-DD); để trống thì không hiện
+  order_deadline: '2027-01-30',
   telegram_admin_only: '1',
   ops_digest: '1',
   backup_email: '1',
@@ -51,7 +53,7 @@ const DEFAULTS = {
   hero_eyebrow: 'Quà Tết an khang, trao trọn phú quý',
   hero_title: 'Trao lời chúc trọn vẹn trong từng giỏ quà',
   hero_subtitle:
-    'Giỏ quà Tết tuyển chọn kỹ lưỡng từ các xưởng sản xuất uy tín, đóng hộp sơn mài, kèm thiệp chúc viết tay và giao tận nơi đúng ngày bạn chọn.',
+    'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Thiệp viết tay, giao đúng ngày bạn hẹn.',
 };
 
 let cache = null;

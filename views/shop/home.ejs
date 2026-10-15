@@ -41,6 +41,7 @@
 
 <section class="section-tight" aria-labelledby="budget-title" style="padding-bottom:0;padding-top:28px">
   <div class="container" style="text-align:center">
+    <% if (orderDeadline) { %><p class="small" style="margin-bottom:10px;color:var(--primary);font-weight:600">⏳ Nhận đơn giao trước Tết đến hết <%= orderDeadline %> — đặt sớm để giữ ngày giao đẹp</p><% } %>
     <h2 id="budget-title" class="h3" style="margin-bottom:14px">Chọn nhanh theo ngân sách</h2>
     <ul class="chips" style="justify-content:center">
       <li><a class="chip" href="/bo-suu-tap?gia=duoi-1-trieu">Dưới 1 triệu</a></li>

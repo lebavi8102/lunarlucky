@@ -255,6 +255,7 @@ const SETTING_GROUPS = [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
     ['province_min_days', 'Số ngày tối thiểu khi giao ngoài Hà Nội (chuyển phát)'],
+    ['order_deadline', 'Hạn chót nhận đơn giao trước Tết (YYYY-MM-DD, vd 2027-01-30) — để trống thì không hiện'],
   ]],
   ['Kho hàng', [
     ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
