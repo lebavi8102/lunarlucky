@@ -1,0 +1,30 @@
+<%# AI tư vấn chọn quà: nút nổi góc trái + khung chat (chỉ hiện khi đã có khóa API và bật trong Cài đặt) %>
+<button type="button" class="ai-fab no-print" data-ai-open aria-haspopup="dialog" aria-controls="ai-chat">
+  <svg class="icon icon-sm"><use href="#i-sparkle"/></svg> Tư vấn chọn quà
+</button>
+<section class="ai-chat no-print" id="ai-chat" role="dialog" aria-modal="false" aria-labelledby="ai-chat-title" hidden data-ai-chat data-csrf="<%= csrfToken %>">
+  <header class="ai-head">
+    <div>
+      <strong id="ai-chat-title">Tư vấn chọn quà</strong>
+      <span>Trợ lý AI của <%= s.shop_name %> · trả lời ngay</span>
+    </div>
+    <button type="button" class="ai-icon-btn" data-ai-reset title="Bắt đầu lại" aria-label="Bắt đầu lại cuộc trò chuyện"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg></button>
+    <button type="button" class="ai-icon-btn" data-ai-close aria-label="Đóng"><svg class="icon icon-sm"><use href="#i-x"/></svg></button>
+  </header>
+  <div class="ai-log" data-ai-log aria-live="polite">
+    <div class="ai-msg bot">Em chào anh/chị! Anh/chị định tặng quà Tết cho ai, ngân sách khoảng bao nhiêu mỗi giỏ ạ? Em gợi ý giỏ hợp nhất và lên đơn giúp luôn.</div>
+  </div>
+  <div class="ai-chips" data-ai-chips>
+    <button type="button" data-ai-suggest>Biếu sếp khoảng 2 triệu</button>
+    <button type="button" data-ai-suggest>Quà cho bố mẹ</button>
+    <button type="button" data-ai-suggest>Tặng nhân viên dưới 1 triệu</button>
+    <button type="button" data-ai-suggest>Đặt 30 giỏ cho công ty</button>
+  </div>
+  <form class="ai-form" data-ai-form>
+    <label class="sr-only" for="ai-input">Câu hỏi của bạn</label>
+    <textarea id="ai-input" rows="1" maxlength="800" placeholder="Nhập câu hỏi…" data-ai-input></textarea>
+    <button type="submit" class="btn btn-sm" aria-label="Gửi">Gửi</button>
+  </form>
+  <p class="ai-foot">AI có thể nhầm — đơn chỉ được tạo khi bạn bấm “Đặt hàng”. Cần người thật? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo</a></p>
+</section>
+<script src="<%= asset('/js/ai-chat.js') %>" defer></script>

@@ -87,10 +87,11 @@ router.get('/thanh-toan', async (req, res) => {
   if (!priced.lines.length) return res.redirect('/gio-hang');
   res.locals.seo.title = 'Thanh toán · Lunar Lucky';
   res.locals.seo.noindex = true;
-  const defaults = checkoutDefaults(req);
+  // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
+  const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
   const dc = dateCtx(res.locals.s, defaults.province);
   res.render('shop/checkout', {
-    cart: priced, values: { ...defaults, delivery_date: dc.minDate }, errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
+    cart: priced, values: { delivery_date: dc.minDate, ...defaults }, errors: {}, fromAi: !!req.session.aiPrefill, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
     ...dc,
   });
 });
@@ -195,7 +196,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     code: newCode(),
     user_id: req.session.user && !isStaff(req) ? req.session.user.id : null,
     // Kênh: nhân viên chọn khi đặt hộ; khách tự đặt → kênh khách đến (link ?nguon=, Facebook, Zalo…)
-    source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.source || 'web',
+    source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.aiPrefill ? 'ai' : req.session.source || 'web',
     created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
@@ -275,6 +276,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   }
 
   req.session.cart = { lines: [], coupon: null };
+  delete req.session.aiPrefill;
   rememberOrder(req, order.code);
 
   const tgOrders = require('../lib/telegram-orders');
@@ -383,3 +385,6 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
 module.exports = router;
 module.exports.PROVINCES = PROVINCES;
 module.exports.shareLink = shareLink;
+module.exports.dateCtx = dateCtx;
+module.exports.isHanoi = isHanoi;
+module.exports.tetClosed = tetClosed;

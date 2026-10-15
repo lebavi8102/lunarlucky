@@ -47,6 +47,10 @@ const DEFAULTS = {
   tet_closed_to: '2027-02-10',
   telegram_admin_only: '1',
   ops_digest: '1',
+  // AI tư vấn bán hàng (cần ANTHROPIC_API_KEY trên Render)
+  ai_chat_enabled: '1',
+  ai_model: 'claude-opus-5-5',
+  ai_daily_limit: '500',
   backup_email: '1',
   backup_last: '',
   ops_morning_hour: '7',

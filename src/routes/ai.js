@@ -1,0 +1,24 @@
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const ai = require('../lib/ai-sales');
+
+const router = express.Router();
+// Chống spam: mỗi khách tối đa 20 tin / 5 phút
+const chatLimiter = rateLimit({
+  windowMs: 5 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ reply: 'Anh/chị nhắn hơi nhanh, đợi em vài phút hoặc nhắn Zalo giúp em nhé!' }),
+});
+
+router.post('/tu-van/chat', chatLimiter, async (req, res) => {
+  const text = String((req.body && req.body.message) || '').trim();
+  if (!text) return res.status(400).json({ reply: 'Anh/chị nhập câu hỏi giúp em nhé.' });
+  const r = await ai.chat(req, text);
+  res.set('Cache-Control', 'no-store').json(r);
+});
+
+router.post('/tu-van/moi', (req, res) => {
+  delete req.session.aiChat;
+  res.json({ ok: true });
+});
+
+module.exports = router;

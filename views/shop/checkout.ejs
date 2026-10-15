@@ -17,13 +17,16 @@
   <% const staff = user && user.role === 'admin'; %>
   <form class="cart-layout" action="/thanh-toan" method="post" novalidate data-checkout <%= staff ? 'data-staff' : '' %>>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (typeof fromAi !== 'undefined' && fromAi && !staff) { %>
+    <div class="flash flash-info" role="status" style="grid-column:1/-1;margin:0"><svg class="icon"><use href="#i-sparkle"/></svg><span>Em đã điền sẵn theo trao đổi. Anh/chị <b>kiểm tra lại thông tin</b> rồi bấm <b>Đặt hàng</b> là xong.</span></div>
+    <% } %>
     <% if (staff) { %>
     <div class="flash flash-info" role="status" style="grid-column:1/-1;margin:0;align-items:center;flex-wrap:wrap;gap:12px">
       <svg class="icon"><use href="#i-user"/></svg>
       <span><b>Đang đặt hộ khách</b> (bạn đăng nhập quản trị). Điền thông tin của <b>khách</b>; đơn tự về Telegram như khách tự đặt.</span>
       <label style="display:flex;gap:8px;align-items:center;margin-left:auto"><span class="small">Khách nhắn qua</span>
         <select class="select" name="order_source" style="width:auto;min-height:40px">
-          <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web').forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
+          <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web' && k !== 'ai').forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
         </select></label>
     </div>
     <% } %>

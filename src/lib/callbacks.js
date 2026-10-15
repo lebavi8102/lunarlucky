@@ -8,7 +8,7 @@ const config = require('../config');
 const { logTime } = require('./orders');
 
 const e = notify.escapeTg;
-const SOURCE = { 'san-pham': 'trang sản phẩm', 'gio-hang': 'giỏ hàng', 'thanh-toan': 'trang thanh toán' };
+const SOURCE = { 'san-pham': 'trang sản phẩm', 'gio-hang': 'giỏ hàng', 'thanh-toan': 'trang thanh toán', ai: 'AI tư vấn' };
 
 function messageText(r) {
   return [
