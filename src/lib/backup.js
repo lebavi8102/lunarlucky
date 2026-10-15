@@ -47,6 +47,8 @@ const ORDER_COLUMNS = [
   { header: 'Mã giảm giá', key: 'coupon_code', width: 12 },
   { header: 'Phí giao', key: 'shipping_fee', type: 'money', width: 11 },
   { header: 'Phí VAT', key: 'vat_fee', type: 'money', width: 11 },
+  { header: 'Điều chỉnh giá', key: 'adjustment', type: 'money', width: 13 },
+  { header: 'Lý do điều chỉnh', key: 'adjustment_note', width: 26 },
   { header: 'Tổng cộng', key: 'total', type: 'money', width: 13 },
   { header: 'Tiền cọc', key: 'deposit_amount', type: 'money', width: 12 },
   { header: 'Xuất VAT', key: 'vat', width: 8 },

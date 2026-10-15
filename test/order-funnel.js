@@ -117,6 +117,34 @@ async function addToCart(c) {
       const bad = await client()(`/don-hang/${code2}?k=sai-ma-khoa`);
       ok(bad.status === 302, 'Link sai khóa → không xem được');
 
+      // 2b. Đặt hộ có đổi món: chỉnh giá +/−, bắt buộc lý do, tổng & cọc tính theo giá mới
+      ok(/name="price_adjustment"/.test(ack.text), 'Đặt hộ: có ô "Điều chỉnh giá (đổi món)"');
+      await addToCart(a);
+      const ck3 = await a('/thanh-toan');
+      const base3 = { _csrf: csrf(ck3.text), order_source: 'zalo', customer_name: 'Anh Tùng Zalo', phone: '0966333555',
+        province: 'Hà Nội', address: '9 Lý Thường Kiệt', delivery_date: deliveryDate, payment_method: 'bank' };
+      const noNote = await a('/thanh-toan', { method: 'POST', form: { ...base3, price_adjustment: '+150.000' } });
+      ok(noNote.status === 422 && /Ghi lý do điều chỉnh/.test(noNote.text) && /value="\+150\.000"/.test(noNote.text), 'Chỉnh giá không ghi lý do → báo lỗi, giữ số đã nhập');
+      const r3 = await a('/thanh-toan', { method: 'POST', form: { ...base3, _csrf: csrf(noNote.text), price_adjustment: '+150.000', adjustment_note: 'đổi vang sang trà Shan tuyết' } });
+      const code3 = (/\/don-hang\/(LN\w+)/.exec(r3.location || '') || [])[1];
+      codes.push(code3);
+      const o3 = await db('orders').where({ code: code3 }).first();
+      ok(o3 && o3.adjustment === 150000 && o3.total === o3.subtotal - o3.discount + o3.shipping_fee + o3.vat_fee + 150000 && /Shan tuyết/.test(o3.adjustment_note), 'Đơn đổi món: tổng tiền cộng thêm 150.000đ, lưu lý do');
+      const p3 = await a(r3.location);
+      ok(/Điều chỉnh \(đổi vang sang trà Shan tuyết\)/.test(p3.text), 'Trang đơn hiện dòng điều chỉnh giá');
+      const tooLow = await (async () => { await addToCart(a); const c = await a('/thanh-toan');
+        return a('/thanh-toan', { method: 'POST', form: { ...base3, _csrf: csrf(c.text), price_adjustment: '-999999999', adjustment_note: 'thử' } }); })();
+      ok(tooLow.status === 422 && /Giảm nhiều hơn tiền hàng/.test(tooLow.text), 'Giảm quá tiền hàng → chặn');
+      const guest = client();
+      await addToCart(guest);
+      const gck = await guest('/thanh-toan');
+      ok(!/name="price_adjustment"/.test(gck.text), 'Khách thường không thấy ô chỉnh giá');
+      const gr = await guest('/thanh-toan', { method: 'POST', form: { ...base3, _csrf: csrf(gck.text), phone: '0966333666', price_adjustment: '-500000', adjustment_note: 'hack' } });
+      const gcode = (/\/don-hang\/(LN\w+)/.exec(gr.location || '') || [])[1];
+      codes.push(gcode);
+      const go = gcode && await db('orders').where({ code: gcode }).first();
+      ok(go && go.adjustment === 0, 'Khách tự gửi price_adjustment → bị bỏ qua');
+
       const adm = await a(`/admin/don-hang?nguon=facebook`);
       ok(adm.text.includes(code2) && !adm.text.includes(code1), 'Admin lọc đơn theo kênh Facebook');
       const dash = await a('/admin');

@@ -361,6 +361,20 @@
   );
 
   /* Thanh toán: ghi nhớ thông tin người đặt trên máy này (lần sau khỏi gõ lại) */
+  // Đặt hộ: xem trước tổng sau điều chỉnh giá (đổi món)
+  const adj = $('[data-adjust]');
+  if (adj) {
+    const prev = $('[data-adjust-preview]');
+    const totalEl = $('[data-total]');
+    const show = () => {
+      const n = Number(String(adj.value).replace(/[^\d-]/g, '').replace(/(?!^)-/g, ''));
+      const base = Number(totalEl?.dataset.base || 0);
+      prev.textContent = adj.value.trim() && Number.isFinite(n) && n ? `Tổng sau điều chỉnh: ${(base + n).toLocaleString('vi-VN')}₫ (chưa gồm phí VAT nếu có)` : '';
+    };
+    adj.addEventListener('input', show);
+    show();
+  }
+
   const ckForm = $('[data-checkout]');
   if (ckForm && !('staff' in ckForm.dataset)) {
     const KEY = 'll_buyer';

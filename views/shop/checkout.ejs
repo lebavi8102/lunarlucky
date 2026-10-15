@@ -28,6 +28,14 @@
         <select class="select" name="order_source" style="width:auto;min-height:40px">
           <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web' && k !== 'ai').forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
         </select></label>
+      <div class="staff-adjust">
+        <label><span class="small">Điều chỉnh giá (đổi món)</span>
+          <input class="input <%= errors.price_adjustment ? 'is-invalid' : '' %>" name="price_adjustment" inputmode="numeric" placeholder="vd: 150000 hoặc -80000" value="<%= values.price_adjustment || '' %>" data-adjust></label>
+        <label><span class="small">Lý do</span>
+          <input class="input <%= errors.adjustment_note ? 'is-invalid' : '' %>" name="adjustment_note" maxlength="200" placeholder="vd: đổi vang sang trà Shan tuyết" value="<%= values.adjustment_note || '' %>"></label>
+        <span class="small" data-adjust-preview></span>
+        <% if (errors.price_adjustment || errors.adjustment_note) { %><span class="small" style="color:var(--danger, #b42318);flex-basis:100%"><%= errors.price_adjustment || errors.adjustment_note %></span><% } %>
+      </div>
     </div>
     <% } %>
     <input type="hidden" name="cart_snapshot" value="<%= JSON.stringify(cart.lines.filter(l => l.productId).map(l => ({ id: l.productId, qty: l.qty }))) %>">

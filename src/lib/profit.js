@@ -62,7 +62,7 @@ async function report({ from, to }) {
   const orders = await db('orders')
     .where('created_at', '>=', start)
     .andWhere('created_at', '<', end)
-    .select('id', 'code', 'status', 'payment_status', 'payment_method', 'subtotal', 'discount', 'shipping_fee', 'vat_fee', 'total', 'created_at');
+    .select('id', 'code', 'status', 'payment_status', 'payment_method', 'subtotal', 'discount', 'adjustment', 'shipping_fee', 'vat_fee', 'total', 'created_at');
   const paid = orders.filter(isPaid);
   const pending = orders.filter((o) => o.status !== 'cancelled' && !isPaid(o));
 
@@ -91,7 +91,7 @@ async function report({ from, to }) {
   }
 
   const sum = (arr, f) => arr.reduce((a, x) => a + (Number(f(x)) || 0), 0);
-  const goods = sum(paid, (o) => o.subtotal - o.discount);
+  const goods = sum(paid, (o) => o.subtotal - o.discount + (Number(o.adjustment) || 0));
   const shipping = sum(paid, (o) => o.shipping_fee);
   const vatCollected = sum(paid, (o) => o.vat_fee);
   const revenue = goods + shipping;
@@ -112,7 +112,7 @@ async function report({ from, to }) {
     const k = bucket(o.created_at);
     const s = series.get(k) || { key: k, orders: 0, revenue: 0, cogs: 0 };
     s.orders += 1;
-    s.revenue += o.subtotal - o.discount + o.shipping_fee;
+    s.revenue += o.subtotal - o.discount + (Number(o.adjustment) || 0) + o.shipping_fee;
     s.cogs += byOrder.get(o.id).cost;
     series.set(k, s);
   }

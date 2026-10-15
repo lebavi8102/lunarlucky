@@ -198,6 +198,24 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     ? `${vat.vat_company} · MST ${vat.vat_tax_code} · ${vat.vat_address} · ${vat.vat_email}`.slice(0, 500)
     : null;
 
+  // Đặt hộ: chỉnh giá khi khách đổi món (dương = đắt hơn, âm = rẻ hơn), bắt buộc ghi lý do
+  let adjustment = 0;
+  let adjustment_note = null;
+  if (isStaff(req)) {
+    const raw = String(req.body.price_adjustment || '').trim();
+    f.values.price_adjustment = raw;
+    if (raw) {
+      const n = Number(raw.replace(/[^\d-]/g, '').replace(/(?!^)-/g, ''));
+      const goodsBase = priced.subtotal - priced.discount;
+      if (!Number.isFinite(n)) f.errors.price_adjustment = 'Số tiền điều chỉnh không hợp lệ (vd: 150000 hoặc -80000).';
+      else if (n < -goodsBase) f.errors.price_adjustment = 'Giảm nhiều hơn tiền hàng — kiểm tra lại số tiền.';
+      else if (n > 100000000) f.errors.price_adjustment = 'Số tiền điều chỉnh quá lớn.';
+      else adjustment = n;
+    }
+    adjustment_note = f.text('adjustment_note', { label: 'lý do điều chỉnh', max: 200 }) || null;
+    if (adjustment && !adjustment_note) f.errors.adjustment_note = 'Ghi lý do điều chỉnh (vd: đổi rượu vang sang trà Shan tuyết).';
+  }
+
   if (priced.couponError) {
     c.coupon = null;
     flash(req, 'error', priced.couponError);
@@ -231,13 +249,14 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     // (đơn còn chờ chuyển khoản/cọc giữ "Mới" để vẫn tự hủy khi quá hạn; tiền về sẽ tự xác nhận)
     status: 'new',
     subtotal: priced.subtotal, discount: priced.discount, shipping_fee: priced.shippingFee,
-    vat_fee: needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0,
+    adjustment, adjustment_note,
+    vat_fee: needs_vat ? payment.vatFee(priced.subtotal - priced.discount + adjustment, res.locals.s) : 0,
     vat_fee_percent: needs_vat ? payment.vatFeePercent(res.locals.s) : null,
-    total: priced.total + (needs_vat ? payment.vatFee(priced.subtotal - priced.discount, res.locals.s) : 0),
+    total: priced.total + adjustment + (needs_vat ? payment.vatFee(priced.subtotal - priced.discount + adjustment, res.locals.s) : 0),
     coupon_code: priced.coupon ? priced.coupon.code : null,
   };
   order.deposit_amount = order.payment_method === 'cod'
-    ? payment.depositFor({ goods: priced.subtotal - priced.discount, qty: priced.count, total: order.total }, res.locals.s)
+    ? payment.depositFor({ goods: priced.subtotal - priced.discount + adjustment, qty: priced.count, total: order.total }, res.locals.s)
     : 0;
   if (isStaff(req) && !payment.awaitingMoney(order)) {
     order.status = 'confirmed';

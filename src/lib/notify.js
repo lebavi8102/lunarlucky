@@ -193,6 +193,7 @@ function orderTelegram(order, items) {
     list,
     '',
     order.discount ? `Giảm giá (${e(order.coupon_code)}): −${money(order.discount)}` : null,
+    Number(order.adjustment) ? `✏️ Điều chỉnh (${e(order.adjustment_note || 'đổi món')}): ${order.adjustment > 0 ? '+' : '−'}${money(Math.abs(order.adjustment))}` : null,
     order.shipping_fee ? `Phí giao: ${money(order.shipping_fee)}` : 'Phí giao: miễn phí',
     order.vat_fee ? `Phí xuất VAT${order.vat_fee_percent ? ` (${Number(order.vat_fee_percent)}%)` : ''}: ${money(order.vat_fee)}` : null,
     `<b>Tổng: ${money(order.total)}</b> · ${order.payment_method === 'bank' ? 'Chuyển khoản' : 'COD'}`,
