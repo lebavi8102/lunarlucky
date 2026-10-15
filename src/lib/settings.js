@@ -36,7 +36,7 @@ const DEFAULTS = {
   shipping_fee: '50000',
   free_ship_threshold: '1500000',
   min_delivery_days: '1',
-  announcement: 'Miễn phí giao hàng toàn quốc cho đơn từ 1.500.000₫ · Đặt trước Tết để chọn ngày giao',
+  announcement: 'Miễn phí giao hàng cho đơn từ 1.500.000₫ · Đặt trước Tết để chọn ngày giao',
   hero_eyebrow: 'Quà Tết an khang, trao trọn phú quý',
   hero_title: 'Trao lời chúc trọn vẹn trong từng giỏ quà',
   hero_subtitle:
