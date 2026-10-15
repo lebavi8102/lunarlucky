@@ -18,7 +18,7 @@ async function render(res, data) {
   res.render('pages/business', { products, ...data });
 }
 
-router.get('/qua-tang-doanh-nghiep', (req, res) => render(res, { values: {}, errors: {}, sent: false }));
+router.get('/qua-tang-doanh-nghiep', (req, res) => render(res, { values: {}, errors: {}, sent: req.query['da-gui'] === '1' }));
 
 router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
   if (req.body.website) return res.redirect('/qua-tang-doanh-nghiep'); // honeypot chống spam
@@ -40,7 +40,12 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
   }
   await db('quotes').insert(q);
   notify.telegram(notify.quoteTelegram(q));
-  render(res, { values: {}, errors: {}, sent: true });
+  if (q.email) {
+    notify.sendMail({ to: q.email, subject: `Lunar Lucky đã nhận yêu cầu báo giá của ${q.company}`, template: 'quote-received', data: { q, s: res.locals.s } })
+      .catch((err) => console.error('[mail] báo giá lỗi:', err.message));
+  }
+  // Chuyển hướng sau khi gửi: tải lại trang không gửi trùng yêu cầu
+  res.redirect(303, '/qua-tang-doanh-nghiep?da-gui=1#bao-gia');
 });
 
 module.exports = router;

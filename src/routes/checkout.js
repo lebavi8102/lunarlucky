@@ -297,7 +297,9 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
   const code = String(req.body.code || '').trim().toUpperCase().slice(0, 20);
   const phone = normalizePhone(req.body.phone);
   const order = code && phone ? await db('orders').where({ code }).first() : null;
-  const match = order && (normalizePhone(order.phone) === phone || normalizePhone(order.recipient_phone) === phone);
+  // So 9 số cuối: khách gõ 0912…, +84 912… hay 84912… đều khớp
+  const same = (a, b) => { const x = String(a || '').replace(/\D/g, '').slice(-9); return x.length === 9 && x === String(b || '').replace(/\D/g, '').slice(-9); };
+  const match = order && (same(order.phone, phone) || same(order.recipient_phone, phone));
   if (!match) {
     res.status(404);
     res.locals.seo.title = 'Tra cứu đơn hàng · Lunar Lucky';
@@ -307,6 +309,11 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
     });
   }
   rememberOrder(req, order.code);
+  // Đang đăng nhập + đúng SĐT người đặt → thêm đơn (đặt trước khi có tài khoản) vào lịch sử
+  const u = req.session.user;
+  if (u && u.role !== 'admin' && !order.user_id && same(order.phone, phone)) {
+    await db('orders').where({ id: order.id }).update({ user_id: u.id });
+  }
   res.redirect(`/don-hang/${order.code}`);
 });
 

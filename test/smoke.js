@@ -138,6 +138,20 @@ async function addToCart(c, slug, qty = 1) {
   ok((await c2('/tra-cuu-don', { method: 'POST', form: { _csrf: tk, code, phone: '0900000001' } })).status === 404, 'Tra cứu sai SĐT bị từ chối');
   ok((await c2('/tra-cuu-don', { method: 'POST', form: { _csrf: tk, code, phone: '0912 345 678' } })).status === 302, 'Tra cứu đúng SĐT');
 
+  // 5b. Đặt trước, tạo tài khoản sau: tra cứu (kể cả gõ +84) → đơn vào lịch sử tài khoản
+  {
+    const u = client();
+    const rg = await u('/dang-ky');
+    const pw = require('crypto').randomBytes(9).toString('base64url');
+    const reg = await u('/dang-ky', { method: 'POST', form: { _csrf: csrf(rg.text), name: 'Khách Thử', email: `smoke-${Date.now()}@example.test`, password: pw } });
+    ok(reg.status === 302, 'Tạo tài khoản khách');
+    const d0 = (await u('/tai-khoan')).text;
+    ok(!d0.includes(code) && /Tra cứu bằng mã đơn \+ SĐT/.test(d0), 'Tài khoản mới: chưa có đơn, có hướng dẫn thêm đơn cũ');
+    const tk2 = csrf((await u('/tra-cuu-don')).text);
+    ok((await u('/tra-cuu-don', { method: 'POST', form: { _csrf: tk2, code, phone: '+84 912 345 678' } })).status === 302, 'Tra cứu bằng SĐT dạng +84');
+    ok((await u('/tai-khoan')).text.includes(code), 'Đơn đặt trước khi có tài khoản → hiện trong lịch sử đơn');
+  }
+
   // 6. Đơn xuất VAT: bắt buộc chuyển khoản, lưu thông tin công ty
   const c3 = client();
   const { t: t3 } = await addToCart(c3, 'gio-an-khang', 1);
@@ -168,7 +182,9 @@ async function addToCart(c, slug, qty = 1) {
   const biz = await c2('/qua-tang-doanh-nghiep');
   const q = await c2('/qua-tang-doanh-nghiep', { method: 'POST', form: { _csrf: csrf(biz.text), company: 'Công ty ABC',
     contact_name: 'Chị Lan', phone: '0909123456', quantity: '120', budget: 'Cần tư vấn' } });
-  ok(q.status === 200 && /đã nhận yêu cầu/.test(q.text), 'Gửi yêu cầu báo giá');
+  ok(q.status === 303 && q.location === '/qua-tang-doanh-nghiep?da-gui=1#bao-gia', 'Gửi yêu cầu báo giá → chuyển trang (tải lại không gửi trùng)');
+  const qd = await c2('/qua-tang-doanh-nghiep?da-gui=1');
+  ok(qd.status === 200 && /đã nhận yêu cầu/.test(qd.text), 'Trang báo đã nhận yêu cầu báo giá');
 
   // 8. Admin
   const a = client();

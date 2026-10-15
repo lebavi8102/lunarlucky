@@ -55,6 +55,8 @@
           <div class="order-hero" style="padding:0"><div class="seal"><svg class="icon"><use href="#i-check"/></svg></div></div>
           <h3 class="h3">Lunar Lucky đã nhận yêu cầu</h3>
           <p class="muted" style="margin-top:8px">Chuyên viên sẽ liên hệ bạn trong vòng 24 giờ làm việc. Cảm ơn bạn đã tin chọn Lunar Lucky.</p>
+          <p class="small muted" style="margin-top:12px">Đã có danh sách người nhận (Excel) hoặc file logo? Gửi luôn qua Zalo để báo giá sát hơn.</p>
+          <div class="hero-cta" style="justify-content:center;margin-top:16px"><a class="btn" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Gửi qua Zalo</a><a class="btn btn-quiet" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>">Cần gấp? Gọi <%= s.shop_phone %></a></div>
         </div>
       <% } else { %>
       <form action="/qua-tang-doanh-nghiep#bao-gia" method="post" novalidate>

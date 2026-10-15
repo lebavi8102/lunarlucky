@@ -24,7 +24,11 @@ function login(req, user) {
       if (err) return reject(err);
       Object.assign(req.session, keep);
       req.session.user = publicUser(user);
-      resolve();
+      // Đơn vừa đặt khi chưa đăng nhập (trên trình duyệt này) → đưa vào lịch sử đơn của tài khoản
+      const codes = keep.myOrders || [];
+      if (!codes.length || user.role === 'admin') return resolve();
+      db('orders').whereIn('code', codes).whereNull('user_id').update({ user_id: user.id })
+        .then(() => resolve(), (e) => { console.error('[tài khoản] gắn đơn lỗi:', e.message); resolve(); });
     });
   });
 }

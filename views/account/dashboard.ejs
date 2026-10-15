@@ -10,7 +10,7 @@
   <section>
     <h2 class="h3" style="margin-bottom:20px">Đơn hàng của tôi</h2>
     <% if (!orders.length) { %>
-      <div class="card card-cream" style="text-align:center"><p class="muted">Bạn chưa có đơn hàng nào.</p><a class="btn" href="/bo-suu-tap" style="margin-top:16px">Chọn giỏ quà đầu tiên</a></div>
+      <div class="card card-cream" style="text-align:center"><p class="muted">Bạn chưa có đơn hàng nào.</p><a class="btn" href="/bo-suu-tap" style="margin-top:16px">Chọn giỏ quà đầu tiên</a><p class="small muted" style="margin-top:16px">Đã đặt trước khi tạo tài khoản? <a href="/tra-cuu-don" style="color:var(--primary);font-weight:600">Tra cứu bằng mã đơn + SĐT</a> để thêm đơn vào đây.</p></div>
     <% } else { %>
     <div class="table-wrap">
       <table class="table">
@@ -28,6 +28,7 @@
         </tbody>
       </table>
     </div>
+    <p class="small muted" style="margin-top:12px">Thiếu đơn đặt trước khi tạo tài khoản? <a href="/tra-cuu-don" style="color:var(--primary)">Tra cứu bằng mã đơn + SĐT</a> để thêm vào đây.</p>
     <% } %>
   </section>
   <aside class="card">
