@@ -52,6 +52,38 @@ async function addToCart(c) {
     const o1 = await db('orders').where({ code: code1 }).first();
     ok(o1 && o1.source === 'zalo' && !o1.created_by, `Khách vào từ link ?nguon=zalo → đơn ghi kênh Zalo (${o1 && o1.source})`);
 
+    // Hết hàng đúng lúc đặt: không bán lố, không âm thầm đặt đơn khác ý khách, luôn có lời báo
+    {
+      const kn = await db('products').where({ slug: 'gio-kim-ngan' }).first();
+      const ak = await db('products').where({ slug: 'gio-an-khang' }).first();
+      const stockKn = kn.stock;
+      const X = client();
+      const pg = await X('/san-pham/gio-kim-ngan');
+      await X('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(pg.text), product_id: kn.id, qty: 1 } });
+      await X('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(pg.text), product_id: ak.id, qty: 1 } });
+      const ck = await X('/thanh-toan');
+      await db('products').where({ id: kn.id }).update({ stock: 0 }); // khách khác vừa mua mất
+      const form = { _csrf: csrf(ck.text), customer_name: 'Khách Hai Mẫu', phone: '0966777888', province: 'Hà Nội', address: '3 Lý Thái Tổ', delivery_date: deliveryDate, payment_method: 'bank', card_message: 'Chúc mừng năm mới' };
+      const r1 = await X('/thanh-toan', { method: 'POST', form });
+      ok(r1.status === 409 && /Giỏ hàng vừa thay đổi/.test(r1.text) && /Giỏ Kim Ngân/.test(r1.text) && /Khách Hai Mẫu/.test(r1.text) && /Chúc mừng năm mới/.test(r1.text),
+        'Giỏ 2 mẫu, 1 mẫu vừa hết → KHÔNG tự đặt; báo rõ, giữ nguyên thông tin đã điền');
+      const r2 = await X('/thanh-toan', { method: 'POST', form: { ...form, _csrf: csrf(r1.text) } });
+      const code2b = (/\/don-hang\/(LN\w+)/.exec(r2.location || '') || [])[1];
+      codes.push(code2b);
+      ok(r2.status === 302 && code2b, 'Khách xem lại rồi bấm Đặt hàng → đặt được mẫu còn lại');
+      // Chỉ còn đúng mẫu vừa hết → về giỏ hàng kèm lời báo (không phải "giỏ trống" không lý do)
+      const Y = client();
+      await db('products').where({ id: kn.id }).update({ stock: 1 });
+      const pg2 = await Y('/san-pham/gio-kim-ngan');
+      await Y('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(pg2.text), product_id: kn.id, qty: 1 } });
+      const ck2 = await Y('/thanh-toan');
+      await db('products').where({ id: kn.id }).update({ stock: 0 });
+      const r3 = await Y('/thanh-toan', { method: 'POST', form: { ...form, _csrf: csrf(ck2.text) } });
+      const cartPage = await Y(r3.location || '/gio-hang');
+      ok(r3.status === 302 && /vừa hết hàng/.test(cartPage.text) && /chọn mẫu khác/.test(cartPage.text), 'Mẫu duy nhất vừa hết → về giỏ hàng có lời báo rõ ràng');
+      await db('products').where({ id: kn.id }).update({ stock: stockKn });
+    }
+
     if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
       console.log('… bỏ qua phần đặt hộ (chưa có ADMIN_EMAIL/ADMIN_PASSWORD trong .env)');
     } else {

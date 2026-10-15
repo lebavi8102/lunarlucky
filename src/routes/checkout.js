@@ -92,7 +92,11 @@ function checkoutDefaults(req) {
 
 router.get('/thanh-toan', async (req, res) => {
   const priced = await cart.priceCart(cart.getCart(req));
-  if (!priced.lines.length) return res.redirect('/gio-hang');
+  if (!priced.lines.length) {
+    // Giỏ vừa hết hàng (khách khác mua mất) → mang lời báo về trang giỏ, không để khách thấy giỏ trống không lý do
+    if (priced.notices.length) flash(req, 'error', `${priced.notices.join(' ')} Mời bạn chọn mẫu khác hoặc nhắn Lunar Lucky để được gợi ý.`);
+    return res.redirect('/gio-hang');
+  }
   res.locals.seo.title = 'Thanh toán · Lunar Lucky';
   res.locals.seo.noindex = true;
   // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
@@ -115,14 +119,22 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     }
   }
   const priced = await cart.priceCart(c);
-  if (!priced.lines.length) return res.redirect('/gio-hang');
+  if (!priced.lines.length) {
+    // Giỏ vừa hết hàng (khách khác mua mất) → mang lời báo về trang giỏ, không để khách thấy giỏ trống không lý do
+    if (priced.notices.length) flash(req, 'error', `${priced.notices.join(' ')} Mời bạn chọn mẫu khác hoặc nhắn Lunar Lucky để được gợi ý.`);
+    return res.redirect('/gio-hang');
+  }
 
   const minDays = minDaysFor(req.body.province, res.locals.s, priced.count);
-  if (req.csrfFailed) {
+  // Hết phiên, hoặc giỏ vừa thay đổi do hết hàng (khách khác mua mất) → không tự đặt đơn khác với ý khách:
+  // hiện lại form với thông tin đã điền + lời báo, khách xem lại rồi bấm Đặt hàng
+  if (req.csrfFailed || priced.notices.length) {
     res.status(409);
     res.locals.seo.title = 'Thanh toán · Lunar Lucky';
     res.locals.seo.noindex = true;
-    res.locals.flash = { type: 'info', message: 'Trang đã mở khá lâu nên cần xác nhận lại. Thông tin của bạn vẫn còn — kiểm tra rồi bấm "Đặt hàng" lần nữa.' };
+    res.locals.flash = req.csrfFailed
+      ? { type: 'info', message: 'Trang đã mở khá lâu nên cần xác nhận lại. Thông tin của bạn vẫn còn — kiểm tra rồi bấm "Đặt hàng" lần nữa.' }
+      : { type: 'error', message: `Giỏ hàng vừa thay đổi: ${priced.notices.join(' ')} Bạn kiểm tra lại đơn rồi bấm "Đặt hàng" lần nữa.` };
     const values = { ...checkoutDefaults(req), ...req.body };
     delete values._csrf;
     delete values.cart_snapshot;
