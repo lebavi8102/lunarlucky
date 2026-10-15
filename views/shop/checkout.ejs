@@ -52,7 +52,7 @@
 
         <div style="margin-top:16px">
           <p class="label" style="margin-bottom:8px">Ngày giao mong muốn</p>
-          <div class="date-picks" role="group" aria-label="Chọn nhanh ngày giao">
+          <div class="date-picks" role="group" aria-label="Chọn nhanh ngày giao" data-date-rules='<%- JSON.stringify(typeof dateRules !== "undefined" ? dateRules : {}) %>'>
             <% const wd = (d) => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][new Date(d + 'T00:00:00Z').getUTCDay()]; %>
             <% (quickDates || []).forEach((d, i) => { %>
               <button type="button" class="date-pick" data-date-pick="<%= d %>" aria-pressed="<%= values.delivery_date === d %>">
@@ -61,6 +61,7 @@
             <% }) %>
             <button type="button" class="date-pick" data-date-other aria-pressed="<%= !!(values.delivery_date && !(quickDates || []).includes(values.delivery_date)) %>"><b>Ngày khác</b><span>Chọn lịch</span></button>
           </div>
+          <p class="small muted" data-date-hint style="margin-top:8px" <%= /hà nội/i.test(values.province || 'Hà Nội') ? 'hidden' : '' %>>Giao ngoài Hà Nội đi chuyển phát 2–4 ngày, sớm nhất từ <b data-date-hint-day><%= minDate.split('-').reverse().join('/') %></b>.</p>
           <div data-date-input style="margin-top:10px" <%= values.delivery_date && (quickDates || []).includes(values.delivery_date) && !errors.delivery_date ? 'hidden' : '' %>>
             <%- include('../partials/field', { name: 'delivery_date', label: 'Chọn ngày giao', type: 'date', required: true, min: minDate, max: maxDate }) %>
           </div>

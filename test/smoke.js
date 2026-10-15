@@ -112,6 +112,16 @@ async function addToCart(c, slug, qty = 1) {
     ok(gift.status === 302 && /Chuyển khoản · /.test(gpage.text) && !/COD · /.test(gpage.text), 'Đơn gửi tặng chọn COD → tự chuyển sang chuyển khoản');
   }
 
+  // 4c2. Giao tỉnh (chuyển phát 2–4 ngày) → không cho chọn giao ngày mai
+  {
+    const g = client();
+    const { t } = await addToCart(g, 'gio-an-khang', 1);
+    const tomorrow = new Date(Date.now() + 86400000 + 7 * 3600000).toISOString().slice(0, 10);
+    const r = await g('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'Khách Sài Gòn', phone: '0912345678', province: 'TP. Hồ Chí Minh',
+      address: '1 Lê Lợi, Quận 1', delivery_date: tomorrow, payment_method: 'bank' } });
+    ok(r.status === 422 && /Giao ngoài Hà Nội đi chuyển phát/.test(r.text), 'Giao TP.HCM chọn ngày mai → báo cần chọn từ ngày sớm nhất cho tỉnh');
+  }
+
   // 4d. Cọc COD: 2 giỏ → phải cọc 30%; 1 giỏ dưới 1 triệu → không cọc
   {
     const cheap = (await c('/bo-suu-tap?sap_xep=gia-tang')).text.match(/name="product_id" value="(\d+)"/)[1];

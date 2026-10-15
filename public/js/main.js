@@ -296,6 +296,43 @@
         }
       }),
     );
+
+    // Đổi tỉnh: Hà Nội giao sớm, tỉnh khác chuyển phát 2–4 ngày → đẩy ngày sớm nhất + nút chọn nhanh
+    const box = $('[data-date-rules]');
+    let rules = {};
+    try { rules = JSON.parse(box?.dataset.dateRules || '{}'); } catch { /* bỏ qua */ }
+    const province = $('select[name=province]');
+    const hint = $('[data-date-hint]');
+    const addDays = (ymd, n) => { const d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const WD = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const applyProvince = () => {
+      if (!province || !rules.hn) return;
+      const hn = /hà nội/i.test(province.value.normalize('NFC'));
+      const min = hn ? rules.hn : rules.tinh;
+      if (input.min === min) return;
+      input.min = min;
+      const quick = $$('[data-date-pick]');
+      quick.forEach((b, i) => {
+        const d = addDays(min, i);
+        b.dataset.datePick = d;
+        b.innerHTML = `<b>${i === 0 ? 'Sớm nhất' : WD[new Date(d + 'T00:00:00Z').getUTCDay()]}</b><span>${d.slice(8)}/${d.slice(5, 7)}</span>`;
+      });
+      if (hint) {
+        hint.hidden = hn;
+        const day = $('[data-date-hint-day]', hint);
+        if (day) day.textContent = min.split('-').reverse().join('/');
+      }
+      // Ngày đang chọn sớm hơn mức cho phép → chuyển về ngày sớm nhất
+      if (!input.value || input.value < min) {
+        input.value = min;
+        if (quick[0]) { press(quick[0]); dateInputWrap.hidden = true; }
+      } else {
+        const match = quick.find((b) => b.dataset.datePick === input.value);
+        if (match) press(match);
+      }
+    };
+    province?.addEventListener('change', applyProvince);
+    applyProvince();
   }
 
   /* Thanh toán: bấm chọn lời chúc có sẵn */
@@ -323,7 +360,7 @@
         const el = ckForm.elements[n];
         if (!el || !saved[n]) return;
         if (n === 'province') {
-          if (!hasErrors && [...el.options].some((o) => o.value === saved[n])) { el.value = saved[n]; filled = true; }
+          if (!hasErrors && [...el.options].some((o) => o.value === saved[n])) { el.value = saved[n]; filled = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
         } else if (!el.value) { el.value = saved[n]; filled = true; }
       });
       if (filled) $('[data-remember-note]')?.removeAttribute('hidden');

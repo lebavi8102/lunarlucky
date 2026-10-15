@@ -28,7 +28,37 @@ const STEPS = [
 const ACTIONS = { c: 'confirmed', p: 'packing', s: 'shipping', d: 'completed' };
 const STATUS_ICON = { new: '🆕', confirmed: '✅', packing: '📦', shipping: '🚚', completed: '🎉', cancelled: '❌' };
 
-function messageText(order, items) {
+/**
+ * Ghi chú cho người xử lý: đơn ngoài Hà Nội (gửi chuyển phát sớm), khách quen / hay hủy, đơn có thể trùng.
+ * Tính từ database nên dùng chung khi gửi tin mới và khi sửa tin.
+ */
+async function opsNotes(order) {
+  const notes = [];
+  if (!/hà nội/i.test(String(order.province || '')) && order.delivery_date && order.status !== 'cancelled' && order.status !== 'completed') {
+    const s = await settings.all();
+    const lead = Math.max(1, (Number(s.province_min_days) || 3) - 1);
+    const d = new Date(String(order.delivery_date).slice(0, 10) + 'T00:00:00Z');
+    if (!Number.isNaN(d.getTime())) {
+      d.setUTCDate(d.getUTCDate() - lead);
+      notes.push(`🚛 <b>Ngoài Hà Nội</b> · gửi chuyển phát <b>muộn nhất ${d.toISOString().slice(0, 10).split('-').reverse().join('/')}</b>`);
+    }
+  }
+  const tail = String(order.phone || '').replace(/\D/g, '').slice(-9);
+  if (tail.length === 9) {
+    const others = await db('orders').where('phone', 'like', `%${tail}`).whereNot('id', order.id).select('id', 'code', 'status', 'created_at');
+    const created = new Date(order.created_at || Date.now()).getTime();
+    // Đơn cũ hơn 2 giờ mới tính là "đã mua trước" (đơn sát giờ là nghi trùng, xét riêng bên dưới)
+    const done = others.filter((o) => o.status !== 'cancelled' && new Date(o.created_at).getTime() < created - 2 * 3600000).length;
+    const cancelled = others.filter((o) => o.status === 'cancelled').length;
+    if (done) notes.push(`⭐ Khách quen · đã mua ${done} đơn trước`);
+    if (cancelled >= 2) notes.push(`⚠️ SĐT này đã có <b>${cancelled} đơn hủy</b> — gọi xác nhận kỹ trước khi giao`);
+    const dup = others.find((o) => o.status !== 'cancelled' && Math.abs(new Date(o.created_at).getTime() - created) < 2 * 3600000);
+    if (dup) notes.push(`⚠️ <b>Có thể trùng đơn</b> ${e(dup.code)} (cùng SĐT, đặt cách nhau dưới 2 giờ) — kiểm tra trước khi soạn`);
+  }
+  return notes.join('\n') || null;
+}
+
+function messageText(order, items, notes = null) {
   const head = notify
     .orderTelegram(order, items)
     .replace(/🧧 <b>ĐƠN MỚI /, '🧧 <b>ĐƠN ')
@@ -61,6 +91,7 @@ function messageText(order, items) {
   return [
     head,
     '',
+    notes,
     vat,
     `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
     order.status === 'cancelled' && order.payment_status === 'paid' ? '⚠️ <b>Khách đã thanh toán — cần hoàn tiền</b>' : null,
@@ -125,7 +156,8 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false } = {})
 /** Gửi tin đơn mới vào nhóm, nhớ message_id để sau này sửa tin khi đổi trạng thái. */
 async function sendNewOrder(order, items) {
   try {
-    const msg = await notify.telegram(messageText(order, items).replace('🧧 <b>ĐƠN ', '🧧 <b>ĐƠN MỚI '), null, {
+    const notes = await opsNotes(order).catch(() => null);
+    const msg = await notify.telegram(messageText(order, items, notes).replace('🧧 <b>ĐƠN ', '🧧 <b>ĐƠN MỚI '), null, {
       reply_markup: keyboard(order),
     });
     if (msg && msg.message_id) {
@@ -145,7 +177,7 @@ async function refreshOrderMessage(orderId, opts = {}) {
     await notify.tgApi('editMessageText', {
       chat_id: order.tg_chat_id,
       message_id: Number(order.tg_message_id),
-      text: messageText(order, items),
+      text: messageText(order, items, await opsNotes(order).catch(() => null)),
       parse_mode: 'HTML',
       disable_web_page_preview: true,
       reply_markup: keyboard(order, opts),
@@ -480,5 +512,5 @@ async function ensureWebhook() {
 }
 
 module.exports = {
-  sendNewOrder, refreshOrderMessage, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder,
+  sendNewOrder, refreshOrderMessage, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder, opsNotes,
 };

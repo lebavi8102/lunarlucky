@@ -138,6 +138,33 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     await db('products').where({ id: p.id }).update({ stock: prod.stock });
   }
 
+  // Ghi chú cho người xử lý: ngoài Hà Nội, khách quen, hay hủy, có thể trùng đơn
+  {
+    const mk = async (o) => {
+      const [r] = await db('orders').insert({ customer_name: 'Khách', phone: '0933111222', address: 'x', delivery_date: '2026-12-20', payment_method: 'cod',
+        payment_status: 'pending', status: 'new', subtotal: 1, discount: 0, shipping_fee: 0, total: 1, province: 'Hà Nội', ...o });
+      return typeof r === 'object' ? r.id : r;
+    };
+    const ids = [];
+    const days = (n) => new Date(Date.now() - n * 86400000);
+    ids.push(await mk({ code: 'LN251201OLD1', status: 'completed', created_at: days(300) }));
+    ids.push(await mk({ code: 'LN251201CAN1', status: 'cancelled', created_at: days(200) }));
+    ids.push(await mk({ code: 'LN251201CAN2', status: 'cancelled', created_at: days(100) }));
+    ids.push(await mk({ code: 'LN261015DUP1', created_at: new Date(Date.now() - 20 * 60000) }));
+    ids.push(await mk({ code: 'LN261015HCM1', province: 'TP. Hồ Chí Minh', created_at: new Date() }));
+    const o = await db('orders').where({ id: ids[4] }).first();
+    const notes = await tg.opsNotes(o);
+    ok(/Ngoài Hà Nội.*muộn nhất 18\/12\/2026/.test(notes), 'Đơn ngoài Hà Nội → nhắc gửi chuyển phát muộn nhất 2 ngày trước ngày giao');
+    ok(/Khách quen · đã mua 1 đơn trước/.test(notes), 'Khách đã mua trước → "Khách quen"');
+    ok(/2 đơn hủy/.test(notes), 'SĐT từng hủy 2 đơn → cảnh báo gọi xác nhận');
+    ok(/Có thể trùng đơn<\/b> LN261015DUP1/.test(notes), 'Cùng SĐT đặt 2 đơn gần nhau → cảnh báo trùng đơn');
+    const text = tg.messageText(o, [{ name: 'Giỏ', qty: 1, line_total: 1 }], notes);
+    ok(/Phí giao: miễn phí/.test(text) && /Ngoài Hà Nội/.test(text), 'Tin đơn hiện ghi chú + "Phí giao: miễn phí"');
+    const plain = await tg.opsNotes({ id: -1, phone: '0900000999', province: 'Hà Nội', delivery_date: '2026-12-20', status: 'new', created_at: new Date() });
+    ok(plain === null, 'Khách mới ở Hà Nội → không có ghi chú thừa');
+    await db('orders').whereIn('id', ids).del();
+  }
+
   // Shipper gửi ảnh giao hàng: ảnh + chú thích /anhgiao MÃĐƠN lời khen → lưu web, chờ duyệt
   {
     const [oRaw] = await db('orders').insert({
