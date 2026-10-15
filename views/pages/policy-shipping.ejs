@@ -23,6 +23,12 @@
 <h2>Thời gian giao</h2>
 <p>Bạn chọn <strong>ngày giao mong muốn</strong> khi đặt hàng. Lunar Lucky giao trong khung <strong>8:00 – 20:00</strong> và gọi cho người nhận trước khi giao.</p>
 <ul>
+  <li><strong>Hà Nội:</strong> chọn được buổi giao — sáng (8h–12h), chiều (13h–17h) hoặc tối (18h–20h).</li>
+  <li><strong>Đơn từ <%= s.bulk_min_qty || 5 %> giỏ:</strong> cần <%= s.bulk_min_days || 2 %> ngày chuẩn bị, ngày giao sớm nhất lùi lại tương ứng.</li>
+  <% if (orderDeadline) { %><li><strong>Mùa Tết:</strong> Lunar Lucky giao quà đến hết <strong><%= orderDeadline %></strong><% if (s.tet_closed_from && s.tet_closed_to) { %>; nghỉ giao hàng từ <%= s.tet_closed_from.split('-').reverse().join('/') %> đến <%= s.tet_closed_to.split('-').reverse().join('/') %><% } %>.</li><% } %>
+  <li>Khi quà tới tay, Lunar Lucky gửi <strong>ảnh xác nhận</strong> cho người đặt.</li>
+</ul>
+<ul>
   <li><strong>Đơn chuyển khoản:</strong> được chuẩn bị và giao ngay sau khi Lunar Lucky nhận được thanh toán.</li>
   <li><strong>Đơn COD:</strong> Lunar Lucky gọi xác nhận trước khi chuẩn bị và giao; tiền được tài xế (Ahamove hoặc đơn vị vận chuyển) thu hộ khi giao.</li>
   <li>Mùa cao điểm (từ 15 tháng Chạp), bạn nên đặt trước 5–7 ngày, đơn đi tỉnh nên đặt sớm hơn.</li>

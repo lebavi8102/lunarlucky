@@ -25,12 +25,12 @@ router.get('/:page', (req, res, next) => {
     res.locals.jsonLd.push({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: require('../lib/faq').map((f) => ({
+      mainEntity: require('../lib/faq')(res.locals.s).map((f) => ({
         '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a },
       })),
     });
   }
-  res.render(`pages/${p.view}`, { page: p, faqs: require('../lib/faq') });
+  res.render(`pages/${p.view}`, { page: p, faqs: require('../lib/faq')(res.locals.s) });
 });
 
 module.exports = router;
