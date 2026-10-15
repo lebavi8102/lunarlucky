@@ -95,6 +95,13 @@ const ok = (c, m) => {
     const html = await require('ejs').renderFile(require('path').join(__dirname, '../views/emails/backup.ejs'), { ...bk.data, ymd: require('../src/lib/format').ymd, money: require('../src/lib/format').money, siteUrl: 'x' });
     ok(/Sao lưu dữ liệu ngày/.test(html), 'Email sao lưu hiển thị đúng');
 
+    // Tin chờ chuyển khoản → chủ đề TIỀN VỀ (/chontien), không vào chủ đề đơn hàng của kho
+    await tg.handleUpdate({ message: { message_id: 10, chat: { id: -100777, type: 'supergroup' }, is_topic_message: true, message_thread_id: 36, from: { first_name: 'Chủ' }, text: '/chontien' } });
+    ok((await settings.all()).telegram_money_thread === '36', '/chontien lưu chủ đề tiền về');
+    sent.length = 0;
+    await require('../src/lib/bank-payments').notifyWaiting({ id: -1, code: 'LN26OPSWAIT', customer_name: 'K', phone: '0900', total: 100000, payment_method: 'bank', payment_status: 'pending', deposit_amount: 0, delivery_date: today, created_at: new Date() });
+    ok(sent.some((x) => x.method === 'sendMessage' && x.body.message_thread_id === 36), 'Tin "chờ chuyển khoản" vào chủ đề TIỀN VỀ');
+
     // Không gửi trùng khi máy chủ khởi động lại
     await settings.save({ ops_morning_last: today, ops_evening_last: today });
     sent.length = 0;
@@ -106,7 +113,7 @@ const ok = (c, m) => {
   } finally {
     await db('order_items').whereIn('order_id', ids).del();
     await db('orders').whereIn('id', ids).del();
-    await settings.save({ telegram_order_thread: before.telegram_order_thread, telegram_ops_thread: before.telegram_ops_thread });
+    await settings.save({ telegram_order_thread: before.telegram_order_thread, telegram_ops_thread: before.telegram_ops_thread, telegram_money_thread: before.telegram_money_thread });
     await settings.save({ telegram_chat_id: before.telegram_chat_id, ops_morning_last: before.ops_morning_last, ops_evening_last: before.ops_evening_last });
     await db.destroy();
   }

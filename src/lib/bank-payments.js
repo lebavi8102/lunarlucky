@@ -10,6 +10,8 @@ const notify = require('./notify');
 const settings = require('./settings');
 const { updateOrder } = require('./orders');
 const payment = require('./payment');
+// Tin về tiền (chờ chuyển khoản/cọc, chuyển thiếu, chuyển dư…) → chủ đề TIỀN VỀ (/chontien); chưa chọn thì vào chủ đề đơn hàng
+const MONEY = { topic: 'money' };
 
 const CODE_RE = /LN\d{6}[A-Z2-9]{4}/;
 
@@ -64,12 +66,12 @@ async function handleSepay(tx) {
   const order = await db('orders').where({ code }).first();
   if (!order) {
     await save('unknown_order');
-    await notify.telegram(`💸 Tiền vào <b>${money(amount)}</b> có mã <b>${code}</b> nhưng không tìm thấy đơn.\nNội dung: ${notify.escapeTg(content)}`);
+    await notify.telegram(`💸 Tiền vào <b>${money(amount)}</b> có mã <b>${code}</b> nhưng không tìm thấy đơn.\nNội dung: ${notify.escapeTg(content)}`, null, MONEY);
     return { result: 'unknown_order' };
   }
   if (order.payment_status === 'paid') {
     await save('already_paid', order.id);
-    await notify.telegram(`💸 Đơn <b>${code}</b> đã thanh toán trước đó, nay nhận thêm <b>${money(amount)}</b> — kiểm tra khách chuyển trùng.`);
+    await notify.telegram(`💸 Đơn <b>${code}</b> đã thanh toán trước đó, nay nhận thêm <b>${money(amount)}</b> — kiểm tra khách chuyển trùng.`, null, MONEY);
     return { result: 'already_paid' };
   }
   // Số tiền cần lúc này: cả đơn (CK), tiền cọc (COD chờ cọc), hoặc phần còn lại (COD đã cọc)
@@ -79,6 +81,7 @@ async function handleSepay(tx) {
     await save('underpaid', order.id);
     await notify.telegram(
       `⚠️ Đơn <b>${code}</b> chuyển thiếu: nhận <b>${money(amount)}</b> / cần ${money(due)}${due !== Number(order.total) ? ' (tiền cọc)' : ''} (thiếu ${money(due - amount)}).\nLiên hệ khách: ${notify.escapeTg(order.customer_name)} · ${notify.escapeTg(order.phone)}`,
+      null, MONEY,
     );
     return { result: 'underpaid' };
   }
@@ -90,7 +93,7 @@ async function handleSepay(tx) {
   await save(`${changes.payment_status}${order.status === 'cancelled' ? '_restored' : ''}`, order.id);
   const over = changes.payment_status === 'paid' ? amount - remaining : amount - due;
   if (over > 0 && changes.payment_status === 'paid') {
-    await notify.telegram(`ℹ️ Đơn <b>${code}</b> khách chuyển dư ${money(over)}.`);
+    await notify.telegram(`ℹ️ Đơn <b>${code}</b> khách chuyển dư ${money(over)}.`, null, MONEY);
   }
   return { result: changes.payment_status, orderId: order.id };
 }
@@ -117,7 +120,7 @@ function waitText(order, state) {
 /** Đơn chuyển khoản vừa đặt (đang giữ chờ tiền): báo nhóm biết có khách, chưa có nút xử lý. */
 async function notifyWaiting(order) {
   try {
-    const msg = await notify.telegram(waitText(order, 'wait'));
+    const msg = await notify.telegram(waitText(order, 'wait'), null, MONEY);
     if (msg && msg.message_id) await db('orders').where({ id: order.id }).update({ tg_wait_message_id: msg.message_id });
   } catch (err) {
     console.error('[telegram] báo đơn chờ CK lỗi:', err.message);

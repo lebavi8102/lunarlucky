@@ -4,9 +4,9 @@
   Chào <%= order.customer_name %>,<br>
   <% if (order.status === 'confirmed') { %>Lunar Lucky đã xác nhận đơn quà của bạn và đang chuẩn bị đóng gói.<% } %>
   <% if (order.status === 'shipping') { %>Giỏ quà đang trên đường giao đến <%= order.is_gift ? order.recipient_name : 'bạn' %>. Nhân viên sẽ gọi trước khi giao.<% } %>
-  <% if (order.status === 'completed') { %>Giỏ quà đã được giao thành công. Cảm ơn bạn đã chọn Lunar Lucky để gửi lời chúc Tết.<% } %>
+  <% if (order.status === 'completed') { %><% if (order.is_gift) { %>Giỏ quà đã được trao tận tay <b><%= order.recipient_name %></b>. Lunar Lucky sẽ gửi bạn ảnh xác nhận lúc giao.<% } else { %>Giỏ quà đã được giao thành công.<% } %> Cảm ơn bạn đã chọn Lunar Lucky để gửi lời chúc Tết.<% } %>
   <% if (order.status === 'cancelled' && typeof expired !== 'undefined' && expired) { %>Đơn đã tự hủy vì quá thời gian giữ hàng mà Lunar Lucky chưa nhận được <%= order.payment_method === 'cod' ? 'tiền cọc' : 'chuyển khoản' %>. Bạn không mất khoản phí nào. Nếu bạn đã chuyển tiền, hãy trả lời email này kèm ảnh giao dịch — đơn sẽ được khôi phục ngay.<br><br>Vẫn muốn gửi giỏ quà này? Đặt lại chỉ mất 1 phút.
-  <% } else if (order.status === 'cancelled') { %>Đơn hàng đã được hủy.<% if (order.payment_status === 'paid' || order.payment_status === 'deposit') { %> Khoản bạn đã thanh toán sẽ được Lunar Lucky liên hệ hoàn lại trong 3 ngày làm việc.<% } %><% } %>
+  <% } else if (order.status === 'cancelled') { %>Đơn hàng đã được hủy.<% if (order.payment_status === 'paid') { %> Khoản bạn đã thanh toán sẽ được Lunar Lucky liên hệ hoàn lại trong 3 ngày làm việc.<% } else if (order.payment_status === 'deposit') { %> Về tiền cọc đã chuyển, Lunar Lucky sẽ liên hệ bạn để xử lý theo <a href="<%= siteUrl %>/chinh-sach-doi-tra" style="color:#7a1622">chính sách hoàn cọc</a> (hoàn 100% nếu shop không giao được hoặc bạn hủy trước khi giỏ được chuẩn bị).<% } %><% } %>
 </p>
 <% if (order.status === 'cancelled' && typeof expired !== 'undefined' && expired) { %>
 <p style="margin:24px 0 0"><a href="<%= siteUrl %>/bo-suu-tap" style="display:inline-block;background:#7a1622;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">Đặt lại giỏ quà</a></p>

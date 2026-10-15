@@ -138,7 +138,9 @@ function messageText(order, items, notes = null) {
     vat,
     `${STATUS_ICON[order.status] || '•'} <b>${TG_STATUS[order.status] || ORDER_STATUS[order.status]}</b>`,
     order.status === 'cancelled' && ['paid', 'deposit'].includes(order.payment_status)
-      ? `⚠️ <b>Khách đã ${order.payment_status === 'paid' ? 'thanh toán' : 'đặt cọc'} — cần hoàn ${require('./format').money(order.payment_status === 'paid' ? order.total : order.deposit_amount)}</b> (theo chính sách hoàn cọc)`
+      ? order.payment_status === 'paid'
+        ? `⚠️ <b>Khách đã thanh toán — cần hoàn ${require('./format').money(order.total)}</b>`
+        : `⚠️ <b>Khách đã cọc ${require('./format').money(order.deposit_amount)}</b> — hoàn 100% nếu shop không giao được hoặc khách hủy trước khi soạn hàng; hủy sau khi đã soạn thì giữ cọc`
       : null,
     pay,
     order.cod_collected_by ? `💵 ${e(order.cod_collected_by)} đã thu ${require('./format').money(order.cod_collected_amount || 0)} — tiền đang ở shipper, nộp lại cuối ngày` : null,
@@ -366,7 +368,7 @@ const KHO_HELP = [
   '<code>/giam LL001 2</code> — trừ 2 giỏ (hỏng, bán ngoài web…)',
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
-  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper.',
+  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper, <code>/chontien</code> trong chủ đề tiền về.',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
@@ -503,22 +505,23 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
-  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship') {
+  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
     }
-    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread' }[cmd];
+    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread', chontien: 'telegram_money_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
     return reply(msg, {
       chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
+      chontien: '✅ Từ giờ tin về <b>tiền</b> (đơn chờ chuyển khoản/cọc, khách chuyển thiếu/dư, tiền vào không khớp đơn) gửi vào chủ đề này — chủ đề Đơn hàng chỉ còn đơn đã có tiền để kho soạn.',
       chonship: '✅ Đây là chủ đề <b>SHIPPER</b>. Khi kho bấm "📦 Đã soạn xong", thẻ giao hàng (người nhận, địa chỉ, tiền thu) hiện ở đây với nút <b>Nhận đi giao</b> → <b>Đã giao xong</b>.',
       chonnhac: '✅ Từ giờ <b>tin nhắc việc</b> sẽ gửi vào chủ đề này: 7h sáng việc hôm nay, nhắc đơn quá 2 giờ chưa xác nhận, 21h chốt ngày + tiền COD.',
       chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm số điện thoại khách</b> (vd <code>0912345678 khách khen giỏ đẹp</code>) → bot tự tìm đơn, lưu vào web chờ duyệt.\nQuên ghi số? Trả lời (reply) vào ảnh bằng SĐT khách.',
@@ -575,7 +578,7 @@ async function handleUpdate(update) {
     const from = String(update.message.migrate_from_chat_id || update.message.chat.id);
     const to = String(update.message.migrate_to_chat_id || update.message.chat.id);
     if (current === from && from !== to) {
-      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '', telegram_ship_thread: '' });
+      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '' });
       console.log(`[telegram] nhóm chuyển mã ${from} → ${to}, đã cập nhật`);
     }
     return;
@@ -735,6 +738,7 @@ async function ensureWebhook() {
       { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới' },
       { command: 'chonkho', description: 'Chọn chủ đề này để nhận cảnh báo kho' },
       { command: 'chonanh', description: 'Chọn chủ đề này để shipper gửi ảnh giao hàng' },
+      { command: 'chontien', description: 'Chọn chủ đề này cho tin chờ chuyển khoản / tiền vào' },
       { command: 'chonship', description: 'Chọn chủ đề này cho shipper nhận đơn đi giao' },
       { command: 'chonnhac', description: 'Chọn chủ đề này để nhận tin nhắc việc hằng ngày' },
     ],
