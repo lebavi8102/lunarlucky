@@ -302,7 +302,7 @@ const KHO_HELP = [
   '<code>/giam LL001 2</code> — trừ 2 giỏ (hỏng, bán ngoài web…)',
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
-  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho.',
+  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc.',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
@@ -439,22 +439,23 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
-  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh') {
+  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
     }
-    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread' }[cmd];
+    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
     return reply(msg, {
       chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
+      chonnhac: '✅ Từ giờ <b>tin nhắc việc</b> sẽ gửi vào chủ đề này: 7h sáng việc hôm nay, nhắc đơn quá 2 giờ chưa xác nhận, 21h chốt ngày + tiền COD.',
       chonanh: '✅ Đây là chủ đề <b>ảnh giao hàng</b>. Shipper chỉ cần gửi <b>ảnh kèm số điện thoại khách</b> (vd <code>0912345678 khách khen giỏ đẹp</code>) → bot tự tìm đơn, lưu vào web chờ duyệt.\nQuên ghi số? Trả lời (reply) vào ảnh bằng SĐT khách.',
     }[cmd]);
   }
@@ -509,7 +510,7 @@ async function handleUpdate(update) {
     const from = String(update.message.migrate_from_chat_id || update.message.chat.id);
     const to = String(update.message.migrate_to_chat_id || update.message.chat.id);
     if (current === from && from !== to) {
-      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '' });
+      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '' });
       console.log(`[telegram] nhóm chuyển mã ${from} → ${to}, đã cập nhật`);
     }
     return;
@@ -660,6 +661,7 @@ async function ensureWebhook() {
       { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới' },
       { command: 'chonkho', description: 'Chọn chủ đề này để nhận cảnh báo kho' },
       { command: 'chonanh', description: 'Chọn chủ đề này để shipper gửi ảnh giao hàng' },
+      { command: 'chonnhac', description: 'Chọn chủ đề này để nhận tin nhắc việc hằng ngày' },
     ],
   }).catch((err) => console.error('[telegram] không đặt được menu lệnh:', err.message));
   return { ok: true, url };

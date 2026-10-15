@@ -68,6 +68,20 @@ const ok = (c, m) => {
     ok(/CHỐT NGÀY/.test(ev) && /đã giao 0\/2 đơn/.test(ev) && /LN26OPS0CHIE · Khách · 🛵 Hùng/.test(ev) && /chưa ai nhận giao/.test(ev), 'Tin tối: đơn chưa giao xong + ai đang giữ');
     ok(/TIỀN COD NGÀY/.test(ev), 'Tin tối: kèm đối soát tiền COD');
 
+    // Chủ đề nhắc việc: chưa chọn → vào chủ đề đơn hàng; /chonnhac → vào chủ đề riêng
+    await settings.save({ telegram_order_thread: '11', telegram_ops_thread: '' });
+    await db('orders').where({ code: 'LN26OPS0QUEN' }).update({ ops_reminded_at: null });
+    sent.length = 0;
+    await digest.remindStale();
+    ok(sent.some((x) => x.body.message_thread_id === 11), 'Chưa /chonnhac → tin nhắc vào chủ đề đơn hàng');
+    const tg = require('../src/lib/telegram-orders');
+    await tg.handleUpdate({ message: { message_id: 9, chat: { id: -100777, type: 'supergroup' }, is_topic_message: true, message_thread_id: 77, from: { first_name: 'Chủ' }, text: '/chonnhac' } });
+    ok((await settings.all()).telegram_ops_thread === '77', '/chonnhac lưu chủ đề nhắc việc');
+    await db('orders').where({ code: 'LN26OPS0QUEN' }).update({ ops_reminded_at: null });
+    sent.length = 0;
+    await digest.remindStale();
+    ok(sent.some((x) => x.method === 'sendMessage' && x.body.message_thread_id === 77 && /quá 2 giờ/.test(x.body.text)), 'Sau /chonnhac → tin nhắc vào chủ đề riêng');
+
     // Không gửi trùng khi máy chủ khởi động lại
     await settings.save({ ops_morning_last: today, ops_evening_last: today });
     sent.length = 0;
@@ -79,6 +93,7 @@ const ok = (c, m) => {
   } finally {
     await db('order_items').whereIn('order_id', ids).del();
     await db('orders').whereIn('id', ids).del();
+    await settings.save({ telegram_order_thread: before.telegram_order_thread, telegram_ops_thread: before.telegram_ops_thread });
     await settings.save({ telegram_chat_id: before.telegram_chat_id, ops_morning_last: before.ops_morning_last, ops_evening_last: before.ops_evening_last });
     await db.destroy();
   }

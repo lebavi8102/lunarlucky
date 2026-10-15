@@ -88,7 +88,7 @@ async function remindStale() {
   const lines = [`⏰ <b>${rows.length} đơn mới quá 2 giờ chưa ai xác nhận</b>`];
   for (const o of rows) lines.push(`• ${e(o.code)} · ${e(o.customer_name)} · ${e(o.phone)} · giao ${dm(ymd(o.delivery_date))}`);
   lines.push('Gọi xác nhận với khách rồi bấm "✅ Xác nhận" trên tin đơn.');
-  await notify.telegram(lines.join('\n'));
+  await notify.telegram(lines.join('\n'), null, { topic: 'ops' });
   return rows.length;
 }
 
@@ -101,11 +101,11 @@ async function tick() {
   const eH = Number(s.ops_evening_hour) || 21;
   if (h >= mH && h < eH && s.ops_morning_last !== day) {
     await settings.save({ ops_morning_last: day });
-    await notify.telegram(await morning(day));
+    await notify.telegram(await morning(day), null, { topic: 'ops' });
   }
   if (h >= eH && s.ops_evening_last !== day) {
     await settings.save({ ops_evening_last: day });
-    await notify.telegram(await evening(day));
+    await notify.telegram(await evening(day), null, { topic: 'ops' });
   }
   if (h >= 8 && h < 21) await remindStale();
 }
