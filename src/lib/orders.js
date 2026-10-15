@@ -70,6 +70,12 @@ async function updateOrder(id, changes, { by } = {}) {
   await db.transaction(async (trx) => {
     const goingCancelled = status === 'cancelled' && order.status !== 'cancelled';
     const leavingCancelled = order.status === 'cancelled' && status !== 'cancelled';
+    // Mã giảm giá: hủy đơn → trả lại lượt dùng; khôi phục đơn → tính lại lượt
+    if ((goingCancelled || leavingCancelled) && order.coupon_code) {
+      const c = trx('coupons').whereRaw('UPPER(code) = ?', [String(order.coupon_code).toUpperCase()]);
+      if (goingCancelled) await c.andWhere('used_count', '>', 0).decrement('used_count', 1);
+      else await c.increment('used_count', 1);
+    }
     if (goingCancelled || leavingCancelled) {
       const sign = goingCancelled ? 1 : -1;
       for (const i of items.filter((x) => x.product_id)) {

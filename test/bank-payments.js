@@ -198,6 +198,18 @@ const tx = (n, amount, content, type = 'in') => ({ id: 900000 + n, transferType:
   ok(!sent.some((x) => x.body.text && x.body.text.includes(o4.code)), 'Đã gửi bù rồi thì không gửi lặp');
 
   // Dọn dữ liệu thử
+  // Mã giảm giá: đơn tự hủy vì không trả tiền → trả lại lượt dùng mã
+  {
+    await db('coupons').where({ code: 'TESTLUOT' }).del();
+    await db('coupons').insert({ code: 'TESTLUOT', type: 'fixed', value: 10000, min_order: 0, is_active: true, max_uses: 2, used_count: 2 });
+    const oc = await makeOrder({ coupon_code: 'TESTLUOT', created_at: new Date(Date.now() - 30 * 3600000) });
+    made.push(oc.id);
+    await bank.expireUnpaid();
+    const cp = await db('coupons').where({ code: 'TESTLUOT' }).first();
+    ok((await db('orders').where({ id: oc.id }).first()).status === 'cancelled' && cp.used_count === 1, 'Đơn có mã giảm giá tự hủy → mã được trả lại 1 lượt');
+    await db('coupons').where({ code: 'TESTLUOT' }).del();
+  }
+
   await db('order_items').whereIn('order_id', made).del();
   await db('orders').whereIn('id', made).del();
   await db('bank_transactions').where('id', 'like', 'sepay:9000%').del();
