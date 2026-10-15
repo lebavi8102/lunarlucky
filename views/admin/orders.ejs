@@ -7,9 +7,12 @@
     <% Object.entries(ORDER_STATUS).forEach(([k, v]) => { %><li><a class="chip" href="?status=<%= k %>" aria-current="<%= status === k %>"><%= v %><% if (counts[k]) { %>&nbsp;<b><%= counts[k] %></b><% } %></a></li><% }) %>
     <li><a class="chip" href="?chua_tt=1" aria-current="<%= unpaidOnly %>">Chờ chuyển khoản / chờ cọc</a></li>
   </ul></nav>
-  <nav aria-label="Lọc theo kênh" style="margin-top:8px"><ul class="chips">
-    <% Object.entries(fmt.SOURCES).forEach(([k, v]) => { %><li><a class="chip" href="?nguon=<%= k %>" aria-current="<%= nguon === k %>"><%= v %></a></li><% }) %>
-  </ul></nav>
+  <details class="filter-more" <%= nguon ? 'open' : '' %>>
+    <summary>Lọc theo kênh<%= nguon ? ': ' + fmt.sourceLabel(nguon) : '' %></summary>
+    <nav aria-label="Lọc theo kênh"><ul class="chips">
+      <% Object.entries(fmt.SOURCES).forEach(([k, v]) => { %><li><a class="chip" href="?nguon=<%= k %>" aria-current="<%= nguon === k %>"><%= v %></a></li><% }) %>
+    </ul></nav>
+  </details>
 </div>
 <div class="list-tools">
   <form method="get" role="search">
