@@ -40,6 +40,8 @@ const DEFAULTS = {
   province_min_days: '3',
   telegram_admin_only: '1',
   ops_digest: '1',
+  backup_email: '1',
+  backup_last: '',
   ops_morning_hour: '7',
   ops_evening_hour: '21',
   ops_morning_last: '',

@@ -96,7 +96,9 @@ function messageText(order, items, notes = null) {
     notes,
     vat,
     `${STATUS_ICON[order.status] || '•'} <b>Trạng thái: ${ORDER_STATUS[order.status]}</b>`,
-    order.status === 'cancelled' && order.payment_status === 'paid' ? '⚠️ <b>Khách đã thanh toán — cần hoàn tiền</b>' : null,
+    order.status === 'cancelled' && ['paid', 'deposit'].includes(order.payment_status)
+      ? `⚠️ <b>Khách đã ${order.payment_status === 'paid' ? 'thanh toán' : 'đặt cọc'} — cần hoàn ${require('./format').money(order.payment_status === 'paid' ? order.total : order.deposit_amount)}</b> (theo chính sách hoàn cọc)`
+      : null,
     pay,
     order.cod_collected_by ? `💵 ${e(order.cod_collected_by)} đã thu ${require('./format').money(order.cod_collected_amount || 0)} — tiền đang ở shipper, nộp lại cuối ngày` : null,
     order.shipper && order.status === 'shipping' ? `🛵 <b>Đang giao: ${e(order.shipper)}</b>` : null,
@@ -153,7 +155,9 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false, confir
     };
   }
   if (order.status === 'cancelled') {
-    return { inline_keyboard: [[{ text: '↩️ Khôi phục đơn', callback_data: `o:${id}:r` }, openBtn]] };
+    const rows = [[{ text: '↩️ Khôi phục đơn', callback_data: `o:${id}:r` }, openBtn]];
+    if (['paid', 'deposit'].includes(order.payment_status)) rows.unshift([{ text: '💸 Đã hoàn tiền cho khách', callback_data: `o:${id}:rf` }]);
+    return { inline_keyboard: rows };
   }
   // Đơn đã hoàn tất vẫn hủy được (khách trả hàng, đơn thử...)
   if (order.status === 'completed') {
@@ -237,7 +241,7 @@ async function isGroupAdmin(chatId, userId) {
   return ok;
 }
 function sensitive(action, order) {
-  if (['x', 'xx', 'r', 'rr', 'dp'].includes(action)) return true;
+  if (['x', 'xx', 'r', 'rr', 'dp', 'rf'].includes(action)) return true;
   return action === '$' && order.payment_method === 'bank';
 }
 
@@ -618,6 +622,7 @@ async function handleUpdate(update) {
   else if (action === '$') changes = { payment_status: 'paid' };
   else if (action === 'dc') changes = { status: 'completed', payment_status: 'paid' };
   else if (action === 'dn') changes = { status: 'completed' };
+  else if (action === 'rf') changes = o0.status === 'cancelled' ? { payment_status: 'refunded' } : null;
   else if (action === 'dp') changes = { payment_status: 'deposit' };
   if (!changes) return answer(cb, 'Lệnh không hợp lệ.');
 
@@ -628,6 +633,9 @@ async function handleUpdate(update) {
     await db('orders').where({ id: o0.id }).update({ cod_collected_by: by, cod_collected_amount: codLeft, cod_collected_at: new Date() });
   }
   await refreshOrderMessage(id);
+  if (r && r.negativeStock && r.negativeStock.length) {
+    return answer(cb, `Đã khôi phục đơn. ⚠️ Kho không đủ: ${r.negativeStock.map((p) => `${p.name} còn ${p.stock}`).join(', ')} — kiểm hàng hoặc /nhap thêm.`, true);
+  }
   if (action === 'dn') return answer(cb, `Đã giao xong. Nhớ thu ${require('./format').money(codLeft)} — đơn sẽ hiện trong /thu mục "chưa thu".`, true);
   const label = changes.status ? ORDER_STATUS[changes.status] : PAYMENT_STATUS[changes.payment_status];
   if (r && r.changed && changes.status === 'cancelled' && r.order.payment_status === 'paid') {

@@ -18,7 +18,7 @@ function getTransport() {
   return transporter;
 }
 
-async function sendMail({ to, subject, template, data }) {
+async function sendMail({ to, subject, template, data, attachments }) {
   if (!to) return;
   const html = await ejs.renderFile(
     path.join(__dirname, '../../views/emails', `${template}.ejs`),
@@ -32,7 +32,7 @@ async function sendMail({ to, subject, template, data }) {
   try {
     // Khách bấm "Trả lời" → về đúng email chăm sóc khách hàng của shop
     const replyTo = (data && data.s && data.s.shop_email) || undefined;
-    const info = await t.sendMail({ from: config.mail.from, replyTo, to, subject, html });
+    const info = await t.sendMail({ from: config.mail.from, replyTo, to, subject, html, ...(attachments ? { attachments } : {}) });
     console.log(`[mail] → ${to}: ${subject} · ${info.response}`);
   } catch (err) {
     console.error('[mail] gửi thất bại:', err.message);

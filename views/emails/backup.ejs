@@ -1,0 +1,8 @@
+<%- include('_layout-top') %>
+<h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:22px;margin:0 0 12px">Sao lưu dữ liệu ngày <%= ymd(day) %></h1>
+<p style="margin:0;line-height:1.7;color:#4a3f38">
+  File Excel đính kèm gồm toàn bộ <b><%= orders %> đơn hàng</b>, chi tiết giỏ, khách hàng, sản phẩm và chi phí.<br>
+  Hãy giữ email này (đừng xóa). Nếu website hoặc database gặp sự cố, file này giúp khôi phục danh sách đơn và khách.<br>
+  <span style="color:#75685e;font-size:13px">Tắt gửi tự động: admin → Cài đặt → "Tự gửi file sao lưu".</span>
+</p>
+<%- include('_layout-bottom') %>

@@ -82,6 +82,19 @@ const ok = (c, m) => {
     await digest.remindStale();
     ok(sent.some((x) => x.method === 'sendMessage' && x.body.message_thread_id === 77 && /quá 2 giờ/.test(x.body.text)), 'Sau /chonnhac → tin nhắc vào chủ đề riêng');
 
+    // Sao lưu tự động qua email: file Excel đính kèm
+    const notify = require('../src/lib/notify');
+    const realMail = notify.sendMail;
+    const mails = [];
+    notify.sendMail = async (m) => { mails.push(m); };
+    await digest.sendBackup({ shop_email: 'shop@example.test' }, todayVN());
+    notify.sendMail = realMail;
+    const bk = mails[0];
+    ok(bk && bk.to === 'shop@example.test' && /\[Sao lưu\]/.test(bk.subject) && bk.attachments[0].content.slice(0, 2).toString() === 'PK',
+      'Sao lưu: email kèm file Excel (.xlsx) gửi vào email cửa hàng');
+    const html = await require('ejs').renderFile(require('path').join(__dirname, '../views/emails/backup.ejs'), { ...bk.data, ymd: require('../src/lib/format').ymd, money: require('../src/lib/format').money, siteUrl: 'x' });
+    ok(/Sao lưu dữ liệu ngày/.test(html), 'Email sao lưu hiển thị đúng');
+
     // Không gửi trùng khi máy chủ khởi động lại
     await settings.save({ ops_morning_last: today, ops_evening_last: today });
     sent.length = 0;

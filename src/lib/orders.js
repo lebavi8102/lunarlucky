@@ -91,7 +91,13 @@ async function updateOrder(id, changes, { by } = {}) {
   if (becameReady) {
     await require('./bank-payments').afterPaid(order.id).catch((err) => console.error('[thanh toán] báo nhóm lỗi:', err.message));
   }
-  return { before: order, order: { ...order, ...update }, items, changed: events.length > 0 };
+  // Khôi phục đơn đã hủy mà kho không đủ (giỏ đã bán cho khách khác) → báo để kiểm hàng
+  let negativeStock = [];
+  if (order.status === 'cancelled' && status !== 'cancelled') {
+    const pids = items.filter((x) => x.product_id).map((x) => x.product_id);
+    if (pids.length) negativeStock = await db('products').whereIn('id', pids).andWhere('stock', '<', 0).select('name', 'stock');
+  }
+  return { before: order, order: { ...order, ...update }, items, changed: events.length > 0, negativeStock };
 }
 
 const DELIVERY_FIELDS = {

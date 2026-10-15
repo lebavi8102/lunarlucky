@@ -129,7 +129,7 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     ok(cancelled.status === 'cancelled', 'Bấm "Có, hủy đơn" → đơn trên web chuyển Đã hủy');
     ok((await db('products').where({ id: p.id }).first()).stock === prod.stock + 2, 'Hủy đơn → trả 2 giỏ về kho');
     ok(sent.some((x) => x.method === 'answerCallbackQuery' && /hoàn tiền/.test(x.body.text)), 'Đơn đã thanh toán bị hủy → nhắc hoàn tiền');
-    ok(sent.some((x) => x.method === 'editMessageText' && /cần hoàn tiền/.test(x.body.text)), 'Tin đơn trong nhóm ghi "cần hoàn tiền"');
+    ok(sent.some((x) => x.method === 'editMessageText' && /cần hoàn /.test(x.body.text)), 'Tin đơn trong nhóm ghi "cần hoàn tiền"');
     await press(`o:${oid}:r`);
     ok((await db('orders').where({ id: oid }).first()).status === 'cancelled', 'Bấm Khôi phục lần 1 → chỉ hỏi xác nhận');
     await press(`o:${oid}:rr`);
@@ -202,6 +202,23 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
     ok(sent.some((x) => x.method === 'editMessageText'), 'Tin đơn trong nhóm được cập nhật ngày mới');
     await tg.handleUpdate({ message: { message_id: 611, chat: { id: GROUP, type: 'supergroup' }, from: { first_name: 'Lan' }, text: '/doingay 0944 555 888 23/12' } });
     ok(String((await db('orders').where({ id: pid3 }).first()).delivery_date).slice(0, 10) === '2026-12-23', '/doingay bằng SĐT khách cũng được');
+    // Đơn đã trả tiền bị hủy → nút "Đã hoàn tiền"; khôi phục đơn khi kho không đủ → cảnh báo
+    await db('orders').where({ id: pid3 }).update({ status: 'cancelled', payment_status: 'paid' });
+    sent.length = 0;
+    await tg.refreshOrderMessage(pid3);
+    const kb = sent.find((x) => x.method === 'editMessageText');
+    ok(/cần hoàn 1₫/.test(kb.body.text) && kb.body.reply_markup.inline_keyboard.flat().some((b) => /Đã hoàn tiền/.test(b.text)), 'Đơn đã trả tiền bị hủy → nhắc số tiền cần hoàn + nút "Đã hoàn tiền"');
+    await tapAs(`o:${pid3}:rf`, 1);
+    ok((await db('orders').where({ id: pid3 }).first()).payment_status === 'refunded', 'Bấm "Đã hoàn tiền" → trạng thái Đã hoàn tiền');
+    const prodX = await db('products').first();
+    await db('order_items').insert({ order_id: pid3, product_id: prodX.id, name: prodX.name, price: 1, qty: 3, line_total: 3 });
+    const stockX = prodX.stock;
+    await db('products').where({ id: prodX.id }).update({ stock: 1 });
+    sent.length = 0;
+    await tapAs(`o:${pid3}:rr`, 1);
+    ok(sent.some((x) => x.method === 'answerCallbackQuery' && /Kho không đủ/.test(x.body.text)), 'Khôi phục đơn khi kho không đủ → cảnh báo kiểm hàng');
+    await db('products').where({ id: prodX.id }).update({ stock: stockX });
+    await db('order_items').where({ order_id: pid3 }).del();
     await db('orders').whereIn('id', [sid, oid2, pid3]).del();
   }
 

@@ -108,6 +108,23 @@ async function tick() {
     await notify.telegram(await evening(day), null, { topic: 'ops' });
   }
   if (h >= 8 && h < 21) await remindStale();
+  // 23h: gửi file sao lưu Excel (đơn, khách, sản phẩm, chi phí) vào email cửa hàng — phòng khi database gặp sự cố
+  if (h >= 23 && String(s.backup_email) !== '0' && s.backup_last !== day && s.shop_email) {
+    await settings.save({ backup_last: day });
+    await sendBackup(s, day);
+  }
+}
+
+async function sendBackup(s, day = todayVN()) {
+  const buf = await require('./backup').exportXlsx('tat-ca');
+  const [{ n }] = await db('orders').count({ n: '*' });
+  await notify.sendMail({
+    to: s.shop_email,
+    subject: `[Sao lưu] Lunar Lucky ${dm(day)}/${day.slice(0, 4)} · ${n} đơn`,
+    template: 'backup',
+    data: { s, day, orders: Number(n) },
+    attachments: [{ filename: `LunarLucky_SaoLuu_${day}.xlsx`, content: buf }],
+  });
 }
 
 function start() {
@@ -116,4 +133,4 @@ function start() {
   setInterval(run, 30 * 60000).unref();
 }
 
-module.exports = { morning, evening, remindStale, tick, start };
+module.exports = { morning, evening, remindStale, tick, start, sendBackup };

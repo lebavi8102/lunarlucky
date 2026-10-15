@@ -132,7 +132,9 @@ router.post('/don-hang/:id', async (req, res, next) => {
   );
   if (!r) return next();
   require('../../lib/telegram-orders').refreshOrderMessage(r.order.id);
-  flash(req, 'success', 'Đã cập nhật đơn hàng.');
+  if (r.negativeStock && r.negativeStock.length) {
+    flash(req, 'error', `Đã khôi phục đơn nhưng kho không đủ: ${r.negativeStock.map((p) => `${p.name} còn ${p.stock}`).join(', ')}. Kiểm hàng hoặc nhập thêm.`);
+  } else flash(req, 'success', 'Đã cập nhật đơn hàng.');
   res.redirect(`/admin/don-hang/${r.order.id}`);
 });
 
@@ -249,6 +251,7 @@ const SETTING_GROUPS = [
   ['Kho hàng', [
     ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
     ['ops_digest', 'Bot tự nhắc việc: tin sáng (việc hôm nay), nhắc đơn quá 2 giờ chưa xác nhận, tin tối (chốt ngày + tiền COD) — 1 = bật, 0 = tắt'],
+    ['backup_email', 'Tự gửi file sao lưu Excel vào email cửa hàng lúc 23h mỗi ngày — 1 = bật, 0 = tắt'],
     ['ops_morning_hour', 'Giờ gửi tin sáng (0–23)'], ['ops_evening_hour', 'Giờ gửi tin chốt ngày (0–23)'],
     ['telegram_admin_only', 'Chỉ QUẢN TRỊ VIÊN nhóm Telegram được hủy đơn / xác nhận đã nhận tiền (1 = bật, 0 = ai trong nhóm cũng bấm được)'],
   ]],
