@@ -81,7 +81,7 @@
         <% } else { %>
           <dt>Địa chỉ</dt><dd><%= order.address %>, <%= order.province %></dd>
         <% } %>
-        <dt>Ngày giao</dt><dd><%= fmt.ymd(order.delivery_date) %></dd>
+        <dt>Ngày giao</dt><dd><%= fmt.deliveryWhen(order) %></dd>
         <% if (order.needs_vat) { %><dt>Hóa đơn VAT</dt><dd><%= order.vat_company %><br><span class="small muted">MST <%= order.vat_tax_code %> · gửi về <%= order.vat_email %></span></dd><% } %>
         <% if (order.card_message) { %><dt>Thiệp</dt><dd class="serif" style="font-size:19px;font-style:italic">“<%= order.card_message %>”</dd><% } %>
         <% if (order.note) { %><dt>Ghi chú</dt><dd><%= order.note %></dd><% } %>

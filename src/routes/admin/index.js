@@ -522,7 +522,7 @@ router.get('/giao-hang/excel', async (req, res) => {
   const rows = plan.ready.map((o, i) => {
     const t = delivery.shipTo(o);
     return {
-      stt: i + 1, code: o.code, name: t.name, phone: t.phone, address: t.address, area: plan.area(o),
+      stt: i + 1, code: o.code, name: t.name, phone: t.phone, address: t.address, area: plan.area(o), slot: require('../../lib/format').slotLabel(o.delivery_slot),
       items: o.items.map((x) => `${x.name} × ${x.qty}`).join(', '), cod: delivery.codDue(o),
       gift: o.is_gift ? 'Gửi tặng – không kèm hóa đơn giá' : '', note: o.note || '', card: o.card_message || '',
     };
@@ -537,6 +537,7 @@ router.get('/giao-hang/excel', async (req, res) => {
         { header: 'SĐT', key: 'phone', width: 13 },
         { header: 'Địa chỉ giao', key: 'address', width: 40 },
         { header: 'Khu vực', key: 'area', width: 10 },
+        { header: 'Buổi giao', key: 'slot', width: 15 },
         { header: 'Giỏ quà', key: 'items', width: 30 },
         { header: 'Thu COD', key: 'cod', type: 'money', width: 13 },
         { header: 'Lưu ý', key: 'gift', width: 22 },

@@ -274,7 +274,7 @@ async function deliveryList(args) {
     const t = delivery.shipTo(o);
     const cod = delivery.codDue(o);
     return [
-      `<b>${i + 1}. ${e(o.code)}</b>${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}`,
+      `<b>${i + 1}. ${e(o.code)}</b>${o.delivery_slot ? ` · ⏰ <b>${require('./format').slotLabel(o.delivery_slot)}</b>` : ''}${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}`,
       `   ${e(t.name)} · ${e(t.phone)}`,
       `   📍 ${e(t.address)}`,
       `   ${o.items.map((x) => `${e(x.name)} ×${x.qty}`).join(', ')} · ${cod ? `<b>thu ${money(cod)}</b>` : 'đã thanh toán'}`,

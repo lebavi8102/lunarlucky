@@ -35,6 +35,7 @@ const ORDER_COLUMNS = [
   { header: 'SĐT người nhận', key: 'recipient_phone', width: 13 },
   { header: 'Địa chỉ người nhận', key: 'recipient_address', width: 32 },
   { header: 'Ngày giao', key: 'delivery_date', width: 11 },
+  { header: 'Buổi giao', key: 'delivery_slot_label', width: 15 },
   { header: 'Thanh toán', key: 'pay', width: 13 },
   { header: 'Trạng thái thanh toán', key: 'pay_status', width: 16 },
   { header: 'Ngày nhận tiền', key: 'paid', width: 17 },
@@ -61,6 +62,7 @@ async function orderSheets() {
   const rows = orders.map((o) => ({
     ...o,
     created: vnTime(o.created_at),
+    delivery_slot_label: require('./format').slotLabel(o.delivery_slot),
     paid: vnTime(o.paid_at),
     gift: yesNo(o.is_gift),
     pay: PAY[o.payment_method] || o.payment_method,

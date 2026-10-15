@@ -332,6 +332,18 @@
       }
     };
     province?.addEventListener('change', applyProvince);
+    // Buổi giao: chỉ Hà Nội; bấm chọn → đánh dấu ô
+    const slotBox = $('[data-slot-box]');
+    const slotHelp = $('[data-slot-help]');
+    const syncSlot = () => {
+      $$('[data-slot-box] label').forEach((l) => l.setAttribute('aria-pressed', String(!!$('input', l)?.checked)));
+    };
+    slotBox?.addEventListener('change', syncSlot);
+    province?.addEventListener('change', () => {
+      const hn = /hà nội/i.test(province.value.normalize('NFC'));
+      if (slotBox) slotBox.hidden = !hn;
+      if (slotHelp) slotHelp.textContent = hn ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.';
+    });
     applyProvince();
   }
 

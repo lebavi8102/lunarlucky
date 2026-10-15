@@ -109,7 +109,7 @@ function waitText(order, state) {
   return [
     head,
     `👤 ${notify.escapeTg(order.customer_name)} · ${notify.escapeTg(order.phone)}`,
-    `💰 ${money2(order.total)} · giao ${require('./format').ymd(order.delivery_date)}`,
+    `💰 ${money2(order.total)} · giao ${require('./format').deliveryWhen(order)}`,
     state === 'wait' ? '<i>Chưa soạn hàng. Bot báo ĐƠN MỚI khi nhận được tiền. Có thể gọi nhắc khách.</i>' : null,
   ].filter(Boolean).join('\n');
 }

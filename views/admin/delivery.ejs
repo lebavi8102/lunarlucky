@@ -54,7 +54,7 @@
       <% if (!d.ready.length) { %><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Chưa có đơn.</td></tr><% } %>
       <% d.ready.forEach(o => { const t = shipTo(o); %>
         <tr>
-          <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.is_gift) { %><br><span class="tiny" style="color:var(--gold-700)">🎁 gửi tặng</span><% } %></td>
+          <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.delivery_slot) { %><br><b class="tiny">⏰ <%= fmt.slotLabel(o.delivery_slot) %></b><% } %><% if (o.is_gift) { %><br><span class="tiny" style="color:var(--gold-700)">🎁 gửi tặng</span><% } %></td>
           <td><%= t.name %><br><a class="tiny" href="tel:<%= t.phone %>"><%= t.phone %></a></td>
           <td class="wrap small"><%= t.address %><br><span class="tiny muted"><%= d.area(o) %></span></td>
           <td class="wrap small"><%= o.items.map(i => i.name + ' × ' + i.qty).join(', ') %></td>

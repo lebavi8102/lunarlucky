@@ -2,7 +2,7 @@ const path = require('path');
 const ejs = require('ejs');
 const nodemailer = require('nodemailer');
 const config = require('../config');
-const { money, ymd } = require('./format');
+const { money, ymd, slotLabel } = require('./format');
 
 let transporter = null;
 function getTransport() {
@@ -186,7 +186,7 @@ function orderTelegram(order, items) {
     order.is_gift
       ? `🎁 <b>GIAO TẶNG</b> → ${e(order.recipient_name)} · ${e(order.recipient_phone)}\n📍 ${e(order.recipient_address)}${order.province ? ', ' + e(order.province) : ''}\n👤 Người đặt: ${e(order.customer_name)} · ${e(order.phone)} (không kèm hóa đơn giá)`
       : `👤 ${e(order.customer_name)} · ${e(order.phone)}\n📍 ${e(order.address)}${order.province ? ', ' + e(order.province) : ''}`,
-    order.delivery_date ? `📅 Giao ngày: ${ymd(order.delivery_date)}` : null,
+    order.delivery_date ? `📅 Giao ngày: <b>${ymd(order.delivery_date)}</b>${order.delivery_slot ? ` · <b>${slotLabel(order.delivery_slot)}</b>` : ''}` : null,
     '',
     list,
     '',

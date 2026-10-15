@@ -729,3 +729,4 @@ ul, ol { margin: 0; padding: 0; }
   .usp-item { padding: 16px 4px; border-left-width: 0 !important; }
   .usp-item + .usp-item { border-top-width: 1px; }
 }
+.date-pick:has(input:focus-visible) { outline: 2px solid var(--lacquer-700); outline-offset: 2px; }

@@ -20,7 +20,7 @@ const PROVINCES = [
   'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long',
 ];
 
-const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, standardHeaders: true, legacyHeaders: false });
+const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, skipFailedRequests: true, standardHeaders: true, legacyHeaders: false });
 const trackLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -119,6 +119,8 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   if (f.errors.delivery_date && !isHanoi(req.body.province) && delivery_date && delivery_date < todayVN(minDays)) {
     f.errors.delivery_date = `Giao ngoài Hà Nội đi chuyển phát mất 2–4 ngày — vui lòng chọn từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
   }
+  // Buổi giao: chỉ hẹn được ở Hà Nội (tỉnh khác đi chuyển phát)
+  const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;
   const card_message = f.text('card_message', { max: 300 });
   const note = f.text('note', { max: 500 });
   // Xuất hóa đơn VAT → bắt buộc chuyển khoản (thu vào TK bán lẻ; khách muốn TK công ty thì nhắn Zalo)
@@ -164,7 +166,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     code: newCode(),
     user_id: req.session.user ? req.session.user.id : null,
     customer_name, phone, email: email || null, address, province,
-    is_gift, recipient_name, recipient_phone, recipient_address, delivery_date,
+    is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
     card_message: card_message || null, note: note || null, invoice_info,
     needs_vat, vat_company: vat.vat_company || null, vat_tax_code: vat.vat_tax_code || null,
     vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,

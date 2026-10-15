@@ -65,7 +65,15 @@
           <div data-date-input style="margin-top:10px" <%= values.delivery_date && (quickDates || []).includes(values.delivery_date) && !errors.delivery_date ? 'hidden' : '' %>>
             <%- include('../partials/field', { name: 'delivery_date', label: 'Chọn ngày giao', type: 'date', required: true, min: minDate, max: maxDate }) %>
           </div>
-          <p class="help" style="margin-top:6px">Giao trong khung 8:00 – 20:00, Lunar Lucky gọi trước khi giao.</p>
+          <div data-slot-box style="margin-top:14px" <%= /hà nội/i.test(values.province || 'Hà Nội') ? '' : 'hidden' %>>
+            <p class="label" style="margin-bottom:8px">Buổi giao</p>
+            <div class="date-picks" role="radiogroup" aria-label="Chọn buổi giao">
+              <% [['', 'Buổi nào', 'cũng được'], ['sang', 'Sáng', '8h – 12h'], ['chieu', 'Chiều', '13h – 17h'], ['toi', 'Tối', '18h – 20h']].forEach(([v, t, sub]) => { %>
+                <label class="date-pick" style="cursor:pointer" aria-pressed="<%= (values.delivery_slot || '') === v %>"><input type="radio" name="delivery_slot" value="<%= v %>" class="sr-only" <%= (values.delivery_slot || '') === v ? 'checked' : '' %>><b><%= t %></b><span><%= sub %></span></label>
+              <% }) %>
+            </div>
+          </div>
+          <p class="help" style="margin-top:6px" data-slot-help><%= /hà nội/i.test(values.province || 'Hà Nội') ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.' %></p>
         </div>
       </fieldset>
 

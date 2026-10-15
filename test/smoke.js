@@ -122,6 +122,15 @@ async function addToCart(c, slug, qty = 1) {
     ok(r.status === 422 && /Giao ngoài Hà Nội đi chuyển phát/.test(r.text), 'Giao TP.HCM chọn ngày mai → báo cần chọn từ ngày sớm nhất cho tỉnh');
   }
 
+  // 4c3. Buổi giao (Hà Nội): lưu và hiện trên trang đơn
+  {
+    const g = client();
+    const { t } = await addToCart(g, 'gio-an-khang', 1);
+    const r = await g('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'Khách Buổi Chiều', phone: '0912345678', province: 'Hà Nội',
+      address: '1 Tràng Tiền', delivery_date: deliveryDate, delivery_slot: 'chieu', payment_method: 'bank' } });
+    ok(r.status === 302 && /Chiều \(13h–17h\)/.test((await g(r.location)).text), 'Chọn buổi chiều → trang đơn ghi "Chiều (13h–17h)"');
+  }
+
   // 4d. Cọc COD: 2 giỏ → phải cọc 30%; 1 giỏ dưới 1 triệu → không cọc
   {
     const cheap = (await c('/bo-suu-tap?sap_xep=gia-tang')).text.match(/name="product_id" value="(\d+)"/)[1];

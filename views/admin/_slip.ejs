@@ -1,6 +1,6 @@
 <%# Một phiếu giao + thiệp (dùng cho in 1 đơn và in hàng loạt). Cần: order, items %>
   <section class="slip">
-    <header><div class="brand">LUNAR LUCKY<small>LUXURY GIFTS &amp; HAMPERS</small></div><div><b><%= order.code %></b><br>Giao ngày <%= fmt.ymd(order.delivery_date) %></div></header>
+    <header><div class="brand">LUNAR LUCKY<small>LUXURY GIFTS &amp; HAMPERS</small></div><div><b><%= order.code %></b><br>Giao ngày <%= fmt.deliveryWhen(order) %></div></header>
     <div class="cols">
       <div><h3>Người nhận</h3>
         <% if (order.is_gift) { %><p><b><%= order.recipient_name %></b><br><%= order.recipient_phone %><br><%= order.recipient_address %>, <%= order.province %></p>

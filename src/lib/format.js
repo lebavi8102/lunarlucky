@@ -85,11 +85,18 @@ function truncate(s, n) {
   return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s;
 }
 
+/** Buổi giao (Hà Nội). */
+const SLOTS = { sang: 'Sáng (8h–12h)', chieu: 'Chiều (13h–17h)', toi: 'Tối (18h–20h)' };
+const slotLabel = (s) => SLOTS[s] || '';
+/** "20/10/2026 · Sáng (8h–12h)" */
+const deliveryWhen = (o) => [ymd(o.delivery_date), slotLabel(o.delivery_slot)].filter(Boolean).join(' · ');
+
 function normalizePhone(p) {
   return String(p || '').replace(/[^\d+]/g, '');
 }
 
 module.exports = {
+  SLOTS, slotLabel, deliveryWhen,
   money, toDate, date, dateTime, longDate, ymd, todayVN, slugify, lines, parseJson, truncate,
   normalizePhone,
 };

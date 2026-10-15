@@ -14,7 +14,10 @@ async function forDate(day) {
   const byOrder = new Map(ids.map((id) => [id, []]));
   for (const i of items) byOrder.get(i.order_id).push(i);
 
-  const ready = orders.filter(isReady).map((o) => ({ ...o, items: byOrder.get(o.id) }));
+  // Xếp theo buổi giao (sáng → chiều → tối → buổi nào cũng được) để shipper đi theo thứ tự
+  const SLOT_ORDER = { sang: 0, chieu: 1, toi: 2 };
+  const ready = orders.filter(isReady).map((o) => ({ ...o, items: byOrder.get(o.id) }))
+    .sort((a, b) => (SLOT_ORDER[a.delivery_slot] ?? 3) - (SLOT_ORDER[b.delivery_slot] ?? 3) || a.id - b.id);
   const unpaid = orders.filter((o) => !isReady(o)).map((o) => ({ ...o, items: byOrder.get(o.id) }));
 
   // Bảng soạn hàng: tổng số giỏ mỗi loại cần chuẩn bị (chỉ đơn sẵn sàng giao)

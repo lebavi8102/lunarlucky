@@ -37,7 +37,7 @@
 </table>
 
 <p style="margin:20px 0 0;font-size:14px;line-height:1.7;color:#4a3f38">
-  <b>Giao ngày:</b> <%= ymd(order.delivery_date) %><br>
+  <b>Giao ngày:</b> <%= ymd(order.delivery_date) %><% if (order.delivery_slot) { %> · <%= { sang: 'Sáng (8h–12h)', chieu: 'Chiều (13h–17h)', toi: 'Tối (18h–20h)' }[order.delivery_slot] %><% } %><br>
   <b>Đến:</b> <%= order.is_gift ? `${order.recipient_name} · ${order.recipient_phone} · ${order.recipient_address}` : order.address %>, <%= order.province %>
   <% if (order.card_message) { %><br><b>Thiệp:</b> <i>“<%= order.card_message %>”</i><% } %>
 </p>
