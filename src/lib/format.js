@@ -85,6 +85,10 @@ function truncate(s, n) {
   return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s;
 }
 
+/** Kênh khách đến / kênh chốt đơn. */
+const SOURCES = { web: 'Website', facebook: 'Facebook', zalo: 'Zalo', instagram: 'Instagram', tiktok: 'TikTok', phone: 'Điện thoại', other: 'Khác' };
+const sourceLabel = (s) => SOURCES[s] || SOURCES.web;
+
 /** Buổi giao (Hà Nội). */
 const SLOTS = { sang: 'Sáng (8h–12h)', chieu: 'Chiều (13h–17h)', toi: 'Tối (18h–20h)' };
 const slotLabel = (s) => SLOTS[s] || '';
@@ -96,7 +100,7 @@ function normalizePhone(p) {
 }
 
 module.exports = {
-  SLOTS, slotLabel, deliveryWhen,
+  SLOTS, slotLabel, deliveryWhen, SOURCES, sourceLabel,
   money, toDate, date, dateTime, longDate, ymd, todayVN, slugify, lines, parseJson, truncate,
   normalizePhone,
 };

@@ -30,7 +30,22 @@ function img(id, fallback = '/img/placeholder.svg') {
 }
 
 /** Biến dùng chung cho mọi view. */
+function rememberSource(req) {
+  if (req.method !== 'GET' || req.path.startsWith('/admin') || !req.session || req.session.source) return;
+  const q = String(req.query.nguon || req.query.utm_source || '').toLowerCase();
+  let src = fmt.SOURCES[q] && q !== 'phone' ? q : '';
+  if (!src) {
+    const ref = String(req.get('referer') || '');
+    if (/facebook\.com|fb\.com|messenger\.com/i.test(ref)) src = 'facebook';
+    else if (/instagram\.com/i.test(ref)) src = 'instagram';
+    else if (/zalo\.me|zaloapp\.com|zalo\.vn/i.test(ref)) src = 'zalo';
+    else if (/tiktok\.com/i.test(ref)) src = 'tiktok';
+  }
+  if (src) req.session.source = src;
+}
+
 module.exports = async function locals(req, res, next) {
+  rememberSource(req);
   const s = await settings.all();
   res.locals.s = s;
   res.locals.fmt = fmt;

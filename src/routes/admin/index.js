@@ -30,7 +30,7 @@ router.use((req, res, next) => {
 /* ---------- Tổng quan ---------- */
 router.get('/', async (req, res) => {
   const since = new Date(Date.now() - 32 * 86400000); // đủ cả tháng này (tháng 31 ngày)
-  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at', 'payment_method', 'payment_status', 'deposit_amount');
+  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at', 'payment_method', 'payment_status', 'deposit_amount', 'source');
   const { awaitingMoney } = require('../../lib/payment');
   const days = [];
   for (let i = 13; i >= 0; i--) days.push({ day: todayVN(-i), total: 0, count: 0 });
@@ -41,6 +41,7 @@ router.get('/', async (req, res) => {
   let revenueMonth = 0;
   let ordersToday = 0;
   let waitingToday = 0;
+  const byChannel = {}; // 30 ngày gần nhất, đơn đã chốt (không tính hủy / chờ tiền)
   for (const o of recentAll) {
     if (o.status === 'cancelled') continue;
     // Đơn chưa trả tiền/chưa cọc có thể tự hủy → chưa tính là doanh thu
@@ -59,6 +60,10 @@ router.get('/', async (req, res) => {
       ordersToday += 1;
     }
     if (k.startsWith(monthPrefix)) revenueMonth += o.total;
+    const src = o.source || 'web';
+    const c = byChannel[src] || (byChannel[src] = { n: 0, total: 0 });
+    c.n += 1;
+    c.total += o.total;
   }
   const [newOrders, unpaidBank, newQuotes, lowStock, recent, topProducts] = await Promise.all([
     db('orders').where(readyNew).count({ n: '*' }).first(),
@@ -74,7 +79,7 @@ router.get('/', async (req, res) => {
       revenueToday, revenueMonth, ordersToday, waitingToday,
       newOrders: Number(newOrders.n), unpaidBank: Number(unpaidBank.n), newQuotes: Number(newQuotes.n),
     },
-    days, lowStock, recent, topProducts,
+    days, lowStock, recent, topProducts, byChannel,
   });
 });
 
@@ -89,6 +94,9 @@ router.get('/don-hang', async (req, res) => {
   // Cần xử lý: đơn mới đã sẵn sàng (COD hoặc đã thanh toán) — không lẫn đơn chuyển khoản chưa trả tiền
   if (req.query.can_xu_ly) query = query.where(readyNew);
   const ngay = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.ngay || '')) ? String(req.query.ngay) : '';
+  const nguon = require('../../lib/format').SOURCES[req.query.nguon] ? String(req.query.nguon) : '';
+  if (nguon === 'web') query = query.where((w) => w.where({ source: 'web' }).orWhereNull('source'));
+  else if (nguon) query = query.where({ source: nguon });
   if (ngay) query = query.where({ delivery_date: ngay });
   if (q) query = query.andWhere((w) => w.where('code', 'like', `%${q}%`).orWhere('phone', 'like', `%${q}%`).orWhere('customer_name', 'like', `%${q}%`));
   const [{ n }] = await query.clone().count({ n: '*' });
@@ -99,7 +107,7 @@ router.get('/don-hang', async (req, res) => {
   );
   res.render('admin/orders', {
     title: 'Đơn hàng', orders, status, q, page, pages: Math.max(1, Math.ceil(Number(n) / 30)), counts,
-    unpaidOnly: !!req.query.chua_tt, todoOnly: !!req.query.can_xu_ly, todo: Number(todo), ngay,
+    unpaidOnly: !!req.query.chua_tt, todoOnly: !!req.query.can_xu_ly, todo: Number(todo), ngay, nguon,
   });
 });
 

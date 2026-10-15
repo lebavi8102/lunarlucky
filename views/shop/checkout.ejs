@@ -14,8 +14,19 @@
     </div>
   <% } %>
 
-  <form class="cart-layout" action="/thanh-toan" method="post" novalidate data-checkout>
+  <% const staff = user && user.role === 'admin'; %>
+  <form class="cart-layout" action="/thanh-toan" method="post" novalidate data-checkout <%= staff ? 'data-staff' : '' %>>
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (staff) { %>
+    <div class="flash flash-info" role="status" style="grid-column:1/-1;margin:0;align-items:center;flex-wrap:wrap;gap:12px">
+      <svg class="icon"><use href="#i-user"/></svg>
+      <span><b>Đang đặt hộ khách</b> (bạn đăng nhập quản trị). Điền thông tin của <b>khách</b>; đơn tự về Telegram như khách tự đặt.</span>
+      <label style="display:flex;gap:8px;align-items:center;margin-left:auto"><span class="small">Khách nhắn qua</span>
+        <select class="select" name="order_source" style="width:auto;min-height:40px">
+          <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web').forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
+        </select></label>
+    </div>
+    <% } %>
     <input type="hidden" name="cart_snapshot" value="<%= JSON.stringify(cart.lines.filter(l => l.productId).map(l => ({ id: l.productId, qty: l.qty }))) %>">
     <div>
       <fieldset class="fieldset">

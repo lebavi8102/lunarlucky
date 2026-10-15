@@ -1,4 +1,18 @@
 (() => {
+  // Nút sao chép (link kênh, link gửi khách)
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    const old = b.textContent;
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy);
+      b.textContent = 'Đã chép ✓';
+    } catch {
+      b.textContent = 'Chép thủ công';
+    }
+    setTimeout(() => { b.textContent = old; }, 1500);
+  });
+
   // Hỏi lại trước khi xóa
   document.querySelectorAll('form[data-confirm]').forEach((f) =>
     f.addEventListener('submit', (e) => {

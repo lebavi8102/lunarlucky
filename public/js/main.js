@@ -360,7 +360,7 @@
 
   /* Thanh toán: ghi nhớ thông tin người đặt trên máy này (lần sau khỏi gõ lại) */
   const ckForm = $('[data-checkout]');
-  if (ckForm) {
+  if (ckForm && !('staff' in ckForm.dataset)) {
     const KEY = 'll_buyer';
     const FIELDS = ['customer_name', 'phone', 'email', 'province', 'address'];
     let saved = null;
@@ -489,7 +489,7 @@
     if (!b) return;
     try {
       await navigator.clipboard.writeText(b.dataset.copy);
-      showToast(`Đã sao chép: ${b.dataset.copy}`);
+      showToast(b.dataset.copy.length > 60 ? 'Đã sao chép' : `Đã sao chép: ${b.dataset.copy}`);
     } catch {
       showToast('Không sao chép được, vui lòng chép thủ công.');
     }

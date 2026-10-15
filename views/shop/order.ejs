@@ -21,6 +21,15 @@
     <% } %>
   </div>
 
+  <% if (staffShare) { const msg = `Lunar Lucky gửi ${order.customer_name} đơn quà ${order.code} (${money(order.total)}). Xem đơn${pay.awaitingMoney(order) ? ' và mã QR thanh toán' : ''} tại: ${staffShare}`; %>
+  <section class="card card-cream" style="margin-bottom:24px">
+    <h2 class="h3">Gửi đơn cho khách</h2>
+    <p class="small muted" style="margin:6px 0 12px">Dán tin này vào Zalo / Messenger của khách. Khách bấm link là xem được đơn<%= pay.awaitingMoney(order) ? ', mã QR và số tiền cần chuyển' : '' %> (không cần tra cứu).</p>
+    <textarea class="textarea" readonly rows="3" style="font-size:14px"><%= msg %></textarea>
+    <div class="hero-cta" style="margin-top:12px"><button type="button" class="btn btn-sm" data-copy="<%= msg %>">Sao chép tin nhắn</button><button type="button" class="btn btn-sm btn-quiet" data-copy="<%= staffShare %>">Chỉ sao chép link</button><a class="btn btn-sm btn-quiet" href="/bo-suu-tap">Đặt đơn khác</a></div>
+  </section>
+  <% } %>
+
   <% if (justPaid) { %>
   <div class="flash flash-success" role="status" style="margin-bottom:24px"><svg class="icon"><use href="#i-check"/></svg><span><% if (order.payment_status === 'deposit') { %><b>Đã nhận cọc <%= money(order.deposit_amount) %>.</b> Lunar Lucky đang chuẩn bị đơn quà. Bạn thanh toán <b><%= money(order.total - order.deposit_amount) %></b> khi nhận hàng.<% } else { %><b>Đã nhận thanh toán <%= money(order.total) %>.</b> Lunar Lucky đang chuẩn bị đơn quà của bạn.<% } %></span></div>
   <% } %>

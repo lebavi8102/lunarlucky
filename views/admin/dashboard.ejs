@@ -1,6 +1,6 @@
 <%- include('_top') %>
 <% const max = Math.max(1, ...days.map(d => d.total)); const today = days[days.length - 1].day; %>
-<div class="admin-head"><h1>Tổng quan</h1><div class="actions"><a class="btn btn-sm" href="/admin/san-pham/moi"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm sản phẩm</a></div></div>
+<div class="admin-head"><h1>Tổng quan</h1><div class="actions"><a class="btn btn-sm btn-quiet" href="/bo-suu-tap" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Đặt hộ khách</a> <a class="btn btn-sm" href="/admin/san-pham/moi"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm sản phẩm</a></div></div>
 
 <div class="stat-grid">
   <div class="stat hl"><div class="label">Doanh thu hôm nay</div><div class="value"><%= money(stats.revenueToday) %></div><div class="small" style="opacity:.75"><%= stats.ordersToday %> đơn<% if (stats.waitingToday) { %> · chờ tiền <%= money(stats.waitingToday) %><% } %></div></div>
@@ -57,6 +57,28 @@
     <h2>Bán chạy</h2>
     <table class="table"><tbody>
       <% topProducts.forEach(p => { %><tr><td class="wrap"><a class="t" href="/admin/san-pham/<%= p.id %>"><%= p.name %></a></td><td class="num"><%= p.sold %> đã bán</td></tr><% }) %>
+    </tbody></table>
+  </section>
+</div>
+
+<div class="panel-grid" style="margin-top:24px">
+  <section class="panel">
+    <div class="panel-head"><h2>Đơn theo kênh · 32 ngày</h2></div>
+    <% const ch = Object.entries(byChannel).sort((a, b) => b[1].total - a[1].total); %>
+    <% if (!ch.length) { %><p class="muted small">Chưa có đơn.</p><% } else { %>
+    <table class="table"><tbody>
+      <% ch.forEach(([k, c]) => { %><tr><td><a class="t" href="/admin/don-hang?nguon=<%= k %>"><%= fmt.sourceLabel(k) %></a></td><td class="num"><%= c.n %> đơn</td><td class="num"><b><%= money(c.total) %></b></td></tr><% }) %>
+    </tbody></table>
+    <% } %>
+    <p class="tiny muted" style="margin-top:8px">Không tính đơn hủy / chờ tiền. "Website" = khách tự vào web không rõ nguồn.</p>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Link đặt hàng cho từng kênh</h2></div>
+    <p class="small muted" style="margin-bottom:10px">Gắn link này vào bio Facebook / Instagram / Zalo OA / TikTok. Khách bấm vào rồi tự đặt → đơn ghi đúng kênh.</p>
+    <table class="table"><tbody>
+      <% ['facebook', 'zalo', 'instagram', 'tiktok'].forEach((k) => { const link = `${siteUrl}/?nguon=${k}`; %>
+      <tr><td><%= fmt.sourceLabel(k) %></td><td class="wrap mono tiny"><%= link %></td><td class="num"><button type="button" class="btn btn-sm btn-quiet" data-copy="<%= link %>">Sao chép</button></td></tr>
+      <% }) %>
     </tbody></table>
   </section>
 </div>

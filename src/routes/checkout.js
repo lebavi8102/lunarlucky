@@ -7,7 +7,7 @@ const notify = require('../lib/notify');
 const payment = require('../lib/payment');
 const bankPayments = require('../lib/bank-payments');
 const { Form } = require('../lib/validate');
-const { normalizePhone, todayVN } = require('../lib/format');
+const { normalizePhone, todayVN, SOURCES } = require('../lib/format');
 const { flash } = require('../middleware/locals');
 
 const router = express.Router();
@@ -20,7 +20,8 @@ const PROVINCES = [
   'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long',
 ];
 
-const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, skipFailedRequests: true, standardHeaders: true, legacyHeaders: false });
+const isStaff = (req) => !!(req.session.user && req.session.user.role === 'admin');
+const orderLimiter = rateLimit({ windowMs: 10 * 60000, limit: 10, skipFailedRequests: true, skip: isStaff, standardHeaders: true, legacyHeaders: false });
 const trackLimiter = rateLimit({ windowMs: 10 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -50,8 +51,17 @@ function dateCtx(s, province) {
   };
 }
 
+/** Link xem đơn gửi cho khách (đơn đặt hộ qua Zalo/Facebook): có chữ ký nên người khác không đoán được. */
+function orderKey(code) {
+  return require('crypto').createHmac('sha256', `order-link:${require('../config').sessionSecret}`).update(String(code)).digest('base64url').slice(0, 16);
+}
+function shareLink(code) {
+  return `${require('../config').publicUrl}/don-hang/${code}?k=${orderKey(code)}`;
+}
+
 function checkoutDefaults(req) {
-  const u = req.session.user;
+  // Nhân viên đặt hộ khách: để trống, không điền thông tin của chính mình
+  const u = isStaff(req) ? null : req.session.user;
   return {
     customer_name: u ? u.name : '', phone: u ? u.phone || '' : '', email: u ? u.email : '',
     address: u ? u.address || '' : '', province: 'Hà Nội', payment_method: 'bank', is_gift: false,
@@ -164,7 +174,10 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
 
   const order = {
     code: newCode(),
-    user_id: req.session.user ? req.session.user.id : null,
+    user_id: req.session.user && !isStaff(req) ? req.session.user.id : null,
+    // Kênh: nhân viên chọn khi đặt hộ; khách tự đặt → kênh khách đến (link ?nguon=, Facebook, Zalo…)
+    source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.source || 'web',
+    created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
     card_message: card_message || null, note: note || null, invoice_info,
@@ -261,6 +274,11 @@ function qrFor(order, s) {
 
 function canView(req, order) {
   const u = req.session.user;
+  // Link có chữ ký (nhân viên gửi cho khách) → mở được, và nhớ luôn để xem lại
+  if (req.query && req.query.k && req.query.k === orderKey(order.code)) {
+    rememberOrder(req, order.code);
+    return true;
+  }
   return (req.session.myOrders || []).includes(order.code) || (u && (u.role === 'admin' || u.id === order.user_id));
 }
 
@@ -302,6 +320,7 @@ router.get('/don-hang/:code', async (req, res, next) => {
   res.locals.seo.noindex = true;
   res.render('shop/order', {
     order, items, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s), isNew: req.query.moi === '1',
+    staffShare: isStaff(req) ? shareLink(order.code) : null,
     autoConfirm: bankPayments.enabled(), holdHours: bankPayments.holdHours(res.locals.s),
   });
 });
@@ -337,3 +356,4 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
 
 module.exports = router;
 module.exports.PROVINCES = PROVINCES;
+module.exports.shareLink = shareLink;

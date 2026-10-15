@@ -2,7 +2,7 @@ const path = require('path');
 const ejs = require('ejs');
 const nodemailer = require('nodemailer');
 const config = require('../config');
-const { money, ymd, slotLabel } = require('./format');
+const { money, ymd, slotLabel, sourceLabel } = require('./format');
 
 let transporter = null;
 function getTransport() {
@@ -198,6 +198,9 @@ function orderTelegram(order, items) {
     `<b>Tổng: ${money(order.total)}</b> · ${order.payment_method === 'bank' ? 'Chuyển khoản' : 'COD'}`,
     order.card_message ? `💌 Thiệp: “${e(order.card_message)}”` : null,
     order.note ? `📝 ${e(order.note)}` : null,
+    order.created_by || (order.source && order.source !== 'web')
+      ? `📣 Kênh: ${e(sourceLabel(order.source))}${order.created_by ? ` · đặt hộ bởi ${e(order.created_by)}` : ''}`
+      : null,
     `\n${config.publicUrl}/admin/don-hang/${order.id}`,
   ]
     .filter((x) => x !== null)
