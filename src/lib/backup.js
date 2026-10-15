@@ -24,7 +24,7 @@ const PAY = { bank: 'Chuyển khoản', cod: 'COD' };
 
 const ORDER_COLUMNS = [
   { header: 'Mã đơn', key: 'code', width: 16 },
-  { header: 'Ngày đặt', key: 'created', width: 17 },
+  { header: 'Ngày đặt', key: 'created_at', type: 'datetime', width: 17 },
   { header: 'Khách hàng', key: 'customer_name', width: 22 },
   { header: 'Điện thoại', key: 'phone', width: 13 },
   { header: 'Email', key: 'email', width: 24 },
@@ -34,13 +34,13 @@ const ORDER_COLUMNS = [
   { header: 'Người nhận', key: 'recipient_name', width: 20 },
   { header: 'SĐT người nhận', key: 'recipient_phone', width: 13 },
   { header: 'Địa chỉ người nhận', key: 'recipient_address', width: 32 },
-  { header: 'Ngày giao', key: 'delivery_date', width: 11 },
+  { header: 'Ngày giao', key: 'delivery_date', type: 'date', width: 12 },
   { header: 'Buổi giao', key: 'delivery_slot_label', width: 15 },
   { header: 'Kênh', key: 'source_label', width: 11 },
   { header: 'Đặt hộ bởi', key: 'created_by', width: 14 },
   { header: 'Thanh toán', key: 'pay', width: 13 },
   { header: 'Trạng thái thanh toán', key: 'pay_status', width: 16 },
-  { header: 'Ngày nhận tiền', key: 'paid', width: 17 },
+  { header: 'Ngày nhận tiền', key: 'paid_at', type: 'datetime', width: 17 },
   { header: 'Trạng thái đơn', key: 'status_label', width: 14 },
   { header: 'Tạm tính', key: 'subtotal', type: 'money', width: 13 },
   { header: 'Giảm giá', key: 'discount', type: 'money', width: 11 },
@@ -130,7 +130,7 @@ async function customerRows(orders) {
 
 async function customerSheet(orders) {
   const rows = (await customerRows(orders))
-    .map((c) => ({ ...c, first: vnTime(c.first), last: vnTime(c.last), account: yesNo(c.account) }));
+    .map((c) => ({ ...c, account: yesNo(c.account) }));
   return {
     columns: [
       { header: 'Khách hàng', key: 'name', width: 22 },
@@ -141,8 +141,8 @@ async function customerSheet(orders) {
       { header: 'Số đơn', key: 'orders', type: 'number', width: 8 },
       { header: 'Tổng đã mua', key: 'spent', type: 'money', width: 14 },
       { header: 'Đơn hủy', key: 'cancelled', type: 'number', width: 8 },
-      { header: 'Đơn đầu tiên', key: 'first', width: 17 },
-      { header: 'Đơn gần nhất', key: 'last', width: 17 },
+      { header: 'Đơn đầu tiên', key: 'first', type: 'datetime', width: 17 },
+      { header: 'Đơn gần nhất', key: 'last', type: 'datetime', width: 17 },
       { header: 'Có tài khoản', key: 'account', width: 10 },
     ],
     rows,
@@ -174,7 +174,7 @@ async function expenseSheet() {
   return {
     name: 'Chi phí',
     columns: [
-      { header: 'Ngày', key: 'spent_on', width: 11 },
+      { header: 'Ngày', key: 'spent_on', type: 'date', width: 12 },
       { header: 'Loại chi phí', key: 'category', width: 26 },
       { header: 'Số tiền', key: 'amount', type: 'money', width: 13 },
       { header: 'Ghi chú', key: 'note', width: 40 },

@@ -1,6 +1,6 @@
 /**
  * Tạo file Excel (.xlsx) đơn giản, không cần thư viện ngoài.
- *   buildXlsx([{ name: 'Đơn hàng', columns: [{ header, key, width, type: 'money'|'number'|'text' }], rows: [...] }])
+ *   buildXlsx([{ name: 'Đơn hàng', columns: [{ header, key, width, type: 'money'|'number'|'date'|'datetime'|'text' }], rows: [...] }])
  * → Buffer. Dòng tiêu đề in đậm + cố định khi cuộn, cột tiền có dấu phân cách hàng nghìn.
  */
 const zlib = require('zlib');
@@ -20,15 +20,27 @@ function colName(i) {
   return s;
 }
 
-// Style: 0 thường · 1 tiêu đề đậm nền vàng nhạt · 2 số có dấu phân cách hàng nghìn
+// Style: 0 thường · 1 tiêu đề đậm nền vàng nhạt · 2 số có dấu phân cách hàng nghìn · 3 ngày · 4 ngày giờ
+
+/** Ngày → số ngày kiểu Excel. 'YYYY-MM-DD' giữ nguyên ngày; Date/thời điểm → giờ Việt Nam. */
+function excelSerial(v, withTime) {
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const [y, m, d] = v.split('-').map(Number);
+    return Date.UTC(y, m - 1, d) / 86400000 + 25569;
+  }
+  const t = v instanceof Date ? v.getTime() : typeof v === 'number' ? v : Date.parse(String(v).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(v)) ? '' : 'Z'));
+  if (!Number.isFinite(t)) return null;
+  const vn = (t + 7 * 3600000) / 86400000 + 25569; // giờ Việt Nam (UTC+7)
+  return withTime ? vn : Math.floor(vn);
+}
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts>
+<numFmts count="3"><numFmt numFmtId="164" formatCode="#,##0"/><numFmt numFmtId="165" formatCode="dd/mm/yyyy"/><numFmt numFmtId="166" formatCode="dd/mm/yyyy hh:mm"/></numFmts>
 <fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
 <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF5E9D3"/></patternFill></fill></fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>
+<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 
@@ -37,6 +49,10 @@ function sheetXml({ columns, rows }) {
   const cell = (ref, v, c, header) => {
     if (header) return `<c r="${ref}" s="1" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
     if (v == null || v === '') return '';
+    if (c.type === 'date' || c.type === 'datetime') {
+      const n = excelSerial(v, c.type === 'datetime');
+      if (n != null) return `<c r="${ref}" s="${c.type === 'date' ? 3 : 4}"><v>${n}</v></c>`;
+    }
     if ((c.type === 'money' || c.type === 'number') && Number.isFinite(Number(v))) {
       return `<c r="${ref}"${c.type === 'money' ? ' s="2"' : ''}><v>${Number(v)}</v></c>`;
     }
