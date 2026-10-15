@@ -68,6 +68,8 @@ const ok = (c, m) => {
 
   const pr = profit.presetRange('thang-truoc', '2031-01-15');
   ok(pr.from === '2030-12-01' && pr.to === '2030-12-31', 'Kỳ "Tháng trước" tính đúng qua năm');
+  ok(profit.isPaid({ status: 'completed', payment_status: 'paid' }) && !profit.isPaid({ status: 'completed', payment_status: 'refunded' }),
+    'Đơn đã giao nhưng khách trả hàng, đã hoàn tiền → không tính doanh thu');
 
   await db('order_items').whereIn('order_id', made).del();
   await db('orders').whereIn('id', made).del();

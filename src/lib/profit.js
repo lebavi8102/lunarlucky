@@ -52,7 +52,8 @@ function presetRange(key, today = ymd(new Date())) {
   }
 }
 
-const isPaid = (o) => o.status !== 'cancelled' && (o.payment_status === 'paid' || o.status === 'completed');
+// Đơn đã hoàn tiền (khách trả hàng) không còn là doanh thu
+const isPaid = (o) => o.status !== 'cancelled' && o.payment_status !== 'refunded' && (o.payment_status === 'paid' || o.status === 'completed');
 
 async function report({ from, to }) {
   const start = startOf(from);
@@ -122,6 +123,7 @@ async function report({ from, to }) {
     pendingOrders: pending.length,
     pendingValue: sum(pending, (o) => o.total),
     cancelled: orders.filter((o) => o.status === 'cancelled').length,
+    refunded: orders.filter((o) => o.payment_status === 'refunded').length,
     goods, shipping, vatCollected, revenue, cogs, gross, expenses, expenseByCat, net,
     grossMargin: revenue ? gross / revenue : 0,
     netMargin: revenue ? net / revenue : 0,
