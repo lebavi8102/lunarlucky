@@ -25,6 +25,7 @@ async function start() {
       .then((r) => r.ok && console.log('[telegram] webhook:', r.url))
       .catch((err) => console.error('[telegram] không đăng ký được webhook:', err.message));
     require('./src/lib/bank-payments').startExpiryTimer();
+    require('./src/lib/ops-digest').start();
     require('./src/lib/site-url').start();
   });
 

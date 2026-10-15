@@ -248,6 +248,8 @@ const SETTING_GROUPS = [
   ]],
   ['Kho hàng', [
     ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
+    ['ops_digest', 'Bot tự nhắc việc: tin sáng (việc hôm nay), nhắc đơn quá 2 giờ chưa xác nhận, tin tối (chốt ngày + tiền COD) — 1 = bật, 0 = tắt'],
+    ['ops_morning_hour', 'Giờ gửi tin sáng (0–23)'], ['ops_evening_hour', 'Giờ gửi tin chốt ngày (0–23)'],
     ['telegram_admin_only', 'Chỉ QUẢN TRỊ VIÊN nhóm Telegram được hủy đơn / xác nhận đã nhận tiền (1 = bật, 0 = ai trong nhóm cũng bấm được)'],
   ]],
   ['Trang chủ', [

@@ -666,5 +666,5 @@ async function ensureWebhook() {
 }
 
 module.exports = {
-  sendNewOrder, refreshOrderMessage, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder, opsNotes,
+  sendNewOrder, refreshOrderMessage, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder, opsNotes, codReport,
 };
