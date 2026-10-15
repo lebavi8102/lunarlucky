@@ -616,7 +616,16 @@ ul, ol { margin: 0; padding: 0; }
 .order-hero { text-align: center; padding-block: var(--space-8) var(--space-6); }
 .order-hero .seal { width: 76px; height: 76px; margin: 0 auto var(--space-5); border-radius: 50%; display: grid; place-items: center; background: var(--jade-100); color: var(--jade-700); }
 .order-hero .seal .icon { width: 36px; height: 36px; stroke-width: 2; }
-.order-code { display: inline-flex; gap: 10px; align-items: center; margin-top: var(--space-4); padding: 8px 8px 8px 18px; border-radius: 999px; border: 1px dashed var(--gold-600); font-weight: 600; letter-spacing: 0.06em; }
+.order-code { display: inline-flex; gap: 10px; align-items: center; margin-top: var(--space-4); padding: 8px 8px 8px 18px; border-radius: 999px; border: 1px dashed var(--gold-600); font-weight: 600; letter-spacing: 0.06em; white-space: nowrap; max-width: 100%; }
+.order-code .copy-btn { white-space: nowrap; flex-shrink: 0; }
+/* Điện thoại: thu gọn phần "Đặt hàng thành công" để mã QR chuyển khoản hiện sớm hơn */
+@media (max-width: 560px) {
+  .order-hero { padding-block: var(--space-5) var(--space-4); }
+  .order-hero .seal { width: 52px; height: 52px; margin-bottom: var(--space-3); }
+  .order-hero .seal .icon { width: 26px; height: 26px; }
+  .order-hero .lead { font-size: 15px; }
+  .order-code { gap: 6px; padding: 6px 6px 6px 12px; letter-spacing: 0.02em; font-size: 14px; }
+}
 .qr-card { display: grid; gap: var(--space-6); align-items: center; background: var(--surface); border: 1px solid var(--gold-500); border-radius: var(--radius-lg); padding: var(--space-6); }
 @media (min-width: 768px) { .qr-card { grid-template-columns: 260px 1fr; } }
 .qr-card img { width: 100%; max-width: 260px; margin-inline: auto; border-radius: var(--radius); background: #fff; }

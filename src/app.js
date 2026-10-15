@@ -43,7 +43,9 @@ app.use(
   express.static(path.join(root, 'public'), {
     maxAge: config.isProd ? '7d' : 0,
     setHeaders(res, file) {
-      if (/\.(css|js)$/.test(file) && config.isProd) res.setHeader('Cache-Control', 'public, max-age=86400');
+      // Có mã phiên bản (?v=hash, đổi khi tệp đổi) → điện thoại khách lưu hẳn 1 năm, khỏi tải lại
+      if (config.isProd && res.req && res.req.query && res.req.query.v) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      else if (/\.(css|js)$/.test(file) && config.isProd) res.setHeader('Cache-Control', 'public, max-age=86400');
     },
   }),
 );
