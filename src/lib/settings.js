@@ -39,6 +39,9 @@ const DEFAULTS = {
   free_ship_threshold: '1500000',
   min_delivery_days: '1',
   province_min_days: '3',
+  // Đơn nhiều giỏ cần thời gian chuẩn bị
+  bulk_min_qty: '5',
+  bulk_min_days: '2',
   // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
   order_deadline: '2027-02-05',
   order_deadline_label: '29 tháng Chạp',

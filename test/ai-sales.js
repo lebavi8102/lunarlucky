@@ -37,6 +37,13 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(good.ok && req.session.cart.lines[0].qty === 2 && req.session.aiPrefill.payment_method === 'bank' && req.session.aiPrefill.delivery_slot === 'sang',
       'prepare_order: bỏ 2 giỏ vào giỏ khách, điền sẵn; đơn tặng chọn COD → chuyển khoản');
     ok(out.action && out.action.url === '/thanh-toan?tu-van=1', 'Trả về nút "Kiểm tra & đặt hàng"');
+    // Đơn nhiều giỏ (từ 5) cần 2 ngày chuẩn bị
+    const d10 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 10 }, req, out);
+    ok(d10.earliest_delivery >= todayVN(2) && /cần 2 ngày chuẩn bị/.test(d10.preparation_note || ''), 'delivery_options: 10 giỏ ở Hà Nội → sớm nhất sau 2 ngày');
+    const rush = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 10 }], customer_name: 'Cty A', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: todayVN(1), payment_method: 'bank' }, { session: {} }, {});
+    ok(/sớm nhất từ/.test(rush.error || ''), 'prepare_order: 10 giỏ giao ngày mai → từ chối, nói ngày sớm nhất');
+    const sysNow = await ai.systemPrompt();
+    ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /cần 2 ngày chuẩn bị/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 
     // Vòng chat với Claude giả lập: gọi search_products rồi trả lời
     const calls = [];

@@ -38,9 +38,15 @@ function rememberOrder(req, code) {
 
 /** Hà Nội giao sớm (Ahamove/tự giao); tỉnh khác đi chuyển phát 2–4 ngày → ngày giao sớm nhất muộn hơn. */
 const isHanoi = (province) => /hà nội/i.test(String(province || '').normalize('NFC'));
-function minDaysFor(province, s) {
+/** Đơn nhiều giỏ (mặc định từ 5) cần 1–2 ngày chuẩn bị → ngày giao sớm nhất lùi lại. */
+function bulkRule(s) {
+  return { qty: Number(s.bulk_min_qty) || 5, days: Number(s.bulk_min_days) || 2 };
+}
+function minDaysFor(province, s, qty = 0) {
   const hn = Number(s.min_delivery_days) || 1;
-  return isHanoi(province) ? hn : Math.max(hn, Number(s.province_min_days) || 3);
+  const base = isHanoi(province) ? hn : Math.max(hn, Number(s.province_min_days) || 3);
+  const b = bulkRule(s);
+  return qty >= b.qty ? Math.max(base, b.days) : base;
 }
 /** Những ngày nghỉ Tết (không giao). */
 function tetClosed(s) {
@@ -53,15 +59,16 @@ function openDay(d, s) {
   const c = tetClosed(s);
   return c && d >= c.from && d <= c.to ? nextDay(c.to) : d;
 }
-function dateCtx(s, province) {
-  const minDays = minDaysFor(province, s);
+function dateCtx(s, province, qty = 0) {
+  const minDays = minDaysFor(province, s, qty);
   const quickDates = [];
   for (let d = openDay(todayVN(minDays), s); quickDates.length < 3; d = openDay(nextDay(d), s)) quickDates.push(d);
   const c = tetClosed(s);
   return {
     quickDates,
     minDate: quickDates[0], maxDate: todayVN(180),
-    dateRules: { hn: openDay(todayVN(minDaysFor('Hà Nội', s)), s), tinh: openDay(todayVN(minDaysFor('', s)), s), closedFrom: c ? c.from : '', closedTo: c ? c.to : '' },
+    bulkNote: qty >= bulkRule(s).qty ? `Đơn từ ${bulkRule(s).qty} giỏ cần ${bulkRule(s).days} ngày chuẩn bị.` : '',
+    dateRules: { hn: openDay(todayVN(minDaysFor('Hà Nội', s, qty)), s), tinh: openDay(todayVN(minDaysFor('', s, qty)), s), closedFrom: c ? c.from : '', closedTo: c ? c.to : '' },
   };
 }
 
@@ -89,7 +96,7 @@ router.get('/thanh-toan', async (req, res) => {
   res.locals.seo.noindex = true;
   // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
   const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
-  const dc = dateCtx(res.locals.s, defaults.province);
+  const dc = dateCtx(res.locals.s, defaults.province, priced.count);
   res.render('shop/checkout', {
     cart: priced, values: { delivery_date: dc.minDate, ...defaults }, errors: {}, fromAi: !!req.session.aiPrefill, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
     ...dc,
@@ -109,7 +116,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const priced = await cart.priceCart(c);
   if (!priced.lines.length) return res.redirect('/gio-hang');
 
-  const minDays = minDaysFor(req.body.province, res.locals.s);
+  const minDays = minDaysFor(req.body.province, res.locals.s, priced.count);
   if (req.csrfFailed) {
     res.status(409);
     res.locals.seo.title = 'Thanh toán · Lunar Lucky';
@@ -120,7 +127,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     delete values.cart_snapshot;
     return res.render('shop/checkout', {
       cart: priced, values, errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
-      ...dateCtx(res.locals.s, req.body.province),
+      ...dateCtx(res.locals.s, req.body.province, priced.count),
     });
   }
   const f = new Form(req.body);
@@ -141,7 +148,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     if (!address) address = recipient_address;
   }
   const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
-  if (f.errors.delivery_date && !isHanoi(req.body.province) && delivery_date && delivery_date < todayVN(minDays)) {
+  if (f.errors.delivery_date && priced.count >= bulkRule(res.locals.s).qty && delivery_date && delivery_date < todayVN(minDays)) {
+    f.errors.delivery_date = `Đơn ${priced.count} giỏ cần ${bulkRule(res.locals.s).days} ngày chuẩn bị — vui lòng chọn giao từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
+  } else if (f.errors.delivery_date && !isHanoi(req.body.province) && delivery_date && delivery_date < todayVN(minDays)) {
     f.errors.delivery_date = `Giao ngoài Hà Nội đi chuyển phát mất 2–4 ngày — vui lòng chọn từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
   }
   const closed = tetClosed(res.locals.s);
@@ -188,7 +197,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
       cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
-      ...dateCtx(res.locals.s, req.body.province),
+      ...dateCtx(res.locals.s, req.body.province, priced.count),
     });
   }
 
@@ -386,5 +395,7 @@ module.exports = router;
 module.exports.PROVINCES = PROVINCES;
 module.exports.shareLink = shareLink;
 module.exports.dateCtx = dateCtx;
+module.exports.bulkRule = bulkRule;
+module.exports.minDaysFor = minDaysFor;
 module.exports.isHanoi = isHanoi;
 module.exports.tetClosed = tetClosed;

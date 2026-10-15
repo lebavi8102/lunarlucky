@@ -255,6 +255,7 @@ const SETTING_GROUPS = [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
     ['province_min_days', 'Số ngày tối thiểu khi giao ngoài Hà Nội (chuyển phát)'],
+    ['bulk_min_qty', 'Đơn từ bao nhiêu giỏ thì cần thêm thời gian chuẩn bị'], ['bulk_min_days', 'Số ngày chuẩn bị tối thiểu cho đơn nhiều giỏ đó'],
     ['order_deadline', 'Ngày giao cuối cùng trước Tết (YYYY-MM-DD, vd 2027-02-05) — để trống thì không hiện lời nhắc'],
     ['order_deadline_label', 'Cách gọi ngày đó theo âm lịch (vd: 29 tháng Chạp)'],
     ['tet_closed_from', 'Nghỉ Tết TỪ ngày (YYYY-MM-DD) — không cho chọn giao'], ['tet_closed_to', 'Nghỉ Tết ĐẾN HẾT ngày (YYYY-MM-DD)'],

@@ -77,7 +77,8 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.
 - Phí giao ${money(Number(s.shipping_fee) || 0)}/đơn, miễn phí cho đơn từ ${money(Number(s.free_ship_threshold) || 0)}.
 - Thanh toán: chuyển khoản qua mã QR (tự xác nhận), hoặc COD (trả khi nhận). Đơn COD từ ${dr.minQty} giỏ hoặc tiền hàng trên ${money(dr.minTotal)} phải đặt cọc ${dr.percent}% qua QR. Đơn gửi tặng và đơn xuất hóa đơn VAT phải chuyển khoản.
-- Doanh nghiệp: nhận từ 5 giỏ, in logo lên hộp/thiệp, xuất VAT, giao theo danh sách; báo giá trong 24 giờ tại /qua-tang-doanh-nghiep. Đơn từ 20 giỏ hoặc cần in logo: mời khách gửi yêu cầu báo giá hoặc để lại số để chuyên viên gọi (request_callback).
+- Đơn từ ${checkoutHelpers().bulkRule(s).qty} giỏ trở lên cần ${checkoutHelpers().bulkRule(s).days} ngày chuẩn bị: ngày giao sớm nhất lùi lại (delivery_options với qty sẽ tính đúng). Không hứa giao gấp cho đơn nhiều giỏ.
+- Doanh nghiệp: nhận từ 5 giỏ, xuất VAT, giao theo danh sách; báo giá trong 24 giờ tại /qua-tang-doanh-nghiep. In logo: từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ; từ 500 giỏ thiết kế hộp riêng. Giá ưu đãi theo số lượng từ 20 giỏ, mức cụ thể do chuyên viên báo. Đơn cần in logo hoặc từ 20 giỏ: mời khách gửi yêu cầu báo giá hoặc để lại số để chuyên viên gọi (request_callback).
 - Hotline ${s.shop_phone || ''}. Zalo: ${s.zalo_url || ''}.
 
 QUY TẮC
@@ -117,7 +118,10 @@ function tools() {
       input_schema: {
         type: 'object',
         additionalProperties: false,
-        properties: { province: { type: 'string', enum: PROVINCES } },
+        properties: {
+          province: { type: 'string', enum: PROVINCES },
+          qty: { type: 'integer', description: 'Tổng số giỏ khách định đặt (đơn nhiều giỏ cần thêm ngày chuẩn bị)' },
+        },
         required: ['province'],
       },
     },
@@ -189,11 +193,12 @@ async function runTool(name, input, req, out) {
   }
   if (name === 'delivery_options') {
     const { dateCtx, isHanoi, tetClosed } = checkoutHelpers();
-    const dc = dateCtx(s, input.province);
+    const dc = dateCtx(s, input.province, Number(input.qty) || 0);
     const closed = tetClosed(s);
     return {
       today: todayVN(),
       earliest_delivery: dc.minDate,
+      preparation_note: dc.bulkNote || null,
       next_options: dc.quickDates,
       slots_available: isHanoi(input.province) ? SLOTS : 'Tỉnh khác: không hẹn buổi, giao giờ hành chính',
       tet_closed: closed ? { from: closed.from, to: closed.to } : null,
@@ -216,6 +221,10 @@ async function runTool(name, input, req, out) {
     for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
     const priced = await cart.priceCart(c);
     if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
+    const earliest = checkoutHelpers().dateCtx(s, input.province, priced.count).minDate;
+    if (input.delivery_date < earliest) {
+      return { error: `Đơn ${priced.count} giỏ giao ${input.province} sớm nhất từ ${earliest}. Báo khách và hỏi lại ngày giao.` };
+    }
     req.session.cart = c;
     const gift = !!input.is_gift;
     const method = gift ? 'bank' : input.payment_method; // đơn tặng: không thu tiền người nhận
