@@ -1,15 +1,31 @@
 <%- include('_top') %>
-<div class="admin-head"><h1>Khách hàng</h1><div class="actions"><span class="muted small"><%= users.length %> tài khoản</span> <a class="btn btn-sm btn-quiet" href="/admin/sao-luu/tai-ve?loai=khach-hang"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Xuất Excel (tất cả khách đã mua)</a></div></div>
+<div class="admin-head"><h1>Khách hàng</h1><div class="actions"><span class="muted small"><%= total %> người đã mua · <%= repeat %> khách quay lại</span> <a class="btn btn-sm btn-quiet" href="/admin/sao-luu/tai-ve?loai=khach-hang"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Xuất Excel</a></div></div>
+<form class="filters" method="get" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <input class="input" type="search" name="q" value="<%= q %>" placeholder="Tìm tên, SĐT, công ty…" style="max-width:280px">
+  <select class="input" name="sap_xep" style="max-width:200px" onchange="this.form.submit()">
+    <option value="chi-tieu" <%= sort === 'chi-tieu' ? 'selected' : '' %>>Chi tiêu nhiều nhất</option>
+    <option value="so-don" <%= sort === 'so-don' ? 'selected' : '' %>>Mua nhiều lần nhất</option>
+    <option value="gan-day" <%= sort === 'gan-day' ? 'selected' : '' %>>Mua gần đây</option>
+  </select>
+  <button class="btn btn-sm" type="submit">Lọc</button>
+</form>
 <div class="table-wrap">
   <table class="table">
-    <thead><tr><th scope="col">Tên</th><th scope="col">Email</th><th scope="col">Điện thoại</th><th scope="col">Ngày tạo</th><th scope="col" class="num">Số đơn</th><th scope="col" class="num">Tổng chi tiêu</th></tr></thead>
+    <thead><tr><th scope="col">Khách</th><th scope="col">Điện thoại</th><th scope="col" class="num">Số đơn</th><th scope="col" class="num">Tổng đã mua</th><th scope="col">Đơn gần nhất</th></tr></thead>
     <tbody>
-      <% if (!users.length) { %><tr><td colspan="6" class="muted" style="padding:32px;text-align:center">Chưa có khách đăng ký tài khoản.</td></tr><% } %>
-      <% users.forEach(u => { %>
-      <tr><td><b><%= u.name %></b></td><td><%= u.email %></td><td><%= u.phone || '—' %></td><td><%= fmt.date(u.created_at) %></td><td class="num"><%= u.orders %></td><td class="num"><%= money(u.spent || 0) %></td></tr>
+      <% if (!rows.length) { %><tr><td colspan="5" class="muted" style="padding:32px;text-align:center"><%= q ? 'Không tìm thấy khách phù hợp.' : 'Chưa có khách mua hàng.' %></td></tr><% } %>
+      <% rows.forEach(c => { const tel = String(c.phone || '').replace(/[^\d+]/g, ''); %>
+      <tr>
+        <td class="wrap"><b><%= c.name || '—' %></b><% if (c.orders >= 2) { %> <span class="status status-completed">Khách quen</span><% } %><% if (c.cancelled >= 2) { %> <span class="status status-cancelled"><%= c.cancelled %> đơn hủy</span><% } %>
+          <% if (c.company) { %><br><span class="small muted"><%= c.company %></span><% } %><% if (c.email) { %><br><span class="small muted"><%= c.email %></span><% } %></td>
+        <td><% if (tel) { %><a class="t" href="tel:<%= tel %>"><%= c.phone %></a> · <a class="small" href="https://zalo.me/<%= tel.replace(/^\+?84/, '0') %>" target="_blank" rel="noopener">Zalo</a><% } else { %>—<% } %></td>
+        <td class="num"><a href="/admin/don-hang?q=<%= encodeURIComponent(c.phone || c.name || '') %>"><%= c.orders %></a></td>
+        <td class="num"><%= money(c.spent || 0) %></td>
+        <td><%= c.last ? fmt.date(c.last) : '—' %></td>
+      </tr>
       <% }) %>
     </tbody>
   </table>
 </div>
-<p class="small muted" style="margin-top:12px">Khách đặt hàng không cần tài khoản vẫn được lưu trong mục Đơn hàng.</p>
+<p class="small muted" style="margin-top:12px">Gom theo số điện thoại người đặt, gồm cả khách không tạo tài khoản. Không tính đơn đã hủy vào số đơn và tổng mua. Bấm số đơn để xem các đơn của khách.</p>
 <%- include('_bottom') %>

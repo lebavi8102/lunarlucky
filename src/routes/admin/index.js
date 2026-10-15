@@ -16,6 +16,10 @@ router.use(requireAdmin, (req, res, next) => {
 });
 
 const { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder } = require('../../lib/orders');
+// Chờ tiền: chuyển khoản chưa trả, hoặc COD chờ cọc
+const awaiting = (w) => w.where('payment_status', 'pending').andWhere((x) => x.where('payment_method', 'bank').orWhere('deposit_amount', '>', 0));
+// Cần xử lý: đơn mới đã sẵn sàng (COD không cọc, hoặc đã trả/đã cọc)
+const readyNew = (w) => w.where({ status: 'new' }).andWhere((x) => x.whereIn('payment_status', ['paid', 'deposit']).orWhere((y) => y.where({ payment_method: 'cod', deposit_amount: 0 })));
 const QUOTE_STATUS = { new: 'Mới', contacted: 'Đã liên hệ', won: 'Chốt đơn', lost: 'Không thành' };
 
 router.use((req, res, next) => {
@@ -25,8 +29,9 @@ router.use((req, res, next) => {
 
 /* ---------- Tổng quan ---------- */
 router.get('/', async (req, res) => {
-  const since = new Date(Date.now() - 30 * 86400000);
-  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at');
+  const since = new Date(Date.now() - 32 * 86400000); // đủ cả tháng này (tháng 31 ngày)
+  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at', 'payment_method', 'payment_status', 'deposit_amount');
+  const { awaitingMoney } = require('../../lib/payment');
   const days = [];
   for (let i = 13; i >= 0; i--) days.push({ day: todayVN(-i), total: 0, count: 0 });
   const dayKey = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(toDate(d));
@@ -35,8 +40,14 @@ router.get('/', async (req, res) => {
   let revenueToday = 0;
   let revenueMonth = 0;
   let ordersToday = 0;
+  let waitingToday = 0;
   for (const o of recentAll) {
     if (o.status === 'cancelled') continue;
+    // Đơn chưa trả tiền/chưa cọc có thể tự hủy → chưa tính là doanh thu
+    if (awaitingMoney(o)) {
+      if (dayKey(o.created_at) === today) waitingToday += o.total;
+      continue;
+    }
     const k = dayKey(o.created_at);
     const d = days.find((x) => x.day === k);
     if (d) {
@@ -50,17 +61,17 @@ router.get('/', async (req, res) => {
     if (k.startsWith(monthPrefix)) revenueMonth += o.total;
   }
   const [newOrders, unpaidBank, newQuotes, lowStock, recent, topProducts] = await Promise.all([
-    db('orders').where({ status: 'new' }).count({ n: '*' }).first(),
-    db('orders').where({ payment_method: 'bank', payment_status: 'pending' }).whereNot({ status: 'cancelled' }).count({ n: '*' }).first(),
+    db('orders').where(readyNew).count({ n: '*' }).first(),
+    db('orders').where(awaiting).whereNot({ status: 'cancelled' }).count({ n: '*' }).first(),
     db('quotes').where({ status: 'new' }).count({ n: '*' }).first(),
-    db('products').where({ is_active: true }).andWhere('stock', '<=', 5).orderBy('stock').limit(6),
+    settings.all().then((s) => db('products').where({ is_active: true }).andWhere('stock', '<=', Number(s.low_stock_threshold) || 5).orderBy('stock').limit(6)),
     db('orders').orderBy('id', 'desc').limit(8),
     db('products').orderBy('sold', 'desc').limit(5),
   ]);
   res.render('admin/dashboard', {
     title: 'Tổng quan',
     stats: {
-      revenueToday, revenueMonth, ordersToday,
+      revenueToday, revenueMonth, ordersToday, waitingToday,
       newOrders: Number(newOrders.n), unpaidBank: Number(unpaidBank.n), newQuotes: Number(newQuotes.n),
     },
     days, lowStock, recent, topProducts,
@@ -74,9 +85,6 @@ router.get('/don-hang', async (req, res) => {
   const page = Math.max(1, Number(req.query.trang) || 1);
   let query = db('orders');
   if (status) query = query.where({ status });
-  // Chờ tiền: chuyển khoản chưa trả, hoặc COD chờ cọc
-  const awaiting = (w) => w.where('payment_status', 'pending').andWhere((x) => x.where('payment_method', 'bank').orWhere('deposit_amount', '>', 0));
-  const readyNew = (w) => w.where({ status: 'new' }).andWhere((x) => x.whereIn('payment_status', ['paid', 'deposit']).orWhere((y) => y.where({ payment_method: 'cod', deposit_amount: 0 })));
   if (req.query.chua_tt) query = query.where(awaiting).whereNot('status', 'cancelled');
   // Cần xử lý: đơn mới đã sẵn sàng (COD hoặc đã thanh toán) — không lẫn đơn chuyển khoản chưa trả tiền
   if (req.query.can_xu_ly) query = query.where(readyNew);
@@ -165,16 +173,23 @@ router.post('/bao-gia/:id', async (req, res) => {
 
 /* ---------- Khách hàng ---------- */
 router.get('/khach-hang', async (req, res) => {
-  const users = await db('users')
-    .leftJoin('orders', 'orders.user_id', 'users.id')
-    .where('users.role', 'customer')
-    .groupBy('users.id', 'users.name', 'users.email', 'users.phone', 'users.created_at')
-    .select('users.id', 'users.name', 'users.email', 'users.phone', 'users.created_at')
-    .count({ orders: 'orders.id' })
-    .sum({ spent: 'orders.total' })
-    .orderBy('users.id', 'desc')
-    .limit(300);
-  res.render('admin/customers', { title: 'Khách hàng', users });
+  // Người đã mua (gom theo SĐT) — phần lớn khách đặt không cần tài khoản
+  const orders = await db('orders').select('id', 'phone', 'customer_name', 'email', 'address', 'province', 'created_at', 'vat_company', 'status', 'total', 'user_id');
+  let rows = await require('../../lib/backup').customerRows(orders);
+  const total = rows.length;
+  const repeat = rows.filter((c) => c.orders >= 2).length;
+  const q = String(req.query.q || '').trim().slice(0, 60);
+  if (q) {
+    const fold = require('../../lib/search').fold;
+    const f = fold(q);
+    const d = q.replace(/\D/g, '');
+    rows = rows.filter((c) => fold(`${c.name} ${c.email || ''} ${c.company || ''}`).includes(f) || (d.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(d)));
+  }
+  const sort = ['chi-tieu', 'gan-day', 'so-don'].includes(req.query.sap_xep) ? req.query.sap_xep : 'chi-tieu';
+  const t = (x) => new Date(x || 0).getTime();
+  if (sort === 'gan-day') rows.sort((a, b) => t(b.last) - t(a.last));
+  if (sort === 'so-don') rows.sort((a, b) => b.orders - a.orders || b.spent - a.spent);
+  res.render('admin/customers', { title: 'Khách hàng', rows: rows.slice(0, 300), total, repeat, q, sort });
 });
 
 /* ---------- Cài đặt ---------- */

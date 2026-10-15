@@ -3,16 +3,16 @@
 <div class="admin-head"><h1>Tổng quan</h1><div class="actions"><a class="btn btn-sm" href="/admin/san-pham/moi"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm sản phẩm</a></div></div>
 
 <div class="stat-grid">
-  <div class="stat hl"><div class="label">Doanh thu hôm nay</div><div class="value"><%= money(stats.revenueToday) %></div><div class="small" style="opacity:.75"><%= stats.ordersToday %> đơn</div></div>
+  <div class="stat hl"><div class="label">Doanh thu hôm nay</div><div class="value"><%= money(stats.revenueToday) %></div><div class="small" style="opacity:.75"><%= stats.ordersToday %> đơn<% if (stats.waitingToday) { %> · chờ tiền <%= money(stats.waitingToday) %><% } %></div></div>
   <div class="stat"><div class="label">Doanh thu tháng này</div><div class="value"><%= money(stats.revenueMonth) %></div></div>
-  <div class="stat"><div class="label">Đơn mới cần xử lý</div><a class="value" href="/admin/don-hang?status=new" style="display:block"><%= stats.newOrders %></a></div>
-  <div class="stat"><div class="label">Chờ chuyển khoản</div><a class="value" href="/admin/don-hang?chua_tt=1" style="display:block"><%= stats.unpaidBank %></a></div>
+  <div class="stat"><div class="label">Đơn mới cần xử lý</div><a class="value" href="/admin/don-hang?can_xu_ly=1" style="display:block"><%= stats.newOrders %></a></div>
+  <div class="stat"><div class="label">Chờ chuyển khoản / cọc</div><a class="value" href="/admin/don-hang?chua_tt=1" style="display:block"><%= stats.unpaidBank %></a></div>
   <div class="stat"><div class="label">Báo giá B2B mới</div><a class="value" href="/admin/bao-gia" style="display:block"><%= stats.newQuotes %></a></div>
 </div>
 
 <div class="panel-grid">
   <section class="panel">
-    <h2>Doanh thu 14 ngày qua <span class="small muted" style="font-weight:400">Không tính đơn đã hủy</span></h2>
+    <h2>Doanh thu 14 ngày qua <span class="small muted" style="font-weight:400">Không tính đơn đã hủy hoặc đang chờ chuyển khoản/cọc</span></h2>
     <div class="chart" role="list" aria-label="Doanh thu theo ngày">
       <% days.forEach(d => { %>
         <div class="bar <%= d.day === today ? 'today' : '' %>" role="listitem" tabindex="0" style="height:<%= Math.max(1, Math.round(d.total / max * 100)) %>%" aria-label="<%= fmt.ymd(d.day) %>: <%= money(d.total) %>, <%= d.count %> đơn">

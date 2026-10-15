@@ -92,7 +92,8 @@ async function orderSheets() {
 }
 
 /** Khách hàng gộp theo số điện thoại (phần lớn khách đặt không cần tài khoản) + khách có tài khoản. */
-async function customerSheet(orders) {
+/** Gom đơn theo SĐT → mỗi người mua 1 dòng (kể cả khách không tạo tài khoản). */
+async function customerRows(orders) {
   const digits = (p) => String(p || '').replace(/\D/g, '').replace(/^84/, '0');
   const map = new Map();
   for (const o of [...orders].sort((a, b) => a.id - b.id)) {
@@ -119,8 +120,11 @@ async function customerSheet(orders) {
     c.account = true;
     map.set(k, c);
   }
-  const rows = [...map.values()]
-    .sort((a, b) => b.spent - a.spent)
+  return [...map.values()].sort((a, b) => b.spent - a.spent);
+}
+
+async function customerSheet(orders) {
+  const rows = (await customerRows(orders))
     .map((c) => ({ ...c, first: vnTime(c.first), last: vnTime(c.last), account: yesNo(c.account) }));
   return {
     columns: [
@@ -182,4 +186,4 @@ async function exportXlsx(kind = 'tat-ca') {
   return buildXlsx([orders, items, customers, await productSheet(), await expenseSheet()]);
 }
 
-module.exports = { exportXlsx, vnTime };
+module.exports = { exportXlsx, vnTime, customerRows };
