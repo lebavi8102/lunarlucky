@@ -33,7 +33,7 @@
       <p class="ship-promise">
         <svg class="icon icon-sm"><use href="#i-truck"/></svg>
         <span>Giao từ <b><%= earliest.slice(8) %>/<%= earliest.slice(5, 7) %></b> tại Hà Nội · tỉnh khác 2–4 ngày<br>
-        <% if (orderDeadline) { %>Nhận đơn giao trước Tết đến hết <b><%= orderDeadline %></b><br><% } %>
+        <% if (orderDeadline) { %>Giao quà Tết đến hết <b><%= orderDeadline %></b><br><% } %>
         <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> cho giỏ này<% } else if (freeShip) { %>Miễn phí giao cho đơn từ <%= money(freeShip) %><% } %></span>
       </p>
       <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>

@@ -42,12 +42,26 @@ function minDaysFor(province, s) {
   const hn = Number(s.min_delivery_days) || 1;
   return isHanoi(province) ? hn : Math.max(hn, Number(s.province_min_days) || 3);
 }
+/** Những ngày nghỉ Tết (không giao). */
+function tetClosed(s) {
+  const ok = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+  return ok(s.tet_closed_from) && ok(s.tet_closed_to) ? { from: s.tet_closed_from, to: s.tet_closed_to } : null;
+}
+const nextDay = (d) => new Date(Date.parse(d + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
+/** Ngày rơi vào kỳ nghỉ Tết → dời sang ngày mở cửa lại. */
+function openDay(d, s) {
+  const c = tetClosed(s);
+  return c && d >= c.from && d <= c.to ? nextDay(c.to) : d;
+}
 function dateCtx(s, province) {
   const minDays = minDaysFor(province, s);
+  const quickDates = [];
+  for (let d = openDay(todayVN(minDays), s); quickDates.length < 3; d = openDay(nextDay(d), s)) quickDates.push(d);
+  const c = tetClosed(s);
   return {
-    quickDates: [0, 1, 2].map((i) => todayVN(minDays + i)),
-    minDate: todayVN(minDays), maxDate: todayVN(180),
-    dateRules: { hn: todayVN(minDaysFor('Hà Nội', s)), tinh: todayVN(minDaysFor('', s)) },
+    quickDates,
+    minDate: quickDates[0], maxDate: todayVN(180),
+    dateRules: { hn: openDay(todayVN(minDaysFor('Hà Nội', s)), s), tinh: openDay(todayVN(minDaysFor('', s)), s), closedFrom: c ? c.from : '', closedTo: c ? c.to : '' },
   };
 }
 
@@ -128,6 +142,11 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
   if (f.errors.delivery_date && !isHanoi(req.body.province) && delivery_date && delivery_date < todayVN(minDays)) {
     f.errors.delivery_date = `Giao ngoài Hà Nội đi chuyển phát mất 2–4 ngày — vui lòng chọn từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
+  }
+  const closed = tetClosed(res.locals.s);
+  if (!f.errors.delivery_date && closed && delivery_date >= closed.from && delivery_date <= closed.to) {
+    const vn = (d) => d.split('-').reverse().slice(0, 2).join('/');
+    f.errors.delivery_date = `Lunar Lucky nghỉ Tết từ ${vn(closed.from)} đến ${vn(closed.to)}. Vui lòng chọn giao trước ${vn(closed.from)} hoặc từ ${vn(nextDay(closed.to))}.`;
   }
   // Buổi giao: chỉ hẹn được ở Hà Nội (tỉnh khác đi chuyển phát)
   const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;

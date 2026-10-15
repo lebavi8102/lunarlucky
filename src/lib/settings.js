@@ -39,8 +39,12 @@ const DEFAULTS = {
   free_ship_threshold: '1500000',
   min_delivery_days: '1',
   province_min_days: '3',
-  // Hạn chót nhận đơn giao trước Tết (YYYY-MM-DD); để trống thì không hiện
-  order_deadline: '2027-01-30',
+  // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
+  order_deadline: '2027-02-05',
+  order_deadline_label: '29 tháng Chạp',
+  // Nghỉ Tết: không nhận giao trong khoảng này (YYYY-MM-DD)
+  tet_closed_from: '2027-02-06',
+  tet_closed_to: '2027-02-10',
   telegram_admin_only: '1',
   ops_digest: '1',
   backup_email: '1',

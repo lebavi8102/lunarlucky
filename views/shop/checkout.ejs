@@ -84,7 +84,7 @@
               <% }) %>
             </div>
           </div>
-          <% if (orderDeadline) { %><p class="help" style="margin-top:6px">Nhận đơn giao trước Tết đến hết <b><%= orderDeadline %></b>.</p><% } %>
+          <% if (orderDeadline) { %><p class="help" style="margin-top:6px">Giao quà Tết đến hết <b><%= orderDeadline %></b><% if (typeof dateRules !== 'undefined' && dateRules.closedFrom) { %>; nghỉ Tết <%= dateRules.closedFrom.slice(8) %>/<%= dateRules.closedFrom.slice(5, 7) %>–<%= dateRules.closedTo.slice(8) %>/<%= dateRules.closedTo.slice(5, 7) %><% } %>.</p><% } %>
           <p class="help" style="margin-top:6px" data-slot-help><%= /hà nội/i.test(values.province || 'Hà Nội') ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.' %></p>
         </div>
       </fieldset>

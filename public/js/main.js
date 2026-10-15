@@ -312,8 +312,10 @@
       if (input.min === min) return;
       input.min = min;
       const quick = $$('[data-date-pick]');
+      const open = (d) => (rules.closedFrom && d >= rules.closedFrom && d <= rules.closedTo ? addDays(rules.closedTo, 1) : d);
+      let cur = open(min);
       quick.forEach((b, i) => {
-        const d = addDays(min, i);
+        const d = i === 0 ? cur : (cur = open(addDays(cur, 1)));
         b.dataset.datePick = d;
         b.innerHTML = `<b>${i === 0 ? 'Sớm nhất' : WD[new Date(d + 'T00:00:00Z').getUTCDay()]}</b><span>${d.slice(8)}/${d.slice(5, 7)}</span>`;
       });

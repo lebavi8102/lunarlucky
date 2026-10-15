@@ -122,6 +122,15 @@ async function addToCart(c, slug, qty = 1) {
     ok(r.status === 422 && /Giao ngoài Hà Nội đi chuyển phát/.test(r.text), 'Giao TP.HCM chọn ngày mai → báo cần chọn từ ngày sớm nhất cho tỉnh');
   }
 
+  // 4c2b. Nghỉ Tết (mặc định 06–10/02/2027) → không nhận giao những ngày đó
+  {
+    const g = client();
+    const { t } = await addToCart(g, 'gio-an-khang', 1);
+    const r = await g('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'Khách Mùng Hai', phone: '0912345678', province: 'Hà Nội',
+      address: '1 Tràng Tiền', delivery_date: '2027-02-07', payment_method: 'bank' } });
+    ok(r.status === 422 && /nghỉ Tết từ 06\/02 đến 10\/02/.test(r.text), 'Chọn giao mùng 2 Tết → báo shop nghỉ Tết, chọn ngày khác');
+  }
+
   // 4c3. Buổi giao (Hà Nội): lưu và hiện trên trang đơn
   {
     const g = client();
