@@ -144,7 +144,7 @@
             <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
             <span class="dot"></span>
             <% const dr = pay.depositRule(s); %>
-            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.<% if (dr.percent) { %> Đơn từ <%= dr.minQty %> giỏ hoặc trên <%= money(dr.minTotal) %>: đặt cọc <%= dr.percent %>% qua mã QR, phần còn lại trả khi nhận.<% } %></span></span>
+            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.<% if (dr.percent || dr.bulkPercent) { %> Cọc qua mã QR: <%= pay.depositText(s) %>; phần còn lại trả khi nhận.<% } %></span></span>
           </label>
         </div>
       </fieldset>

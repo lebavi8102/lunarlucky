@@ -35,6 +35,8 @@ const DEFAULTS = {
   cod_deposit_percent: '30',
   cod_deposit_min_total: '1000000',
   cod_deposit_min_qty: '2',
+  cod_deposit_bulk_qty: '5',
+  cod_deposit_bulk_percent: '50',
   shipping_fee: '50000',
   free_ship_threshold: '1500000',
   min_delivery_days: '1',

@@ -39,7 +39,7 @@
     <img src="<%= qr %>" alt="Mã VietQR chuyển khoản <%= money(due) %> cho đơn <%= order.code %>" width="260" height="300">
     <div>
       <h2 id="pay-title" class="h3"><%= isDeposit ? `Đặt cọc ${money(due)} để giữ đơn` : codQr ? 'Muốn chuyển khoản trước?' : 'Quét mã để thanh toán' %></h2>
-      <% if (isDeposit) { %><p class="small" style="margin:6px 0 0">Đơn từ <%= pay.depositRule(s).minQty %> giỏ hoặc trên <%= money(pay.depositRule(s).minTotal) %> cần cọc <%= pay.depositRule(s).percent %>% để Lunar Lucky giữ hàng và viết thiệp riêng cho bạn. <b>Phần còn lại <%= money(order.total - order.deposit_amount) %> trả khi nhận hàng.</b> Hoàn cọc 100% nếu shop không giao được.</p><% } %>
+      <% if (isDeposit) { %><p class="small" style="margin:6px 0 0">Theo quy định (<%= pay.depositText(s) %>), đơn này cọc <%= money(order.deposit_amount) %> để Lunar Lucky giữ hàng và chuẩn bị riêng cho bạn. <b>Phần còn lại <%= money(order.total - order.deposit_amount) %> trả khi nhận hàng.</b> Hoàn cọc 100% nếu shop không giao được.</p><% } %>
       <p class="muted small" style="margin:6px 0 12px"><%= codQr ? 'Không bắt buộc — đơn của bạn trả tiền mặt khi nhận hàng. Nếu muốn chuyển khoản trước, làm theo hướng dẫn dưới.' : 'Số tiền và nội dung chuyển khoản đã được điền sẵn trong mã QR.' %></p>
       <a class="btn btn-block" href="/don-hang/<%= order.code %>/qr.png" download="QR-<%= order.code %>.png" style="margin-bottom:10px"><svg class="icon icon-sm"><use href="#i-qr"/></svg> Lưu mã QR về máy</a>
       <ol class="pay-steps small">

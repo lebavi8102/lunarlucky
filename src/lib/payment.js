@@ -62,14 +62,28 @@ function depositRule(s) {
     const n = Number(String(v ?? '').replace(/[^\d]/g, ''));
     return String(v ?? '').trim() === '' || !Number.isFinite(n) ? d : n;
   };
-  return { percent: Math.min(100, num(s.cod_deposit_percent, 30)), minTotal: num(s.cod_deposit_min_total, 1000000), minQty: num(s.cod_deposit_min_qty, 2) };
+  return {
+    percent: Math.min(100, num(s.cod_deposit_percent, 30)), minTotal: num(s.cod_deposit_min_total, 1000000), minQty: num(s.cod_deposit_min_qty, 2),
+    // Đơn nhiều giỏ: cọc cao hơn (mặc định từ 5 giỏ cọc 50%)
+    bulkQty: num(s.cod_deposit_bulk_qty, 5), bulkPercent: Math.min(100, num(s.cod_deposit_bulk_percent, 50)),
+  };
+}
+/** Câu giải thích quy định cọc COD cho khách. */
+function depositText(s) {
+  const r = depositRule(s);
+  const fm = require('./format').money;
+  const parts = [];
+  if (r.percent) parts.push(`đơn từ ${r.minQty} giỏ hoặc tiền hàng trên ${fm(r.minTotal)} đặt cọc ${r.percent}%`);
+  if (r.bulkPercent && r.bulkQty) parts.push(`đơn từ ${r.bulkQty} giỏ đặt cọc ${r.bulkPercent}%`);
+  return parts.join('; ');
 }
 /** Số tiền cọc cho đơn COD (0 = không cần cọc). Làm tròn lên nghìn đồng. */
 function depositFor({ goods, qty, total }, s) {
   const r = depositRule(s);
-  if (!r.percent) return 0;
-  const need = goods > r.minTotal || (r.minQty > 0 && qty >= r.minQty);
-  return need ? Math.min(Number(total), Math.ceil((Number(total) * r.percent) / 100 / 1000) * 1000) : 0;
+  let pct = 0;
+  if (r.bulkPercent && r.bulkQty > 0 && qty >= r.bulkQty) pct = r.bulkPercent;
+  else if (r.percent && (goods > r.minTotal || (r.minQty > 0 && qty >= r.minQty))) pct = r.percent;
+  return pct ? Math.min(Number(total), Math.ceil((Number(total) * pct) / 100 / 1000) * 1000) : 0;
 }
 /** Đơn đang chờ tiền (chưa được soạn/giao): chuyển khoản chưa trả, hoặc COD chờ cọc. */
 function awaitingMoney(o) {
@@ -119,4 +133,4 @@ function vatFee(baseTotal, s) {
   return Math.round((Number(baseTotal) || 0) * vatFeePercent(s) / 100);
 }
 
-module.exports = { depositRule, depositFor, awaitingMoney, amountDue, codDue, vatFeePercent, vatFee, BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };
+module.exports = { depositRule, depositText, depositFor, awaitingMoney, amountDue, codDue, vatFeePercent, vatFee, BANKS, accountFromSettings, accountForOrder, isConfigured, snapshot, qrForOrder, maskAccount };

@@ -18,8 +18,8 @@ const ASSET_VERSION = (() => {
   return h.digest('hex').slice(0, 10);
 })();
 
-const { awaitingMoney, amountDue, codDue, depositRule, depositFor } = require('../lib/payment');
-const PAY = { awaitingMoney, amountDue, codDue, depositRule, depositFor };
+const { awaitingMoney, amountDue, codDue, depositRule, depositFor, depositText } = require('../lib/payment');
+const PAY = { awaitingMoney, amountDue, codDue, depositRule, depositFor, depositText };
 
 function asset(p) {
   return `${p}?v=${ASSET_VERSION}`;

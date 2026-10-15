@@ -76,7 +76,7 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Giao đúng ngày khách chọn; Hà Nội chọn được buổi (${Object.values(SLOTS).join(', ')}); shipper gọi trước; có ảnh xác nhận khi quà tới tay. Tỉnh khác đi chuyển phát 2–4 ngày.
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.
 - Phí giao ${money(Number(s.shipping_fee) || 0)}/đơn, miễn phí cho đơn từ ${money(Number(s.free_ship_threshold) || 0)}.
-- Thanh toán: chuyển khoản qua mã QR (tự xác nhận), hoặc COD (trả khi nhận). Đơn COD từ ${dr.minQty} giỏ hoặc tiền hàng trên ${money(dr.minTotal)} phải đặt cọc ${dr.percent}% qua QR. Đơn gửi tặng và đơn xuất hóa đơn VAT phải chuyển khoản.
+- Thanh toán: chuyển khoản qua mã QR (tự xác nhận), hoặc COD (trả khi nhận). Đơn COD phải đặt cọc qua QR: ${payment.depositText(s)}. Báo khách số tiền cọc cụ thể khi lên đơn. Đơn gửi tặng và đơn xuất hóa đơn VAT phải chuyển khoản.
 - Đơn từ ${checkoutHelpers().bulkRule(s).qty} giỏ trở lên cần ${checkoutHelpers().bulkRule(s).days} ngày chuẩn bị: ngày giao sớm nhất lùi lại (delivery_options với qty sẽ tính đúng). Không hứa giao gấp cho đơn nhiều giỏ.
 - Doanh nghiệp: nhận từ 5 giỏ, xuất VAT, giao theo danh sách; báo giá trong 24 giờ tại /qua-tang-doanh-nghiep. In logo: từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ; từ 500 giỏ thiết kế hộp riêng. Giá ưu đãi theo số lượng từ 20 giỏ, mức cụ thể do chuyên viên báo. Đơn cần in logo hoặc từ 20 giỏ: mời khách gửi yêu cầu báo giá hoặc để lại số để chuyên viên gọi (request_callback).
 - Hotline ${s.shop_phone || ''}. Zalo: ${s.zalo_url || ''}.

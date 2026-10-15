@@ -164,6 +164,10 @@ async function addToCart(c, slug, qty = 1) {
     const two = await place(2);
     ok(/Đặt cọc trước \(COD\)/.test(two.ck), 'Trang đặt hàng 2 giỏ: hiện dòng "Đặt cọc trước"');
     ok(/Đặt cọc [\d.]+₫ để giữ đơn/.test(two.page) && /Trả khi nhận hàng/.test(two.page), 'Đơn COD 2 giỏ → trang đơn yêu cầu đặt cọc, ghi phần trả khi nhận');
+    const five = await place(5);
+    const tot5 = Number((five.page.match(/Tổng cộng<\/span><span>([\d.]+)₫/) || [])[1]?.replace(/\./g, '') || 0);
+    const dep5 = Math.ceil((tot5 * 0.5) / 1000) * 1000;
+    ok(tot5 > 0 && five.page.includes(dep5.toLocaleString('vi-VN').replace(/,/g, '.')), `Đơn COD 5 giỏ → cọc 50% (${dep5})`);
     const one = await place(1);
     ok(!/để giữ đơn/.test(one.page) && !/Đặt cọc trước/.test(one.ck), 'Đơn COD 1 giỏ dưới 1 triệu → không cọc');
   }

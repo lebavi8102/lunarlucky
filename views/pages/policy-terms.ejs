@@ -13,7 +13,7 @@
 <h2>Đặt hàng và xác lập đơn</h2>
 <ul>
   <li><strong>Đơn chuyển khoản:</strong> đơn được xác lập khi Lunar Lucky nhận đủ tiền với nội dung là mã đơn. Hệ thống tự xác nhận và trang đơn hàng của bạn chuyển sang "Đã thanh toán". Đơn chưa thanh toán được giữ hàng trong 24 giờ, sau đó tự hủy.</li>
-  <li><strong>Đơn COD:</strong> đơn được xác lập khi Lunar Lucky gọi hoặc nhắn xác nhận với bạn. Đơn COD <strong>từ <%= pay.depositRule(s).minQty %> giỏ trở lên hoặc tiền hàng trên <%= money(pay.depositRule(s).minTotal) %></strong> cần <strong>đặt cọc <%= pay.depositRule(s).percent %>%</strong> qua mã QR để giữ hàng; phần còn lại trả khi nhận. Đơn chưa cọc được giữ 24 giờ, sau đó tự hủy.</li>
+  <li><strong>Đơn COD:</strong> đơn được xác lập khi Lunar Lucky gọi hoặc nhắn xác nhận với bạn. Đơn COD cần <strong>đặt cọc qua mã QR</strong> để giữ hàng: <strong><%= pay.depositText(s) %></strong>; phần còn lại trả khi nhận. Đơn chưa cọc được giữ 24 giờ, sau đó tự hủy.</li>
   <li>Lunar Lucky có quyền từ chối đơn khi hết hàng hoặc thông tin giao hàng không hợp lệ, và hoàn tiền đầy đủ nếu bạn đã thanh toán.</li>
 </ul>
 <h2>Giá và thanh toán</h2>
