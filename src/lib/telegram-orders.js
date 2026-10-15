@@ -511,6 +511,13 @@ async function handleCommand(msg) {
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
+  // Lệnh sửa tồn kho / đổi chủ đề nhận tin: chỉ quản trị viên nhóm (shipper, người ngoài không đụng được)
+  const ADMIN_CMDS = ['nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien'];
+  if (ADMIN_CMDS.includes(cmd) && String((await settings.all()).telegram_admin_only) !== '0'
+      && msg.chat.type !== 'private' && !(await isGroupAdmin(msg.chat.id, msg.from && msg.from.id))) {
+    return reply(msg, 'Lệnh này chỉ dành cho quản trị viên nhóm (sửa tồn kho, đổi chủ đề nhận tin).');
+  }
+
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
   if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
     if (!msg.is_topic_message || !msg.message_thread_id) {

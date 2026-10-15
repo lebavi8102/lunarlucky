@@ -16,6 +16,7 @@ config.telegram.token = 'test-token';
 const sent = [];
 global.fetch = async (url, opt) => {
   const body = JSON.parse(opt.body || '{}');
+  if (url.endsWith('/getChatMember')) return { ok: true, status: 200, json: async () => ({ ok: true, result: { status: body.user_id === 777 ? 'member' : 'administrator' } }) };
   sent.push({ method: url.split('/').pop(), body });
   return { ok: true, status: 200, json: async () => ({ ok: true, result: { message_id: 1, chat: { id: body.chat_id } } }) };
 };
@@ -98,6 +99,13 @@ const ok = (c, m) => {
     // Tin chờ chuyển khoản → chủ đề TIỀN VỀ (/chontien), không vào chủ đề đơn hàng của kho
     await tg.handleUpdate({ message: { message_id: 10, chat: { id: -100777, type: 'supergroup' }, is_topic_message: true, message_thread_id: 36, from: { first_name: 'Chủ' }, text: '/chontien' } });
     ok((await settings.all()).telegram_money_thread === '36', '/chontien lưu chủ đề tiền về');
+    // Shipper (không phải quản trị) không đổi được chủ đề, không sửa được tồn kho
+    sent.length = 0;
+    await tg.handleUpdate({ message: { message_id: 11, chat: { id: -100777, type: 'supergroup' }, is_topic_message: true, message_thread_id: 99, from: { id: 777, first_name: 'Ship' }, text: '/chontien' } });
+    const pBefore = await db('products').first();
+    await tg.handleUpdate({ message: { message_id: 12, chat: { id: -100777, type: 'supergroup' }, from: { id: 777, first_name: 'Ship' }, text: `/dat ${pBefore.sku || pBefore.id} 1` } });
+    ok((await settings.all()).telegram_money_thread === '36' && (await db('products').where({ id: pBefore.id }).first()).stock === pBefore.stock
+      && sent.some((x) => /chỉ dành cho quản trị viên/.test(x.body.text || '')), 'Shipper gõ /chontien, /dat → bị từ chối, không đổi gì');
     sent.length = 0;
     await require('../src/lib/bank-payments').notifyWaiting({ id: -1, code: 'LN26OPSWAIT', customer_name: 'K', phone: '0900', total: 100000, payment_method: 'bank', payment_status: 'pending', deposit_amount: 0, delivery_date: today, created_at: new Date() });
     ok(sent.some((x) => x.method === 'sendMessage' && x.body.message_thread_id === 36), 'Tin "chờ chuyển khoản" vào chủ đề TIỀN VỀ');
