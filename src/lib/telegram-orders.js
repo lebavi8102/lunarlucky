@@ -527,7 +527,7 @@ async function handleCommand(msg) {
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
   if (cmd === 'chontuvan') { // dùng được cả trong General (không có mã chủ đề)
     await settings.save({ telegram_consult_thread: msg.is_topic_message && msg.message_thread_id ? String(msg.message_thread_id) : '' });
-    return reply(msg, '✅ Từ giờ tin <b>tư vấn khách</b> (khách nhờ gọi lại, khách Fanpage cần gặp người thật) gửi vào chủ đề này.');
+    return reply(msg, '✅ Từ giờ tin <b>tư vấn khách</b> (khách nhờ gọi lại, yêu cầu báo giá doanh nghiệp, khách Fanpage cần gặp người thật) gửi vào chủ đề này.');
   }
   if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
@@ -536,7 +536,7 @@ async function handleCommand(msg) {
     const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread', chontien: 'telegram_money_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
     return reply(msg, {
-      chondon: '✅ Từ giờ <b>đơn hàng mới</b> và yêu cầu báo giá sẽ gửi vào chủ đề này.',
+      chondon: '✅ Từ giờ <b>đơn hàng mới</b> sẽ gửi vào chủ đề này.',
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
       chontien: '✅ Từ giờ tin về <b>tiền</b> (đơn chờ chuyển khoản/cọc, khách chuyển thiếu/dư, tiền vào không khớp đơn) gửi vào chủ đề này — chủ đề Đơn hàng chỉ còn đơn đã có tiền để kho soạn.',
       chonship: '✅ Đây là chủ đề <b>SHIPPER</b>. Khi kho bấm "📦 Đã soạn xong", thẻ giao hàng (người nhận, địa chỉ, tiền thu) hiện ở đây với nút <b>Nhận đi giao</b> → <b>Đã giao xong</b>.',

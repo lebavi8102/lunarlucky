@@ -119,7 +119,7 @@ async function telegram(html, chatIdOverride, extra = {}) {
   if (!chatIdOverride && extra.message_thread_id === undefined) {
     const st = await require('./settings').all();
     // Chủ đề nhắc việc chưa chọn (/chonnhac) → gửi vào chủ đề đơn hàng
-    // Tư vấn khách (yêu cầu gọi lại, khách Fanpage cần người thật): mặc định chủ đề General ("TƯ VẤN KHÁCH"), đổi bằng /chontuvan
+    // Tư vấn khách (yêu cầu gọi lại, báo giá doanh nghiệp, khách Fanpage cần người thật): mặc định chủ đề General ("TƯ VẤN KHÁCH"), đổi bằng /chontuvan
     const thread = topic === 'consult'
       ? st.telegram_consult_thread || ''
       : st[`telegram_${topic}_thread`] || (['ops', 'money', 'ship'].includes(topic) ? st.telegram_order_thread : '');

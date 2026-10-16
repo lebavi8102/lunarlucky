@@ -40,7 +40,7 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
     return render(res, { values: f.values, errors: f.errors, sent: false });
   }
   await db('quotes').insert(q);
-  notify.telegram(notify.quoteTelegram(q));
+  notify.telegram(notify.quoteTelegram(q), null, { topic: 'consult' });
   if (q.email) {
     notify.sendMail({ to: q.email, subject: `Lunar Lucky đã nhận yêu cầu báo giá của ${q.company}`, template: 'quote-received', data: { q, s: res.locals.s } })
       .catch((err) => console.error('[mail] báo giá lỗi:', err.message));
