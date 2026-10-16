@@ -99,18 +99,23 @@ function openDay(d, s) {
   const c = tetClosed(s);
   return c && d >= c.from && d <= c.to ? nextDay(c.to) : d;
 }
-function dateCtx(s, province, qty = 0) {
+/** full: Set ngày đã kín lịch giao (giới hạn số giỏ/ngày) → bỏ qua khi gợi ý. */
+function dateCtx(s, province, qty = 0, full = new Set()) {
   const minDays = minDaysFor(province, s, qty);
+  const free = (d) => { let x = openDay(d, s); for (let i = 0; i < 60 && full.has(x); i++) x = openDay(nextDay(x), s); return x; };
   const quickDates = [];
-  for (let d = openDay(todayVN(minDays), s); quickDates.length < 3; d = openDay(nextDay(d), s)) quickDates.push(d);
+  for (let d = free(todayVN(minDays)); quickDates.length < 3; d = free(nextDay(d))) quickDates.push(d);
   const c = tetClosed(s);
+  const fullList = [...full].filter((d) => d >= todayVN() && d <= todayVN(120)).sort();
   return {
     quickDates,
     minDate: quickDates[0], maxDate: todayVN(180),
     bulkNote: bulkNoteFor(s, qty),
-    dateRules: { hn: openDay(todayVN(minDaysFor('Hà Nội', s, qty)), s), tinh: openDay(todayVN(minDaysFor('', s, qty)), s), closedFrom: c ? c.from : '', closedTo: c ? c.to : '' },
+    fullDates: fullList,
+    dateRules: { hn: free(todayVN(minDaysFor('Hà Nội', s, qty))), tinh: free(todayVN(minDaysFor('', s, qty))), closedFrom: c ? c.from : '', closedTo: c ? c.to : '', full: fullList },
   };
 }
+const fullFor = (req, s, qty) => (isStaff(req) ? Promise.resolve(new Set()) : require('../lib/capacity').fullDates(s, qty));
 
 /** Link xem đơn gửi cho khách (đơn đặt hộ qua Zalo/Facebook): có chữ ký nên người khác không đoán được. */
 function orderKey(code) {
@@ -140,7 +145,7 @@ router.get('/thanh-toan', async (req, res) => {
   res.locals.seo.noindex = true;
   // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
   const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
-  const dc = dateCtx(res.locals.s, defaults.province, priced.count);
+  const dc = dateCtx(res.locals.s, defaults.province, priced.count, await fullFor(req, res.locals.s, priced.count));
   res.render('shop/checkout', {
     cart: priced, values: { delivery_date: dc.minDate, ...defaults }, errors: {}, fromAi: !!req.session.aiPrefill, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
     ...dc,
@@ -179,7 +184,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     delete values.cart_snapshot;
     return res.render('shop/checkout', {
       cart: priced, values, errors: {}, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
-      ...dateCtx(res.locals.s, req.body.province, priced.count),
+      ...dateCtx(res.locals.s, req.body.province, priced.count, await fullFor(req, res.locals.s, priced.count)),
     });
   }
   const f = new Form(req.body);
@@ -209,6 +214,16 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   if (!f.errors.delivery_date && closed && delivery_date >= closed.from && delivery_date <= closed.to) {
     const vn = (d) => d.split('-').reverse().slice(0, 2).join('/');
     f.errors.delivery_date = `Lunar Lucky nghỉ Tết từ ${vn(closed.from)} đến ${vn(closed.to)}. Vui lòng chọn giao trước ${vn(closed.from)} hoặc từ ${vn(nextDay(closed.to))}.`;
+  }
+  // Ngày đã kín lịch giao (giới hạn số giỏ/ngày) → mời chọn ngày khác. Chủ shop đặt hộ được nhận vượt.
+  if (!f.errors.delivery_date && delivery_date && !isStaff(req)) {
+    const full = await fullFor(req, res.locals.s, priced.count);
+    if (full.has(delivery_date)) {
+      let alt = openDay(nextDay(delivery_date), res.locals.s);
+      for (let i = 0; i < 60 && full.has(alt); i++) alt = openDay(nextDay(alt), res.locals.s);
+      const vn = (d) => d.split('-').reverse().join('/');
+      f.errors.delivery_date = `Ngày ${vn(delivery_date)} Lunar Lucky đã nhận đủ đơn, không kịp giao thêm ${priced.count} giỏ.${alt ? ` Ngày gần nhất còn nhận: ${vn(alt)}.` : ''} Cần đúng ngày này, anh/chị nhắn Zalo để được hỗ trợ.`;
+    }
   }
   // Buổi giao: chỉ hẹn được ở Hà Nội (tỉnh khác đi chuyển phát)
   const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;
@@ -267,7 +282,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     res.locals.seo.noindex = true;
     return res.render('shop/checkout', {
       cart: priced, values: f.values, errors: f.errors, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
-      ...dateCtx(res.locals.s, req.body.province, priced.count),
+      ...dateCtx(res.locals.s, req.body.province, priced.count, await fullFor(req, res.locals.s, priced.count)),
     });
   }
 

@@ -312,7 +312,9 @@
       if (input.min === min) return;
       input.min = min;
       const quick = $$('[data-date-pick]');
-      const open = (d) => (rules.closedFrom && d >= rules.closedFrom && d <= rules.closedTo ? addDays(rules.closedTo, 1) : d);
+      const full = new Set(rules.full || []);
+      const open1 = (d) => (rules.closedFrom && d >= rules.closedFrom && d <= rules.closedTo ? addDays(rules.closedTo, 1) : d);
+      const open = (d) => { let x = open1(d); for (let i = 0; i < 60 && full.has(x); i++) x = open1(addDays(x, 1)); return x; };
       let cur = open(min);
       quick.forEach((b, i) => {
         const d = i === 0 ? cur : (cur = open(addDays(cur, 1)));

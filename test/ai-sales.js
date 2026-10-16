@@ -51,6 +51,18 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(/xem xét và báo lại thời gian chuẩn bị/.test(d120.preparation_note || ''), 'delivery_options: 120 giỏ → không hứa thời gian, Lunar Lucky xem xét báo lại');
     const d12 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 12 }, req, out);
     ok(d12.earliest_delivery < todayVN(5) && /2–3 ngày/.test(d12.preparation_note || ''), 'delivery_options: 12 giỏ → 2–3 ngày');
+    // Giới hạn số giỏ/ngày: ngày kín → AI không nhận, gợi ý ngày khác
+    const booked = await require('../src/lib/capacity').bookedByDate();
+    const busy = Object.entries(booked).filter(([d]) => d >= todayVN(3)).sort((x, y) => y[1] - x[1])[0];
+    if (busy) {
+      const capBefore = (await settings.all()).daily_capacity;
+      await settings.save({ daily_capacity: String(busy[1]) });
+      const dFull = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 1 }, req, out);
+      ok((dFull.full_dates || []).includes(busy[0]) && !dFull.next_options.includes(busy[0]), `Ngày ${busy[0]} đủ ${busy[1]} giỏ → AI biết ngày kín, không gợi ý`);
+      const pFull = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 1 }], customer_name: 'A', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: busy[0], payment_method: 'bank' }, { session: {} }, {});
+      ok(/đã nhận đủ đơn/.test(pFull.error || ''), 'prepare_order: ngày kín → từ chối');
+      await settings.save({ daily_capacity: capBefore || '0' });
+    } else ok(true, '(bỏ qua kiểm tra ngày kín: chưa có đơn nào)');
     const sysNow = await ai.systemPrompt();
     ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: cần 2–3 ngày chuẩn bị; 21–99 giỏ: cần 5–10 ngày chuẩn bị tùy tình hình thực tế; từ 100 giỏ: Lunar Lucky sẽ xem xét và báo lại/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 

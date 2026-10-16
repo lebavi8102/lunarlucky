@@ -196,7 +196,8 @@ async function runTool(name, input, req, out) {
   }
   if (name === 'delivery_options') {
     const { dateCtx, isHanoi, tetClosed } = checkoutHelpers();
-    const dc = dateCtx(s, input.province, Number(input.qty) || 0);
+    const full = await require('./capacity').fullDates(s, Number(input.qty) || 1);
+    const dc = dateCtx(s, input.province, Number(input.qty) || 0, full);
     const closed = tetClosed(s);
     return {
       today: todayVN(),
@@ -205,6 +206,8 @@ async function runTool(name, input, req, out) {
       next_options: dc.quickDates,
       slots_available: isHanoi(input.province) ? SLOTS : 'Tỉnh khác: không hẹn buổi, giao giờ hành chính',
       tet_closed: closed ? { from: closed.from, to: closed.to } : null,
+      full_dates: dc.fullDates.length ? dc.fullDates : undefined,
+      full_dates_note: dc.fullDates.length ? 'Những ngày này đã nhận đủ đơn — không nhận thêm, gợi ý ngày khác.' : undefined,
       last_delivery_before_tet: s.order_deadline ? `${s.order_deadline} (${s.order_deadline_label || ''})` : null,
       shipping_fee: Number(s.shipping_fee) || 0,
       free_ship_from: Number(s.free_ship_threshold) || 0,
@@ -224,7 +227,11 @@ async function runTool(name, input, req, out) {
     for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
     const priced = await cart.priceCart(c);
     if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
-    const earliest = checkoutHelpers().dateCtx(s, input.province, priced.count).minDate;
+    const fullSet = await require('./capacity').fullDates(s, priced.count);
+    if (fullSet.has(input.delivery_date)) {
+      return { error: `Ngày ${input.delivery_date} đã nhận đủ đơn. Gợi ý khách ngày khác (gọi delivery_options với qty để xem ngày còn nhận).` };
+    }
+    const earliest = checkoutHelpers().dateCtx(s, input.province, priced.count, fullSet).minDate;
     if (input.delivery_date < earliest) {
       return { error: `Đơn ${priced.count} giỏ giao ${input.province} sớm nhất từ ${earliest}. Báo khách và hỏi lại ngày giao.` };
     }

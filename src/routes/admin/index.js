@@ -277,6 +277,7 @@ const SETTING_GROUPS = [
     ['bulk2_min_qty', 'Mức 2 — đơn từ bao nhiêu giỏ (để trống = không dùng mức 2)'], ['bulk2_min_days', 'Mức 2 — số ngày chuẩn bị tối thiểu'],
     ['bulk2_max_days', 'Mức 2 — số ngày chuẩn bị tối đa (báo khách "tùy tình hình thực tế")'],
     ['bulk3_min_qty', 'Mức 3 — đơn từ bao nhiêu giỏ thì không hứa thời gian, Lunar Lucky xem xét rồi báo lại'],
+    ['daily_capacity', 'Tối đa bao nhiêu giỏ giao mỗi ngày (0 = không giới hạn). Ngày đủ số giỏ → khách không chọn được, AI gợi ý ngày khác; chủ shop đặt hộ vẫn nhận vượt được'],
     ['order_deadline', 'Ngày giao cuối cùng trước Tết (YYYY-MM-DD, vd 2027-02-05) — để trống thì không hiện lời nhắc'],
     ['order_deadline_label', 'Cách gọi ngày đó theo âm lịch (vd: 29 tháng Chạp)'],
     ['tet_closed_from', 'Nghỉ Tết TỪ ngày (YYYY-MM-DD) — không cho chọn giao'], ['tet_closed_to', 'Nghỉ Tết ĐẾN HẾT ngày (YYYY-MM-DD)'],
