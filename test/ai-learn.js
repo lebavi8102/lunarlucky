@@ -41,6 +41,13 @@ notify.telegram = async (html) => { tg.push(html); return false; };
     ok(tg.some((x) => /AI rút ra 2 bài học mới/.test(x) && /\/admin\/ai-hoc/.test(x)), 'Báo Telegram kèm link duyệt');
     ok(await learn.learn() === 0, 'Không học lại đoạn chat đã học');
 
+    // Tỉ lệ chốt: 2 khách web chat, 1 được gửi nút đặt hàng; 1 khách Fanpage
+    const W1 = `web:t1${T}`, W2 = `web:t2${T}`;
+    await learn.log(W1, 'customer', 'xin giá'); await learn.log(W1, 'ai', 'dạ'); await learn.log(W1, 'event', 'order_button');
+    await learn.log(W2, 'customer', 'hi');
+    const st = await learn.stats(T - 1000);
+    ok(st.web.chats >= 2 && st.web.buttons >= 1 && st.fb.chats >= 1 && st.all.chats === st.web.chats + st.fb.chats && typeof st.all.rate === 'number', 'Đếm phễu AI: khách chat → nút đặt hàng → đơn, tách web / Fanpage');
+    await db('conv_log').whereIn('psid', [W1, W2]).del();
     const before = await ai.systemPrompt();
     ok(!/khắc tên lên thiệp/.test(before), 'Chưa duyệt → AI chưa áp dụng');
     await db('ai_lessons').where({ id: rows[0].id }).update({ status: 'approved' });

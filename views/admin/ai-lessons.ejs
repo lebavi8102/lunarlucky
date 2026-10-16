@@ -3,6 +3,19 @@
 <div class="admin-head"><h1>AI học tư vấn</h1><span class="muted small"><%= pending.length %> chờ duyệt · <%= ok.length %> đang áp dụng</span></div>
 <p class="small muted" style="margin:-8px 0 16px">Mỗi tối 22h, AI đọc các cuộc chat Fanpage có bạn/nhân viên vào trả lời và rút ra bài học (đã bỏ tên, SĐT khách). Bạn duyệt bài nào thì AI làm theo bài đó từ tin tiếp theo. 7 ngày qua: <b><%= stats.staff %></b> tin của nhân viên · <b><%= stats.ai %></b> tin AI tự trả lời.</p>
 
+<div class="panel" style="margin-bottom:20px">
+  <h2 class="h3" style="margin:0 0 8px">Tỉ lệ chốt của AI</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th scope="col">Khoảng</th><th scope="col">Kênh</th><th scope="col" class="num">Khách chat</th><th scope="col" class="num">Gửi nút đặt hàng</th><th scope="col" class="num">Đơn đặt</th><th scope="col" class="num">Đã trả / cọc</th><th scope="col" class="num">Tỉ lệ chốt</th><th scope="col" class="num">Chuyển người</th></tr></thead>
+    <tbody>
+    <% [['7 ngày', funnel.d7], ['30 ngày', funnel.d30]].forEach(([label, f]) => { [['Web', f.web], ['Fanpage', f.fb], ['Tổng', f.all]].forEach(([ch, x]) => { %>
+      <tr<%- ch === 'Tổng' ? ' style="font-weight:600"' : '' %>><td><%= label %></td><td><%= ch %></td><td class="num"><%= x.chats %></td><td class="num"><%= x.buttons %></td><td class="num"><%= x.orders %><% if (x.revenue) { %><br><span class="tiny muted"><%= money(x.revenue) %></span><% } %></td><td class="num"><%= x.paid %></td><td class="num"><%= x.rate == null ? '—' : x.rate + '%' %></td><td class="num"><%= x.humans %></td></tr>
+    <% }) }) %>
+    </tbody>
+  </table></div>
+  <p class="tiny muted" style="margin:8px 0 0">Tỉ lệ chốt = đơn đặt ÷ khách chat. Đếm từ 16/10/2026 (trước đó chưa ghi). Đơn AI = khách đặt qua nút "Kiểm tra &amp; đặt hàng" của AI.</p>
+</div>
+
 <form class="panel" action="/admin/ai-hoc" method="post" style="margin-bottom:20px">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <label class="label" for="nl">Tự dạy AI một kinh nghiệm (áp dụng ngay)</label>

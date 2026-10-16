@@ -421,7 +421,9 @@ async function handleEvent(ev) {
     await pause(psid, pauseHours);
     await alertHuman(psid, row, { title: 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
   }
+  if (r.human || r.callback) await require('./ai-learn').log(psid, 'event', 'human');
   if (r.action && session.cart && session.aiPrefill) {
+    await require('./ai-learn').log(psid, 'event', 'order_button');
     const url = await createHandoff(session, psid);
     await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
       template_type: 'button',

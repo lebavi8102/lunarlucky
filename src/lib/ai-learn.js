@@ -11,9 +11,10 @@ const settings = require('./settings');
 
 const ROLES = { customer: 'Khách', ai: 'AI', staff: 'Nhân viên' };
 
+/** role: customer | ai | staff (đoạn chat) hoặc event (mốc phễu: order_button, human). psid web = "web:<mã phiên>". */
 async function log(psid, role, text) {
   const t = String(text || '').trim();
-  if (!psid || !t || !ROLES[role]) return;
+  if (!psid || !t || !(ROLES[role] || role === 'event')) return;
   await db('conv_log').insert({ psid: String(psid), role, text: t.slice(0, 1000), created_ms: Date.now() }).catch(() => {});
 }
 
@@ -62,7 +63,7 @@ async function learn({ now = Date.now(), maxThreads = 15 } = {}) {
   await settings.save({ ai_learn_mark: String(now) });
   const blocks = [];
   for (const psid of fresh) {
-    const lines = await db('conv_log').where({ psid }).andWhere('created_ms', '>', since).orderBy('created_ms').limit(80);
+    const lines = await db('conv_log').where({ psid }).whereIn('role', Object.keys(ROLES)).andWhere('created_ms', '>', since).orderBy('created_ms').limit(80);
     blocks.push(lines.map((l) => `${ROLES[l.role]}: ${l.text}`).join('\n'));
   }
   const user = `ĐÃ CÓ:\n${known}\n\nCÁC ĐOẠN CHAT (mỗi đoạn cách nhau bằng ---):\n${blocks.join('\n---\n')}`;
@@ -89,4 +90,36 @@ async function learn({ now = Date.now(), maxThreads = 15 } = {}) {
   return lessons.length;
 }
 
-module.exports = { log, approved, learn, _setAsk: (fn) => { ask = fn; } };
+/**
+ * Tỉ lệ chốt của AI trong khoảng [from, to): cuộc chat (có khách nhắn) → AI gửi nút đặt hàng → đơn đặt → đơn đã trả/cọc.
+ * Tách web / Fanpage. Đơn AI = đơn nguồn "ai" (web) / "ai_fb" (Fanpage).
+ */
+async function stats(from, to = Date.now()) {
+  const inRange = (q) => q.andWhere('created_ms', '>=', from).andWhere('created_ms', '<=', to);
+  const distinct = async (role, text, ch) => {
+    const q = inRange(db('conv_log').where({ role }).modify((x) => text && x.andWhere({ text })))
+      .modify((x) => (ch === 'web' ? x.andWhere('psid', 'like', 'web:%') : x.whereNot('psid', 'like', 'web:%')));
+    return (await q.distinct('psid')).length;
+  };
+  const out = {};
+  for (const ch of ['web', 'fb']) {
+    const src = ch === 'web' ? 'ai' : 'ai_fb';
+    const orders = await db('orders').where({ source: src }).whereNot('status', 'cancelled')
+      .andWhere('created_at', '>=', new Date(from)).andWhere('created_at', '<', new Date(to)).select('total', 'payment_status', 'payment_method', 'status');
+    const paid = orders.filter((o) => ['paid', 'deposit'].includes(o.payment_status) || (o.payment_method === 'cod' && o.status !== 'new'));
+    out[ch] = {
+      chats: await distinct('customer', null, ch),
+      buttons: await distinct('event', 'order_button', ch),
+      humans: await distinct('event', 'human', ch),
+      orders: orders.length,
+      paid: paid.length,
+      revenue: orders.reduce((x, o) => x + Number(o.total), 0),
+    };
+  }
+  const sum = (k) => out.web[k] + out.fb[k];
+  out.all = { chats: sum('chats'), buttons: sum('buttons'), humans: sum('humans'), orders: sum('orders'), paid: sum('paid'), revenue: sum('revenue') };
+  for (const k of ['web', 'fb', 'all']) out[k].rate = out[k].chats ? Math.round((out[k].orders / out[k].chats) * 1000) / 10 : null;
+  return out;
+}
+
+module.exports = { log, approved, learn, stats, _setAsk: (fn) => { ask = fn; } };

@@ -58,6 +58,13 @@ async function morning(day = todayVN()) {
   const [{ n: todo }] = await db('orders').where(readyNew).count({ n: '*' });
   if (Number(todo)) lines.push('', `🆕 ${todo} đơn mới chưa xác nhận — mở chủ đề Đơn hàng hoặc admin → "Cần xử lý".`);
 
+  // AI tư vấn hôm qua: cuộc chat → nút đặt hàng → đơn
+  const yStart = Date.parse(`${todayVN(-1)}T00:00:00+07:00`);
+  const st = await require('./ai-learn').stats(yStart, yStart + 86400000).catch(() => null);
+  if (st && st.all.chats) {
+    lines.push('', `🤖 <b>AI tư vấn hôm qua:</b> ${st.all.chats} khách chat → ${st.all.buttons} lần gửi nút đặt hàng → <b>${st.all.orders} đơn</b> (tỉ lệ chốt ${st.all.rate}%)${st.all.humans ? ` · ${st.all.humans} ca chuyển người` : ''}`);
+  }
+
   // Soạn trước cho ngày mai
   const tmr = await delivery.forDate(todayVN(1));
   if (tmr.ready.length) {

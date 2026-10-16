@@ -14,6 +14,14 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   const text = String((req.body && req.body.message) || '').trim();
   if (!text) return res.status(400).json({ reply: 'Anh/chị nhập câu hỏi giúp em nhé.' });
   const r = await ai.chat(req, text);
+  const learn = require('../lib/ai-learn');
+  const id = `web:${String(req.sessionID || '').slice(0, 40)}`;
+  if (!r.off && !r.error) {
+    await learn.log(id, 'customer', text);
+    await learn.log(id, 'ai', r.reply);
+    if (r.action) await learn.log(id, 'event', 'order_button');
+    if (r.callback) await learn.log(id, 'event', 'human');
+  }
   res.set('Cache-Control', 'no-store').json(r);
 });
 

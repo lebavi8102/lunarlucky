@@ -681,7 +681,9 @@ router.get('/ai-hoc', async (req, res) => {
   const since = Date.now() - 7 * 86400000;
   const [{ n: staffMsgs }] = await db('conv_log').where({ role: 'staff' }).andWhere('created_ms', '>', since).count({ n: '*' });
   const [{ n: aiMsgs }] = await db('conv_log').where({ role: 'ai' }).andWhere('created_ms', '>', since).count({ n: '*' });
-  res.render('admin/ai-lessons', { title: 'AI học tư vấn', rows, stats: { staff: Number(staffMsgs), ai: Number(aiMsgs) } });
+  const learn = require('../../lib/ai-learn');
+  const funnel = { d7: await learn.stats(Date.now() - 7 * 86400000), d30: await learn.stats(Date.now() - 30 * 86400000) };
+  res.render('admin/ai-lessons', { title: 'AI học tư vấn', rows, stats: { staff: Number(staffMsgs), ai: Number(aiMsgs) }, funnel });
 });
 router.post('/ai-hoc', async (req, res) => {
   const text = String(req.body.text || '').trim().slice(0, 500);
