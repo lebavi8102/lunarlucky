@@ -21,6 +21,28 @@ const env = () => ({ token: process.env.FB_PAGE_TOKEN || '', secret: process.env
 const configured = () => !!(env().token && env().secret);
 const enabled = (s) => configured() && String(s.messenger_ai_enabled) !== '0';
 
+// Nhận ra tin do chính AI gửi khi Facebook gửi bản sao (echo) về: theo mã tin, mã ứng dụng, thời điểm vừa gửi
+const ours = { mids: new Set(), appId: '', lastSend: new Map() };
+function rememberSent(body, res) {
+  const psid = body && body.recipient && body.recipient.id;
+  if (psid && body.message) ours.lastSend.set(psid, Date.now());
+  if (res && res.message_id) {
+    ours.mids.add(res.message_id);
+    if (ours.mids.size > 2000) ours.mids.delete(ours.mids.values().next().value);
+  }
+}
+function isOurEcho(ev) {
+  const msg = ev.message || {};
+  if (msg.metadata === AI_TAG) {
+    if (msg.app_id) ours.appId = String(msg.app_id);
+    return true;
+  }
+  if (msg.mid && ours.mids.has(msg.mid)) return true;
+  if (ours.appId && msg.app_id && String(msg.app_id) === ours.appId) return true;
+  const psid = ev.recipient && ev.recipient.id;
+  return Date.now() - (ours.lastSend.get(psid) || 0) < 30000; // AI vừa gửi cho khách này trong 30 giây
+}
+
 let send = async (body) => {
   const r = await fetch(`${GRAPH}/me/messages`, {
     method: 'POST',
@@ -31,8 +53,10 @@ let send = async (body) => {
   if (!r.ok) {
     const t = await r.text().catch(() => '');
     console.error('[messenger] gửi lỗi', r.status, t.slice(0, 300));
+    return false;
   }
-  return r.ok;
+  rememberSent(body, await r.json().catch(() => null));
+  return true;
 };
 
 /** Facebook ký mỗi lần gọi webhook bằng App Secret → chặn ai đó giả danh Facebook. */
@@ -101,6 +125,11 @@ async function pause(psid, hours) {
 }
 
 /** Lưu giỏ + thông tin điền sẵn → link ngắn mở trang thanh toán trên web. */
+// Lịch sử trò chuyện quá 90 ngày không nhắn → tự xóa (đúng như chính sách bảo mật)
+async function purgeOld() {
+  await db('messenger_threads').where('updated_ms', '<', Date.now() - 90 * 86400000).del().catch(() => {});
+}
+
 async function createHandoff(session) {
   const token = crypto.randomBytes(16).toString('base64url');
   await db('ai_handoffs').insert({
@@ -128,13 +157,22 @@ async function handleEvent(ev) {
 
   // Tin do Fanpage gửi đi (echo): không phải AI gửi → người thật đang trả lời → AI tạm im với khách này
   if (ev.message && ev.message.is_echo) {
-    if (ev.message.metadata !== AI_TAG && ev.recipient && ev.recipient.id) await pause(ev.recipient.id, pauseHours);
+    if (!isOurEcho(ev) && ev.recipient && ev.recipient.id) {
+      console.log(`[messenger] người thật trả lời khách …${String(ev.recipient.id).slice(-4)} → AI tạm dừng ${pauseHours} giờ`);
+      await pause(ev.recipient.id, pauseHours);
+    }
     return 'echo';
   }
   const psid = ev.sender && ev.sender.id;
   if (!psid) return 'skip';
   const text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
     || (ev.postback && (ev.postback.title || ev.postback.payload)) || '').trim();
+
+  if (/^(xo[aá]|x[oó]a)\s*(d[uữ]\s*li[eệ]u|l[iị]ch\s*s[uử]|tin\s*nh[aắ]n)/i.test(text) && configured()) {
+    await db('messenger_threads').where({ psid }).del();
+    await sendText(psid, 'Dạ em đã xóa toàn bộ lịch sử trò chuyện của anh/chị với trợ lý Lunar Lucky. Cần tư vấn lại anh/chị cứ nhắn em nhé!');
+    return 'deleted';
+  }
 
   const { row, history } = await thread(psid);
   if (row && Number(row.paused_until_ms) > Date.now()) return 'paused'; // người thật đang tư vấn
@@ -165,6 +203,7 @@ async function handleEvent(ev) {
     r = await ai.chat({ session }, text, { channel: 'messenger' });
   }
   await saveThread(psid, { history: JSON.stringify(session.aiChat || []) });
+  if (Math.random() < 0.02) purgeOld();
   await sendText(psid, r.reply);
   if (r.action && session.cart && session.aiPrefill) {
     const url = await createHandoff(session);
@@ -202,5 +241,6 @@ function handleWebhook(body) {
 
 module.exports = {
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
-  _setSend: (fn) => { send = fn; },
+  _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
+  _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.appId = ''; },
 };

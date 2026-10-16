@@ -59,7 +59,16 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(h && h.cart.lines[0].productId === prod.id && h.prefill.phone === '0912345000' && h.prefill.source === 'ai_fb', 'Link đặt hàng mang theo giỏ + thông tin khách, đánh dấu kênh "AI Fanpage"');
     ok(!(await m.loadHandoff('khong-ton-tai-123')), 'Link sai → không mở được');
 
+    // Bản sao (echo) tin của chính AI, Facebook không gửi kèm nhãn → không được hiểu nhầm là người thật (lỗi AI im sau 1 câu)
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID }, message: { is_echo: true, app_id: 123, text: 'Dạ em gợi ý' } }] }] });
+    const tp = await db('messenger_threads').where({ psid: PSID }).first();
+    ok(Number(tp.paused_until_ms) < Date.now(), 'Bản sao tin của AI (không nhãn) ngay sau khi AI gửi → AI vẫn trả lời tiếp');
+    sent.length = 0;
+    await m.handleWebhook(msg('Hà Nội giao ngày 19/10'));
+    ok(sent.some((b) => b.message && b.message.text), 'Khách nhắn tiếp → AI trả lời tiếp');
+
     // Người thật trả lời trong hộp thư → AI im
+    m._resetEchoState();
     sent.length = 0;
     const n = calls.length;
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID }, message: { is_echo: true, text: 'Chào chị, em là Vy ạ' } }] }] });
@@ -83,6 +92,10 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { attachments: [{ type: 'image' }] } }] }] });
     ok(sent.length === 1 && /tin chữ/.test(sent[0].message.text), 'Khách gửi ảnh → nhờ gõ chữ');
 
+    // Khách nhắn "xóa dữ liệu" → xóa lịch sử
+    sent.length = 0;
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { text: 'Xóa dữ liệu' } }] }] });
+    ok(!(await db('messenger_threads').where({ psid: P3 }).first()) && /đã xóa/.test(sent[0].message.text), 'Khách nhắn "xóa dữ liệu" → xóa lịch sử, báo xác nhận');
     await db('messenger_threads').where('psid', 'like', PSID + '%').del();
   } catch (err) {
     console.error(err);

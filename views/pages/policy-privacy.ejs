@@ -3,13 +3,21 @@
   <div class="container">
     <span class="eyebrow">Chính sách</span>
     <h1><%= page.title %></h1>
-    <p class="muted small">Cập nhật lần cuối: 14/10/2026</p>
+    <p class="muted small">Cập nhật lần cuối: 16/10/2026</p>
   </div>
 </section>
 <section class="section-tight">
   <div class="container"><div class="prose">
 <h2>Thông tin Lunar Lucky thu thập</h2>
 <p>Khi bạn đặt hàng hoặc tạo tài khoản, Lunar Lucky thu thập: họ tên, số điện thoại, email, địa chỉ giao hàng, thông tin người nhận quà và lời chúc trên thiệp. Với đơn xuất hóa đơn VAT: tên công ty, mã số thuế, địa chỉ công ty và email nhận hóa đơn.</p>
+<h2 id="tu-van-ai">Trò chuyện với trợ lý tư vấn (website và Fanpage Messenger)</h2>
+<p>Khi bạn nhắn tin với trợ lý tư vấn tự động của Lunar Lucky trên website hoặc qua Fanpage Facebook (Messenger), chúng tôi nhận nội dung tin nhắn và mã định danh cuộc trò chuyện do Facebook cung cấp (không phải số điện thoại hay email Facebook của bạn). Nội dung này được dùng để:</p>
+<ul>
+  <li>Trả lời câu hỏi, gợi ý giỏ quà, báo ngày giao và phí.</li>
+  <li>Chuẩn bị sẵn đơn hàng khi bạn đồng ý mua — đơn chỉ được tạo khi chính bạn bấm "Đặt hàng" trên website.</li>
+  <li>Chuyển cho nhân viên Lunar Lucky khi bạn muốn gặp người thật.</li>
+</ul>
+<p>Nội dung trò chuyện được xử lý bởi dịch vụ trí tuệ nhân tạo Claude của Anthropic để tạo câu trả lời; Anthropic không dùng dữ liệu này để huấn luyện mô hình. Lịch sử trò chuyện Messenger được lưu tối đa 90 ngày để trợ lý nhớ ngữ cảnh, sau đó tự xóa. Chúng tôi không dùng tin nhắn của bạn cho quảng cáo và không chia sẻ cho bên nào khác.</p>
 <h2>Mục đích sử dụng</h2>
 <ul>
   <li>Xử lý đơn, liên hệ xác nhận và giao hàng.</li>
@@ -30,6 +38,12 @@
 <p>Thông tin đơn hàng được lưu để phục vụ bảo hành, đối soát và nghĩa vụ kế toán. Bạn có thể yêu cầu xóa thông tin tài khoản bất kỳ lúc nào.</p>
 <h2>Quyền của bạn</h2>
 <p>Bạn có thể yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân bằng cách liên hệ <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a> hoặc hotline <%= s.shop_phone %>.</p>
+<h2 id="xoa-du-lieu">Hướng dẫn xóa dữ liệu</h2>
+<ul>
+  <li><strong>Lịch sử trò chuyện Messenger:</strong> nhắn <strong>"xóa dữ liệu"</strong> cho Fanpage Lunar Lucky — toàn bộ lịch sử trò chuyện với trợ lý được xóa ngay và bạn nhận tin xác nhận.</li>
+  <li><strong>Lịch sử trò chuyện trên website:</strong> bấm "Bắt đầu lại" trong khung tư vấn; lịch sử chỉ nằm trong phiên duyệt web của bạn.</li>
+  <li><strong>Tài khoản và thông tin đơn hàng:</strong> gửi email tới <a href="mailto:<%= s.shop_email %>"><%= s.shop_email %></a> hoặc gọi <%= s.shop_phone %>, kèm số điện thoại đã đặt hàng. Chúng tôi xử lý trong 7 ngày làm việc; riêng chứng từ đơn hàng cần giữ theo quy định kế toán sẽ được ẩn danh thay vì xóa.</li>
+</ul>
   </div></div>
 </section>
 <%- include('../partials/bottom') %>
