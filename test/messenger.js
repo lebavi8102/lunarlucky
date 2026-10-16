@@ -42,7 +42,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
           is_gift: false, delivery_date: todayVN(3), payment_method: 'bank' } }] };
       }
       if (typeof last.content === 'string' && /đổi món/.test(last.content)) {
-        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ' } }] };
+        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ', customer_name: 'chị Hoa' } }] };
       }
       return { stop_reason: 'end_turn', model: 'fake', usage: {}, content: [{ type: 'text', text: 'Dạ em gợi ý **Giỏ An Khang** ạ.' }] };
     } } } });
@@ -135,11 +135,23 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     // AI tự chuyển cho người thật (đổi món…) — khách đang ở Fanpage, không bị bảo nhắn Zalo
     ok(ai.tools('messenger').some((t) => t.name === 'transfer_to_human') && !ai.tools().some((t) => t.name === 'transfer_to_human'), 'Công cụ chuyển người thật chỉ có trên Messenger');
     ok(/KHÔNG bảo khách "nhắn Zalo\/Fanpage"/.test(calls[0].system[1].text), 'AI trên Fanpage được dặn không đẩy khách sang Zalo');
+    const notifyMod = require('../src/lib/notify');
+    const realTg = notifyMod.telegram;
+    const tgCalls = [];
+    notifyMod.telegram = async (html, chat, extra = {}) => { tgCalls.push({ html, extra }); return false; };
+    m._setPageId('112418327083235');
+    m._setConversation(async () => ({ link: 'https://www.facebook.com/msg/t_123', name: '' }));
     const P5 = PSID + 'swap';
     m._resetEchoState();
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P5 }, recipient: { id: 'PAGE' }, message: { text: 'cho chị đổi món trong giỏ' } }] }] });
     const t5 = await db('messenger_threads').where({ psid: P5 }).first();
+    ok(t5 && t5.name === 'chị Hoa', 'AI ghi lại tên khách tự giới thiệu → tin báo sau hiện tên');
+    const tgSent = tgCalls.filter((x) => /AI chuyển khách Fanpage/.test(x.html)).pop();
+    const kb = tgSent && tgSent.extra.reply_markup && tgSent.extra.reply_markup.inline_keyboard.flat();
+    ok(tgSent && /chị Hoa/.test(tgSent.html) && kb && kb.some((b) => /business\.facebook\.com\/latest\/inbox\/all\/\?asset_id=112418327083235&selected_item_id=/.test(b.url)) && kb.some((b) => b.url === 'https://www.facebook.com/msg/t_123'),
+      'Tin Telegram có tên khách + nút mở thẳng cuộc trò chuyện');
     ok(t5 && Number(t5.paused_until_ms) > Date.now(), 'AI gọi transfer_to_human → tạm dừng, chờ chuyên viên trả lời tại Fanpage');
+    notifyMod.telegram = realTg;
     // AI tắt → khách Fanpage không bị bảo nhắn Zalo, người thật trả lời
     const aiOn = (await settings.all()).ai_chat_enabled;
     await settings.save({ ai_chat_enabled: '0' });

@@ -190,6 +190,7 @@ function tools(channel) {
         additionalProperties: false,
         properties: {
           summary: { type: 'string', description: 'Tóm tắt cho chuyên viên: khách là ai, cần gì, đã gợi ý gì (giỏ, số lượng, ngày giao, ngân sách)' },
+          customer_name: { type: 'string', description: 'Cách gọi khách nếu đã biết, vd "anh Tuấn", "chị Lan" (không biết thì bỏ trống)' },
         },
         required: ['summary'],
       },
@@ -287,6 +288,7 @@ async function runTool(name, input, req, out) {
   if (name === 'transfer_to_human') {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
     out.human = String(input.summary || '').slice(0, 800);
+    out.humanName = String(input.customer_name || '').slice(0, 80);
     return { ok: true, message: 'Đã báo chuyên viên. Nói ngắn gọn với khách: chuyên viên Lunar Lucky sẽ trả lời ngay tại đây (giờ làm việc thường trong ít phút). Không hỏi thêm.' };
   }
   return { error: `Không có công cụ ${name}` };
@@ -384,7 +386,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '' };
 }
 
 module.exports = { chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };

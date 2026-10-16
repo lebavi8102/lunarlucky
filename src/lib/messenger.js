@@ -221,6 +221,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
     const e = require('./notify').escapeTg;
     const { money } = require('./format');
     const items = lines.map((l) => `${nameOf[l.productId] || 'giỏ #' + l.productId} × ${l.qty}`).join(', ');
+    const { links } = await inboxLinks(h.psid, await db('messenger_threads').where({ psid: h.psid }).first());
     await require('./notify').telegram([
       '🔥 <b>KHÁCH FANPAGE ĐÃ CHỐT NHƯNG CHƯA ĐẶT</b> (quá 2 giờ)',
       `👤 ${e(p.customer_name || 'Khách')}${p.phone ? ` · 📞 ${e(p.phone)}` : ''}`,
@@ -228,7 +229,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
       p.delivery_date ? `📅 Muốn giao ${e(String(p.delivery_date).split('-').reverse().join('/'))}${p.province ? ` · ${e(p.province)}` : ''}` : null,
       p.payment_method ? `💳 ${p.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}` : null,
       '👉 Gọi hoặc nhắn khách trong hộp thư Fanpage để chốt đơn (có thể đặt hộ trên web).',
-    ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => {});
+    ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
     sentCount += 1;
   }
   return sentCount;
@@ -244,17 +245,61 @@ async function loadHandoff(token) {
 const HUMAN = /(gặp|nói chuyện|chat|nối máy|chuyển).{0,12}(người thật|nhân viên|tư vấn viên|chủ shop|admin)|(người thật|nhân viên) (tư vấn|trả lời)/i;
 
 /** Báo chủ đề TƯ VẤN KHÁCH: khách nào (tên, giờ nhắn), cần gì → nhân viên tìm đúng người trong hộp thư Fanpage. */
+let pageId = process.env.FB_PAGE_ID || ''; // lấy từ webhook (entry.id) nếu chưa cài
+
+/**
+ * Link mở thẳng cuộc trò chuyện của khách (bấm từ Telegram → đúng người, không phải lật tìm trong hộp thư).
+ * Thử hỏi Facebook link + tên người nhắn (danh sách hội thoại của trang); luôn kèm link Business Suite theo mã khách.
+ */
+let fetchConversation = async (psid) => {
+  const r = await fetch(`${GRAPH}/me/conversations?platform=messenger&user_id=${encodeURIComponent(psid)}&fields=link,participants`, {
+    headers: { Authorization: `Bearer ${env().token}` }, signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok) {
+    console.error('[messenger] không lấy được cuộc trò chuyện:', r.status, (await r.text().catch(() => '')).slice(0, 200));
+    return null;
+  }
+  const c = ((await r.json()).data || [])[0];
+  if (!c) return null;
+  const who = ((c.participants && c.participants.data) || []).find((p) => String(p.id) === String(psid));
+  return { link: c.link ? (String(c.link).startsWith('http') ? c.link : `https://www.facebook.com${c.link}`) : '', name: who && who.name ? String(who.name) : '' };
+};
+
+async function inboxLinks(psid, row) {
+  const links = [];
+  if (pageId) links.push({ text: '📨 Mở cuộc trò chuyện (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
+  let name = (row && row.name) || '';
+  if (configured()) {
+    const c = await fetchConversation(psid).catch(() => null);
+    if (c && c.link) links.push({ text: '💬 Mở trên Facebook', url: c.link });
+    if (c && c.name && !name) {
+      name = c.name;
+      await saveThread(psid, { name });
+    }
+  }
+  return { links, name };
+}
+
+/** Lưu tên khách tự giới thiệu (AI ghi lại khi chuyển người thật / lên đơn) nếu chưa có tên. */
+async function rememberName(psid, row, name) {
+  const n = String(name || '').trim().slice(0, 120);
+  if (n && !(row && row.name)) await saveThread(psid, { name: n });
+  return n;
+}
+
 async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
   const e = require('./notify').escapeTg;
-  const name = (row && row.name) || '';
+  const fresh = (await db('messenger_threads').where({ psid }).first()) || row;
+  const { links, name } = await inboxLinks(psid, fresh);
   const at = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date());
   await require('./notify').telegram([
     `💬 <b>${e(title)}</b>`,
     `👤 ${name ? e(name) : 'Khách Fanpage (chưa rõ tên)'} · nhắn lúc ${at}`,
     summary ? `📝 ${e(summary)}` : null,
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
-    `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời. AI tạm dừng với khách này ${pauseHours} giờ.`,
-  ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => {});
+    links.length ? `👉 Bấm nút dưới để mở đúng cuộc trò chuyện. AI tạm dừng với khách này ${pauseHours} giờ.`
+      : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời. AI tạm dừng với khách này ${pauseHours} giờ.`,
+  ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
 }
 
 /** Xử lý 1 sự kiện Messenger (tin khách, bấm nút, hoặc tin người thật trả lời từ hộp thư). */
@@ -346,6 +391,8 @@ async function handleEvent(ev) {
     return 'error';
   }
   await sendText(psid, r.reply);
+  // Tên khách tự giới thiệu (AI ghi lại) / tên trên đơn → các tin báo sau hiện tên
+  await rememberName(psid, row, r.humanName || (session.aiPrefill && session.aiPrefill.customer_name));
   if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)
     await pause(psid, pauseHours);
     await alertHuman(psid, row, { title: 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
@@ -376,6 +423,7 @@ function handleWebhook(body) {
   if (!body || body.object !== 'page') return Promise.resolve([]);
   const jobs = [];
   for (const entry of body.entry || []) {
+    if (!pageId && /^\d{5,30}$/.test(String(entry.id || ''))) pageId = String(entry.id);
     for (const ev of entry.messaging || []) {
       const key = (ev.message && ev.message.is_echo ? ev.recipient && ev.recipient.id : ev.sender && ev.sender.id) || 'x';
       jobs.push(enqueue(key, () => handleEvent(ev)));
@@ -443,5 +491,7 @@ module.exports = {
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
   _setProfile: (fn) => { fetchProfile = fn; },
+  _setConversation: (fn) => { fetchConversation = fn; },
+  _setPageId: (id) => { pageId = id; },
   _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.lastIncoming.clear(); nameFail.clear(); ours.appId = ''; },
 };
