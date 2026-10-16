@@ -79,6 +79,18 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID + 'x' }, message: { is_echo: true, metadata: m.AI_TAG, text: 'AI' } }] }] });
     ok(!(await db('messenger_threads').where({ psid: PSID + 'x' }).first()), 'Tin của chính AI (echo) → không tính là người thật');
 
+    // Tin tự động của Fanpage (phản hồi tức thì) đến ngay sau tin khách → không phải người thật
+    const P4 = PSID + 'auto';
+    m._resetEchoState();
+    m._setProfile(async () => null);
+    const now = Date.now();
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P4 }, recipient: { id: 'PAGE' }, timestamp: now, message: { text: 'Tư vấn quà doanh nghiệp' } }] }] });
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: P4 }, timestamp: now + 1500, message: { is_echo: true, app_id: 999, text: 'Xin chào, cảm ơn bạn đã liên hệ' } }] }] });
+    const t4 = await db('messenger_threads').where({ psid: P4 }).first();
+    ok(t4 && Number(t4.paused_until_ms) < Date.now(), 'Tin tự động của Fanpage ngay sau tin khách → AI không bị dừng');
+    const lastSys = calls[calls.length - 1].system;
+    ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /xin tên/.test(lastSys[0].text), 'Không lấy được tên Facebook → AI tự xin tên khách');
+
     // Khách đòi gặp người thật
     const P2 = PSID + 'h';
     sent.length = 0;

@@ -22,7 +22,7 @@ const configured = () => !!(env().token && env().secret);
 const enabled = (s) => configured() && String(s.messenger_ai_enabled) !== '0';
 
 // Nhận ra tin do chính AI gửi khi Facebook gửi bản sao (echo) về: theo mã tin, mã ứng dụng, thời điểm vừa gửi
-const ours = { mids: new Set(), appId: '', lastSend: new Map() };
+const ours = { mids: new Set(), appId: '', lastSend: new Map(), lastIncoming: new Map() };
 function rememberSent(body, res) {
   const psid = body && body.recipient && body.recipient.id;
   if (psid && body.message) ours.lastSend.set(psid, Date.now());
@@ -40,7 +40,10 @@ function isOurEcho(ev) {
   if (msg.mid && ours.mids.has(msg.mid)) return true;
   if (ours.appId && msg.app_id && String(msg.app_id) === ours.appId) return true;
   const psid = ev.recipient && ev.recipient.id;
-  return Date.now() - (ours.lastSend.get(psid) || 0) < 30000; // AI vừa gửi cho khách này trong 30 giây
+  if (Date.now() - (ours.lastSend.get(psid) || 0) < 30000) return true; // AI vừa gửi cho khách này trong 30 giây
+  // Tin tự động của Fanpage (phản hồi tức thì, tin chào) đến ngay sau tin khách — người thật không gõ kịp
+  const t = Number(ev.timestamp) || Date.now();
+  return t - (ours.lastIncoming.get(psid) || 0) < 15000;
 }
 
 let send = async (body) => {
@@ -113,14 +116,20 @@ let fetchProfile = async (psid) => {
     headers: { Authorization: `Bearer ${env().token}` },
     signal: AbortSignal.timeout(8000),
   });
-  if (!r.ok) return null;
+  if (!r.ok) {
+    const t = await r.text().catch(() => '');
+    console.error('[messenger] Facebook không cho lấy tên khách:', r.status, t.slice(0, 300));
+    return null;
+  }
   const p = await r.json();
   return { first: String(p.first_name || '').trim(), last: String(p.last_name || '').trim() };
 };
 
 /** Họ tên khách theo thứ tự tiếng Việt (họ trước, tên sau). '' nếu không lấy được. */
+const nameFail = new Map(); // lấy tên lỗi → 6 giờ sau mới thử lại (không gọi Facebook mỗi tin)
 async function customerName(psid, row) {
-  if (row && row.name != null) return row.name;
+  if (row && row.name) return row.name;
+  if (Date.now() - (nameFail.get(psid) || 0) < 6 * 3600000) return '';
   let name = '';
   try {
     const p = await fetchProfile(psid);
@@ -128,7 +137,8 @@ async function customerName(psid, row) {
   } catch (err) {
     console.error('[messenger] không lấy được tên khách:', err.message);
   }
-  await saveThread(psid, { name });
+  if (name) await saveThread(psid, { name });
+  else nameFail.set(psid, Date.now());
   return name;
 }
 
@@ -190,6 +200,7 @@ async function handleEvent(ev) {
   }
   const psid = ev.sender && ev.sender.id;
   if (!psid) return 'skip';
+  ours.lastIncoming.set(psid, Number(ev.timestamp) || Date.now());
   const text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
     || (ev.postback && (ev.postback.title || ev.postback.payload)) || '').trim();
 
@@ -269,5 +280,5 @@ module.exports = {
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
   _setProfile: (fn) => { fetchProfile = fn; },
-  _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.appId = ''; },
+  _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.lastIncoming.clear(); nameFail.clear(); ours.appId = ''; },
 };
