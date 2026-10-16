@@ -27,6 +27,7 @@ async function start() {
     require('./src/lib/bank-payments').startExpiryTimer();
     require('./src/lib/ops-digest').start();
     require('./src/lib/site-url').start();
+    if (config.env === 'production') require('./src/lib/messenger').setupProfile().catch(() => {});
   });
 
   // Render đứng sau proxy giữ kết nối lâu: để Node giữ lâu hơn proxy, tránh lỗi 502 ngắt quãng

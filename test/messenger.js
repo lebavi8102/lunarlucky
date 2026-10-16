@@ -62,6 +62,14 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(!(await m.loadHandoff('khong-ton-tai-123')), 'Link sai → không mở được');
     ok(h.prefill.psid === PSID, 'Link đặt hàng nhớ người nhắn Messenger');
 
+    // Khách đã chốt (có link) mà 2 giờ sau chưa đặt → nhắc nhóm gọi lại, mỗi khách 1 lần
+    await db('ai_handoffs').where({ psid: PSID }).update({ created_ms: Date.now() - 3 * 3600000 });
+    ok(await m.followUpAbandoned() === 1 && await m.followUpAbandoned() === 0, 'Chốt mà chưa đặt sau 2 giờ → báo TƯ VẤN KHÁCH gọi lại (1 lần)');
+    await db('ai_handoffs').where({ psid: PSID }).update({ followed: false });
+    const [oid] = await db('orders').insert({ code: 'LN26TESTFU01', customer_name: 'Chị Lan FB', phone: '0912345000', province: 'Hà Nội', address: 'x', delivery_date: todayVN(3), payment_method: 'bank', payment_status: 'pending', status: 'new', subtotal: 1, discount: 0, shipping_fee: 0, total: 1, messenger_psid: PSID, created_at: new Date() });
+    ok(await m.followUpAbandoned() === 0, 'Khách đã đặt đơn → không nhắc');
+    await db('orders').where({ code: 'LN26TESTFU01' }).del();
+
     // Đơn từ AI Fanpage → báo khách qua Messenger: vừa đặt (kèm QR), nhắc chuyển khoản, đã nhận tiền
     sent.length = 0;
     const fakeOrder = { code: 'LN26TESTMSG1', total: 1990000, deposit_amount: 0, payment_method: 'bank', payment_status: 'pending', status: 'new', delivery_date: todayVN(3), messenger_psid: PSID };

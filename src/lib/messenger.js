@@ -188,9 +188,50 @@ async function createHandoff(session, psid) {
     token,
     data: JSON.stringify({ cart: session.cart, prefill: { ...session.aiPrefill, source: 'ai_fb', psid } }),
     expires_ms: Date.now() + HANDOFF_HOURS * 3600000,
+    psid: psid || null,
+    created_ms: Date.now(),
   });
   await db('ai_handoffs').where('expires_ms', '<', Date.now()).del().catch(() => {});
   return `${config.siteUrl}/tu-van/don/${token}`;
+}
+
+/**
+ * (chạy mỗi phút) Khách Fanpage đã chốt với AI (nhận link "Kiểm tra & đặt hàng") mà sau 2 giờ vẫn chưa đặt
+ * → báo chủ đề TƯ VẤN KHÁCH để gọi lại: đây là khách nóng nhất. Mỗi khách báo 1 lần.
+ */
+async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
+  const now = Date.now();
+  const rows = await db('ai_handoffs').where({ followed: false }).whereNotNull('psid')
+    .andWhere('created_ms', '<', now - afterMs).andWhere('created_ms', '>', now - 48 * 3600000)
+    .orderBy('created_ms', 'desc');
+  const seen = new Set();
+  let sentCount = 0;
+  for (const h of rows) {
+    if (seen.has(h.psid)) continue;
+    seen.add(h.psid);
+    await db('ai_handoffs').where({ psid: h.psid, followed: false }).update({ followed: true });
+    const ordered = await db('orders').where({ messenger_psid: h.psid }).andWhere('created_at', '>=', new Date(Number(h.created_ms) - 60000)).first();
+    if (ordered) continue;
+    let data = {};
+    try { data = JSON.parse(h.data) || {}; } catch { data = {}; }
+    const p = data.prefill || {};
+    const lines = (data.cart && data.cart.lines) || [];
+    const prods = lines.length ? await db('products').whereIn('id', lines.map((l) => l.productId)).select('id', 'name') : [];
+    const nameOf = Object.fromEntries(prods.map((x) => [x.id, x.name]));
+    const e = require('./notify').escapeTg;
+    const { money } = require('./format');
+    const items = lines.map((l) => `${nameOf[l.productId] || 'giỏ #' + l.productId} × ${l.qty}`).join(', ');
+    await require('./notify').telegram([
+      '🔥 <b>KHÁCH FANPAGE ĐÃ CHỐT NHƯNG CHƯA ĐẶT</b> (quá 2 giờ)',
+      `👤 ${e(p.customer_name || 'Khách')}${p.phone ? ` · 📞 ${e(p.phone)}` : ''}`,
+      items ? `🎁 ${e(items)}` : null,
+      p.delivery_date ? `📅 Muốn giao ${e(String(p.delivery_date).split('-').reverse().join('/'))}${p.province ? ` · ${e(p.province)}` : ''}` : null,
+      p.payment_method ? `💳 ${p.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}` : null,
+      '👉 Gọi hoặc nhắn khách trong hộp thư Fanpage để chốt đơn (có thể đặt hộ trên web).',
+    ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => {});
+    sentCount += 1;
+  }
+  return sentCount;
 }
 
 async function loadHandoff(token) {
@@ -344,8 +385,32 @@ async function orderUpdate(order, kind, extra = {}) {
   return ok;
 }
 
+// Lời chào + nút câu hỏi gợi ý khi khách mở Messenger lần đầu (gọi khi khởi động; Facebook bỏ qua nếu không đổi)
+async function setupProfile() {
+  if (!configured()) return false;
+  const r = await fetch(`${GRAPH}/me/messenger_profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env().token}` },
+    body: JSON.stringify({
+      greeting: [{ locale: 'default', text: 'Lunar Lucky — giỏ quà Tết cao cấp, giao toàn quốc. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.' }],
+      ice_breakers: [{ locale: 'default', call_to_actions: [
+        { question: 'Tư vấn giỏ quà biếu sếp, đối tác', payload: 'IB_BIEU' },
+        { question: 'Quà Tết cho nhân viên (số lượng nhiều)', payload: 'IB_NHANVIEN' },
+        { question: 'Bảng giá và thời gian giao hàng', payload: 'IB_GIA' },
+        { question: 'Gặp nhân viên tư vấn', payload: 'IB_NGUOI' },
+      ] }],
+    }),
+    signal: AbortSignal.timeout(10000),
+  }).catch((err) => ({ ok: false, text: async () => err.message }));
+  if (!r.ok) console.error('[messenger] không cài được lời chào/nút gợi ý:', r.status || '', (await r.text().catch(() => '')).slice(0, 200));
+  else console.log('[messenger] đã cài lời chào + nút câu hỏi gợi ý');
+  return r.ok;
+}
+
 module.exports = {
   orderUpdate,
+  followUpAbandoned,
+  setupProfile,
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
   _setProfile: (fn) => { fetchProfile = fn; },
