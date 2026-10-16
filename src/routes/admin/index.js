@@ -290,6 +290,9 @@ const SETTING_GROUPS = [
     ['ai_daily_limit', 'Giới hạn số tin AI trả lời mỗi ngày (chống spam, chống tốn tiền)'],
     ['messenger_ai_enabled', 'AI trả lời tin nhắn Fanpage (Messenger) — 1 = bật, 0 = tắt (cần FB_PAGE_TOKEN, FB_APP_SECRET trên Render)'],
     ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],
+    ['ai_escalate_qty', 'AI chuyển chủ shop khi đơn từ bao nhiêu giỏ (ca lớn)'],
+    ['ai_escalate_value', 'AI chuyển chủ shop khi tổng tiền từ (₫)'],
+    ['ai_learn', 'AI tự rút bài học mỗi tối từ cách nhân viên tư vấn trên Fanpage (chờ duyệt ở mục "AI học tư vấn") — 1 = bật, 0 = tắt'],
     ['meta_pixel_id', 'Meta Pixel — ID tập dữ liệu (chỉ gồm số, vd 1234567890123456). Để trống = tắt'],
     ['ga4_id', 'Google Analytics 4 — Mã đo lường (dạng G-XXXXXXXXXX). Để trống = tắt'],
     ['comment_bot_enabled', 'Bot trả lời bình luận Facebook ("giá?", "ib"…): trả lời công khai + nhắn riêng; bình luận có SĐT thì ẩn + báo gọi lại — 1 = bật, 0 = tắt'],
@@ -670,6 +673,34 @@ router.use(
 );
 
 /* ---------- Yêu cầu gọi lại ---------- */
+/* ---------- AI học tư vấn: duyệt bài học ---------- */
+router.get('/ai-hoc', async (req, res) => {
+  const rows = await db('ai_lessons').whereNot('status', 'rejected').orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(300);
+  const since = Date.now() - 7 * 86400000;
+  const [{ n: staffMsgs }] = await db('conv_log').where({ role: 'staff' }).andWhere('created_ms', '>', since).count({ n: '*' });
+  const [{ n: aiMsgs }] = await db('conv_log').where({ role: 'ai' }).andWhere('created_ms', '>', since).count({ n: '*' });
+  res.render('admin/ai-lessons', { title: 'AI học tư vấn', rows, stats: { staff: Number(staffMsgs), ai: Number(aiMsgs) } });
+});
+router.post('/ai-hoc', async (req, res) => {
+  const text = String(req.body.text || '').trim().slice(0, 500);
+  if (text.length < 10) flash(req, 'error', 'Viết bài học rõ hơn một chút (ít nhất 10 ký tự).');
+  else {
+    await db('ai_lessons').insert({ text, status: 'approved', source: 'admin', created_at: new Date(), updated_at: new Date() });
+    flash(req, 'success', 'Đã thêm — AI áp dụng ngay từ tin tiếp theo.');
+  }
+  res.redirect('/admin/ai-hoc');
+});
+router.post('/ai-hoc/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const action = String(req.body.action || '');
+  const text = String(req.body.text || '').trim().slice(0, 500);
+  if (action === 'approve') await db('ai_lessons').where({ id }).update({ status: 'approved', ...(text.length >= 10 ? { text } : {}), updated_at: new Date() });
+  else if (action === 'reject') await db('ai_lessons').where({ id }).update({ status: 'rejected', updated_at: new Date() });
+  else if (action === 'save' && text.length >= 10) await db('ai_lessons').where({ id }).update({ text, updated_at: new Date() });
+  flash(req, 'success', action === 'approve' ? 'Đã duyệt — AI áp dụng từ tin tiếp theo.' : action === 'reject' ? 'Đã bỏ bài học này.' : 'Đã lưu.');
+  res.redirect('/admin/ai-hoc');
+});
+
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
   res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });

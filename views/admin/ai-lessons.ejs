@@ -1,0 +1,29 @@
+<%- include('_top') %>
+<% const pending = rows.filter(r => r.status === 'pending'); const ok = rows.filter(r => r.status === 'approved'); %>
+<div class="admin-head"><h1>AI học tư vấn</h1><span class="muted small"><%= pending.length %> chờ duyệt · <%= ok.length %> đang áp dụng</span></div>
+<p class="small muted" style="margin:-8px 0 16px">Mỗi tối 22h, AI đọc các cuộc chat Fanpage có bạn/nhân viên vào trả lời và rút ra bài học (đã bỏ tên, SĐT khách). Bạn duyệt bài nào thì AI làm theo bài đó từ tin tiếp theo. 7 ngày qua: <b><%= stats.staff %></b> tin của nhân viên · <b><%= stats.ai %></b> tin AI tự trả lời.</p>
+
+<form class="panel" action="/admin/ai-hoc" method="post" style="margin-bottom:20px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label class="label" for="nl">Tự dạy AI một kinh nghiệm (áp dụng ngay)</label>
+  <textarea class="textarea" id="nl" name="text" maxlength="500" rows="2" placeholder='vd: Khi khách chê đắt, đừng giảm giá — gợi ý giỏ thấp hơn một bậc và nhấn mạnh thiệp viết tay miễn phí ("Dạ mình tham khảo thêm giỏ …")'></textarea>
+  <button class="btn btn-sm" type="submit" style="margin-top:8px">Thêm kinh nghiệm</button>
+</form>
+
+<% if (pending.length) { %><h2 class="h3" style="margin:8px 0">Chờ duyệt</h2><% } %>
+<% [...pending, ...ok].forEach(r => { %>
+<form class="panel" action="/admin/ai-hoc/<%= r.id %>" method="post" style="margin-bottom:12px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <span class="status <%= r.status === 'pending' ? 'status-pending' : 'status-completed' %>"><%= r.status === 'pending' ? 'Chờ duyệt' : 'Đang áp dụng' %></span>
+    <span class="tiny muted"><%= r.source === 'admin' ? 'Bạn tự thêm' : 'AI rút từ Fanpage' %> · <%= fmt.dateTime(r.created_at) %></span>
+  </div>
+  <textarea class="textarea" name="text" maxlength="500" rows="2"><%= r.text %></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+    <% if (r.status === 'pending') { %><button class="btn btn-sm" type="submit" name="action" value="approve">Duyệt (dùng)</button><% } else { %><button class="btn btn-sm btn-quiet" type="submit" name="action" value="save">Lưu sửa</button><% } %>
+    <button class="btn btn-sm btn-quiet" type="submit" name="action" value="reject"><%= r.status === 'pending' ? 'Bỏ' : 'Ngừng áp dụng' %></button>
+  </div>
+</form>
+<% }) %>
+<% if (!rows.length) { %><div class="panel"><p class="muted">Chưa có bài học nào. Khi bạn/nhân viên trả lời khách trên Fanpage, tối hôm đó AI sẽ rút bài học để bạn duyệt — hoặc bạn tự thêm ở ô phía trên.</p></div><% } %>
+<%- include('_bottom') %>

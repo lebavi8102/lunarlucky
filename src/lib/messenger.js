@@ -195,6 +195,7 @@ async function pause(psid, hours) {
 // Lịch sử trò chuyện quá 90 ngày không nhắn → tự xóa (đúng như chính sách bảo mật)
 async function purgeOld() {
   await db('messenger_threads').where('updated_ms', '<', Date.now() - 90 * 86400000).del().catch(() => {});
+  await db('conv_log').where('created_ms', '<', Date.now() - 90 * 86400000).del().catch(() => {});
 }
 
 async function createHandoff(session, psid) {
@@ -328,6 +329,7 @@ async function handleEvent(ev) {
       console.log(`[messenger] người thật trả lời khách …${String(ev.recipient.id).slice(-4)} → AI tạm dừng ${pauseHours} giờ`);
       await pause(ev.recipient.id, pauseHours);
       if (ev.message.text) await addNote(ev.recipient.id, `Nhân viên: ${ev.message.text}`);
+      await require('./ai-learn').log(ev.recipient.id, 'staff', ev.message.text);
     }
     return 'echo';
   }
@@ -341,8 +343,10 @@ async function handleEvent(ev) {
   const text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
     || (ev.postback && (ev.postback.title || ev.postback.payload)) || '').trim();
 
+  if (text) await require('./ai-learn').log(psid, 'customer', text);
   if (/^(xo[aá]|x[oó]a)\s*(d[uữ]\s*li[eệ]u|l[iị]ch\s*s[uử]|tin\s*nh[aắ]n)/i.test(text) && configured()) {
     await db('messenger_threads').where({ psid }).del();
+    await db('conv_log').where({ psid }).del();
     await sendText(psid, 'Dạ em đã xóa toàn bộ lịch sử trò chuyện của anh/chị với Lunar Lucky rồi ạ. Cần gì anh/chị cứ nhắn em nhé!');
     return 'deleted';
   }
@@ -410,6 +414,7 @@ async function handleEvent(ev) {
     return 'error';
   }
   await sendChat(psid, r.reply);
+  await require('./ai-learn').log(psid, 'ai', r.reply);
   // Tên khách tự giới thiệu (AI ghi lại) / tên trên đơn → các tin báo sau hiện tên
   await rememberName(psid, row, r.humanName || (session.aiPrefill && session.aiPrefill.customer_name));
   if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)

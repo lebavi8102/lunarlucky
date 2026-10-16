@@ -119,6 +119,11 @@ async function tick() {
     await notify.telegram(await ads.report(todayVN(-1)), null, { topic: 'ops' });
   }
   if (h >= 8 && h < 21) await remindStale();
+  // 22h: AI rút bài học từ các cuộc trò chuyện có nhân viên trả lời → chờ chủ shop duyệt
+  if (h >= 22 && String(s.ai_learn) !== '0' && s.ai_learn_last !== day) {
+    await settings.save({ ai_learn_last: day });
+    await require('./ai-learn').learn().catch((err) => console.error('[AI học] lỗi:', err.message));
+  }
   // 23h: gửi file sao lưu Excel (đơn, khách, sản phẩm, chi phí) vào email cửa hàng — phòng khi database gặp sự cố
   if (h >= 23 && String(s.backup_email) !== '0' && s.backup_last !== day && s.shop_email) {
     await settings.save({ backup_last: day });
