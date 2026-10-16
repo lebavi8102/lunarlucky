@@ -60,6 +60,23 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     const h = await m.loadHandoff(url.split('/').pop());
     ok(h && h.cart.lines[0].productId === prod.id && h.prefill.phone === '0912345000' && h.prefill.source === 'ai_fb', 'Link đặt hàng mang theo giỏ + thông tin khách, đánh dấu kênh "AI Fanpage"');
     ok(!(await m.loadHandoff('khong-ton-tai-123')), 'Link sai → không mở được');
+    ok(h.prefill.psid === PSID, 'Link đặt hàng nhớ người nhắn Messenger');
+
+    // Đơn từ AI Fanpage → báo khách qua Messenger: vừa đặt (kèm QR), nhắc chuyển khoản, đã nhận tiền
+    sent.length = 0;
+    const fakeOrder = { code: 'LN26TESTMSG1', total: 1990000, deposit_amount: 0, payment_method: 'bank', payment_status: 'pending', status: 'new', delivery_date: todayVN(3), messenger_psid: PSID };
+    await m.orderUpdate(fakeOrder, 'placed', { until: '14:30 17/10' });
+    const pl = sent[0] && sent[0].message.attachment.payload;
+    ok(pl && /LN26TESTMSG1/.test(pl.text) && /chuyển khoản 1\.990\.000/.test(pl.text) && /14:30 17\/10/.test(pl.text) && /\/don-hang\/LN26TESTMSG1\?k=/.test(pl.buttons[0].url) && sent[0].message.metadata === m.AI_TAG,
+      'Đặt xong → Messenger báo mã đơn, số tiền cần chuyển, hạn giữ đơn, nút xem đơn & QR');
+    sent.length = 0;
+    await m.orderUpdate({ ...fakeOrder, payment_status: 'paid' }, 'paid');
+    ok(sent[0] && /đã nhận đủ tiền/.test(sent[0].message.attachment.payload.text), 'Tiền về → Messenger báo đã nhận tiền');
+    sent.length = 0;
+    await m.orderUpdate({ ...fakeOrder, payment_status: 'paid' }, 'reminder');
+    ok(!sent.length, 'Đã trả tiền → không nhắc');
+    await m.orderUpdate({ ...fakeOrder, messenger_psid: null }, 'placed');
+    ok(!sent.length, 'Đơn không từ Messenger → không gửi gì');
 
     // Bản sao (echo) tin của chính AI, Facebook không gửi kèm nhãn → không được hiểu nhầm là người thật (lỗi AI im sau 1 câu)
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID }, message: { is_echo: true, app_id: 123, text: 'Dạ em gợi ý' } }] }] });

@@ -140,12 +140,19 @@ async function afterPaid(orderId) {
   const order = await db('orders').where({ id: orderId }).first();
   if (!order) return;
   await updateWaiting(order, 'paid');
+  require('./messenger').orderUpdate(order, 'paid').catch(() => {});
   if (!order.tg_message_id) {
     const items = await db('order_items').where({ order_id: order.id });
     await tg.sendNewOrder(order, items);
   } else {
     await tg.refreshOrderMessage(order.id);
   }
+}
+
+/** Giờ hết hạn giữ đơn chờ tiền, dạng "14:30 17/10" (giờ VN). */
+function holdUntil(order, s) {
+  const deadline = new Date(new Date(order.created_at || Date.now()).getTime() + holdHours(s) * 3600000);
+  return new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(deadline);
 }
 
 function holdHours(s) {
@@ -184,7 +191,7 @@ async function remindUnpaid() {
     .andWhere((w) => w.where('payment_method', 'bank').orWhere((x) => x.where('payment_method', 'cod').andWhere('deposit_amount', '>', 0)))
     .whereNull('tg_message_id')
     .whereNull('pay_reminded_at')
-    .whereNotNull('email').whereNot('email', '')
+    .andWhere((w) => w.where((x) => x.whereNotNull('email').whereNot('email', '')).orWhereNotNull('messenger_psid'))
     .andWhere('created_at', '<', new Date(now - (hours / 2) * 3600000))
     .andWhere('created_at', '>', new Date(now - (hours - 1) * 3600000));
   for (const order of rows) {
@@ -193,6 +200,8 @@ async function remindUnpaid() {
     const deadline = new Date(new Date(order.created_at).getTime() + hours * 3600000);
     const until = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(deadline);
     const isDep = order.payment_method === 'cod';
+    if (order.messenger_psid) require('./messenger').orderUpdate(order, 'reminder', { until }).catch(() => {});
+    if (!order.email) continue;
     notify.sendMail({
       to: order.email,
       subject: `Nhắc ${isDep ? 'đặt cọc' : 'thanh toán'} đơn ${order.code} — Lunar Lucky giữ giỏ quà đến ${until}`,
@@ -241,4 +250,4 @@ function startExpiryTimer() {
   setInterval(run, 60000).unref();
 }
 
-module.exports = { notifyWaiting, resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, remindUnpaid, startExpiryTimer, holdHours };
+module.exports = { notifyWaiting, resendMissed, enabled, authorized, findCode, handleSepay, afterPaid, expireUnpaid, remindUnpaid, startExpiryTimer, holdHours, holdUntil };

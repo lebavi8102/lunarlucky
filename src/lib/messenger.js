@@ -182,11 +182,11 @@ async function purgeOld() {
   await db('messenger_threads').where('updated_ms', '<', Date.now() - 90 * 86400000).del().catch(() => {});
 }
 
-async function createHandoff(session) {
+async function createHandoff(session, psid) {
   const token = crypto.randomBytes(16).toString('base64url');
   await db('ai_handoffs').insert({
     token,
-    data: JSON.stringify({ cart: session.cart, prefill: { ...session.aiPrefill, source: 'ai_fb' } }),
+    data: JSON.stringify({ cart: session.cart, prefill: { ...session.aiPrefill, source: 'ai_fb', psid } }),
     expires_ms: Date.now() + HANDOFF_HOURS * 3600000,
   });
   await db('ai_handoffs').where('expires_ms', '<', Date.now()).del().catch(() => {});
@@ -281,7 +281,7 @@ async function handleEvent(ev) {
   if (Math.random() < 0.02) purgeOld();
   await sendText(psid, r.reply);
   if (r.action && session.cart && session.aiPrefill) {
-    const url = await createHandoff(session);
+    const url = await createHandoff(session, psid);
     await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
       template_type: 'button',
       text: 'Anh/chị bấm nút dưới để xem lại đơn và bấm "Đặt hàng" (đơn chỉ được tạo khi anh/chị bấm):',
@@ -314,7 +314,38 @@ function handleWebhook(body) {
   return Promise.all(jobs);
 }
 
+/**
+ * Báo khách qua Messenger về đơn đặt từ AI Fanpage: 'placed' (vừa đặt), 'reminder' (sắp hết giờ giữ đơn), 'paid' (đã nhận tiền).
+ * Facebook chỉ cho nhắn trong 24 giờ kể từ tin cuối của khách — quá hạn thì bỏ qua (khách vẫn có email/trang đơn).
+ */
+async function orderUpdate(order, kind, extra = {}) {
+  if (!configured() || !order || !order.messenger_psid) return false;
+  const payment = require('./payment');
+  const { money, deliveryWhen } = require('./format');
+  const link = require('../routes/checkout').shareLink(order.code);
+  const due = payment.amountDue(order);
+  const isDep = order.payment_method === 'cod' && Number(order.deposit_amount) > 0 && order.payment_status === 'pending';
+  let text = '';
+  if (kind === 'placed') {
+    text = `Dạ Lunar Lucky đã nhận đơn ${order.code} — tổng ${money(order.total)}, giao ${deliveryWhen(order)} ạ.`;
+    if (payment.awaitingMoney(order) && due) text += `\nAnh/chị ${isDep ? 'đặt cọc' : 'chuyển khoản'} ${money(due)} theo mã QR trong link dưới (nội dung ${order.code}) để em giữ giỏ${extra.until ? ` đến ${extra.until}` : ''}; tiền vào là hệ thống tự xác nhận.`;
+    else if (order.payment_method === 'cod') text += `\nAnh/chị thanh toán ${money(payment.codDue(order))} khi nhận hàng. Em sẽ gọi xác nhận trước khi giao.`;
+  } else if (kind === 'reminder') {
+    if (!payment.awaitingMoney(order) || !due) return false;
+    text = `Dạ em nhắc anh/chị: đơn ${order.code} đang chờ ${isDep ? 'đặt cọc' : 'chuyển khoản'} ${money(due)}. Lunar Lucky giữ giỏ quà${extra.until ? ` đến ${extra.until}` : ''}, sau đó đơn tự hủy để nhường hàng cho khách khác ạ.`;
+  } else if (kind === 'paid') {
+    text = order.payment_status === 'deposit'
+      ? `Dạ Lunar Lucky đã nhận tiền cọc đơn ${order.code}. Kho bắt đầu chuẩn bị; còn ${money(payment.codDue(order))} anh/chị thanh toán khi nhận hàng ạ. Cảm ơn anh/chị!`
+      : `Dạ Lunar Lucky đã nhận đủ tiền đơn ${order.code}. Kho bắt đầu chuẩn bị, giao ${deliveryWhen(order)} ạ. Cảm ơn anh/chị!`;
+  } else return false;
+  const ok = await send({ recipient: { id: order.messenger_psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
+    template_type: 'button', text: text.slice(0, 640), buttons: [{ type: 'web_url', url: link, title: kind === 'paid' ? 'Xem đơn' : 'Xem đơn & mã QR' }],
+  } } } }).catch(() => false);
+  return ok;
+}
+
 module.exports = {
+  orderUpdate,
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
   _setProfile: (fn) => { fetchProfile = fn; },

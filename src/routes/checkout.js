@@ -276,6 +276,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     user_id: req.session.user && !isStaff(req) ? req.session.user.id : null,
     // Kênh: nhân viên chọn khi đặt hộ; khách tự đặt → kênh khách đến (link ?nguon=, Facebook, Zalo…)
     source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.aiPrefill ? (req.session.aiPrefill.source === 'ai_fb' ? 'ai_fb' : 'ai') : req.session.source || 'web',
+    messenger_psid: !isStaff(req) && req.session.aiPrefill && /^\d{5,40}$/.test(String(req.session.aiPrefill.psid || '')) ? String(req.session.aiPrefill.psid) : null,
     created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
@@ -365,6 +366,11 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   (holdForPayment ? require('../lib/bank-payments').notifyWaiting(order) : tgOrders.sendNewOrder(order, items))
     .then(() => tgOrders.stockAlertsAfterOrder(items))
     .catch(() => {});
+  // Đơn từ AI Fanpage → xác nhận ngay trên Messenger (khách Fanpage thường không để email)
+  if (order.messenger_psid) {
+    const until = holdForPayment ? require('../lib/bank-payments').holdUntil(order, res.locals.s) : '';
+    require('../lib/messenger').orderUpdate(order, 'placed', { until }).catch(() => {});
+  }
   if (order.email) {
     notify.sendMail({
       to: order.email,
