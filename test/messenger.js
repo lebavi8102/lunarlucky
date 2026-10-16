@@ -43,7 +43,9 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       return { stop_reason: 'end_turn', model: 'fake', usage: {}, content: [{ type: 'text', text: 'Dạ em gợi ý **Giỏ An Khang** ạ.' }] };
     } } } });
 
+    m._setProfile(async () => ({ first: 'Lan', last: 'Trần Thị' }));
     await m.handleWebhook(msg('quà cho bố mẹ 2 triệu'));
+    ok(/Tên Facebook của khách: Trần Thị Lan/.test(calls[0].system[1].text) && (await db('messenger_threads').where({ psid: PSID }).first()).name === 'Trần Thị Lan', 'Lấy tên Facebook của khách (họ trước tên sau) → AI gọi đúng tên');
     const texts = sent.filter((b) => b.message && b.message.text);
     ok(texts.length === 1 && texts[0].message.text === 'Dạ em gợi ý Giỏ An Khang ạ.' && texts[0].message.metadata === m.AI_TAG && sent.some((b) => b.sender_action === 'typing_on'), 'Khách nhắn → AI trả lời (chữ thường, có hiện "đang soạn")');
     ok(calls[0].system.length === 2 && /Messenger/.test(calls[0].system[1].text), 'AI biết đang chat qua Messenger');

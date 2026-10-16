@@ -48,6 +48,7 @@ module.exports = async function locals(req, res, next) {
   rememberSource(req);
   const s = await settings.all();
   res.locals.s = s;
+  res.locals.bulkTiers = () => require('../routes/checkout').bulkTiers(s); // mức thời gian chuẩn bị đơn nhiều giỏ
   res.locals.aiReady = require('../lib/ai-sales').enabled(s);
   // "Nhận đơn giao trước Tết đến hết 30/01" — tự ẩn sau ngày chốt
   const dl = /^\d{4}-\d{2}-\d{2}$/.test(String(s.order_deadline || '')) ? s.order_deadline : '';

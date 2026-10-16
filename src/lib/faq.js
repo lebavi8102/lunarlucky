@@ -8,15 +8,18 @@ const payment = require('./payment');
 function faq(s = {}) {
   const fee = money(Number(s.shipping_fee) || 0);
   const free = money(Number(s.free_ship_threshold) || 0);
-  const bulkQty = Number(s.bulk_min_qty) || 5;
-  const bulkDays = Number(s.bulk_min_days) || 2;
+  const tiers = require('../routes/checkout').bulkTiers(s);
+  const bulkText = tiers.map((t, i) => {
+    const nx = tiers[i + 1];
+    return `đơn ${nx ? `${t.qty}–${nx.qty - 1}` : `từ ${t.qty}`} giỏ cần ${t.maxDays > t.days ? `${t.days}–${t.maxDays}` : t.days} ngày chuẩn bị${nx ? '' : ' (tùy tình hình thực tế)'}`;
+  }).join('; ');
   const vn = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? `${d.slice(8)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : '');
   const deadline = vn(s.order_deadline);
   const tet = s.tet_closed_from && s.tet_closed_to ? `Lunar Lucky nghỉ giao hàng từ ${vn(s.tet_closed_from)} đến ${vn(s.tet_closed_to)}.` : '';
   return [
     {
       q: 'Tôi nên đặt giỏ quà Tết trước bao lâu?',
-      a: `Đơn lẻ ở Hà Nội giao được từ ngày hôm sau; đơn từ ${bulkQty} giỏ cần ${bulkDays} ngày chuẩn bị; các tỉnh khác cần thêm 2–4 ngày vận chuyển. Giai đoạn cao điểm (từ 15 tháng Chạp), bạn nên đặt trước 5–7 ngày để giữ được ngày giao mong muốn.${deadline ? ` Lunar Lucky giao quà Tết đến hết ${s.order_deadline_label ? s.order_deadline_label + ' (' + deadline + ')' : deadline}.` : ''} ${tet}`.trim(),
+      a: `Đơn lẻ ở Hà Nội giao được từ ngày hôm sau; ${bulkText}; các tỉnh khác cần thêm 2–4 ngày vận chuyển. Giai đoạn cao điểm (từ 15 tháng Chạp), bạn nên đặt trước 5–7 ngày để giữ được ngày giao mong muốn.${deadline ? ` Lunar Lucky giao quà Tết đến hết ${s.order_deadline_label ? s.order_deadline_label + ' (' + deadline + ')' : deadline}.` : ''} ${tet}`.trim(),
     },
     {
       q: 'Tôi có thể chọn ngày và giờ giao hàng không?',

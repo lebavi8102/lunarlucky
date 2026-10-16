@@ -39,15 +39,39 @@ function rememberOrder(req, code) {
 
 /** Hà Nội giao sớm (Ahamove/tự giao); tỉnh khác đi chuyển phát 2–4 ngày → ngày giao sớm nhất muộn hơn. */
 const isHanoi = (province) => /hà nội/i.test(String(province || '').normalize('NFC'));
-/** Đơn nhiều giỏ (mặc định từ 5) cần 1–2 ngày chuẩn bị → ngày giao sớm nhất lùi lại. */
-function bulkRule(s) {
-  return { qty: Number(s.bulk_min_qty) || 5, days: Number(s.bulk_min_days) || 2 };
+/**
+ * Đơn nhiều giỏ cần thời gian chuẩn bị → ngày giao sớm nhất lùi lại. 2 mức (Cài đặt):
+ * mức 1 (mặc định từ 5 giỏ): 2–3 ngày · mức 2 (mặc định từ 21 giỏ): 5–10 ngày tùy tình hình thực tế.
+ * days = số ngày tối thiểu (chặn chọn ngày sớm hơn), maxDays = để báo khách khoảng thời gian.
+ */
+function bulkTiers(s) {
+  const n = (v, d) => (Number.isFinite(Number(v)) && String(v).trim() !== '' ? Number(v) : d);
+  const t1 = { qty: n(s.bulk_min_qty, 5) || 5, days: n(s.bulk_min_days, 2) || 2 };
+  t1.maxDays = Math.max(t1.days, n(s.bulk_max_days, 3));
+  const t2 = { qty: n(s.bulk2_min_qty, 21), days: n(s.bulk2_min_days, 5) };
+  t2.maxDays = Math.max(t2.days, n(s.bulk2_max_days, 10));
+  return t2.qty > t1.qty && t2.days > 0 ? [t1, t2] : [t1];
+}
+/** Mức áp dụng cho số giỏ; không truyền qty → mức 1 (để mô tả quy định). */
+function bulkRule(s, qty) {
+  const tiers = bulkTiers(s);
+  if (qty === undefined) return tiers[0];
+  return tiers.filter((t) => qty >= t.qty).pop() || null;
+}
+const daysText = (t) => (t.maxDays > t.days ? `${t.days}–${t.maxDays}` : `${t.days}`);
+/** Câu báo thời gian chuẩn bị cho đơn qty giỏ ('' nếu đơn ít). */
+function bulkNoteFor(s, qty) {
+  const t = bulkRule(s, qty);
+  if (!t) return '';
+  const tiers = bulkTiers(s);
+  const big = tiers.length > 1 && t.qty === tiers[tiers.length - 1].qty;
+  return `Đơn ${qty} giỏ cần ${daysText(t)} ngày chuẩn bị${big ? ' tùy tình hình thực tế — Lunar Lucky sẽ gọi xác nhận ngày giao cụ thể' : ''}.`;
 }
 function minDaysFor(province, s, qty = 0) {
   const hn = Number(s.min_delivery_days) || 1;
   const base = isHanoi(province) ? hn : Math.max(hn, Number(s.province_min_days) || 3);
-  const b = bulkRule(s);
-  return qty >= b.qty ? Math.max(base, b.days) : base;
+  const t = bulkRule(s, qty);
+  return t ? Math.max(base, t.days) : base;
 }
 /** Những ngày nghỉ Tết (không giao). */
 function tetClosed(s) {
@@ -68,7 +92,7 @@ function dateCtx(s, province, qty = 0) {
   return {
     quickDates,
     minDate: quickDates[0], maxDate: todayVN(180),
-    bulkNote: qty >= bulkRule(s).qty ? `Đơn từ ${bulkRule(s).qty} giỏ cần ${bulkRule(s).days} ngày chuẩn bị.` : '',
+    bulkNote: bulkNoteFor(s, qty),
     dateRules: { hn: openDay(todayVN(minDaysFor('Hà Nội', s, qty)), s), tinh: openDay(todayVN(minDaysFor('', s, qty)), s), closedFrom: c ? c.from : '', closedTo: c ? c.to : '' },
   };
 }
@@ -161,8 +185,8 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     if (!address) address = recipient_address;
   }
   const delivery_date = f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: minDays, maxOffset: 180 });
-  if (f.errors.delivery_date && priced.count >= bulkRule(res.locals.s).qty && delivery_date && delivery_date < todayVN(minDays)) {
-    f.errors.delivery_date = `Đơn ${priced.count} giỏ cần ${bulkRule(res.locals.s).days} ngày chuẩn bị — vui lòng chọn giao từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
+  if (f.errors.delivery_date && bulkRule(res.locals.s, priced.count) && delivery_date && delivery_date < todayVN(minDays)) {
+    f.errors.delivery_date = `${bulkNoteFor(res.locals.s, priced.count).replace(/\.$/, '')} — vui lòng chọn giao từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
   } else if (f.errors.delivery_date && !isHanoi(req.body.province) && delivery_date && delivery_date < todayVN(minDays)) {
     f.errors.delivery_date = `Giao ngoài Hà Nội đi chuyển phát mất 2–4 ngày — vui lòng chọn từ ${todayVN(minDays).split('-').reverse().join('/')} trở đi.`;
   }
@@ -428,6 +452,8 @@ module.exports.PROVINCES = PROVINCES;
 module.exports.shareLink = shareLink;
 module.exports.dateCtx = dateCtx;
 module.exports.bulkRule = bulkRule;
+module.exports.bulkTiers = bulkTiers;
+module.exports.bulkNoteFor = bulkNoteFor;
 module.exports.minDaysFor = minDaysFor;
 module.exports.isHanoi = isHanoi;
 module.exports.tetClosed = tetClosed;

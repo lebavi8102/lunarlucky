@@ -39,14 +39,18 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(out.action && out.action.url === '/thanh-toan?tu-van=1', 'Trả về nút "Kiểm tra & đặt hàng"');
     // Đơn nhiều giỏ (từ 5) cần 2 ngày chuẩn bị
     const d10 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 10 }, req, out);
-    ok(d10.earliest_delivery >= todayVN(2) && /cần 2 ngày chuẩn bị/.test(d10.preparation_note || ''), 'delivery_options: 10 giỏ ở Hà Nội → sớm nhất sau 2 ngày');
+    ok(d10.earliest_delivery >= todayVN(2) && /2–3 ngày chuẩn bị/.test(d10.preparation_note || ''), 'delivery_options: 10 giỏ ở Hà Nội → sớm nhất sau 2 ngày');
     const rush = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 10 }], customer_name: 'Cty A', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: todayVN(1), payment_method: 'bank' }, { session: {} }, {});
     ok(/sớm nhất từ/.test(rush.error || ''), 'prepare_order: 10 giỏ giao ngày mai → từ chối, nói ngày sớm nhất');
     const cod5 = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 5 }], customer_name: 'Cty B', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: todayVN(4), payment_method: 'cod' }, { session: {} }, {});
     const need = Math.ceil((cod5.total * 0.5) / 1000) * 1000;
     ok(cod5.ok && (cod5.deposit_text || '').includes(require('../src/lib/format').money(need)), `COD 5 giỏ → AI báo cọc 50% (${cod5.deposit_text})`);
+    const d30 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 30 }, req, out);
+    ok(d30.earliest_delivery >= todayVN(5) && /5–10 ngày chuẩn bị tùy tình hình thực tế/.test(d30.preparation_note || ''), 'delivery_options: 30 giỏ → sớm nhất sau 5 ngày, báo 5–10 ngày tùy thực tế');
+    const d12 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 12 }, req, out);
+    ok(d12.earliest_delivery < todayVN(5) && /2–3 ngày/.test(d12.preparation_note || ''), 'delivery_options: 12 giỏ → 2–3 ngày');
     const sysNow = await ai.systemPrompt();
-    ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /cần 2 ngày chuẩn bị/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
+    ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: 2–3 ngày; từ 21 giỏ: 5–10 ngày tùy tình hình thực tế/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 
     // Vòng chat với Claude giả lập: gọi search_products rồi trả lời
     const calls = [];

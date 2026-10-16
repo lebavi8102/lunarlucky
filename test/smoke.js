@@ -138,7 +138,7 @@ async function addToCart(c, slug, qty = 1) {
     const tomorrow = new Date(Date.now() + 86400000 + 7 * 3600000).toISOString().slice(0, 10);
     const r = await g('/thanh-toan', { method: 'POST', form: { _csrf: t, customer_name: 'Công ty Thử', phone: '0912345678', province: 'Hà Nội',
       address: '1 Tràng Tiền', delivery_date: tomorrow, payment_method: 'bank' } });
-    ok(r.status === 422 && /cần 2 ngày chuẩn bị/.test(r.text), 'Đặt 5 giỏ giao ngày mai → báo cần 2 ngày chuẩn bị');
+    ok(r.status === 422 && /cần 2–3 ngày chuẩn bị/.test(r.text), 'Đặt 5 giỏ giao ngày mai → báo cần 2–3 ngày chuẩn bị');
   }
 
   // 4c3. Buổi giao (Hà Nội): lưu và hiện trên trang đơn

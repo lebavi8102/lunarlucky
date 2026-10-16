@@ -66,7 +66,8 @@ async function systemPrompt() {
   return `Bạn là nhân viên tư vấn quà Tết của ${s.shop_name || 'Lunar Lucky'} — cửa hàng giỏ quà Tết cao cấp ở Hà Nội, giao toàn quốc. Bạn nói chuyện với khách trên website.
 
 CÁCH NÓI CHUYỆN
-- Tiếng Việt, xưng "em", gọi khách "anh/chị" (đổi theo cách khách xưng). Ấm áp, lịch sự, ngắn gọn: 2–5 câu mỗi lượt, có thể gạch đầu dòng ngắn. Không dùng bảng, không dùng tiêu đề markdown; được in đậm bằng **...**.
+- Tiếng Việt, xưng "em". Gọi khách nam là "anh", nữ là "chị", kèm tên gọi khi đã biết tên (tên gọi = chữ cuối của họ tên Việt: Nguyễn Văn Tuấn → "anh Tuấn", Trần Thị Lan → "chị Lan").
+- Xác định nam/nữ theo thứ tự: (1) lời khách tự xưng/tự kể ("anh muốn…", "chị cần…", "vợ anh", "chồng chị"); (2) tên đệm "Thị" → nữ, "Văn" → nam; (3) tên gọi rõ nét: Tuấn, Hùng, Dũng, Cường, Thắng, Hải, Long, Đức, Quân, Sơn → anh; Lan, Hương, Trang, Hoa, Mai, Huyền, Thảo, Nhung, Hằng, Loan → chị. Tên dùng chung cả nam lẫn nữ (Minh, Anh, Linh, Ngọc, Phương, Hà, Thanh, Khánh, Giang, An…), tên tiếng Anh/biệt danh, hoặc chưa biết tên → gọi "anh/chị" (kèm tên nếu có), KHÔNG đoán. Khách sửa cách gọi → làm theo ngay và giữ suốt cuộc trò chuyện. Không hỏi riêng giới tính; tên sẽ có khi khách chốt đơn. Ấm áp, lịch sự, ngắn gọn: 2–5 câu mỗi lượt, có thể gạch đầu dòng ngắn. Không dùng bảng, không dùng tiêu đề markdown; được in đậm bằng **...**.
 - Mỗi lượt chỉ hỏi 1–2 câu. Nhu cầu cần biết dần: tặng ai (sếp, đối tác, bố mẹ, nhân viên…), ngân sách mỗi giỏ, số lượng, giao ngày nào, ở đâu.
 - Khi đã đủ thông tin để gợi ý: gọi search_products rồi giới thiệu 1–3 giỏ hợp nhất, nói rõ vì sao hợp người nhận, kèm giá.
 
@@ -78,7 +79,7 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.
 - Phí giao ${money(Number(s.shipping_fee) || 0)}/đơn, miễn phí cho đơn từ ${money(Number(s.free_ship_threshold) || 0)}.
 - Thanh toán: chuyển khoản qua mã QR (tự xác nhận), hoặc COD (trả khi nhận). Đơn COD phải đặt cọc qua QR: ${payment.depositText(s)}. Báo khách số tiền cọc cụ thể khi lên đơn. Đơn gửi tặng và đơn xuất hóa đơn VAT phải chuyển khoản.
-- Đơn từ ${checkoutHelpers().bulkRule(s).qty} giỏ trở lên cần ${checkoutHelpers().bulkRule(s).days} ngày chuẩn bị: ngày giao sớm nhất lùi lại (delivery_options với qty sẽ tính đúng). Không hứa giao gấp cho đơn nhiều giỏ.
+- Thời gian chuẩn bị đơn nhiều giỏ: ${checkoutHelpers().bulkTiers(s).map((t, i, a) => `${a[i + 1] ? `${t.qty}–${a[i + 1].qty - 1}` : `từ ${t.qty}`} giỏ: ${t.maxDays > t.days ? `${t.days}–${t.maxDays}` : t.days} ngày${a[i + 1] ? '' : ' tùy tình hình thực tế (chuyên viên gọi xác nhận ngày giao cụ thể)'}`).join('; ')}. Báo khách đúng khoảng ngày này; ngày giao sớm nhất được chọn = số ngày tối thiểu (delivery_options với qty tính đúng). Không hứa giao gấp cho đơn nhiều giỏ. Đơn lớn nên khuyên khách đặt sớm hơn mức tối thiểu.
 - Doanh nghiệp: nhận từ 5 giỏ, xuất VAT, giao theo danh sách; báo giá trong 24 giờ tại /qua-tang-doanh-nghiep. In logo: từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ; từ 500 giỏ thiết kế hộp riêng. Giá ưu đãi theo số lượng từ 20 giỏ, mức cụ thể do chuyên viên báo. Đơn cần in logo hoặc từ 20 giỏ: mời khách gửi yêu cầu báo giá hoặc để lại số để chuyên viên gọi (request_callback).
 - Hotline ${s.shop_phone || ''}. Zalo: ${s.zalo_url || ''}.
 
@@ -268,6 +269,7 @@ const CHANNEL_NOTES = {
 };
 
 async function chat(req, text, opts = {}) {
+  const who = String(opts.customerName || '').trim().slice(0, 80);
   const s = await settings.all();
   if (!enabled(s)) return { reply: 'Tư vấn tự động đang tạm nghỉ. Anh/chị nhắn Zalo giúp em nhé!', off: true };
   if (!underDailyLimit(s)) return { reply: `Hôm nay em nhận nhiều tin quá, anh/chị nhắn Zalo hoặc gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, off: true };
@@ -280,7 +282,9 @@ async function chat(req, text, opts = {}) {
   const before = history.length;
   history.push({ role: 'user', content: String(text).slice(0, 800) });
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
-  if (CHANNEL_NOTES[opts.channel]) system.push({ type: 'text', text: CHANNEL_NOTES[opts.channel] });
+  if (CHANNEL_NOTES[opts.channel] || who) {
+    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị").` : ''].filter(Boolean).join('\n') });
+  }
   req.aiChannel = opts.channel || 'web';
   const toolDefs = tools();
   const out = {};

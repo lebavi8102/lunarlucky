@@ -107,6 +107,31 @@ async function sendText(psid, text) {
 
 const typing = (psid) => send({ recipient: { id: psid }, sender_action: 'typing_on' }).catch(() => {});
 
+// Tên trên Facebook (first_name/last_name). Facebook không cho biết giới tính → AI tự nhận theo tên.
+let fetchProfile = async (psid) => {
+  const r = await fetch(`${GRAPH}/${encodeURIComponent(psid)}?fields=first_name,last_name`, {
+    headers: { Authorization: `Bearer ${env().token}` },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok) return null;
+  const p = await r.json();
+  return { first: String(p.first_name || '').trim(), last: String(p.last_name || '').trim() };
+};
+
+/** Họ tên khách theo thứ tự tiếng Việt (họ trước, tên sau). '' nếu không lấy được. */
+async function customerName(psid, row) {
+  if (row && row.name != null) return row.name;
+  let name = '';
+  try {
+    const p = await fetchProfile(psid);
+    if (p) name = [p.last, p.first].filter(Boolean).join(' ').slice(0, 120);
+  } catch (err) {
+    console.error('[messenger] không lấy được tên khách:', err.message);
+  }
+  await saveThread(psid, { name });
+  return name;
+}
+
 async function thread(psid) {
   const row = await db('messenger_threads').where({ psid }).first();
   let history = [];
@@ -197,10 +222,11 @@ async function handleEvent(ev) {
 
   typing(psid);
   let session = { aiChat: history };
-  let r = await ai.chat({ session }, text, { channel: 'messenger' });
+  const name = await customerName(psid, row);
+  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name });
   if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger
     session = { aiChat: [] };
-    r = await ai.chat({ session }, text, { channel: 'messenger' });
+    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name });
   }
   await saveThread(psid, { history: JSON.stringify(session.aiChat || []) });
   if (Math.random() < 0.02) purgeOld();
@@ -242,5 +268,6 @@ function handleWebhook(body) {
 module.exports = {
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
+  _setProfile: (fn) => { fetchProfile = fn; },
   _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.appId = ''; },
 };

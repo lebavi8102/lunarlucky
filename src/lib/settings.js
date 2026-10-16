@@ -45,6 +45,10 @@ const DEFAULTS = {
   // Đơn nhiều giỏ cần thời gian chuẩn bị
   bulk_min_qty: '5',
   bulk_min_days: '2',
+  bulk_max_days: '3',
+  bulk2_min_qty: '21',
+  bulk2_min_days: '5',
+  bulk2_max_days: '10',
   // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
   order_deadline: '2027-02-05',
   order_deadline_label: '29 tháng Chạp',
