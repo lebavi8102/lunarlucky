@@ -227,7 +227,7 @@ async function handleEvent(ev) {
   if (HUMAN.test(text)) {
     await pause(psid, pauseHours);
     await sendText(psid, `Dạ em đã báo chuyên viên Lunar Lucky, anh/chị đợi một chút sẽ có người trả lời ngay tại đây ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
-    await require('./notify').telegram(`💬 <b>Khách Fanpage cần gặp người thật</b>\nTin: ${text.slice(0, 200).replace(/[<>&]/g, '')}\n👉 Mở hộp thư Fanpage để trả lời (AI tạm dừng với khách này ${pauseHours} giờ).`).catch(() => {});
+    await require('./notify').telegram(`💬 <b>Khách Fanpage cần gặp người thật</b>\nTin: ${text.slice(0, 200).replace(/[<>&]/g, '')}\n👉 Mở hộp thư Fanpage để trả lời (AI tạm dừng với khách này ${pauseHours} giờ).`, null, { topic: 'consult' }).catch(() => {});
     return 'human';
   }
 

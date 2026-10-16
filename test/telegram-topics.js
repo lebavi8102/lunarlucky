@@ -80,6 +80,21 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   await tg.sendNewOrder(o, items);
   ok(lastSend()?.body.message_thread_id === 11 && /ĐƠN MỚI/.test(lastSend().body.text), 'Đơn mới gửi vào chủ đề Đơn hàng');
 
+  // 3b. Khách nhờ gọi lại → chủ đề General "TƯ VẤN KHÁCH" (không gắn mã chủ đề), không vào chủ đề Đơn hàng
+  sent.length = 0;
+  const cbNew = await require('../src/lib/callbacks').create({ name: 'Khách thử', phone: '0912000111', interest: '50 giỏ', note: 'Từ AI tư vấn trên Fanpage (Messenger)', source: 'ai' });
+  const cbNewMsg = sent.find((x) => x.method === 'sendMessage' && /GỌI LẠI/.test(x.body.text || ''));
+  ok(cbNewMsg && cbNewMsg.body.message_thread_id === undefined, 'Yêu cầu gọi lại → chủ đề General (TƯ VẤN KHÁCH)');
+  await tg.handleUpdate(msg('/chontuvan', { is_topic_message: true, message_thread_id: 55 }));
+  sent.length = 0;
+  await notify.telegram('thử tư vấn', null, { topic: 'consult' });
+  ok(lastSend()?.body.message_thread_id === 55, '/chontuvan đổi chủ đề tư vấn khách');
+  await tg.handleUpdate(msg('/chontuvan'));
+  sent.length = 0;
+  await notify.telegram('thử tư vấn', null, { topic: 'consult' });
+  ok(lastSend() && lastSend().body.message_thread_id === undefined, '/chontuvan gõ trong General → trở lại General');
+  if (cbNew && cbNew.id) await db('callback_requests').where({ id: cbNew.id }).del();
+
   // 4. Cảnh báo kho → chủ đề Kho hàng
   const p = await db('products').whereNotNull('sku').first();
   const stock0 = p.stock;
@@ -412,7 +427,7 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   const cbReq = await require('../src/lib/callbacks').create({ name: 'Chị Mai', phone: '0912345678', interest: 'Giỏ An Khang', source: 'san-pham' });
   const cbMsg = lastSend();
-  ok(cbMsg && /KHÁCH CẦN GỌI LẠI/.test(cbMsg.body.text) && cbMsg.body.message_thread_id === 11, 'Khách để lại SĐT → báo vào chủ đề Đơn hàng');
+  ok(cbMsg && /KHÁCH CẦN GỌI LẠI/.test(cbMsg.body.text) && cbMsg.body.message_thread_id === undefined, 'Khách để lại SĐT → báo vào chủ đề TƯ VẤN KHÁCH (General)');
   const kb = JSON.stringify(cbMsg.body.reply_markup || {});
   ok(kb.includes(`g:${cbReq.id}:d`), 'Tin gọi lại có nút "✅ Đã gọi"');
   sent.length = 0;

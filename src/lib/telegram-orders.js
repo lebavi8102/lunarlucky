@@ -374,7 +374,7 @@ const KHO_HELP = [
   '<code>/giam LL001 2</code> — trừ 2 giỏ (hỏng, bán ngoài web…)',
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
-  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper, <code>/chontien</code> trong chủ đề tiền về.',
+  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper, <code>/chontien</code> trong chủ đề tiền về, <code>/chontuvan</code> trong chủ đề tư vấn khách (mặc định: General).',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
@@ -511,20 +511,24 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
   if (String(msg.chat.id) !== String(allowed)) return;
 
   // Lệnh sửa tồn kho / đổi chủ đề nhận tin: chỉ quản trị viên nhóm (shipper, người ngoài không đụng được)
-  const ADMIN_CMDS = ['nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien'];
+  const ADMIN_CMDS = ['nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan'];
   if (ADMIN_CMDS.includes(cmd) && String((await settings.all()).telegram_admin_only) !== '0'
       && msg.chat.type !== 'private' && !(await isGroupAdmin(msg.chat.id, msg.from && msg.from.id))) {
     return reply(msg, 'Lệnh này chỉ dành cho quản trị viên nhóm (sửa tồn kho, đổi chủ đề nhận tin).');
   }
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
+  if (cmd === 'chontuvan') { // dùng được cả trong General (không có mã chủ đề)
+    await settings.save({ telegram_consult_thread: msg.is_topic_message && msg.message_thread_id ? String(msg.message_thread_id) : '' });
+    return reply(msg, '✅ Từ giờ tin <b>tư vấn khách</b> (khách nhờ gọi lại, khách Fanpage cần gặp người thật) gửi vào chủ đề này.');
+  }
   if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
@@ -754,6 +758,7 @@ async function ensureWebhook() {
       { command: 'chontien', description: 'Chọn chủ đề này cho tin chờ chuyển khoản / tiền vào' },
       { command: 'chonship', description: 'Chọn chủ đề này cho shipper nhận đơn đi giao' },
       { command: 'chonnhac', description: 'Chọn chủ đề này để nhận tin nhắc việc hằng ngày' },
+      { command: 'chontuvan', description: 'Chọn chủ đề này cho tin tư vấn khách (gọi lại)' },
     ],
   }).catch((err) => console.error('[telegram] không đặt được menu lệnh:', err.message));
   return { ok: true, url };

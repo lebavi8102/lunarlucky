@@ -40,7 +40,7 @@ async function create({ name, phone, productId, interest, note, source }) {
   row.id = typeof id === 'object' ? id.id : id;
   row.created_label = logTime();
   try {
-    const msg = await notify.telegram(messageText(row), null, { reply_markup: keyboard(row) });
+    const msg = await notify.telegram(messageText(row), null, { topic: 'consult', reply_markup: keyboard(row) });
     if (msg && msg.message_id) {
       await db('callback_requests').where({ id: row.id }).update({ tg_chat_id: String(msg.chat.id), tg_message_id: msg.message_id });
     }
