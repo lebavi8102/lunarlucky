@@ -286,7 +286,8 @@ const SETTING_GROUPS = [
   ['Kho hàng', [
     ['low_stock_threshold', 'Cảnh báo "sắp hết" trên Telegram khi tồn kho còn ≤ (giỏ)'],
     ['ai_chat_enabled', 'AI tư vấn bán hàng trên web — 1 = bật, 0 = tắt (cần khóa ANTHROPIC_API_KEY trên Render)'],
-    ['ai_model', 'Mô hình AI tư vấn (claude-opus-5-5: tư vấn tốt nhất · claude-haiku-5-5: rẻ hơn nhiều)'],
+    ['ai_model', 'Mô hình AI tư vấn: claude-opus-5-5 (chốt đơn tốt nhất) · claude-sonnet-5-5 (rẻ hơn ~40%) · auto (ngày ít khách dùng Sonnet, đông khách tự chuyển Opus)'],
+    ['ai_busy_from', 'Chế độ auto: số tin AI trả lời trong ngày vượt mức này thì chuyển sang Opus'],
     ['ai_daily_limit', 'Giới hạn số tin AI trả lời mỗi ngày (chống spam, chống tốn tiền)'],
     ['messenger_ai_enabled', 'AI trả lời tin nhắn Fanpage (Messenger) — 1 = bật, 0 = tắt (cần FB_PAGE_TOKEN, FB_APP_SECRET trên Render)'],
     ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],

@@ -84,6 +84,16 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(tr && JSON.parse(tr.content[0].content).results, 'Kết quả công cụ được gửi lại cho AI');
     ok(chatReq.session.aiChat.length === 4, 'Lịch sử trò chuyện lưu trong phiên (chỉ nối thêm)');
 
+    // Chế độ auto: ít khách → Sonnet, đông khách → Opus; Sonnet lỗi 400 → tự thử lại bằng Opus
+    ok(ai.pickModel({ ai_model: 'auto', ai_busy_from: '100000' }) === 'claude-sonnet-5-5' && ai.pickModel({ ai_model: 'auto', ai_busy_from: '0' }) === 'claude-opus-5-5' && ai.pickModel({}) === 'claude-opus-5-5', 'Chọn mô hình: auto theo số tin trong ngày, mặc định Opus');
+    const mBefore = (await settings.all()).ai_model;
+    await settings.save({ ai_model: 'claude-sonnet-5-5' });
+    const used = [];
+    ai._setClient({ beta: { messages: { create: async (p) => { used.push(p.model); if (p.model === 'claude-sonnet-5-5') { const e = new Error('bad'); e.status = 400; throw e; } return { stop_reason: 'end_turn', model: p.model, usage: {}, content: [{ type: 'text', text: 'Dạ em đây ạ' }] }; } } } });
+    const rs = await ai.chat({ session: {} }, 'chào shop');
+    ok(rs.reply === 'Dạ em đây ạ' && used.join(',') === 'claude-sonnet-5-5,claude-opus-5-5', 'Sonnet lỗi → tự thử lại bằng Opus, khách vẫn được trả lời');
+    await settings.save({ ai_model: mBefore || '' });
+
     // Lỗi API → không làm hỏng lịch sử
     ai._setClient({ beta: { messages: { create: async () => { const e = new Error('overloaded'); e.status = 529; throw e; } } } });
     const r2 = await ai.chat(chatReq, 'còn mẫu nào khác không');

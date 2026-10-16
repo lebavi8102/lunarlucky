@@ -32,6 +32,7 @@ notify.telegram = async (html) => { tg.push(html); return false; };
       seen = user;
       return '{"lessons": ["Khi khách chê đắt, không giảm giá — tặng khắc tên lên thiệp và gợi ý giỏ thấp hơn một bậc (\\"mình tham khảo giỏ Như Ý 1tr690 nha\\").", "Khách để lại số 0912345678 thì gọi ngay"]}';
     });
+    await require('../src/lib/settings').save({ ai_learn_mark: String(T - 1) });
     const n = await learn.learn();
     const rows = await db('ai_lessons').where('created_at', '>=', new Date(T - 1000)).orderBy('id');
     rows.forEach((r) => ids.push(r.id));

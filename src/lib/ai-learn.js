@@ -49,17 +49,17 @@ Chỉ trả về JSON đúng dạng: {"lessons": ["bài học 1", "bài học 2"
 async function learn({ now = Date.now(), maxThreads = 15 } = {}) {
   if (!process.env.ANTHROPIC_API_KEY) return 0;
   const since = now - 3 * 86400000;
-  const rows = await db('conv_log').where({ role: 'staff' }).andWhere('created_ms', '>', since).distinct('psid');
+  // Mốc "đã học đến": chỉ xét tin nhân viên mới hơn mốc (không học lại, kể cả khi cuộc trò chuyện đã bị xóa)
+  const mark = Math.max(since, Number((await settings.all()).ai_learn_mark) || 0);
+  const rows = await db('conv_log').where({ role: 'staff' }).andWhere('created_ms', '>', mark).distinct('psid');
   const known = (await db('ai_lessons').whereIn('status', ['approved', 'pending']).select('text')).map((r) => `- ${r.text}`).join('\n') || '(chưa có)';
   const fresh = [];
   for (const { psid } of rows) {
-    const th = await db('messenger_threads').where({ psid }).first();
-    const after = Number(th && th.learned_ms) || 0;
-    const newStaff = await db('conv_log').where({ psid, role: 'staff' }).andWhere('created_ms', '>', after).first();
-    if (newStaff) fresh.push(psid);
+    fresh.push(psid);
     if (fresh.length >= maxThreads) break;
   }
   if (!fresh.length) return 0;
+  await settings.save({ ai_learn_mark: String(now) });
   const blocks = [];
   for (const psid of fresh) {
     const lines = await db('conv_log').where({ psid }).andWhere('created_ms', '>', since).orderBy('created_ms').limit(80);
@@ -78,7 +78,6 @@ async function learn({ now = Date.now(), maxThreads = 15 } = {}) {
   // Chặn lọt số điện thoại / email vào bài học
   lessons = lessons.map((x) => x.replace(/(?:\+?84|0)[\s.-]?(?:\d[\s.-]?){8}\d/g, '[SĐT]').replace(/\S+@\S+\.\S+/g, '[email]').slice(0, 500));
   for (const text of lessons) await db('ai_lessons').insert({ text, status: 'pending', source: 'fanpage', created_at: new Date(), updated_at: new Date() });
-  await db('messenger_threads').whereIn('psid', fresh).update({ learned_ms: now });
   if (lessons.length) {
     const e = require('./notify').escapeTg;
     await require('./notify').telegram([

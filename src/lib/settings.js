@@ -54,6 +54,8 @@ const DEFAULTS = {
   bulk3_min_qty: '100',
   daily_capacity: '0',
   ai_learn: '1',
+  ai_busy_from: '150',
+  ai_learn_mark: '',
   ai_learn_last: '',
   ai_escalate_qty: '20',
   ai_escalate_value: '20000000',

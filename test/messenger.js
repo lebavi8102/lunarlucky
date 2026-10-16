@@ -192,6 +192,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     nt.telegram = realT;
     ok(ck.warn && /còn (9|10) ngày/.test(errs[0].html) && errs[0].extra.topic === 'error' && !ck2.warn && /đã hết hiệu lực/.test(errs[1].html), 'Mã trang sắp hết hạn (≤14 ngày) hoặc mất hiệu lực → báo chủ đề BÁO LỖI');
     await db('messenger_threads').where('psid', 'like', PSID + '%').del();
+    await db('conv_log').where('psid', 'like', PSID + '%').del();
   } catch (err) {
     console.error(err);
     fails++;

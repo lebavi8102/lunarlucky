@@ -22,6 +22,18 @@ const enabled = (s) => !!process.env.ANTHROPIC_API_KEY && String(s.ai_chat_enabl
 
 // Giới hạn số tin mỗi ngày (chống tốn tiền nếu bị spam)
 const day = { key: '', count: 0 };
+const OPUS = 'claude-opus-5-5';
+const SONNET = 'claude-sonnet-5-5';
+/**
+ * Chọn mô hình theo Cài đặt (ai_model): ghi rõ tên mô hình → dùng đúng mô hình đó;
+ * "auto" → ngày ít khách dùng Sonnet (rẻ hơn ~40%), số tin trong ngày vượt ai_busy_from → Opus (chốt đơn tốt hơn).
+ */
+function pickModel(s) {
+  const m = String(s.ai_model || '').trim();
+  const busy = String(s.ai_busy_from ?? '').trim() !== '' && Number.isFinite(Number(s.ai_busy_from)) ? Number(s.ai_busy_from) : 150;
+  if (m === 'auto') return day.count > busy ? OPUS : SONNET;
+  return m || OPUS;
+}
 function underDailyLimit(s) {
   const today = todayVN();
   if (day.key !== today) Object.assign(day, { key: today, count: 0 });
@@ -353,8 +365,8 @@ async function chat(req, text, opts = {}) {
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     let res;
     try {
-      res = await getClient().beta.messages.create({
-        model: s.ai_model || 'claude-opus-5-5',
+      const params = {
+        model: pickModel(s),
         max_tokens: 4000,
         output_config: { effort: 'low' }, // trò chuyện ngắn: effort thấp cho nhanh, rẻ
         // Lời dặn có danh mục/giá/cài đặt → đổi giá, sửa sản phẩm, cập nhật web làm lời dặn khác đi giữa cuộc trò chuyện.
@@ -367,7 +379,15 @@ async function chat(req, text, opts = {}) {
         system,
         tools: toolDefs,
         messages: history,
-      });
+      };
+      try {
+        res = await getClient().beta.messages.create(params);
+      } catch (e1) {
+        // Mô hình phụ (Sonnet…) lỗi yêu cầu → thử lại ngay bằng Opus, khách không bị gián đoạn
+        if (e1.status !== 400 || params.model === OPUS) throw e1;
+        console.error(`[AI tư vấn] ${params.model} lỗi 400, chuyển sang ${OPUS}:`, String(e1.message).slice(0, 200));
+        res = await getClient().beta.messages.create({ ...params, model: OPUS });
+      }
     } catch (err) {
       console.error('[AI tư vấn] lỗi gọi Claude:', err.status || '', err.message);
       alertTeam(err);
@@ -406,4 +426,4 @@ async function chat(req, text, opts = {}) {
   return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '' };
 }
 
-module.exports = { getClient, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
+module.exports = { getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
