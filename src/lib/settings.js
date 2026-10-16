@@ -63,6 +63,7 @@ const DEFAULTS = {
   ai_chat_enabled: '1',
   messenger_ai_enabled: '1',
   messenger_pause_hours: '12',
+  messenger_daily_cap: '60',
   ai_model: 'claude-opus-5-5',
   ai_daily_limit: '500',
   backup_email: '1',

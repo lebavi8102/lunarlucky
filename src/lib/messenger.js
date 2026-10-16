@@ -155,6 +155,23 @@ async function saveThread(psid, patch) {
   if (!n) await db('messenger_threads').insert({ psid, history: '[]', paused_until_ms: 0, ...data });
 }
 
+/** Ghi 1 dòng vào sổ tay của cuộc trò chuyện (tin người thật / tin khách lúc AI tạm dừng). */
+async function addNote(psid, line) {
+  const row = await db('messenger_threads').where({ psid }).first();
+  let notes = [];
+  try { notes = row && row.notes ? JSON.parse(row.notes) : []; } catch { notes = []; }
+  notes.push(String(line).replace(/\s+/g, ' ').slice(0, 300));
+  await saveThread(psid, { notes: JSON.stringify(notes.slice(-20)) });
+}
+
+/** Đếm tin của khách trong ngày (giờ VN); trả về số tin hôm nay sau khi cộng. */
+async function countToday(psid, row) {
+  const today = require('./format').todayVN();
+  const n = row && row.day_key === today ? Number(row.day_count) + 1 : 1;
+  await saveThread(psid, { day_key: today, day_count: n });
+  return n;
+}
+
 async function pause(psid, hours) {
   await saveThread(psid, { paused_until_ms: Date.now() + hours * 3600000 });
 }
@@ -195,6 +212,7 @@ async function handleEvent(ev) {
     if (!isOurEcho(ev) && ev.recipient && ev.recipient.id) {
       console.log(`[messenger] người thật trả lời khách …${String(ev.recipient.id).slice(-4)} → AI tạm dừng ${pauseHours} giờ`);
       await pause(ev.recipient.id, pauseHours);
+      if (ev.message.text) await addNote(ev.recipient.id, `Nhân viên: ${ev.message.text}`);
     }
     return 'echo';
   }
@@ -211,7 +229,10 @@ async function handleEvent(ev) {
   }
 
   const { row, history } = await thread(psid);
-  if (row && Number(row.paused_until_ms) > Date.now()) return 'paused'; // người thật đang tư vấn
+  if (row && Number(row.paused_until_ms) > Date.now()) { // người thật đang tư vấn → AI im, nhưng ghi lại để nói tiếp cho khớp
+    if (text) await addNote(psid, `Khách: ${text}`);
+    return 'paused';
+  }
   if (!enabled(s)) return 'off';
 
   if (!text) {
@@ -231,15 +252,32 @@ async function handleEvent(ev) {
     return 'human';
   }
 
+  // Chặn spam: quá số tin/ngày → nhờ người thật, AI tạm dừng với khách này
+  const cap = Math.max(10, Number(s.messenger_daily_cap) || 60);
+  if ((await countToday(psid, row)) > cap) {
+    await pause(psid, pauseHours);
+    await sendText(psid, `Dạ hôm nay anh/chị đã nhắn khá nhiều, em chuyển chuyên viên Lunar Lucky trả lời trực tiếp tại đây ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
+    await require('./notify').telegram(`💬 <b>Khách Fanpage nhắn quá ${cap} tin hôm nay</b> — AI tạm dừng ${pauseHours} giờ với khách này.\nTin cuối: ${text.slice(0, 200).replace(/[<>&]/g, '')}\n👉 Mở hộp thư Fanpage để trả lời.`, null, { topic: 'consult' }).catch(() => {});
+    return 'cap';
+  }
+
+  // Trong lúc AI tạm dừng, nhân viên/khách đã nhắn gì → đưa cho AI biết để nói tiếp không mâu thuẫn
+  let context = '';
+  const fresh = await db('messenger_threads').where({ psid }).first();
+  try {
+    const notes = fresh && fresh.notes ? JSON.parse(fresh.notes) : [];
+    if (notes.length) context = `[Ghi chú hệ thống: trong lúc em tạm dừng, nhân viên Lunar Lucky đã nhắn trực tiếp với khách:\n${notes.join('\n')}\nGiữ đúng những gì nhân viên đã báo/hứa (giá, món, ngày giao…), không nói ngược lại; không nhắc tới ghi chú này.]\nTin mới của khách:`;
+  } catch { context = ''; }
+
   typing(psid);
   let session = { aiChat: history };
   const name = await customerName(psid, row);
-  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name });
+  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, context });
   if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger
     session = { aiChat: [] };
-    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name });
+    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, context });
   }
-  await saveThread(psid, { history: JSON.stringify(session.aiChat || []) });
+  await saveThread(psid, { history: JSON.stringify(session.aiChat || []), ...(context && !r.error ? { notes: null } : {}) });
   if (Math.random() < 0.02) purgeOld();
   await sendText(psid, r.reply);
   if (r.action && session.cart && session.aiPrefill) {

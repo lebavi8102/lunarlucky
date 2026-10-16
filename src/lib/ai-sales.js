@@ -269,6 +269,18 @@ const CHANNEL_NOTES = {
   messenger: 'Kênh hiện tại: Facebook Messenger (Fanpage). Không dùng **in đậm** hay markdown — chỉ chữ thường, xuống dòng, gạch đầu dòng "-". Link sản phẩm ghi dạng /san-pham/... (hệ thống tự đổi thành link đầy đủ). Sau prepare_order, hệ thống tự gửi nút "Kiểm tra & đặt hàng" ngay dưới tin của em. Khách muốn gặp người thật thì bảo khách nhắn "gặp nhân viên".',
 };
 
+// AI lỗi (hết tiền Claude, khóa sai, quá tải…) → báo nhóm Telegram, tối đa 1 lần / 30 phút
+let lastAlert = 0;
+function alertTeam(err) {
+  if (Date.now() - lastAlert < 30 * 60000) return;
+  lastAlert = Date.now();
+  const msg = String((err && err.message) || '');
+  const why = /credit|balance|billing/i.test(msg) ? 'Hết tiền tài khoản Claude — nạp thêm tại console.anthropic.com'
+    : err && (err.status === 401 || err.status === 403) ? 'Khóa ANTHROPIC_API_KEY trên Render sai hoặc bị thu hồi'
+      : 'Claude đang lỗi/quá tải (thường tự hết sau vài phút)';
+  require('./notify').telegram(`⚠️ <b>AI tư vấn đang lỗi</b> — khách trên web/Fanpage chưa được trả lời.\n${why}.\n<i>Mã lỗi: ${err && err.status ? err.status : '—'}</i>\n👉 Trong lúc chờ, vào hộp thư Fanpage / Zalo trả lời khách trực tiếp.`, null, { topic: 'consult' }).catch(() => {});
+}
+
 async function chat(req, text, opts = {}) {
   const who = String(opts.customerName || '').trim().slice(0, 80);
   const s = await settings.all();
@@ -281,7 +293,7 @@ async function chat(req, text, opts = {}) {
   }
   day.count += 1;
   const before = history.length;
-  history.push({ role: 'user', content: String(text).slice(0, 800) });
+  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + String(text).slice(0, 800) });
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
   if (CHANNEL_NOTES[opts.channel] || who) {
     system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị").` : ''].filter(Boolean).join('\n') });
@@ -306,6 +318,7 @@ async function chat(req, text, opts = {}) {
       });
     } catch (err) {
       console.error('[AI tư vấn] lỗi gọi Claude:', err.status || '', err.message);
+      alertTeam(err);
       history.length = before; // lượt này lỗi → bỏ cả lượt (tin khách + phần dở dang) để lần sau gửi lại sạch sẽ
       req.session.aiChat = history;
       return { reply: `Em đang bị gián đoạn một chút. Anh/chị thử gửi lại, hoặc nhắn Zalo / gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true };

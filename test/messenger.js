@@ -76,6 +76,18 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID }, message: { is_echo: true, text: 'Chào chị, em là Vy ạ' } }] }] });
     await m.handleWebhook(msg('vậy giao sáng được không'));
     ok(calls.length === n && !sent.length, 'Người thật trả lời trong hộp thư → AI không chen vào với khách đó');
+    // Hết thời gian tạm dừng → AI nói tiếp, biết nhân viên đã báo gì (không nói ngược)
+    await db('messenger_threads').where({ psid: PSID }).update({ paused_until_ms: 0 });
+    await m.handleWebhook(msg('vậy chốt giúp mình nhé'));
+    const lastUser = calls[calls.length - 1].messages.filter((x) => x.role === 'user' && typeof x.content === 'string').pop();
+    ok(lastUser && /Nhân viên: Chào chị, em là Vy ạ/.test(lastUser.content) && /Khách: vậy giao sáng được không/.test(lastUser.content), 'AI nói tiếp biết nhân viên và khách đã nhắn gì lúc AI tạm dừng');
+    ok(!(await db('messenger_threads').where({ psid: PSID }).first()).notes, 'Ghi chú dùng xong thì xóa');
+    // Nhắn quá số tin/ngày → chuyển người thật
+    await db('messenger_threads').where({ psid: PSID }).update({ day_key: todayVN(), day_count: 60, paused_until_ms: 0 });
+    sent.length = 0;
+    const n2 = calls.length;
+    await m.handleWebhook(msg('spam'));
+    ok(calls.length === n2 && /chuyển chuyên viên/.test(sent[0].message.text) && Number((await db('messenger_threads').where({ psid: PSID }).first()).paused_until_ms) > Date.now(), 'Quá 60 tin/ngày → không gọi AI, chuyển người thật');
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: 'PAGE' }, recipient: { id: PSID + 'x' }, message: { is_echo: true, metadata: m.AI_TAG, text: 'AI' } }] }] });
     ok(!(await db('messenger_threads').where({ psid: PSID + 'x' }).first()), 'Tin của chính AI (echo) → không tính là người thật');
 
