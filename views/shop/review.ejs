@@ -1,0 +1,34 @@
+<%- include('../partials/top') %>
+<div class="container auth-wrap">
+  <span class="eyebrow center" style="display:flex;justify-content:center">Cảm nhận của bạn</span>
+  <h1 style="margin-top:12px">Giỏ quà có làm người nhận vui không?</h1>
+  <% if (sent || done) { %>
+    <div class="card" style="text-align:center">
+      <p style="font-size:40px;margin:0">🧧</p>
+      <p><b>Lunar Lucky cảm ơn <%= order.customer_name.split(' ').pop() %> đã dành thời gian chia sẻ!</b></p>
+      <p class="muted">Cảm nhận của bạn giúp Lunar Lucky làm giỏ quà ngày một tốt hơn. Chúc bạn và gia đình năm mới an khang, thịnh vượng.</p>
+      <a class="btn" href="/bo-suu-tap" style="margin-top:12px">Xem các giỏ quà khác</a>
+    </div>
+  <% } else { %>
+  <p class="sub">Đơn <b><%= order.code %></b><%= order.is_gift && order.recipient_name ? ` · gửi tặng ${order.recipient_name}` : '' %>. Chỉ mất 1 phút.</p>
+  <% if (error) { %><div class="flash flash-error" role="alert" style="margin-bottom:20px"><svg class="icon"><use href="#i-alert"/></svg><span><%= error %></span></div><% } %>
+  <form class="card" action="/danh-gia/<%= order.code %>?k=<%= encodeURIComponent(k) %>&_csrf=<%= csrfToken %>" method="post" enctype="multipart/form-data">
+    <fieldset class="field" style="border:0;padding:0;margin:0">
+      <legend class="label">Bạn chấm mấy sao?</legend>
+      <div class="star-pick" role="radiogroup">
+        <% for (let i = 5; i >= 1; i--) { %><input type="radio" id="r<%= i %>" name="rating" value="<%= i %>" <%= Number(values.rating) === i ? 'checked' : '' %> required><label for="r<%= i %>" title="<%= i %> sao">★</label><% } %>
+      </div>
+    </fieldset>
+    <div class="field"><label class="label" for="content">Cảm nhận của bạn / người nhận</label>
+      <textarea class="textarea" id="content" name="content" maxlength="400" rows="4" placeholder="vd: Bố mẹ rất thích, giỏ đẹp, giao đúng giờ…"><%= values.content || '' %></textarea></div>
+    <div class="field"><label class="label" for="photo">Ảnh giỏ quà / người nhận (không bắt buộc)</label>
+      <input class="input" id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp"></div>
+    <label class="check" style="display:flex;gap:10px;align-items:flex-start;margin-top:8px">
+      <input type="checkbox" name="consent" value="1" <%= values.consent === false ? '' : 'checked' %>>
+      <span class="small">Đồng ý để Lunar Lucky đăng cảm nhận và ảnh lên website (chỉ hiện tên gọi rút gọn, không hiện số điện thoại, địa chỉ).</span>
+    </label>
+    <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px">Gửi cảm nhận</button>
+  </form>
+  <% } %>
+</div>
+<%- include('../partials/bottom') %>

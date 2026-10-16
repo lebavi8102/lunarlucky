@@ -132,7 +132,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
 
   res.render('shop/product', {
     product, category, related, gallery,
-    reviews: await testimonials.listActive({ productId: product.id, limit: 4 }),
+    reviews: await testimonials.listActive({ productId: product.id, limit: 6, textOk: true }),
     earliest: todayVN(Number(res.locals.s.min_delivery_days) || 1),
     contents: lines(product.contents),
     descriptionHtml: md(product.description),

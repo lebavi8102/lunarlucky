@@ -381,6 +381,11 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   (holdForPayment ? require('../lib/bank-payments').notifyWaiting(order) : tgOrders.sendNewOrder(order, items))
     .then(() => tgOrders.stockAlertsAfterOrder(items))
     .catch(() => {});
+  // Đơn từ cuộc trò chuyện bắt đầu bằng quảng cáo → ghi mã quảng cáo (báo cáo quảng cáo nào ra đơn)
+  if (order.messenger_psid) {
+    const th = await db('messenger_threads').where({ psid: order.messenger_psid }).first().catch(() => null);
+    if (th && th.ad_id) await db('orders').where({ code: order.code }).update({ ad_id: th.ad_id }).catch(() => {});
+  }
   // Đơn từ AI Fanpage → xác nhận ngay trên Messenger (khách Fanpage thường không để email)
   if (order.messenger_psid) {
     const until = holdForPayment ? require('../lib/bank-payments').holdUntil(order, res.locals.s) : '';
@@ -486,6 +491,7 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
 module.exports = router;
 module.exports.PROVINCES = PROVINCES;
 module.exports.shareLink = shareLink;
+module.exports.orderKey = orderKey;
 module.exports.dateCtx = dateCtx;
 module.exports.bulkRule = bulkRule;
 module.exports.bulkTiers = bulkTiers;

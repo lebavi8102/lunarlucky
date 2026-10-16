@@ -71,6 +71,12 @@
         <% } else if (order.invoice_info) { %><dt>Xuất VAT</dt><dd style="white-space:pre-line"><%= order.invoice_info %></dd><% } %>
         <% if (order.payment_method === 'bank') { %><dt>Nhận tiền vào</dt><dd><span class="status <%= payee.type === 'company' ? 'status-confirmed' : 'status-completed' %>"><%= payee.label %></span><br><%= payee.bankName || payee.bankId || '—' %> · <span class="mono"><%= payee.account || 'chưa cài đặt' %></span> · <%= payee.holder || '' %></dd><% } %>
       </dl>
+      <% if (typeof reviewLink !== 'undefined' && reviewLink) { %>
+      <div style="margin-top:16px;padding:12px;border:1px dashed var(--line);border-radius:10px">
+        <p class="small" style="margin:0 0 6px"><b>⭐ Xin khách đánh giá</b><%= order.review_requested_at ? ' · đã tự gửi' + (order.email ? ' email' : '') + (order.messenger_psid ? ' Messenger' : '') : '' %> — gửi link này qua Zalo cho khách:</p>
+        <input class="input mono" readonly value="<%= reviewLink %>" onclick="this.select()">
+      </div>
+      <% } %>
       <% if (order.status !== 'cancelled' && order.status !== 'completed') { %>
       <details id="sua-giao" style="margin-top:16px">
         <summary class="btn btn-sm btn-quiet">✏️ Sửa ngày giao / địa chỉ / lời chúc</summary>

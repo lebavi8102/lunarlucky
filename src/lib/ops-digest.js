@@ -107,6 +107,12 @@ async function tick() {
     await settings.save({ ops_evening_last: day });
     await notify.telegram(await evening(day), null, { topic: 'ops' });
   }
+  // Báo cáo quảng cáo Facebook của hôm qua (chỉ khi đã cài FB_ADS_TOKEN + FB_AD_ACCOUNT_ID)
+  const ads = require('./ads-report');
+  if (h >= mH && h < eH && ads.configured() && String(s.ads_report) !== '0' && s.ads_report_last !== day) {
+    await settings.save({ ads_report_last: day });
+    await notify.telegram(await ads.report(todayVN(-1)), null, { topic: 'ops' });
+  }
   if (h >= 8 && h < 21) await remindStale();
   // 23h: gửi file sao lưu Excel (đơn, khách, sản phẩm, chi phí) vào email cửa hàng — phòng khi database gặp sự cố
   if (h >= 23 && String(s.backup_email) !== '0' && s.backup_last !== day && s.shop_email) {

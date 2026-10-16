@@ -87,10 +87,10 @@ async function fromTelegram(msg) {
   ].join('\n');
 }
 
-async function listActive({ productId, limit = 8 } = {}) {
+async function listActive({ productId, limit = 8, textOk = false } = {}) {
   return db('testimonials')
     .where({ is_active: true })
-    .whereNotNull('image_id')
+    .modify((q) => (textOk ? q.andWhere((w) => w.whereNotNull('image_id').orWhereNotNull('content')) : q.whereNotNull('image_id')))
     .modify((q) => productId && q.andWhere({ product_id: productId }))
     .orderBy([{ column: 'sort', order: 'desc' }, { column: 'id', order: 'desc' }])
     .limit(limit);

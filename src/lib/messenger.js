@@ -24,7 +24,7 @@ const enabled = (s) => configured() && String(s.messenger_ai_enabled) !== '0';
 // Nhận ra tin do chính AI gửi khi Facebook gửi bản sao (echo) về: theo mã tin, mã ứng dụng, thời điểm vừa gửi
 const ours = { mids: new Set(), appId: '', lastSend: new Map(), lastIncoming: new Map() };
 function rememberSent(body, res) {
-  const psid = body && body.recipient && body.recipient.id;
+  const psid = (body && body.recipient && body.recipient.id) || (res && res.recipient_id);
   if (psid && body.message) ours.lastSend.set(psid, Date.now());
   if (res && res.message_id) {
     ours.mids.add(res.message_id);
@@ -58,8 +58,9 @@ let send = async (body) => {
     console.error('[messenger] gửi lỗi', r.status, t.slice(0, 300));
     return false;
   }
-  rememberSent(body, await r.json().catch(() => null));
-  return true;
+  const j = await r.json().catch(() => null);
+  rememberSent(body, j);
+  return j || true;
 };
 
 /** Facebook ký mỗi lần gọi webhook bằng App Secret → chặn ai đó giả danh Facebook. */
@@ -319,6 +320,10 @@ async function handleEvent(ev) {
   const psid = ev.sender && ev.sender.id;
   if (!psid) return 'skip';
   ours.lastIncoming.set(psid, Number(ev.timestamp) || Date.now());
+  // Khách đến từ quảng cáo "Gửi tin nhắn" → Facebook kèm mã quảng cáo → nhớ để tính đơn cho quảng cáo đó
+  const ref = ev.referral || (ev.message && ev.message.referral) || (ev.postback && ev.postback.referral);
+  if (ref && ref.ad_id && /^\d{5,30}$/.test(String(ref.ad_id))) await saveThread(psid, { ad_id: String(ref.ad_id) });
+  if (ev.referral && !ev.message && !ev.postback) return 'referral'; // chỉ là sự kiện "khách bấm quảng cáo
   const text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
     || (ev.postback && (ev.postback.title || ev.postback.payload)) || '').trim();
 
@@ -424,6 +429,12 @@ function handleWebhook(body) {
   const jobs = [];
   for (const entry of body.entry || []) {
     if (!pageId && /^\d{5,30}$/.test(String(entry.id || ''))) pageId = String(entry.id);
+    // Bình luận trên bài đăng / quảng cáo (webhook mục "feed")
+    for (const ch of entry.changes || []) {
+      if (ch.field === 'feed' && ch.value && ch.value.item === 'comment') {
+        jobs.push(enqueue(`c:${ch.value.from && ch.value.from.id}`, () => require('./fb-comments').handleComment(ch.value, { pageId })));
+      }
+    }
     for (const ev of entry.messaging || []) {
       const key = (ev.message && ev.message.is_echo ? ev.recipient && ev.recipient.id : ev.sender && ev.sender.id) || 'x';
       jobs.push(enqueue(key, () => handleEvent(ev)));
@@ -455,9 +466,11 @@ async function orderUpdate(order, kind, extra = {}) {
     text = order.payment_status === 'deposit'
       ? `Dạ Lunar Lucky đã nhận tiền cọc đơn ${order.code}. Kho bắt đầu chuẩn bị; còn ${money(payment.codDue(order))} anh/chị thanh toán khi nhận hàng ạ. Cảm ơn anh/chị!`
       : `Dạ Lunar Lucky đã nhận đủ tiền đơn ${order.code}. Kho bắt đầu chuẩn bị, giao ${deliveryWhen(order)} ạ. Cảm ơn anh/chị!`;
+  } else if (kind === 'review') {
+    text = `Dạ Lunar Lucky cảm ơn anh/chị đã tin chọn giỏ quà (đơn ${order.code}) ạ. Anh/chị dành 1 phút cho em xin cảm nhận${order.is_gift ? ' của người nhận' : ''}, kèm ảnh nếu tiện nhé — góp ý của anh/chị giúp bên em làm tốt hơn!`;
   } else return false;
   const ok = await send({ recipient: { id: order.messenger_psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
-    template_type: 'button', text: text.slice(0, 640), buttons: [{ type: 'web_url', url: link, title: kind === 'paid' ? 'Xem đơn' : 'Xem đơn & mã QR' }],
+    template_type: 'button', text: text.slice(0, 640), buttons: [kind === 'review' ? { type: 'web_url', url: extra.url, title: 'Gửi cảm nhận' } : { type: 'web_url', url: link, title: kind === 'paid' ? 'Xem đơn' : 'Xem đơn & mã QR' }],
   } } } }).catch(() => false);
   return ok;
 }
@@ -479,6 +492,14 @@ async function setupProfile() {
     }),
     signal: AbortSignal.timeout(10000),
   }).catch((err) => ({ ok: false, text: async () => err.message }));
+  const sub = await fetch(`${GRAPH}/me/subscribed_apps`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env().token}` },
+    body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'message_echoes', 'messaging_referrals', 'feed'] }),
+    signal: AbortSignal.timeout(10000),
+  }).catch((err) => ({ ok: false, text: async () => err.message }));
+  if (!sub.ok) console.error('[messenger] chưa đăng ký được bình luận/quảng cáo cho trang:', sub.status || '', (await sub.text().catch(() => '')).slice(0, 250));
+  else console.log('[messenger] trang đã đăng ký: tin nhắn, bình luận (feed), quảng cáo (referral)');
   if (!r.ok) console.error('[messenger] không cài được lời chào/nút gợi ý:', r.status || '', (await r.text().catch(() => '')).slice(0, 200));
   else console.log('[messenger] đã cài lời chào + nút câu hỏi gợi ý');
   return r.ok;
@@ -489,7 +510,10 @@ module.exports = {
   followUpAbandoned,
   setupProfile,
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
-  _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return !!r; }; },
+  _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return r; }; },
+  sendRaw: (b) => send(b),
+  addNote,
+  rememberName,
   _setProfile: (fn) => { fetchProfile = fn; },
   _setConversation: (fn) => { fetchConversation = fn; },
   _setPageId: (id) => { pageId = id; },

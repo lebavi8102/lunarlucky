@@ -53,6 +53,12 @@ const DEFAULTS = {
   bulk2_max_days: '10',
   bulk3_min_qty: '100',
   daily_capacity: '0',
+  review_request: '1',
+  review_delay_hours: '3',
+  comment_bot_enabled: '1',
+  comment_public_reply: 'Dạ Lunar Lucky đã nhắn tin riêng cho {ten} ạ, {ten} xem tin nhắn giúp em nhé 💌',
+  ads_report: '1',
+  ads_report_last: '',
   // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
   order_deadline: '2027-02-05',
   order_deadline_label: '29 tháng Chạp',

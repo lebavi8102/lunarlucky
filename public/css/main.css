@@ -786,3 +786,13 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .staff-adjust { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .staff-adjust label { display: grid; gap: 4px; flex: 1 1 180px; }
 .staff-adjust .input { min-height: 40px; }
+
+/* Đánh giá khách: sao, thẻ không ảnh, chọn sao */
+.review-stars { display: block; color: var(--gold-600, #b8862f); letter-spacing: 2px; font-size: 15px; margin-bottom: 4px; }
+.review-stars span { color: var(--line, #e6ddd0); }
+.review-card.review-text { display: flex; align-items: center; padding: 20px; background: var(--cream-50, #fbf7f0); }
+.star-pick { display: inline-flex; flex-direction: row-reverse; gap: 4px; }
+.star-pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.star-pick label { font-size: 34px; line-height: 1; color: var(--line, #e6ddd0); cursor: pointer; padding: 2px; }
+.star-pick input:checked ~ label, .star-pick label:hover, .star-pick label:hover ~ label { color: var(--gold-600, #b8862f); }
+.star-pick input:focus-visible + label { outline: 2px solid var(--primary, #7a1622); outline-offset: 2px; border-radius: 4px; }

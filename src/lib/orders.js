@@ -60,6 +60,7 @@ async function updateOrder(id, changes, { by } = {}) {
 
   const update = { status, payment_status, handled_log: log || null, updated_at: new Date() };
   if (changes.admin_note !== undefined) update.admin_note = changes.admin_note;
+  if (status === 'completed' && order.status !== 'completed') update.completed_at = new Date(); // để xin đánh giá sau vài giờ
   const becamePaid = payment_status === 'paid' && order.payment_status !== 'paid';
   if (becamePaid) update.paid_at = new Date();
   if (payment_status === 'deposit' && order.payment_status !== 'deposit') update.deposit_paid_at = new Date();

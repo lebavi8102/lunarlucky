@@ -164,6 +164,7 @@ app.use(require('./routes/checkout'));
 app.use(require('./routes/account'));
 app.use(require('./routes/b2b'));
 app.use(require('./routes/callback'));
+app.use(require('./routes/reviews'));
 app.use(require('./routes/ai'));
 app.use(require('./routes/blog'));
 app.use(require('./routes/pages'));

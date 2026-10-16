@@ -2,9 +2,10 @@
 <% if (reviews && reviews.length) { %>
 <div class="review-grid">
   <% reviews.forEach(r => { %>
-  <figure class="review-card">
-    <img src="<%= img(r.image_id) %>" alt="Lunar Lucky giao quà cho <%= r.customer_name %>" loading="lazy" width="400" height="500">
+  <figure class="review-card<%= r.image_id ? '' : ' review-text' %>">
+    <% if (r.image_id) { %><img src="<%= img(r.image_id) %>" alt="Lunar Lucky giao quà cho <%= r.customer_name %>" loading="lazy" width="400" height="500"><% } %>
     <figcaption>
+      <% if (r.rating) { %><span class="review-stars" aria-label="<%= r.rating %> trên 5 sao"><%= '★'.repeat(r.rating) %><span><%= '★'.repeat(5 - r.rating) %></span></span><% } %>
       <% if (r.content) { %><blockquote>“<%= r.content %>”</blockquote><% } %>
       <span class="small muted">— <%= r.customer_name %></span>
     </figcaption>

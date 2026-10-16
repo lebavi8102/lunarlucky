@@ -1,0 +1,8 @@
+<%- include('_layout-top') %>
+<h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:24px;margin:0 0 12px">Giỏ quà đã đến tay <%= order.is_gift && order.recipient_name ? order.recipient_name : 'bạn' %> 🧧</h1>
+<p style="margin:0;line-height:1.7;color:#4a3f38">
+  Chào <%= order.customer_name %>,<br>
+  Cảm ơn bạn đã chọn Lunar Lucky để gửi lời chúc Tết (đơn <%= order.code %>). Bạn dành 1 phút cho Lunar Lucky biết cảm nhận của bạn<%= order.is_gift ? ' và người nhận' : '' %> nhé — kèm một tấm ảnh nếu tiện. Mỗi lời góp ý giúp chúng tôi làm giỏ quà tốt hơn.
+</p>
+<p style="margin:24px 0 0"><a href="<%= url %>" style="display:inline-block;background:#7a1622;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">Gửi cảm nhận</a></p>
+<%- include('_layout-bottom') %>

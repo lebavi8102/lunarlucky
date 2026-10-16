@@ -242,6 +242,7 @@ function startExpiryTimer() {
   const run = async () => {
     await resendMissed().catch((err) => console.error('[telegram] gửi bù lỗi:', err.message));
     await require('./messenger').followUpAbandoned().catch((err) => console.error('[messenger] nhắc khách chưa đặt lỗi:', err.message));
+    await require('./reviews').requestReviews().catch((err) => console.error('[đánh giá] gửi lời xin đánh giá lỗi:', err.message));
     if (enabled()) {
       await remindUnpaid().catch((err) => console.error('[thanh toán] email nhắc lỗi:', err.message));
       await expireUnpaid().catch((err) => console.error('[thanh toán] tự hủy đơn lỗi:', err.message));
