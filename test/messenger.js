@@ -180,6 +180,17 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     sent.length = 0;
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { text: 'Xóa dữ liệu' } }] }] });
     ok(!(await db('messenger_threads').where({ psid: P3 }).first()) && /đã xóa/.test(sent[0].message.text), 'Khách nhắn "xóa dữ liệu" → xóa lịch sử, báo xác nhận');
+    // Mã trang sắp hết hạn truy cập dữ liệu → báo BÁO LỖI trước 14 ngày
+    const nt = require('../src/lib/notify'); const realT = nt.telegram; const errs = [];
+    nt.telegram = async (html, c, extra = {}) => { errs.push({ html, extra }); return false; };
+    m._setDebugToken(async () => ({ is_valid: true, expires_at: 0, data_access_expires_at: Math.floor(Date.now() / 1000) + 10 * 86400 }));
+    const ck = await m.checkToken();
+    m._setDebugToken(async () => ({ is_valid: true, expires_at: 0, data_access_expires_at: Math.floor(Date.now() / 1000) + 60 * 86400 }));
+    const ck2 = await m.checkToken();
+    m._setDebugToken(async () => ({ is_valid: false }));
+    await m.checkToken();
+    nt.telegram = realT;
+    ok(ck.warn && /còn (9|10) ngày/.test(errs[0].html) && errs[0].extra.topic === 'error' && !ck2.warn && /đã hết hiệu lực/.test(errs[1].html), 'Mã trang sắp hết hạn (≤14 ngày) hoặc mất hiệu lực → báo chủ đề BÁO LỖI');
     await db('messenger_threads').where('psid', 'like', PSID + '%').del();
   } catch (err) {
     console.error(err);

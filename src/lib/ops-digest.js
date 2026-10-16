@@ -107,6 +107,11 @@ async function tick() {
     await settings.save({ ops_evening_last: day });
     await notify.telegram(await evening(day), null, { topic: 'ops' });
   }
+  // Mã trang Facebook sắp hết hạn → báo trước (1 lần mỗi ngày, cùng giờ tin sáng)
+  if (h >= mH && h < eH && s.fb_token_check_last !== day) {
+    await settings.save({ fb_token_check_last: day });
+    await require('./messenger').checkToken().catch(() => {});
+  }
   // Báo cáo quảng cáo Facebook của hôm qua (chỉ khi đã cài FB_ADS_TOKEN + FB_AD_ACCOUNT_ID)
   const ads = require('./ads-report');
   if (h >= mH && h < eH && ads.configured() && String(s.ads_report) !== '0' && s.ads_report_last !== day) {

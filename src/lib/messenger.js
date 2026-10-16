@@ -475,6 +475,33 @@ async function orderUpdate(order, kind, extra = {}) {
   return ok;
 }
 
+/**
+ * (mỗi sáng) Kiểm tra mã trang Facebook: hết hiệu lực / sắp hết hạn truy cập dữ liệu (Facebook bắt cấp quyền lại ~90 ngày)
+ * → báo chủ đề BÁO LỖI trước 14 ngày, tránh AI Fanpage tự dừng giữa mùa cao điểm.
+ */
+let debugToken = async () => {
+  const appToken = `${process.env.FB_APP_ID || '2690193658061813'}|${env().secret}`;
+  const r = await fetch(`${GRAPH}/debug_token?input_token=${encodeURIComponent(env().token)}`, { headers: { Authorization: `Bearer ${appToken}` }, signal: AbortSignal.timeout(10000) });
+  const j = await r.json().catch(() => ({}));
+  return j.data || null;
+};
+async function checkToken(now = Date.now()) {
+  if (!configured()) return null;
+  const d = await debugToken().catch(() => null);
+  if (!d) return null;
+  const days = (t) => Math.floor((Number(t) * 1000 - now) / 86400000);
+  const fmt = (t) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(Number(t) * 1000));
+  let warn = '';
+  if (d.is_valid === false) warn = 'Mã trang Facebook (FB_PAGE_TOKEN) <b>đã hết hiệu lực</b> — AI Fanpage và bot bình luận đang KHÔNG chạy.';
+  else if (d.expires_at && Number(d.expires_at) > 0 && days(d.expires_at) <= 14) warn = `Mã trang Facebook <b>hết hạn ngày ${fmt(d.expires_at)}</b> (còn ${days(d.expires_at)} ngày).`;
+  else if (d.data_access_expires_at && days(d.data_access_expires_at) <= 14) warn = `Quyền truy cập dữ liệu của mã trang Facebook <b>hết hạn ngày ${fmt(d.data_access_expires_at)}</b> (còn ${days(d.data_access_expires_at)} ngày).`;
+  if (warn) {
+    await require('./notify').telegram(`⚠️ ${warn}
+👉 Tạo lại mã trang vĩnh viễn (Graph API Explorer → gia hạn mã → lấy mã trang) rồi dán vào Render, biến FB_PAGE_TOKEN.`, null, { topic: 'error' }).catch(() => {});
+  }
+  return { ...d, warn };
+}
+
 // Lời chào + nút câu hỏi gợi ý khi khách mở Messenger lần đầu (gọi khi khởi động; Facebook bỏ qua nếu không đổi)
 async function setupProfile() {
   if (!configured()) return false;
@@ -509,6 +536,8 @@ module.exports = {
   orderUpdate,
   followUpAbandoned,
   setupProfile,
+  checkToken,
+  _setDebugToken: (fn) => { debugToken = fn; },
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return r; }; },
   sendRaw: (b) => send(b),

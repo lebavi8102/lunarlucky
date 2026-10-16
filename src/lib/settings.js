@@ -60,6 +60,7 @@ const DEFAULTS = {
   comment_public_reply: 'Dạ Lunar Lucky đã nhắn tin riêng cho {ten} ạ, {ten} xem tin nhắn giúp em nhé 💌',
   ads_report: '1',
   ads_report_last: '',
+  fb_token_check_last: '',
   // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
   order_deadline: '2027-02-05',
   order_deadline_label: '29 tháng Chạp',
