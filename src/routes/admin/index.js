@@ -291,6 +291,7 @@ const SETTING_GROUPS = [
     ['messenger_ai_enabled', 'AI trả lời tin nhắn Fanpage (Messenger) — 1 = bật, 0 = tắt (cần FB_PAGE_TOKEN, FB_APP_SECRET trên Render)'],
     ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],
     ['comment_bot_enabled', 'Bot trả lời bình luận Facebook ("giá?", "ib"…): trả lời công khai + nhắn riêng; bình luận có SĐT thì ẩn + báo gọi lại — 1 = bật, 0 = tắt'],
+    ['comment_hide_alert', 'Báo Telegram "bình luận có SĐT — cần ẩn" (tắt = 0 khi đã dùng Pancake tự ẩn)'],
     ['comment_public_reply', 'Câu trả lời công khai dưới bình luận ({ten} = anh/chị + tên khách)'],
     ['review_request', 'Tự xin đánh giá sau khi giao (email / Messenger, 9h–20h) — 1 = bật, 0 = tắt'],
     ['review_delay_hours', 'Gửi lời xin đánh giá sau khi đơn "Hoàn tất" bao nhiêu giờ'],

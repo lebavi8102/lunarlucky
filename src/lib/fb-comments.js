@@ -72,7 +72,7 @@ async function handleComment(v, { pageId } = {}) {
     const hidden = await engage(v.comment_id, { is_hidden: true });
     if (hidden) await engage(`${v.comment_id}/comments`, { message: `Dạ Lunar Lucky đã nhận số, sẽ gọi ${who} ngay ạ. Bình luận được ẩn để bảo mật số điện thoại 🙏` });
     await require('./callbacks').create({ name: from.name || 'Khách bình luận Facebook', phone: phone.replace(/\D/g, '').replace(/^84/, '0'), interest: text.slice(0, 300), note: hidden ? 'Bình luận Facebook (đã ẩn số)' : 'Bình luận Facebook — CHƯA ẨN số', source: 'facebook' }).catch(() => {});
-    if (!hidden && post_ok(v)) {
+    if (!hidden && post_ok(v) && String(s.comment_hide_alert) !== '0') {
       // Bot chưa có quyền ẩn → nhắc nhân viên ẩn tay ngay (đối thủ hay gom số điện thoại dưới bài)
       await require('./notify').telegram(`🙈 <b>Bình luận có số điện thoại — cần ẩn</b>
 👤 ${require('./notify').escapeTg(from.name || 'Khách')}: “${require('./notify').escapeTg(text.slice(0, 150))}”

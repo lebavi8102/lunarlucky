@@ -56,6 +56,7 @@ const DEFAULTS = {
   review_request: '1',
   review_delay_hours: '3',
   comment_bot_enabled: '1',
+  comment_hide_alert: '1',
   comment_public_reply: 'Dạ Lunar Lucky đã nhắn tin riêng cho {ten} ạ, {ten} xem tin nhắn giúp em nhé 💌',
   ads_report: '1',
   ads_report_last: '',
