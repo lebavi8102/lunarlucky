@@ -19,7 +19,10 @@ async function render(res, data) {
   res.render('pages/business', { products, ...data });
 }
 
-router.get('/qua-tang-doanh-nghiep', (req, res) => render(res, { values: {}, errors: {}, sent: req.query['da-gui'] === '1' }));
+router.get('/qua-tang-doanh-nghiep', (req, res) => {
+  if (req.query['da-gui'] === '1') res.locals.track.events.push({ name: 'generate_lead', value: 0 }); // gửi yêu cầu báo giá
+  render(res, { values: {}, errors: {}, sent: req.query['da-gui'] === '1' });
+});
 
 router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
   if (req.body.website) return res.redirect('/qua-tang-doanh-nghiep'); // honeypot chống spam

@@ -46,7 +46,7 @@
       <% } %>
 
       <% if (product.stock > 0) { %>
-      <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form">
+      <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form" data-track-id="<%= product.id %>" data-track-name="<%= product.name %>" data-track-price="<%= product.price %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="product_id" value="<%= product.id %>">
         <div class="buy-row">

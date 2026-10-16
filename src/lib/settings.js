@@ -53,6 +53,8 @@ const DEFAULTS = {
   bulk2_max_days: '10',
   bulk3_min_qty: '100',
   daily_capacity: '0',
+  meta_pixel_id: '',
+  ga4_id: '',
   review_request: '1',
   review_delay_hours: '3',
   comment_bot_enabled: '1',

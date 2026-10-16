@@ -23,11 +23,11 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://connect.facebook.net', 'https://www.googletagmanager.com'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https://img.vietqr.io'],
-        connectSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https://img.vietqr.io', 'https://www.facebook.com', 'https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+        connectSrc: ["'self'", 'https://www.facebook.com', 'https://connect.facebook.net', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com'],
         frameSrc: ["'self'", 'https://www.facebook.com'],
         formAction: ["'self'"],
         upgradeInsecureRequests: config.isProd ? [] : null,

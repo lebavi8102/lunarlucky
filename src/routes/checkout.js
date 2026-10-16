@@ -146,6 +146,7 @@ router.get('/thanh-toan', async (req, res) => {
   // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
   const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
   const dc = dateCtx(res.locals.s, defaults.province, priced.count, await fullFor(req, res.locals.s, priced.count));
+  res.locals.track.events.push({ name: 'begin_checkout', value: priced.total, items: priced.lines.map((l) => ({ item_id: l.productId || l.key, item_name: l.name, price: l.price, quantity: l.qty })) });
   res.render('shop/checkout', {
     cart: priced, values: { delivery_date: dc.minDate, ...defaults }, errors: {}, fromAi: !!req.session.aiPrefill, provinces: PROVINCES, vatPercent: payment.vatFeePercent(res.locals.s),
     ...dc,
@@ -452,6 +453,10 @@ router.get('/don-hang/:code', async (req, res, next) => {
   const items = await db('order_items').where({ order_id: order.id });
   res.locals.seo.title = `Đơn hàng ${order.code} · Lunar Lucky`;
   res.locals.seo.noindex = true;
+  // Đặt hàng thành công (khách tự đặt, không phải đơn đặt hộ) → báo Meta/Google; trùng (tải lại trang) được lọc theo mã đơn
+  if (req.query.moi === '1' && !order.created_by) {
+    res.locals.track.events.push({ name: 'purchase', id: order.code, transaction_id: order.code, value: Number(order.total), items: items.filter((i) => i.product_id).map((i) => ({ item_id: i.product_id, item_name: i.name, price: i.price, quantity: i.qty })) });
+  }
   res.render('shop/order', {
     order, items, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s), isNew: req.query.moi === '1',
     staffShare: isStaff(req) ? shareLink(order.code) : null,

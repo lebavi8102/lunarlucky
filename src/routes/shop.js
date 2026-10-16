@@ -130,6 +130,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
   crumbs.push([product.name, `/san-pham/${product.slug}`]);
   res.locals.jsonLd.push(breadcrumb(res, crumbs));
 
+  res.locals.track.events.push({ name: 'view_item', value: product.price, items: [{ item_id: product.id, item_name: product.name, price: product.price, quantity: 1 }] });
   res.render('shop/product', {
     product, category, related, gallery,
     reviews: await testimonials.listActive({ productId: product.id, limit: 6, textOk: true }),

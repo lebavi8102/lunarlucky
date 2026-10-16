@@ -8,7 +8,7 @@
     <% } %>
     <img src="<%= img(p.image_id) %>" alt="<%= p.name %>" loading="lazy" decoding="async" width="800" height="1000">
     <% if (p.stock > 0) { %>
-    <form class="p-quick" action="/gio-hang/them" method="post" data-add-to-cart>
+    <form class="p-quick" action="/gio-hang/them" method="post" data-add-to-cart data-track-id="<%= p.id %>" data-track-name="<%= p.name %>" data-track-price="<%= p.price %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="product_id" value="<%= p.id %>">
       <input type="hidden" name="qty" value="1">

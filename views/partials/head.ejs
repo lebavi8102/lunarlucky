@@ -27,4 +27,6 @@
   <% for (const ld of jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(ld).replace(/</g, '\\u003c') %></script>
   <% } %>
   <script src="<%= asset('/js/boot.js') %>"></script>
+  <% if (typeof track !== 'undefined' && track.on) { %><script type="application/json" id="track-cfg"><%- JSON.stringify({ pixel: track.pixel, ga4: track.ga4, events: track.events }).replace(/</g, '\\u003c') %></script>
+  <script src="<%= asset('/js/track.js') %>" defer></script><% } %>
 </head>

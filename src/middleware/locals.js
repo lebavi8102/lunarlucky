@@ -63,6 +63,11 @@ module.exports = async function locals(req, res, next) {
   res.locals.siteUrl = config.siteUrl;
   res.locals.path = req.path;
   res.locals.user = req.session.user || null;
+  // Đo lường (Meta Pixel, Google Analytics): không đếm quản trị viên / trang quản trị để số liệu không sai
+  const staff = res.locals.user && res.locals.user.role === 'admin';
+  const pixel = /^\d{8,20}$/.test(String(s.meta_pixel_id || '').trim()) ? String(s.meta_pixel_id).trim() : '';
+  const ga4 = /^G-[A-Z0-9]{4,15}$/i.test(String(s.ga4_id || '').trim()) ? String(s.ga4_id).trim().toUpperCase() : '';
+  res.locals.track = { on: !staff && !req.path.startsWith('/admin') && !!(pixel || ga4), pixel, ga4, events: [] };
   res.locals.cartCount = cartCount(req);
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
