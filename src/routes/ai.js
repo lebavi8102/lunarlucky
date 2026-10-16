@@ -16,7 +16,8 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   const r = await ai.chat(req, text);
   const learn = require('../lib/ai-learn');
   const id = `web:${String(req.sessionID || '').slice(0, 40)}`;
-  if (!r.off && !r.error) {
+  // Lượt chat thử của chủ shop / kiểm thử (header x-lunar-test) không tính vào số liệu tỉ lệ chốt
+  if (!r.off && !r.error && req.get('x-lunar-test') !== '1') {
     await learn.log(id, 'customer', text);
     await learn.log(id, 'ai', r.reply);
     if (r.action) await learn.log(id, 'event', 'order_button');
