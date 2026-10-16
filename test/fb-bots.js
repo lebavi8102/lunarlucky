@@ -54,6 +54,15 @@ const codes = [];
     ok(graphCalls.some((g) => g.path === `c5${T}` && g.body.is_hidden === true), 'Bình luận có SĐT → ẩn bình luận (bảo mật số)');
     ok(tg.some((x) => /GỌI LẠI/.test(x.html) && /0912345678/.test(x.html)), 'Bình luận có SĐT → báo nhóm gọi lại');
 
+    // Chưa có quyền ẩn (Facebook chưa duyệt) → báo nhóm ẩn tay, kèm nút mở bình luận
+    comments._setGraph(async () => null);
+    tg.length = 0;
+    await m.handleWebhook(feed({ ...base, comment_id: `c6${T}`, message: 'sđt em 0987 111 222 nhé', from: { id: `u6${T}`, name: 'Phạm Văn Nam' } }));
+    const hideMsg = tg.find((x) => /cần ẩn/.test(x.html));
+    ok(hideMsg && /comment_id=/.test(hideMsg.extra.reply_markup.inline_keyboard[0][0].url) && tg.some((x) => /GỌI LẠI/.test(x.html) && /CHƯA ẨN/.test(x.html)), 'Chưa có quyền ẩn → Telegram nhắc ẩn tay + nút mở bình luận, vẫn tạo yêu cầu gọi lại');
+    comments._setGraph(async (path, body) => { graphCalls.push({ path, body }); return { id: 'x' }; });
+    await db('callback_requests').where({ phone: '0987111222' }).del().catch(() => {});
+
     // 2. Xin đánh giá sau giao
     const prod = await db('products').where({ is_active: true }).first();
     const mk = async (code, extra) => {

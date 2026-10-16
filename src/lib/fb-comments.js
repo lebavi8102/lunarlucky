@@ -23,9 +23,17 @@ let graph = async (path, body) => {
     signal: AbortSignal.timeout(15000),
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) console.error('[bình luận FB] lỗi', path.split('/')[0], r.status, JSON.stringify(j).slice(0, 250));
+  if (!r.ok) {
+    // Chưa có quyền trả lời/ẩn bình luận (cần Facebook xét duyệt) → thôi gọi, đỡ lỗi lặp; nhân viên ẩn tay qua nút Telegram
+    if (r.status === 403 || (j.error && j.error.code === 200)) noEngage = true;
+    console.error('[bình luận FB] lỗi', path.split('/')[0], r.status, JSON.stringify(j).slice(0, 250));
+  }
   return r.ok ? j : null;
 };
+let noEngage = false;
+const engage = (path, body) => (noEngage ? Promise.resolve(null) : graph(path, body));
+// Link mở bình luận trên Facebook (post_id dạng "IDtrang_IDbài")
+const commentUrl = (v) => `https://www.facebook.com/${String(v.post_id || '').replace(/[^\d_]/g, '') || ''}?comment_id=${encodeURIComponent(String(v.comment_id).split('_').pop())}`;
 
 const salute = (name) => (name ? `anh/chị ${String(name).trim().split(/\s+/).pop()}` : 'anh/chị');
 
@@ -61,11 +69,18 @@ async function handleComment(v, { pageId } = {}) {
 
   if (phone) {
     // Ẩn bình luận có SĐT (bảo mật, đối thủ không gom số) + báo nhóm gọi lại
-    await graph(v.comment_id, { is_hidden: true });
-    await graph(`${v.comment_id}/comments`, { message: `Dạ Lunar Lucky đã nhận số, sẽ gọi ${who} ngay ạ. Bình luận được ẩn để bảo mật số điện thoại 🙏` });
-    await require('./callbacks').create({ name: from.name || 'Khách bình luận Facebook', phone: phone.replace(/\D/g, '').replace(/^84/, '0'), interest: text.slice(0, 300), note: 'Bình luận Facebook (đã ẩn số)', source: 'facebook' }).catch(() => {});
+    const hidden = await engage(v.comment_id, { is_hidden: true });
+    if (hidden) await engage(`${v.comment_id}/comments`, { message: `Dạ Lunar Lucky đã nhận số, sẽ gọi ${who} ngay ạ. Bình luận được ẩn để bảo mật số điện thoại 🙏` });
+    await require('./callbacks').create({ name: from.name || 'Khách bình luận Facebook', phone: phone.replace(/\D/g, '').replace(/^84/, '0'), interest: text.slice(0, 300), note: hidden ? 'Bình luận Facebook (đã ẩn số)' : 'Bình luận Facebook — CHƯA ẨN số', source: 'facebook' }).catch(() => {});
+    if (!hidden && post_ok(v)) {
+      // Bot chưa có quyền ẩn → nhắc nhân viên ẩn tay ngay (đối thủ hay gom số điện thoại dưới bài)
+      await require('./notify').telegram(`🙈 <b>Bình luận có số điện thoại — cần ẩn</b>
+👤 ${require('./notify').escapeTg(from.name || 'Khách')}: “${require('./notify').escapeTg(text.slice(0, 150))}”
+👉 Bấm nút → bấm ⋯ ở bình luận → <b>Ẩn bình luận</b>. Đã nhắn riêng cho khách.`, null,
+        { topic: 'consult', reply_markup: { inline_keyboard: [[{ text: '🙈 Mở bình luận để ẩn', url: commentUrl(v) }]] } }).catch(() => {});
+    }
   } else {
-    await graph(`${v.comment_id}/comments`, { message: String(s.comment_public_reply || 'Dạ Lunar Lucky đã nhắn tin riêng cho {ten} ạ, {ten} xem tin nhắn giúp em nhé 💌').replace(/\{ten\}/g, who) });
+    await engage(`${v.comment_id}/comments`, { message: String(s.comment_public_reply || 'Dạ Lunar Lucky đã nhắn tin riêng cho {ten} ạ, {ten} xem tin nhắn giúp em nhé 💌').replace(/\{ten\}/g, who) });
   }
   // Nhắn riêng (private reply) → mở cuộc trò chuyện Messenger, khách trả lời là AI tư vấn tiếp
   const range = await priceRange();
@@ -85,4 +100,6 @@ async function handleComment(v, { pageId } = {}) {
   return phone ? 'phone' : 'reply';
 }
 
-module.exports = { handleComment, INTENT, PHONE, _setGraph: (fn) => { graph = fn; } };
+function post_ok(v) { return !!(v && v.post_id && v.comment_id); }
+
+module.exports = { handleComment, INTENT, PHONE, commentUrl, _setGraph: (fn) => { graph = fn; noEngage = false; } };
