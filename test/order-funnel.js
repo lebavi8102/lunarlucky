@@ -132,6 +132,20 @@ async function addToCart(c) {
       ok(o3 && o3.adjustment === 150000 && o3.total === o3.subtotal - o3.discount + o3.shipping_fee + o3.vat_fee + 150000 && /Shan tuyết/.test(o3.adjustment_note), 'Đơn đổi món: tổng tiền cộng thêm 150.000đ, lưu lý do');
       const p3 = await a(r3.location);
       ok(/Điều chỉnh \(đổi vang sang trà Shan tuyết\)/.test(p3.text), 'Trang đơn hiện dòng điều chỉnh giá');
+      // Sửa giá sau khi đã đặt (khách đổi món lần nữa) — trong trang quản trị đơn
+      const ap = await a(`/admin/don-hang/${o3.id}`);
+      ok(/Sửa giá \(khách đổi món\)/.test(ap.text), 'Trang quản trị đơn có "Sửa giá (khách đổi món)"');
+      const ed = await a(`/admin/don-hang/${o3.id}/gia`, { method: 'POST', form: { _csrf: csrf(ap.text), price_adjustment: '-50.000', adjustment_note: 'bỏ hộp trà' } });
+      const o3b = await db('orders').where({ id: o3.id }).first();
+      ok(ed.status === 302 && o3b.adjustment === -50000 && o3b.total === o3.total - 200000 && /bỏ hộp trà/.test(o3b.adjustment_note) && /Đổi giá/.test(o3b.handled_log || ''),
+        'Sửa giá: điều chỉnh +150.000 → −50.000, tổng giảm 200.000, ghi lịch sử');
+      const noReason = await a(`/admin/don-hang/${o3.id}/gia`, { method: 'POST', form: { _csrf: csrf(ap.text), price_adjustment: '20000', adjustment_note: '' } });
+      ok((await db('orders').where({ id: o3.id }).first()).adjustment === -50000, 'Sửa giá không ghi lý do → không lưu');
+      await db('orders').where({ id: o3.id }).update({ payment_status: 'paid' });
+      await a(`/admin/don-hang/${o3.id}/gia`, { method: 'POST', form: { _csrf: csrf(ap.text), price_adjustment: '0', adjustment_note: '' } });
+      ok((await db('orders').where({ id: o3.id }).first()).adjustment === -50000, 'Đơn đã thanh toán đủ → không cho sửa giá');
+      const guestEdit = await client()(`/admin/don-hang/${o3.id}/gia`, { method: 'POST', form: { price_adjustment: '-999' } });
+      ok(guestEdit.status !== 200 && (await db('orders').where({ id: o3.id }).first()).adjustment === -50000, 'Người ngoài không sửa giá được');
       const tooLow = await (async () => { await addToCart(a); const c = await a('/thanh-toan');
         return a('/thanh-toan', { method: 'POST', form: { ...base3, _csrf: csrf(c.text), price_adjustment: '-999999999', adjustment_note: 'thử' } }); })();
       ok(tooLow.status === 422 && /Giảm nhiều hơn tiền hàng/.test(tooLow.text), 'Giảm quá tiền hàng → chặn');

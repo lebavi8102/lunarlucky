@@ -142,4 +142,50 @@ async function updateDelivery(id, changes, { by } = {}) {
   return { order: { ...order, ...update }, changed: true, events };
 }
 
-module.exports = { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder, updateDelivery, logTime };
+/**
+ * Sửa tiền điều chỉnh (khách đổi món sau khi đã đặt) → tính lại phí VAT, tổng tiền, tiền cọc.
+ * Chỉ khi chưa nhận đủ tiền: đơn chưa thanh toán, hoặc COD đã cọc (phần còn lại thu khi giao tự đổi theo).
+ * Đơn chuyển khoản đã trả đủ → không sửa ở đây (chênh lệch thu thêm/hoàn lại xử lý riêng).
+ */
+async function updateAdjustment(id, { adjustment, note }, { by } = {}) {
+  const order = await db('orders').where({ id }).first();
+  if (!order) return { error: 'Không tìm thấy đơn.' };
+  if (['cancelled', 'completed'].includes(order.status)) return { error: 'Đơn đã hủy/hoàn tất — không sửa giá được.' };
+  if (order.payment_status === 'paid' || order.payment_status === 'refunded') {
+    return { error: 'Đơn đã thanh toán đủ — không sửa giá ở đây. Chênh lệch: thu thêm hoặc hoàn lại cho khách rồi ghi chú vào đơn.' };
+  }
+  const adj = Math.round(Number(adjustment) || 0);
+  const base = Number(order.subtotal) - Number(order.discount);
+  if (adj < -base) return { error: 'Giảm nhiều hơn tiền hàng — kiểm tra lại số tiền.' };
+  if (adj > 100000000) return { error: 'Số tiền điều chỉnh quá lớn.' };
+  const cleanNote = String(note || '').trim().slice(0, 200) || null;
+  if (adj && !cleanNote) return { error: 'Ghi lý do điều chỉnh (vd: đổi vang sang trà Shan tuyết).' };
+  if (adj === Number(order.adjustment || 0) && (cleanNote || null) === (order.adjustment_note || null)) return { order, changed: false };
+
+  const s = await settings.all();
+  const payment = require('./payment');
+  const goods = base + adj;
+  const vat_fee = order.needs_vat ? Math.round(goods * (Number(order.vat_fee_percent) || payment.vatFeePercent(s)) / 100) : 0;
+  const total = goods + Number(order.shipping_fee) + vat_fee;
+  const update = { adjustment: adj, adjustment_note: adj ? cleanNote : null, vat_fee, total, updated_at: new Date() };
+  // Cọc: chưa nhận cọc → tính lại theo giá mới; đã nhận cọc → giữ nguyên, phần thu khi giao tự đổi
+  if (order.payment_method === 'cod' && order.payment_status === 'pending') {
+    const qty = Number((await db('order_items').where({ order_id: id }).sum({ n: 'qty' }).first() || {}).n) || 0;
+    update.deposit_amount = payment.depositFor({ goods, qty, total }, s);
+  }
+  const { money } = require('./format');
+  const sign = (n) => (n > 0 ? `+${money(n)}` : n < 0 ? `−${money(-n)}` : '0');
+  const ev = `Đổi giá (${cleanNote || 'bỏ điều chỉnh'}): điều chỉnh ${sign(Number(order.adjustment) || 0)} → ${sign(adj)} · tổng ${money(order.total)} → ${money(total)}`
+    + (update.deposit_amount !== undefined && update.deposit_amount !== Number(order.deposit_amount) ? ` · cọc ${money(order.deposit_amount)} → ${money(update.deposit_amount)}` : '');
+  update.handled_log = [order.handled_log, `${logTime()} · ${ev}${by ? ` · ${by}` : ''}`].filter(Boolean).join('\n').split('\n').slice(-30).join('\n');
+  await db('orders').where({ id }).update(update);
+  const next = { ...order, ...update };
+  await require('./telegram-orders').refreshOrderMessage(id).catch(() => {});
+  // Đơn đang chờ tiền → báo chủ đề TIỀN VỀ số tiền mới cần chuyển
+  if (payment.awaitingMoney(next) || next.payment_status === 'deposit') {
+    await notify.telegram(`✏️ <b>Đơn ${next.code} đổi giá</b> (${notify.escapeTg(cleanNote || 'bỏ điều chỉnh')})\nTổng mới: <b>${money(total)}</b> · cần chuyển ngay: <b>${money(payment.amountDue(next))}</b>${next.payment_method === 'cod' ? ` · thu khi giao: ${money(payment.codDue(next))}` : ''}`, null, { topic: 'money' }).catch(() => {});
+  }
+  return { order: next, changed: true, event: ev };
+}
+
+module.exports = { ORDER_STATUS, PAYMENT_STATUS, loadOrder, updateOrder, updateDelivery, updateAdjustment, logTime };

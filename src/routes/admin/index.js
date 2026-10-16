@@ -175,6 +175,22 @@ router.post('/don-hang/:id/giao', async (req, res, next) => {
   res.redirect(`/admin/don-hang/${order.id}`);
 });
 
+// Sửa tiền điều chỉnh khi khách đổi món sau khi đã đặt
+router.post('/don-hang/:id/gia', async (req, res, next) => {
+  const order = await db('orders').where({ id: Number(req.params.id) }).first();
+  if (!order) return next();
+  const raw = String(req.body.price_adjustment || '').trim();
+  const n = raw ? Number(raw.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '')) : 0;
+  if (!Number.isFinite(n)) {
+    flash(req, 'error', 'Số tiền điều chỉnh không hợp lệ (vd: 150000 hoặc -80000).');
+    return res.redirect(`/admin/don-hang/${order.id}#sua-gia`);
+  }
+  const r = await require('../../lib/orders').updateAdjustment(order.id, { adjustment: n, note: req.body.adjustment_note }, { by: req.session.user.name });
+  if (r.error) flash(req, 'error', r.error);
+  else flash(req, 'success', r.changed ? `Đã lưu: ${r.event}` : 'Không có gì thay đổi.');
+  res.redirect(`/admin/don-hang/${order.id}${r.error ? '#sua-gia' : ''}`);
+});
+
 router.post('/don-hang/:id/tai-khoan', async (req, res, next) => {
   const payment = require('../../lib/payment');
   const order = await db('orders').where({ id: Number(req.params.id) }).first();

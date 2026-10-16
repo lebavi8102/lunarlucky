@@ -35,6 +35,20 @@
         <div class="sum-row"><span>Phí giao</span><span><%= money(order.shipping_fee) %></span></div>
         <% if (order.vat_fee) { %><div class="sum-row"><span>Phí xuất hóa đơn VAT<%= order.vat_fee_percent ? ' (' + Number(order.vat_fee_percent) + '%)' : '' %></span><span><%= money(order.vat_fee) %></span></div><% } %>
         <div class="sum-row total"><span>Tổng</span><span><%= money(order.total) %></span></div>
+        <% if (!['cancelled', 'completed'].includes(order.status) && !['paid', 'refunded'].includes(order.payment_status)) { %>
+        <details id="sua-gia" style="margin-top:12px">
+          <summary class="btn btn-sm btn-quiet">✏️ Sửa giá (khách đổi món)</summary>
+          <form action="/admin/don-hang/<%= order.id %>/gia" method="post" style="margin-top:12px;display:grid;gap:10px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field"><label class="label" for="pa">Điều chỉnh so với giá web (₫)</label><input class="input" id="pa" name="price_adjustment" inputmode="numeric" value="<%= Number(order.adjustment) || '' %>" placeholder="vd: 150000 hoặc -80000"></div>
+            <div class="field"><label class="label" for="pn">Lý do</label><input class="input" id="pn" name="adjustment_note" maxlength="200" value="<%= order.adjustment_note || '' %>" placeholder="vd: đổi vang sang trà Shan tuyết"></div>
+            <button class="btn btn-sm" type="submit">Lưu giá mới</button>
+            <p class="tiny muted">Số dương = đắt hơn, số âm = rẻ hơn, để trống = bỏ điều chỉnh. Tổng tiền, phí VAT<%= order.payment_method === 'cod' ? ', tiền cọc' : '' %> và mã QR trên trang đơn của khách tự tính lại; tin Telegram được cập nhật.<% if (order.payment_status === 'deposit') { %> Khách đã cọc → giữ nguyên tiền cọc, phần thu khi giao đổi theo.<% } %></p>
+          </form>
+        </details>
+        <% } else if (order.payment_status === 'paid' && !['cancelled', 'completed'].includes(order.status)) { %>
+        <p class="tiny muted" style="margin-top:10px">Đơn đã thanh toán đủ — muốn đổi giá: thu thêm hoặc hoàn lại phần chênh cho khách rồi ghi chú vào đơn.</p>
+        <% } %>
       </div>
     </section>
 
