@@ -9,6 +9,7 @@ if (db.isMysql && !process.env.ALLOW_REMOTE) { console.error('Chỉ chạy với
 Object.assign(process.env, { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || 'test-key', FB_PAGE_TOKEN: 'page-tok', FB_APP_SECRET: 'app-secret', FB_VERIFY_TOKEN: 'verify-me' });
 const ai = require('../src/lib/ai-sales');
 const m = require('../src/lib/messenger');
+const settings = require('../src/lib/settings');
 const { todayVN } = require('../src/lib/format');
 
 let fails = 0;
@@ -39,6 +40,9 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'prepare_order', input: {
           items: [{ product_id: prod.id, qty: 1 }], customer_name: 'Chị Lan FB', phone: '0912345000', province: 'Hà Nội', address: '3 Phố Huế',
           is_gift: false, delivery_date: todayVN(3), payment_method: 'bank' } }] };
+      }
+      if (typeof last.content === 'string' && /đổi món/.test(last.content)) {
+        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ' } }] };
       }
       return { stop_reason: 'end_turn', model: 'fake', usage: {}, content: [{ type: 'text', text: 'Dạ em gợi ý **Giỏ An Khang** ạ.' }] };
     } } } });
@@ -127,6 +131,23 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(t4 && Number(t4.paused_until_ms) < Date.now(), 'Tin tự động của Fanpage ngay sau tin khách → AI không bị dừng');
     const lastSys = calls[calls.length - 1].system;
     ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /xin tên/.test(lastSys[0].text), 'Không lấy được tên Facebook → AI tự xin tên khách');
+
+    // AI tự chuyển cho người thật (đổi món…) — khách đang ở Fanpage, không bị bảo nhắn Zalo
+    ok(ai.tools('messenger').some((t) => t.name === 'transfer_to_human') && !ai.tools().some((t) => t.name === 'transfer_to_human'), 'Công cụ chuyển người thật chỉ có trên Messenger');
+    ok(/KHÔNG bảo khách "nhắn Zalo\/Fanpage"/.test(calls[0].system[1].text), 'AI trên Fanpage được dặn không đẩy khách sang Zalo');
+    const P5 = PSID + 'swap';
+    m._resetEchoState();
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P5 }, recipient: { id: 'PAGE' }, message: { text: 'cho chị đổi món trong giỏ' } }] }] });
+    const t5 = await db('messenger_threads').where({ psid: P5 }).first();
+    ok(t5 && Number(t5.paused_until_ms) > Date.now(), 'AI gọi transfer_to_human → tạm dừng, chờ chuyên viên trả lời tại Fanpage');
+    // AI tắt → khách Fanpage không bị bảo nhắn Zalo, người thật trả lời
+    const aiOn = (await settings.all()).ai_chat_enabled;
+    await settings.save({ ai_chat_enabled: '0' });
+    const P6 = PSID + 'off';
+    sent.length = 0;
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P6 }, recipient: { id: 'PAGE' }, message: { text: 'shop ơi' } }] }] });
+    ok((() => { const t = sent.find((b) => b.message && b.message.text); return t && /chuyên viên/.test(t.message.text) && !/Zalo/.test(t.message.text); })(), 'AI tắt → báo chuyên viên trả lời tại Fanpage, không đẩy sang Zalo');
+    await settings.save({ ai_chat_enabled: aiOn || '1' });
 
     // Khách đòi gặp người thật
     const P2 = PSID + 'h';

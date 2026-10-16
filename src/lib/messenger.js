@@ -243,6 +243,20 @@ async function loadHandoff(token) {
 
 const HUMAN = /(gặp|nói chuyện|chat|nối máy|chuyển).{0,12}(người thật|nhân viên|tư vấn viên|chủ shop|admin)|(người thật|nhân viên) (tư vấn|trả lời)/i;
 
+/** Báo chủ đề TƯ VẤN KHÁCH: khách nào (tên, giờ nhắn), cần gì → nhân viên tìm đúng người trong hộp thư Fanpage. */
+async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
+  const e = require('./notify').escapeTg;
+  const name = (row && row.name) || '';
+  const at = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date());
+  await require('./notify').telegram([
+    `💬 <b>${e(title)}</b>`,
+    `👤 ${name ? e(name) : 'Khách Fanpage (chưa rõ tên)'} · nhắn lúc ${at}`,
+    summary ? `📝 ${e(summary)}` : null,
+    last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
+    `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời. AI tạm dừng với khách này ${pauseHours} giờ.`,
+  ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => {});
+}
+
 /** Xử lý 1 sự kiện Messenger (tin khách, bấm nút, hoặc tin người thật trả lời từ hộp thư). */
 async function handleEvent(ev) {
   const s = await settings.all();
@@ -289,7 +303,7 @@ async function handleEvent(ev) {
   if (HUMAN.test(text)) {
     await pause(psid, pauseHours);
     await sendText(psid, `Dạ em đã báo chuyên viên Lunar Lucky, anh/chị đợi một chút sẽ có người trả lời ngay tại đây ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
-    await require('./notify').telegram(`💬 <b>Khách Fanpage cần gặp người thật</b>\nTin: ${text.slice(0, 200).replace(/[<>&]/g, '')}\n👉 Mở hộp thư Fanpage để trả lời (AI tạm dừng với khách này ${pauseHours} giờ).`, null, { topic: 'consult' }).catch(() => {});
+    await alertHuman(psid, row, { title: 'Khách Fanpage cần gặp người thật', last: text, pauseHours });
     return 'human';
   }
 
@@ -298,7 +312,7 @@ async function handleEvent(ev) {
   if ((await countToday(psid, row)) > cap) {
     await pause(psid, pauseHours);
     await sendText(psid, `Dạ hôm nay anh/chị đã nhắn khá nhiều, em chuyển chuyên viên Lunar Lucky trả lời trực tiếp tại đây ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
-    await require('./notify').telegram(`💬 <b>Khách Fanpage nhắn quá ${cap} tin hôm nay</b> — AI tạm dừng ${pauseHours} giờ với khách này.\nTin cuối: ${text.slice(0, 200).replace(/[<>&]/g, '')}\n👉 Mở hộp thư Fanpage để trả lời.`, null, { topic: 'consult' }).catch(() => {});
+    await alertHuman(psid, row, { title: `Khách Fanpage nhắn quá ${cap} tin hôm nay`, last: text, pauseHours });
     return 'cap';
   }
 
@@ -320,7 +334,22 @@ async function handleEvent(ev) {
   }
   await saveThread(psid, { history: JSON.stringify(session.aiChat || []), ...(context && !r.error ? { notes: null } : {}) });
   if (Math.random() < 0.02) purgeOld();
+  // AI tắt / quá giới hạn ngày / lỗi: không đẩy khách sang Zalo — báo người thật trả lời tại Fanpage
+  if (r.off) {
+    await pause(psid, pauseHours);
+    await sendText(psid, `Dạ em đã nhận tin, chuyên viên Lunar Lucky sẽ trả lời anh/chị ngay tại đây sớm nhất ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
+    await alertHuman(psid, row, { title: 'AI đang tắt/hết lượt — khách Fanpage chờ người trả lời', last: text, pauseHours });
+    return 'off';
+  }
+  if (r.error) {
+    await sendText(psid, `Dạ em đang bị gián đoạn một chút, anh/chị gửi lại giúp em sau ít phút nhé. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} ạ!`);
+    return 'error';
+  }
   await sendText(psid, r.reply);
+  if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)
+    await pause(psid, pauseHours);
+    await alertHuman(psid, row, { title: 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
+  }
   if (r.action && session.cart && session.aiPrefill) {
     const url = await createHandoff(session, psid);
     await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {

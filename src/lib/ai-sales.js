@@ -96,9 +96,9 @@ DANH MỤC HIỆN CÓ (mã sản phẩm trong ngoặc vuông)
 ${lines}`;
 }
 
-function tools() {
+function tools(channel) {
   const { PROVINCES } = checkoutHelpers();
-  return [
+  const list = [
     {
       name: 'search_products',
       description: 'Tìm giỏ quà trong danh mục theo nhu cầu (từ khóa không dấu cũng được) và/hoặc khoảng giá. Trả về giá, thành phần, tồn kho, đường dẫn.',
@@ -179,6 +179,23 @@ function tools() {
       },
     },
   ];
+  // Messenger: khách đang ở Fanpage → chuyển thẳng cho người thật trả lời trong hộp thư (không bắt khách sang kênh khác)
+  if (channel === 'messenger') {
+    list.push({
+      name: 'transfer_to_human',
+      description: 'Chuyển cuộc trò chuyện Fanpage cho chuyên viên Lunar Lucky trả lời trực tiếp tại đây: đổi món / làm giỏ theo yêu cầu, in logo, đơn doanh nghiệp cần báo giá, khiếu nại, hỏi đơn đã đặt, khách muốn gặp người, câu hỏi em không chắc. Sau khi gọi, em không trả lời tiếp cho đến khi chuyên viên xong.',
+      strict: true,
+      input_schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          summary: { type: 'string', description: 'Tóm tắt cho chuyên viên: khách là ai, cần gì, đã gợi ý gì (giỏ, số lượng, ngày giao, ngân sách)' },
+        },
+        required: ['summary'],
+      },
+    });
+  }
+  return list;
 }
 
 const digits = (v) => String(v || '').replace(/\D/g, '');
@@ -267,13 +284,18 @@ async function runTool(name, input, req, out) {
     out.callback = true;
     return { ok: true, message: 'Đã báo chuyên viên, sẽ gọi lại khách trong giờ làm việc (thường trong 5 phút).' };
   }
+  if (name === 'transfer_to_human') {
+    if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
+    out.human = String(input.summary || '').slice(0, 800);
+    return { ok: true, message: 'Đã báo chuyên viên. Nói ngắn gọn với khách: chuyên viên Lunar Lucky sẽ trả lời ngay tại đây (giờ làm việc thường trong ít phút). Không hỏi thêm.' };
+  }
   return { error: `Không có công cụ ${name}` };
 }
 
 /** 1 lượt chat: nhận tin khách, chạy vòng công cụ, trả lời. Lịch sử nằm trong session (chỉ nối thêm, không sửa). */
 // Thêm vào lời dặn khi chat qua Messenger (để riêng, sau phần lời dặn chung đã lưu đệm)
 const CHANNEL_NOTES = {
-  messenger: 'Kênh hiện tại: Facebook Messenger (Fanpage). Không dùng **in đậm** hay markdown — chỉ chữ thường, xuống dòng, gạch đầu dòng "-". Link sản phẩm ghi dạng /san-pham/... (hệ thống tự đổi thành link đầy đủ). Sau prepare_order, hệ thống tự gửi nút "Kiểm tra & đặt hàng" ngay dưới tin của em. Khách muốn gặp người thật thì bảo khách nhắn "gặp nhân viên".',
+  messenger: 'Kênh hiện tại: Facebook Messenger (Fanpage). Không dùng **in đậm** hay markdown — chỉ chữ thường, xuống dòng, gạch đầu dòng "-". Link sản phẩm ghi dạng /san-pham/... (hệ thống tự đổi thành link đầy đủ). Sau prepare_order, hệ thống tự gửi nút "Kiểm tra & đặt hàng" ngay dưới tin của em. Khách ĐANG nhắn trên Fanpage: KHÔNG bảo khách "nhắn Zalo/Fanpage" hay bấm nút trên web để được tư vấn. Việc cần người thật (đổi món, làm giỏ theo yêu cầu, in logo, đơn doanh nghiệp cần báo giá, khiếu nại, hỏi đơn đã đặt, khách muốn gặp người, câu em không chắc) → gọi transfer_to_human với tóm tắt rõ, rồi báo khách chuyên viên sẽ trả lời ngay tại đây. Khách muốn được gọi điện thì vẫn dùng request_callback.',
 };
 
 // AI lỗi (hết tiền Claude, khóa sai, quá tải…) → báo nhóm Telegram, tối đa 1 lần / 30 phút
@@ -306,7 +328,7 @@ async function chat(req, text, opts = {}) {
     system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị").` : ''].filter(Boolean).join('\n') });
   }
   req.aiChannel = opts.channel || 'web';
-  const toolDefs = tools();
+  const toolDefs = tools(opts.channel);
   const out = {};
   let reply = '';
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -356,7 +378,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null };
 }
 
 module.exports = { chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
