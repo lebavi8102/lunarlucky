@@ -38,7 +38,7 @@ const codes = [];
     const pub = graphCalls.find((g) => g.path === `c1${T}/comments`);
     const priv = sent.find((b) => b.recipient.comment_id === `c1${T}`);
     ok(pub && /đã nhắn tin riêng cho anh\/chị Tuấn/.test(pub.body.message), 'Bình luận "giá" → trả lời công khai, gọi tên khách');
-    ok(priv && /Giỏ quà Tết bên em có giá từ/.test(priv.message.text) && priv.message.metadata === m.AI_TAG, 'Nhắn riêng cho khách (private reply) kèm khoảng giá, hỏi tặng ai / ngân sách');
+    ok(priv && /Giỏ Tết bên em từ/.test(priv.message.text) && !/trợ lý/.test(priv.message.text) && priv.message.metadata === m.AI_TAG, 'Nhắn riêng cho khách (private reply) kèm khoảng giá, hỏi tặng ai / ngân sách');
     const th = await db('messenger_threads').where({ psid: `ps${T}` }).first();
     ok(th && th.name === 'Nguyễn Văn Tuấn' && JSON.parse(th.notes || '[]').some((x) => x === 'Khách bình luận Facebook: "Giá bao nhiêu vậy shop"'), 'Ghi tên khách + nội dung bình luận cho AI nói tiếp đúng mạch');
     // lặp / trùng / khen / trang tự bình luận

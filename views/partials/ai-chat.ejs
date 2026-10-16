@@ -6,13 +6,13 @@
   <header class="ai-head">
     <div>
       <strong id="ai-chat-title">Tư vấn chọn quà</strong>
-      <span>Trợ lý AI của <%= s.shop_name %> · trả lời ngay</span>
+      <span>Tư vấn <%= s.shop_name %> · trả lời ngay</span>
     </div>
     <button type="button" class="ai-icon-btn" data-ai-reset title="Bắt đầu lại" aria-label="Bắt đầu lại cuộc trò chuyện"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg></button>
     <button type="button" class="ai-icon-btn" data-ai-close aria-label="Đóng"><svg class="icon icon-sm"><use href="#i-x"/></svg></button>
   </header>
   <div class="ai-log" data-ai-log aria-live="polite">
-    <div class="ai-msg bot">Em chào anh/chị! Anh/chị định tặng quà Tết cho ai, ngân sách khoảng bao nhiêu mỗi giỏ ạ? Em gợi ý giỏ hợp nhất và lên đơn giúp luôn.</div>
+    <div class="ai-msg bot">Dạ em chào anh/chị 🧧 Mình định tặng quà Tết cho ai, tầm bao nhiêu một giỏ ạ? Em chọn mẫu hợp và lên đơn giúp luôn.</div>
   </div>
   <div class="ai-chips" data-ai-chips>
     <button type="button" data-ai-suggest>Biếu sếp khoảng 2 triệu</button>
@@ -25,6 +25,6 @@
     <textarea id="ai-input" rows="1" maxlength="800" placeholder="Nhập câu hỏi…" data-ai-input></textarea>
     <button type="submit" class="btn btn-sm" aria-label="Gửi">Gửi</button>
   </form>
-  <p class="ai-foot">AI có thể nhầm — đơn chỉ được tạo khi bạn bấm “Đặt hàng”. Cần người thật? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo</a></p>
+  <p class="ai-foot">Đơn chỉ được tạo khi bạn bấm “Đặt hàng”. Muốn gọi điện trao đổi? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo</a></p>
 </section>
 <script src="<%= asset('/js/ai-chat.js') %>" defer></script>

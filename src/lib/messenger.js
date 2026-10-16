@@ -110,6 +110,20 @@ async function sendText(psid, text) {
 }
 
 const typing = (psid) => send({ recipient: { id: psid }, sender_action: 'typing_on' }).catch(() => {});
+let pauseMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Câu trả lời của AI: mỗi đoạn (cách nhau dòng trống) là một tin, giữa các tin hiện "đang soạn tin" như người gõ. */
+async function sendChat(psid, text) {
+  let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+  if (parts.length > 3) parts = [...parts.slice(0, 2), parts.slice(2).join('\n')];
+  for (let i = 0; i < parts.length; i++) {
+    if (i) {
+      await typing(psid);
+      await pauseMs(Math.min(2500, 600 + parts[i].length * 25));
+    }
+    await sendText(psid, parts[i]);
+  }
+}
 
 // Tên trên Facebook (first_name/last_name). Facebook không cho biết giới tính → AI tự nhận theo tên.
 let fetchProfile = async (psid) => {
@@ -329,7 +343,7 @@ async function handleEvent(ev) {
 
   if (/^(xo[aá]|x[oó]a)\s*(d[uữ]\s*li[eệ]u|l[iị]ch\s*s[uử]|tin\s*nh[aắ]n)/i.test(text) && configured()) {
     await db('messenger_threads').where({ psid }).del();
-    await sendText(psid, 'Dạ em đã xóa toàn bộ lịch sử trò chuyện của anh/chị với trợ lý Lunar Lucky. Cần tư vấn lại anh/chị cứ nhắn em nhé!');
+    await sendText(psid, 'Dạ em đã xóa toàn bộ lịch sử trò chuyện của anh/chị với Lunar Lucky rồi ạ. Cần gì anh/chị cứ nhắn em nhé!');
     return 'deleted';
   }
 
@@ -344,7 +358,7 @@ async function handleEvent(ev) {
     // Sticker "like" → bỏ qua; ảnh/tệp → nhờ khách gõ chữ
     if (ev.message && ev.message.sticker_id) return 'sticker';
     if (ev.message && ev.message.attachments) {
-      await sendText(psid, 'Em đã nhận ảnh/tệp của anh/chị. Em là trợ lý tự động nên chỉ đọc được tin chữ — anh/chị mô tả giúp em (vd: ngân sách, tặng ai, giao ở đâu) để em tư vấn nhé! Cần người thật xem ảnh thì nhắn "gặp nhân viên" ạ.');
+      await sendText(psid, 'Dạ em nhận được rồi ạ. Anh/chị nhắn thêm giúp em là tặng ai, tầm bao nhiêu tiền một giỏ để em chọn mẫu cho hợp nha. Cần bên em xem kỹ ảnh thì anh/chị nhắn "gặp nhân viên" ạ.');
       return 'attachment';
     }
     return 'skip';
@@ -395,7 +409,7 @@ async function handleEvent(ev) {
     await sendText(psid, `Dạ em đang bị gián đoạn một chút, anh/chị gửi lại giúp em sau ít phút nhé. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} ạ!`);
     return 'error';
   }
-  await sendText(psid, r.reply);
+  await sendChat(psid, r.reply);
   // Tên khách tự giới thiệu (AI ghi lại) / tên trên đơn → các tin báo sau hiện tên
   await rememberName(psid, row, r.humanName || (session.aiPrefill && session.aiPrefill.customer_name));
   if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)
@@ -538,6 +552,7 @@ module.exports = {
   setupProfile,
   checkToken,
   _setDebugToken: (fn) => { debugToken = fn; },
+  _setPause: (fn) => { pauseMs = fn; },
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return r; }; },
   sendRaw: (b) => send(b),

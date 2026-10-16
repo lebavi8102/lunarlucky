@@ -174,7 +174,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { sticker_id: 369239263222822, attachments: [{ type: 'image' }] } }] }] });
     ok(!sent.length, 'Sticker "like" → không trả lời');
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { attachments: [{ type: 'image' }] } }] }] });
-    ok(sent.length === 1 && /tin chữ/.test(sent[0].message.text), 'Khách gửi ảnh → nhờ gõ chữ');
+    ok(sent.length === 1 && /tặng ai/.test(sent[0].message.text), 'Khách gửi ảnh → hỏi thêm nhu cầu bằng chữ');
 
     // Khách nhắn "xóa dữ liệu" → xóa lịch sử
     sent.length = 0;
