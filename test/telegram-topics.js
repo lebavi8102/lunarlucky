@@ -89,6 +89,10 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   await notify.telegram('thử tư vấn', null, { topic: 'consult' });
   ok(lastSend()?.body.message_thread_id === 55, '/chontuvan đổi chủ đề tư vấn khách');
+  await tg.handleUpdate(msg('/chonloi', { is_topic_message: true, message_thread_id: 94 }));
+  sent.length = 0;
+  await notify.telegram('AI lỗi thử', null, { topic: 'error' });
+  ok(lastSend()?.body.message_thread_id === 94, '/chonloi → báo lỗi AI vào chủ đề BÁO LỖI');
   await tg.handleUpdate(msg('/chontuvan'));
   sent.length = 0;
   await notify.telegram('thử tư vấn', null, { topic: 'consult' });

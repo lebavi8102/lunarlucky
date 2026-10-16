@@ -78,6 +78,8 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(r.reply.includes('Giỏ An Khang') && calls.length === 2, 'Chat: AI gọi công cụ rồi trả lời');
     const p0 = calls[0];
     ok(p0.model === 'claude-opus-5-5' && p0.fallbacks === 'default' && p0.betas.includes('server-side-fallback-2026-07-01') && p0.system[0].cache_control, 'Gọi Claude Opus 5.5, có dự phòng khi từ chối, có cache lời dặn');
+    ok(p0.thinking && p0.thinking.block_binding && p0.thinking.block_binding.prefix_mismatch_behavior === 'drop_block' && p0.betas.includes('thinking-binding-controls-2026-08-01'),
+      'Đổi giá/sản phẩm giữa cuộc trò chuyện → Claude bỏ suy nghĩ cũ không khớp thay vì lỗi 400');
     const tr = calls[1].messages.find((m) => Array.isArray(m.content) && m.content[0].type === 'tool_result');
     ok(tr && JSON.parse(tr.content[0].content).results, 'Kết quả công cụ được gửi lại cho AI');
     ok(chatReq.session.aiChat.length === 4, 'Lịch sử trò chuyện lưu trong phiên (chỉ nối thêm)');

@@ -307,7 +307,7 @@ function alertTeam(err) {
   const why = /credit|balance|billing/i.test(msg) ? 'Hết tiền tài khoản Claude — nạp thêm tại console.anthropic.com'
     : err && (err.status === 401 || err.status === 403) ? 'Khóa ANTHROPIC_API_KEY trên Render sai hoặc bị thu hồi'
       : 'Claude đang lỗi/quá tải (thường tự hết sau vài phút)';
-  require('./notify').telegram(`⚠️ <b>AI tư vấn đang lỗi</b> — khách trên web/Fanpage chưa được trả lời.\n${why}.\n<i>Mã lỗi: ${err && err.status ? err.status : '—'}</i>\n👉 Trong lúc chờ, vào hộp thư Fanpage / Zalo trả lời khách trực tiếp.`, null, { topic: 'consult' }).catch(() => {});
+  require('./notify').telegram(`⚠️ <b>AI tư vấn đang lỗi</b> — khách trên web/Fanpage chưa được trả lời.\n${why}.\n<i>Mã lỗi: ${err && err.status ? err.status : '—'}</i>\n👉 Trong lúc chờ, vào hộp thư Fanpage / Zalo trả lời khách trực tiếp.`, null, { topic: 'error' }).catch(() => {});
 }
 
 async function chat(req, text, opts = {}) {
@@ -338,7 +338,11 @@ async function chat(req, text, opts = {}) {
         model: s.ai_model || 'claude-opus-5-5',
         max_tokens: 4000,
         output_config: { effort: 'low' }, // trò chuyện ngắn: effort thấp cho nhanh, rẻ
-        betas: ['server-side-fallback-2026-07-01'],
+        // Lời dặn có danh mục/giá/cài đặt → đổi giá, sửa sản phẩm, cập nhật web làm lời dặn khác đi giữa cuộc trò chuyện.
+        // Claude chỉ nhận lại "dòng suy nghĩ" cũ khi lời dặn + công cụ y hệt → bảo Claude bỏ những khối không còn khớp
+        // (cuộc trò chuyện vẫn tiếp tục) thay vì báo lỗi 400 làm khách không được trả lời.
+        thinking: { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } },
+        betas: ['server-side-fallback-2026-07-01', 'thinking-binding-controls-2026-08-01'],
         fallbacks: 'default',
         cache_control: { type: 'ephemeral' }, // lưu đệm cả lịch sử trò chuyện → các lượt sau rẻ hơn nhiều
         system,
@@ -352,6 +356,8 @@ async function chat(req, text, opts = {}) {
       req.session.aiChat = history;
       return { reply: `Em đang bị gián đoạn một chút. Anh/chị thử gửi lại, hoặc nhắn Zalo / gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true };
     }
+    const dropped = (res.input_transformations || []).filter((t) => t.type === 'thinking_dropped').length;
+    if (dropped) console.log(`[AI tư vấn] bỏ ${dropped} khối suy nghĩ cũ không còn khớp (lời dặn/công cụ đã đổi)`);
     if (res.usage) console.log(`[AI tư vấn] ${res.model} in=${res.usage.input_tokens} cache=${res.usage.cache_read_input_tokens || 0} ghi=${res.usage.cache_creation_input_tokens || 0} out=${res.usage.output_tokens}`);
     if (res.stop_reason === 'refusal') {
       reply = 'Câu này em chưa hỗ trợ được. Anh/chị cần chọn quà Tết thì em tư vấn ngay ạ!';

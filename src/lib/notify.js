@@ -120,7 +120,10 @@ async function telegram(html, chatIdOverride, extra = {}) {
     const st = await require('./settings').all();
     // Chủ đề nhắc việc chưa chọn (/chonnhac) → gửi vào chủ đề đơn hàng
     // Tư vấn khách (yêu cầu gọi lại, báo giá doanh nghiệp, khách Fanpage cần người thật): mặc định chủ đề General ("TƯ VẤN KHÁCH"), đổi bằng /chontuvan
-    const thread = topic === 'consult'
+    // Báo lỗi hệ thống (AI lỗi…): chủ đề BÁO LỖI (/chonloi); chưa chọn → chủ đề tư vấn khách
+    const thread = topic === 'error'
+      ? st.telegram_error_thread || st.telegram_consult_thread || ''
+      : topic === 'consult'
       ? st.telegram_consult_thread || ''
       : st[`telegram_${topic}_thread`] || (['ops', 'money', 'ship'].includes(topic) ? st.telegram_order_thread : '');
     if (thread) extra.message_thread_id = Number(thread);
@@ -138,7 +141,7 @@ async function telegram(html, chatIdOverride, extra = {}) {
       // Nhóm đổi mã (lỡ không nhận được tin báo đổi mã qua webhook) → lưu mã mới, gửi lại
       if (err.migrateTo && !chatIdOverride && !config.telegram.chatId) {
         chatId2 = err.migrateTo;
-        await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '', telegram_consult_thread: '' });
+        await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '', telegram_consult_thread: '', telegram_error_thread: '' });
         console.log(`[telegram] nhóm chuyển mã ${chatId} → ${chatId2}, đã cập nhật`);
         const { message_thread_id, ...noThread } = extra;
         return await send(noThread);
