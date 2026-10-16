@@ -24,7 +24,7 @@
 <p>Bạn chọn <strong>ngày giao mong muốn</strong> khi đặt hàng. Lunar Lucky giao trong khung <strong>8:00 – 20:00</strong> và gọi cho người nhận trước khi giao.</p>
 <ul>
   <li><strong>Hà Nội:</strong> chọn được buổi giao — sáng (8h–12h), chiều (13h–17h) hoặc tối (18h–20h).</li>
-  <% const bt = bulkTiers(); bt.forEach((t, i) => { const nx = bt[i + 1]; %><li><strong>Đơn <%= nx ? `${t.qty}–${nx.qty - 1}` : `từ ${t.qty}` %> giỏ:</strong> cần <%= t.maxDays > t.days ? `${t.days}–${t.maxDays}` : t.days %> ngày chuẩn bị<%= nx ? '' : ' tùy tình hình thực tế; Lunar Lucky gọi xác nhận ngày giao cụ thể' %>.</li><% }) %>
+  <% bulkTierList().forEach((b) => { %><li><strong>Đơn <%= b.range %> giỏ:</strong> <%= b.text %><%= b.tier.kind === 'fixed' ? '' : '; chuyên viên gọi xác nhận ngày giao' %>.</li><% }) %>
   <% if (orderDeadline) { %><li><strong>Mùa Tết:</strong> Lunar Lucky giao quà đến hết <strong><%= orderDeadline %></strong><% if (s.tet_closed_from && s.tet_closed_to) { %>; nghỉ giao hàng từ <%= s.tet_closed_from.split('-').reverse().join('/') %> đến <%= s.tet_closed_to.split('-').reverse().join('/') %><% } %>.</li><% } %>
   <li>Khi quà tới tay, Lunar Lucky gửi <strong>ảnh xác nhận</strong> cho người đặt.</li>
 </ul>

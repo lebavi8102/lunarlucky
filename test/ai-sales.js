@@ -47,10 +47,12 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(cod5.ok && (cod5.deposit_text || '').includes(require('../src/lib/format').money(need)), `COD 5 giỏ → AI báo cọc 50% (${cod5.deposit_text})`);
     const d30 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 30 }, req, out);
     ok(d30.earliest_delivery >= todayVN(5) && /5–10 ngày chuẩn bị tùy tình hình thực tế/.test(d30.preparation_note || ''), 'delivery_options: 30 giỏ → sớm nhất sau 5 ngày, báo 5–10 ngày tùy thực tế');
+    const d120 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 120 }, req, out);
+    ok(/xem xét và báo lại thời gian chuẩn bị/.test(d120.preparation_note || ''), 'delivery_options: 120 giỏ → không hứa thời gian, Lunar Lucky xem xét báo lại');
     const d12 = await ai.runTool('delivery_options', { province: 'Hà Nội', qty: 12 }, req, out);
     ok(d12.earliest_delivery < todayVN(5) && /2–3 ngày/.test(d12.preparation_note || ''), 'delivery_options: 12 giỏ → 2–3 ngày');
     const sysNow = await ai.systemPrompt();
-    ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: 2–3 ngày; từ 21 giỏ: 5–10 ngày tùy tình hình thực tế/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
+    ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: cần 2–3 ngày chuẩn bị; 21–99 giỏ: cần 5–10 ngày chuẩn bị tùy tình hình thực tế; từ 100 giỏ: Lunar Lucky sẽ xem xét và báo lại/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 
     // Vòng chat với Claude giả lập: gọi search_products rồi trả lời
     const calls = [];

@@ -8,11 +8,7 @@ const payment = require('./payment');
 function faq(s = {}) {
   const fee = money(Number(s.shipping_fee) || 0);
   const free = money(Number(s.free_ship_threshold) || 0);
-  const tiers = require('../routes/checkout').bulkTiers(s);
-  const bulkText = tiers.map((t, i) => {
-    const nx = tiers[i + 1];
-    return `đơn ${nx ? `${t.qty}–${nx.qty - 1}` : `từ ${t.qty}`} giỏ cần ${t.maxDays > t.days ? `${t.days}–${t.maxDays}` : t.days} ngày chuẩn bị${nx ? '' : ' (tùy tình hình thực tế)'}`;
-  }).join('; ');
+  const bulkText = require('../routes/checkout').bulkTierList(s).map((b) => `đơn ${b.range} giỏ: ${b.text}`).join('; ');
   const vn = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? `${d.slice(8)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : '');
   const deadline = vn(s.order_deadline);
   const tet = s.tet_closed_from && s.tet_closed_to ? `Lunar Lucky nghỉ giao hàng từ ${vn(s.tet_closed_from)} đến ${vn(s.tet_closed_to)}.` : '';

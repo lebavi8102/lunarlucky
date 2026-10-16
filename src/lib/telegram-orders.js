@@ -43,6 +43,12 @@ async function opsNotes(order) {
       notes.push(`🚛 <b>Ngoài Hà Nội</b> · gửi chuyển phát <b>muộn nhất ${d.toISOString().slice(0, 10).split('-').reverse().join('/')}</b>`);
     }
   }
+  // Đơn nhiều giỏ ở mức "xem xét rồi báo lại" (mặc định từ 100 giỏ) → nhắc gọi khách chốt thời gian chuẩn bị
+  if (order.status === 'new' || order.status === 'confirmed') {
+    const qty = (await db('order_items').where({ order_id: order.id }).sum({ n: 'qty' }).first() || {}).n;
+    const t = require('../routes/checkout').bulkRule(await settings.all(), Number(qty) || 0);
+    if (t && t.kind === 'review') notes.push(`📞 <b>Đơn ${Number(qty)} giỏ</b> — chưa hứa thời gian chuẩn bị: gọi khách báo lại thời gian và chốt ngày giao`);
+  }
   const tail = String(order.phone || '').replace(/\D/g, '').slice(-9);
   if (tail.length === 9) {
     const others = await db('orders').where('phone', 'like', `%${tail}`).whereNot('id', order.id).select('id', 'code', 'status', 'created_at');

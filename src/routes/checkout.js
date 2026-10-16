@@ -40,17 +40,23 @@ function rememberOrder(req, code) {
 /** Hà Nội giao sớm (Ahamove/tự giao); tỉnh khác đi chuyển phát 2–4 ngày → ngày giao sớm nhất muộn hơn. */
 const isHanoi = (province) => /hà nội/i.test(String(province || '').normalize('NFC'));
 /**
- * Đơn nhiều giỏ cần thời gian chuẩn bị → ngày giao sớm nhất lùi lại. 2 mức (Cài đặt):
- * mức 1 (mặc định từ 5 giỏ): 2–3 ngày · mức 2 (mặc định từ 21 giỏ): 5–10 ngày tùy tình hình thực tế.
+ * Đơn nhiều giỏ cần thời gian chuẩn bị → ngày giao sớm nhất lùi lại. 3 mức (Cài đặt):
+ * mức 1 (mặc định 5–20 giỏ): 2–3 ngày · mức 2 (21–99): 5–10 ngày tùy tình hình thực tế
+ * · mức 3 (từ 100): Lunar Lucky xem xét rồi báo lại thời gian chuẩn bị.
  * days = số ngày tối thiểu (chặn chọn ngày sớm hơn), maxDays = để báo khách khoảng thời gian.
  */
 function bulkTiers(s) {
   const n = (v, d) => (Number.isFinite(Number(v)) && String(v).trim() !== '' ? Number(v) : d);
-  const t1 = { qty: n(s.bulk_min_qty, 5) || 5, days: n(s.bulk_min_days, 2) || 2 };
+  const t1 = { qty: n(s.bulk_min_qty, 5) || 5, days: n(s.bulk_min_days, 2) || 2, kind: 'fixed' };
   t1.maxDays = Math.max(t1.days, n(s.bulk_max_days, 3));
-  const t2 = { qty: n(s.bulk2_min_qty, 21), days: n(s.bulk2_min_days, 5) };
+  const tiers = [t1];
+  const t2 = { qty: n(s.bulk2_min_qty, 21), days: n(s.bulk2_min_days, 5), kind: 'estimate' };
   t2.maxDays = Math.max(t2.days, n(s.bulk2_max_days, 10));
-  return t2.qty > t1.qty && t2.days > 0 ? [t1, t2] : [t1];
+  if (t2.qty > t1.qty && t2.days > 0) tiers.push(t2);
+  const last = tiers[tiers.length - 1];
+  const t3 = { qty: n(s.bulk3_min_qty, 100), days: last.days, maxDays: last.maxDays, kind: 'review' };
+  if (t3.qty > last.qty) tiers.push(t3);
+  return tiers;
 }
 /** Mức áp dụng cho số giỏ; không truyền qty → mức 1 (để mô tả quy định). */
 function bulkRule(s, qty) {
@@ -59,13 +65,22 @@ function bulkRule(s, qty) {
   return tiers.filter((t) => qty >= t.qty).pop() || null;
 }
 const daysText = (t) => (t.maxDays > t.days ? `${t.days}–${t.maxDays}` : `${t.days}`);
+/** Mô tả 1 mức: "cần 2–3 ngày chuẩn bị" / "… tùy tình hình thực tế" / "Lunar Lucky xem xét và báo lại …". */
+function tierText(t) {
+  if (t.kind === 'review') return 'Lunar Lucky sẽ xem xét và báo lại thời gian chuẩn bị cụ thể';
+  return `cần ${daysText(t)} ngày chuẩn bị${t.kind === 'estimate' ? ' tùy tình hình thực tế' : ''}`;
+}
+/** Danh sách mức kèm khoảng số giỏ: [{ range: '5–20', text, tier }] — dùng cho FAQ, chính sách, AI. */
+function bulkTierList(s) {
+  const tiers = bulkTiers(s);
+  return tiers.map((t, i) => ({ range: tiers[i + 1] ? `${t.qty}–${tiers[i + 1].qty - 1}` : `từ ${t.qty}`, text: tierText(t), tier: t }));
+}
 /** Câu báo thời gian chuẩn bị cho đơn qty giỏ ('' nếu đơn ít). */
 function bulkNoteFor(s, qty) {
   const t = bulkRule(s, qty);
   if (!t) return '';
-  const tiers = bulkTiers(s);
-  const big = tiers.length > 1 && t.qty === tiers[tiers.length - 1].qty;
-  return `Đơn ${qty} giỏ cần ${daysText(t)} ngày chuẩn bị${big ? ' tùy tình hình thực tế — Lunar Lucky sẽ gọi xác nhận ngày giao cụ thể' : ''}.`;
+  if (t.kind === 'review') return `Đơn ${qty} giỏ: ${tierText(t)} — ngày giao bạn chọn là ngày mong muốn, chuyên viên sẽ gọi xác nhận.`;
+  return `Đơn ${qty} giỏ ${tierText(t)}${t.kind === 'estimate' ? ' — Lunar Lucky sẽ gọi xác nhận ngày giao cụ thể' : ''}.`;
 }
 function minDaysFor(province, s, qty = 0) {
   const hn = Number(s.min_delivery_days) || 1;
@@ -454,6 +469,7 @@ module.exports.dateCtx = dateCtx;
 module.exports.bulkRule = bulkRule;
 module.exports.bulkTiers = bulkTiers;
 module.exports.bulkNoteFor = bulkNoteFor;
+module.exports.bulkTierList = bulkTierList;
 module.exports.minDaysFor = minDaysFor;
 module.exports.isHanoi = isHanoi;
 module.exports.tetClosed = tetClosed;
