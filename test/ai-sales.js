@@ -63,9 +63,25 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
       ok(/đã nhận đủ đơn/.test(pFull.error || ''), 'prepare_order: ngày kín → từ chối');
       await settings.save({ daily_capacity: capBefore || '0' });
     } else ok(true, '(bỏ qua kiểm tra ngày kín: chưa có đơn nào)');
+    // Voucher riêng: chưa cài → không tặng; có mã → tặng, prepare_order tự trừ; mã lạ khách đưa → bỏ qua
+    const vBefore = (await settings.all()).ai_voucher_code;
+    await settings.save({ ai_voucher_code: '' });
+    const v0 = await ai.runTool('give_voucher', { reason: 'thử' }, req, out);
+    await db('coupons').where({ code: 'AITEST5' }).del();
+    await db('coupons').insert({ code: 'AITEST5', type: 'percent', value: 5, min_order: 0, is_active: true });
+    await settings.save({ ai_voucher_code: 'AITEST5' });
+    const v1 = await ai.runTool('give_voucher', { reason: 'khách mặc cả lần 2' }, req, out);
+    const base = { items: [{ product_id: prod.id, qty: 1 }], customer_name: 'A', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: todayVN(3), payment_method: 'bank' };
+    const withV = await ai.runTool('prepare_order', { ...base, coupon_code: 'aitest5' }, { session: {} }, {});
+    const fake = await ai.runTool('prepare_order', { ...base, coupon_code: 'GIAMSAU50' }, { session: {} }, {});
+    ok(v0.error && v1.code === 'AITEST5' && /giảm 5%/.test(v1.discount_text) && /Đã trừ voucher AITEST5/.test(withV.voucher || '') && withV.total < fake.total && !fake.voucher,
+      'Voucher: chưa cài thì không tặng; có mã thì tặng và tự trừ vào đơn; mã lạ khách tự đưa bị bỏ qua');
+    await db('coupons').where({ code: 'AITEST5' }).del();
+    await settings.save({ ai_voucher_code: vBefore || '' });
     const sysNow = await ai.systemPrompt();
     ok(/CẨM NANG CHỐT KHÁCH/.test(sysNow) && /KHÔNG giảm giá/.test(sysNow) && /không bịa "sắp hết"/.test(sysNow), 'Lời dặn có cẩm nang chốt khách khó (không giảm giá, không bịa khan hiếm)');
     ok(/hóa đơn khống[\s\S]{0,300}chuyển chuyên viên NGAY/.test(sysNow), 'Khách đòi hóa đơn khống / VAT khác giá → chuyển chuyên viên ngay');
+    ok(/mô hình bán hàng online kết hợp giao hàng tận nơi/.test(sysNow) && /cung cấp hình ảnh, video thực tế/.test(sysNow) && /trải nghiệm chưa được như mong đợi/.test(sysNow), 'Lời dặn có câu mẫu của chủ shop: showroom, sợ chuyển khoản, khách gắt');
     ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: cần 2–3 ngày chuẩn bị; 21–99 giỏ: cần 5–10 ngày chuẩn bị tùy tình hình thực tế; từ 100 giỏ: Lunar Lucky sẽ xem xét và báo lại/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 
     // Vòng chat với Claude giả lập: gọi search_products rồi trả lời

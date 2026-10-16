@@ -291,6 +291,7 @@ const SETTING_GROUPS = [
     ['ai_daily_limit', 'Giới hạn số tin AI trả lời mỗi ngày (chống spam, chống tốn tiền)'],
     ['messenger_ai_enabled', 'AI trả lời tin nhắn Fanpage (Messenger) — 1 = bật, 0 = tắt (cần FB_PAGE_TOKEN, FB_APP_SECRET trên Render)'],
     ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],
+    ['ai_voucher_code', 'Voucher AI được tặng khi khách mặc cả nhiều lần / so sánh giá (nhập MÃ đã tạo ở mục Mã giảm giá; để trống = AI không tặng voucher)'],
     ['ai_escalate_qty', 'AI chuyển chủ shop khi đơn từ bao nhiêu giỏ (ca lớn)'],
     ['ai_escalate_value', 'AI chuyển chủ shop khi tổng tiền từ (₫)'],
     ['ai_learn', 'AI tự rút bài học mỗi tối từ cách nhân viên tư vấn trên Fanpage (chờ duyệt ở mục "AI học tư vấn") — 1 = bật, 0 = tắt'],

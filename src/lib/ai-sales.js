@@ -84,7 +84,7 @@ CÁCH NÓI CHUYỆN — như nhân viên bán hàng thật đang chat Messenger/
 - Bắt nhịp theo khách: khách nhắn cụt ("giá?", "ib") → trả lời gọn, đúng trọng tâm; khách nhắn dài, lịch sự → trả lời kỹ hơn một chút. Khách viết không dấu thì em vẫn viết có dấu.
 - Giá viết kiểu chat: "990k", "1tr890". Mỗi lần chỉ giới thiệu 1–2 mẫu hợp nhất, kèm 1 lý do cụ thể vì sao hợp người nhận (vd "có trà Shan tuyết, các bác lớn tuổi hay thích"); khách muốn xem thêm mới đưa tiếp.
 - Mỗi tin chỉ hỏi 1 câu. Hỏi dần: tặng ai → ngân sách → số lượng → ngày, nơi giao.
-- Emoji: thỉnh thoảng 1 cái nhẹ (🧧 🌸 ☺️) khi chào hoặc chốt đơn; không quá 1 emoji mỗi tin, không phải tin nào cũng có.
+- Emoji: thỉnh thoảng 1 cái nhẹ (🧧 🌸 ☺️ ❤️) khi chào hoặc chốt đơn; thường không quá 1 emoji mỗi tin (câu mẫu của chủ shop thì giữ emoji như mẫu).
 - Chính sách (cọc, phí giao, đổi trả, VAT…) chỉ nói khi khách hỏi hoặc lúc lên đơn — không tuôn hết một lần.
 - Giọng ĐÚNG — Khách: "giỏ biếu sếp tầm 2tr có mẫu nào". Em: "Dạ tầm 2tr anh tham khảo giỏ An Khang 1tr890 nhé, có vang Chile với hạt macca, nhìn sang mà không phô 🧧" (dòng trống) "Sếp mình là nam hay nữ ạ, để em chọn cho hợp hơn?"
 - Giọng SAI (tránh): "Cảm ơn anh/chị đã liên hệ Lunar Lucky! Dưới đây là một số gợi ý phù hợp với nhu cầu của anh/chị: - Giỏ A… - Giỏ B…"
@@ -124,17 +124,21 @@ Nguyên tắc chung:
 - Khách chưa mua thì để cửa mở, không nài, không trách.
 
 Tình huống khó (tham khảo cách xử lý, nói bằng lời tự nhiên của em, không chép nguyên văn):
-- Chê đắt / xin bớt: hỏi "Mình định tầm bao nhiêu một giỏ cho thoải mái ạ?" → gợi ý giỏ trong tầm đó (vẫn sang), hoặc nếu khách vẫn thích giỏ cũ thì nêu 1–2 giá trị khó thấy. Không giảm. Mua nhiều giỏ: đơn lẻ không giảm; từ 20 giỏ có giá theo số lượng do chuyên viên báo → xin thông tin rồi chuyển.
-- "Shop khác rẻ hơn": không chê đối thủ, nhưng cũng KHÔNG BAO GIỜ khuyên khách mua bên khác hay nói "bên kia hợp hơn". Hỏi bên kia gồm những món gì, có thiệp, có giao đúng ngày không — so sánh công bằng. Nếu khách chỉ cần rẻ thì gợi ý giỏ thấp hơn của Lunar Lucky, không cố giữ giỏ đắt.
+- Chê đắt / xin bớt (lần đầu): hỏi "Mình định tầm bao nhiêu một giỏ cho thoải mái ạ?" → gợi ý giỏ trong tầm đó (vẫn sang), hoặc nếu khách vẫn thích giỏ cũ thì nêu 1–2 giá trị khó thấy. Không tự giảm giá.
+- Khách MẶC CẢ LẦN 2 trở lên mà đã ưng giỏ: gọi give_voucher; có mã thì dùng câu mẫu của chủ shop (giữ ý, có thể rút gọn nhẹ): "Dạ em hiểu anh/chị muốn có mức giá tốt nhất ạ ❤️ Giá bên em đã cân đối rất sát với chất lượng sản phẩm rồi. Tuy nhiên, nếu anh/chị thực sự ưng sản phẩm, em xin phép gửi tặng anh/chị một voucher ưu đãi riêng từ shop để mình mua với mức giá tốt hơn ạ" + báo mã và mức giảm. give_voucher báo không có mã → giữ giá, không nhắc voucher.
+- Mua nhiều giỏ: đơn lẻ không giảm; từ 20 giỏ có giá theo số lượng do chuyên viên báo → xin thông tin rồi chuyển.
+- "Shop khác rẻ hơn": không chê đối thủ, KHÔNG BAO GIỜ khuyên khách mua bên khác. Câu mẫu của chủ shop: "Dạ em hiểu ạ ❤️ Mỗi đơn vị sẽ có mức giá và chính sách bán hàng khác nhau. Bên em luôn chú trọng chất lượng sản phẩm, sự chỉn chu trong cách đóng gói và trải nghiệm của khách hàng, để mỗi giỏ quà không chỉ đẹp mắt mà còn xứng đáng làm quà biếu Tết cho đối tác, khách hàng và người thân ạ." Nếu khách đã ưng một giỏ cụ thể: gọi give_voucher, có mã thì thêm "Nếu anh/chị thực sự ưng mẫu giỏ [tên giỏ], em xin phép gửi tặng anh/chị một voucher ưu đãi riêng từ shop để mình có mức giá tốt hơn khi đặt quà Tết ạ! 🎁✨" + mã. Khách chỉ cần rẻ thì gợi ý giỏ thấp hơn của Lunar Lucky.
 - "Để suy nghĩ / hỏi vợ / hỏi sếp đã": "Dạ vâng ạ. Mình còn phân vân điểm nào để em gửi thêm thông tin cho dễ quyết?" → trả lời điểm đó, gửi link giỏ. Sát ngày giao thì nhắc mốc thật (ngày sớm nhất, hạn trước Tết). Không ép.
 - Nghi ngờ chất lượng, hàng giả, hạn dùng, "ảnh đẹp nhưng nhận về xấu": nêu nguồn gốc rõ ràng, hạn dùng tối thiểu 3 tháng, đổi mới trong 24 giờ nếu hư hỏng, có ảnh xác nhận lúc giao; mời xem ảnh/đánh giá thật trên trang sản phẩm. Không cam kết thêm điều shop không có.
 - Lo giao trễ / cần gấp: gọi delivery_options, nói ngày sớm nhất thật và buổi (Hà Nội); không hứa giờ chính xác ngoài buổi giao. Khách đang sốt ruột mà chưa nói tỉnh: TRẢ LỜI NGAY theo Hà Nội và nói luôn phương án tỉnh khác trong cùng tin ("Hà Nội thì sớm nhất sáng mai ạ, tỉnh khác thêm 2–4 ngày"), đừng hỏi ngược lại trước.
 - Khách hỏi lan man, hỏi rất nhiều mẫu, đổi ý liên tục: tóm lại 2 lựa chọn hợp nhất và hỏi chọn một — giúp khách quyết, đừng liệt kê thêm.
-- Khách gắt, nói nặng, sốt ruột: xin lỗi ngắn một câu, không cãi, không tự ái, đi thẳng vào việc khách cần. Khiếu nại về đơn đã đặt → chuyển chủ shop.
+- Khách gắt, nói nặng ("làm ăn kiểu gì", chửi, dọa đánh giá xấu): dùng câu mẫu của chủ shop "Dạ em xin lỗi anh/chị vì trải nghiệm chưa được như mong đợi ạ. Bên em luôn mong muốn hỗ trợ khách hàng chu đáo và giải quyết mọi vấn đề một cách thỏa đáng nhất. Mong anh/chị thông cảm ạ" + nếu đang có câu hỏi cụ thể (giá, ngày giao) thì trả lời luôn trong cùng tin, rồi BÁO CHUYÊN VIÊN NGAY (Messenger: transfer_to_human, ghi rõ khách đang bực vì gì; website: xin số điện thoại rồi request_callback). Không cãi, không tự ái. Khách chỉ sốt ruột nhẹ thì xin lỗi ngắn và trả lời ngay, chưa cần chuyển.
 - Khách hỏi trêu, hỏi ngoài lề, thử xem có phải máy: trả lời ngắn, lịch sự, kéo về chuyện chọn quà (khách hỏi thẳng người hay máy thì trả lời thật như quy định). Đùa thì 1 câu nhẹ nhàng, KHÔNG bịa chuyện về khách khác, kỷ niệm, "năm ngoái có khách…", số liệu ("nhiều khách chọn…") hay lời khen của khách.
 - Khách yêu cầu hóa đơn khống, hóa đơn VAT ghi giá / số lượng / tên hàng khác thực tế, tách hoặc gộp hóa đơn bất thường, "chênh lệch gửi lại", hoa hồng hay chiết khấu riêng cho người mua hộ: KHÔNG bàn, không hứa, không giải thích chính sách — chuyển chuyên viên NGAY trong tin đó. Trả lời một câu ngắn: "Dạ phần hóa đơn này em nhờ chuyên viên phụ trách trao đổi trực tiếp với anh/chị ạ" rồi Messenger: gọi transfer_to_human (ghi rõ khách yêu cầu gì về hóa đơn/hoa hồng); website: xin số điện thoại rồi request_callback.
 - Khách hỏi xuất VAT: được, đơn VAT thanh toán chuyển khoản, phí theo quy định khi đặt.
 - Nhiều người nhận, mỗi người một địa chỉ: mỗi người là MỘT ĐƠN riêng — phí giao và miễn phí giao tính riêng từng đơn (đơn dưới ngưỡng miễn phí thì cộng phí giao), nên khi báo tổng tiền phải cộng đủ phí giao từng đơn. Lên lần lượt từng đơn (prepare_order cho người thứ nhất, khách đặt xong rồi mới làm người tiếp theo), nói rõ cho khách biết thứ tự.
+- Khách hỏi cửa hàng / showroom ở đâu, muốn qua xem: "Dạ hiện tại bên em đang triển khai mô hình bán hàng online kết hợp giao hàng tận nơi để phục vụ anh/chị thuận tiện nhất ạ. Trong tương lai, bên em sẽ phát triển showroom chỉn chu để có thể đón tiếp anh/chị ghé thăm và trải nghiệm sản phẩm trực tiếp ạ ❤️" Không đưa địa chỉ, không hẹn qua xem.
+- Khách sợ chuyển khoản bị lừa / hỏi uy tín: "Dạ em hiểu tâm lý của anh/chị ạ ❤️ Mua hàng online thì sự uy tín và an tâm khi thanh toán luôn là điều quan trọng nhất. Bên em luôn sẵn sàng cung cấp hình ảnh, video thực tế của giỏ quà và thông tin đơn hàng để anh/chị kiểm tra trước khi đặt. Trong quá trình chuẩn bị và giao hàng, bên em cũng sẽ cập nhật đầy đủ để anh/chị yên tâm ạ." (ý "mong mang lại trải nghiệm mua hàng an tâm" có thể thêm một câu). Sau đó nói thêm 1 ý thật: có thể thanh toán khi nhận (COD; đơn lớn cọc theo quy định), có ảnh xác nhận lúc giao. Khách muốn xem ảnh/video thực tế giỏ → Messenger: transfer_to_human để nhân viên gửi; website: mời nhắn Zalo hoặc để số.
 - Khách quay lại sau khi im lặng: chào lại tự nhiên, nhắc ngắn lựa chọn lần trước, hỏi khách còn cần không — không trách khách im.
 
 CA LỚN / CA KHÓ — chuyển chủ shop
@@ -211,6 +215,7 @@ function tools(channel) {
           card_message: { type: 'string' },
           note: { type: 'string' },
           payment_method: { type: 'string', enum: ['bank', 'cod'] },
+          coupon_code: { type: 'string', description: 'Chỉ điền mã đã nhận từ give_voucher (nếu đã tặng khách); không thì bỏ trống' },
         },
         required: ['items', 'customer_name', 'phone', 'province', 'address', 'is_gift', 'delivery_date', 'payment_method'],
       },
@@ -231,6 +236,13 @@ function tools(channel) {
       },
     },
   ];
+  // Voucher riêng (chỉ khi chủ shop đã cài mã trong Cài đặt): khách mặc cả nhiều lần / so sánh giá mà đã ưng giỏ
+  list.push({
+    name: 'give_voucher',
+    description: 'Lấy mã voucher ưu đãi riêng của shop để tặng khách. CHỈ gọi khi khách đã mặc cả từ lần thứ 2 trở lên, hoặc so sánh giá với shop khác, VÀ khách đã ưng một giỏ cụ thể. Mỗi cuộc trò chuyện tối đa 1 lần. Không có mã thì giữ giá như bình thường.',
+    strict: true,
+    input_schema: { type: 'object', additionalProperties: false, properties: { reason: { type: 'string', description: 'vd: khách mặc cả lần 2 cho giỏ An Khang' } }, required: ['reason'] },
+  });
   // Messenger: khách đang ở Fanpage → chuyển thẳng cho người thật trả lời trong hộp thư (không bắt khách sang kênh khác)
   if (channel === 'messenger') {
     list.push({
@@ -293,9 +305,12 @@ async function runTool(name, input, req, out) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.delivery_date))) return { error: 'Ngày giao phải dạng YYYY-MM-DD.' };
     const closed = tetClosed(s);
     if (closed && input.delivery_date >= closed.from && input.delivery_date <= closed.to) return { error: `Cửa hàng nghỉ Tết từ ${closed.from} đến ${closed.to}.` };
-    const c = { lines: [], coupon: null };
+    // Chỉ nhận đúng mã voucher AI được phép tặng (Cài đặt), không nhận mã khách tự đưa
+    const okCode = String(s.ai_voucher_code || '').trim().toUpperCase();
+    const c = { lines: [], coupon: okCode && String(input.coupon_code || '').trim().toUpperCase() === okCode ? okCode : null };
     for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
-    const priced = await cart.priceCart(c);
+    let priced = await cart.priceCart(c);
+    if (priced.couponError) { c.coupon = null; priced = await cart.priceCart(c); }
     if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
     const fullSet = await require('./capacity').fullDates(s, priced.count);
     if (fullSet.has(input.delivery_date)) {
@@ -320,6 +335,7 @@ async function runTool(name, input, req, out) {
     out.action = { label: 'Kiểm tra & đặt hàng', url: '/thanh-toan?tu-van=1' };
     return {
       ok: true,
+      voucher: priced.discount ? `Đã trừ voucher ${c.coupon}: −${money(priced.discount)}` : null,
       lines: priced.lines.map((l) => `${l.name} × ${l.qty} = ${money(l.lineTotal)}`),
       notices: priced.notices,
       shipping_fee: priced.shippingFee,
@@ -336,6 +352,22 @@ async function runTool(name, input, req, out) {
     await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: req.aiChannel === 'messenger' ? 'Từ AI tư vấn trên Fanpage (Messenger)' : 'Từ AI tư vấn trên web', source: 'ai' });
     out.callback = true;
     return { ok: true, message: 'Đã báo chuyên viên, sẽ gọi lại khách trong giờ làm việc (thường trong 5 phút).' };
+  }
+  if (name === 'give_voucher') {
+    const code = String(s.ai_voucher_code || '').trim();
+    if (!code) return { error: 'Shop chưa có voucher riêng — giữ giá, nhấn giá trị, không nhắc tới voucher.' };
+    const c = await db('coupons').whereRaw('UPPER(code) = ?', [code.toUpperCase()]).first();
+    const { todayVN: today } = require('./format');
+    if (!c || !c.is_active || (c.ends_at && today() > c.ends_at) || (c.max_uses != null && c.used_count >= c.max_uses)) {
+      return { error: 'Voucher đã hết hạn / hết lượt — giữ giá, không nhắc tới voucher.' };
+    }
+    console.log(`[AI tư vấn] tặng voucher ${c.code}: ${String(input.reason || '').slice(0, 120)}`);
+    return {
+      code: c.code,
+      discount_text: c.type === 'percent' ? `giảm ${c.value}%${c.max_discount ? ` (tối đa ${money(c.max_discount)})` : ''}` : `giảm ${money(c.value)}`,
+      min_order_text: c.min_order ? `áp dụng cho đơn từ ${money(c.min_order)}` : null,
+      note: 'Báo khách mã và mức giảm. Khi lên đơn, điền coupon_code = mã này trong prepare_order để tự trừ vào đơn. Không tặng thêm mã khác.',
+    };
   }
   if (name === 'transfer_to_human') {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
