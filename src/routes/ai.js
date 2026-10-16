@@ -17,6 +17,18 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   res.set('Cache-Control', 'no-store').json(r);
 });
 
+// Link "Kiểm tra & đặt hàng" AI gửi qua Messenger → bỏ giỏ + điền sẵn thông tin vào phiên trên web
+router.get('/tu-van/don/:token', async (req, res) => {
+  const h = await require('../lib/messenger').loadHandoff(req.params.token);
+  if (!h || !h.cart) {
+    req.session.flash = { type: 'error', message: 'Link đặt hàng đã hết hạn. Anh/chị nhắn lại Fanpage để em gửi link mới nhé!' };
+    return res.redirect('/gio-hang');
+  }
+  req.session.cart = h.cart;
+  req.session.aiPrefill = h.prefill;
+  res.redirect('/thanh-toan?tu-van=1');
+});
+
 router.post('/tu-van/moi', (req, res) => {
   delete req.session.aiChat;
   res.json({ ok: true });

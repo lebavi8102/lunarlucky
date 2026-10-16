@@ -55,6 +55,8 @@ const DEFAULTS = {
   ops_digest: '1',
   // AI tư vấn bán hàng (cần ANTHROPIC_API_KEY trên Render)
   ai_chat_enabled: '1',
+  messenger_ai_enabled: '1',
+  messenger_pause_hours: '12',
   ai_model: 'claude-opus-5-5',
   ai_daily_limit: '500',
   backup_email: '1',

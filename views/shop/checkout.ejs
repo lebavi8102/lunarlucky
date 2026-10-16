@@ -26,7 +26,7 @@
       <span><b>Đang đặt hộ khách</b> (bạn đăng nhập quản trị). Điền thông tin của <b>khách</b>; đơn tự về Telegram như khách tự đặt.</span>
       <label style="display:flex;gap:8px;align-items:center;margin-left:auto"><span class="small">Khách nhắn qua</span>
         <select class="select" name="order_source" style="width:auto;min-height:40px">
-          <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web' && k !== 'ai').forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
+          <% Object.entries(fmt.SOURCES).filter(([k]) => k !== 'web' && !k.startsWith('ai')).forEach(([k, v]) => { %><option value="<%= k %>" <%= (values.order_source || 'zalo') === k ? 'selected' : '' %>><%= v %></option><% }) %>
         </select></label>
       <div class="staff-adjust">
         <label><span class="small">Điều chỉnh giá (đổi món)</span>

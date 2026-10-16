@@ -266,6 +266,8 @@ const SETTING_GROUPS = [
     ['ai_chat_enabled', 'AI tư vấn bán hàng trên web — 1 = bật, 0 = tắt (cần khóa ANTHROPIC_API_KEY trên Render)'],
     ['ai_model', 'Mô hình AI tư vấn (claude-opus-5-5: tư vấn tốt nhất · claude-haiku-5-5: rẻ hơn nhiều)'],
     ['ai_daily_limit', 'Giới hạn số tin AI trả lời mỗi ngày (chống spam, chống tốn tiền)'],
+    ['messenger_ai_enabled', 'AI trả lời tin nhắn Fanpage (Messenger) — 1 = bật, 0 = tắt (cần FB_PAGE_TOKEN, FB_APP_SECRET trên Render)'],
+    ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],
     ['ops_digest', 'Bot tự nhắc việc: tin sáng (việc hôm nay), nhắc đơn quá 2 giờ chưa xác nhận, tin tối (chốt ngày + tiền COD) — 1 = bật, 0 = tắt'],
     ['backup_email', 'Tự gửi file sao lưu Excel vào email cửa hàng lúc 23h mỗi ngày — 1 = bật, 0 = tắt'],
     ['ops_morning_hour', 'Giờ gửi tin sáng (0–23)'], ['ops_evening_hour', 'Giờ gửi tin chốt ngày (0–23)'],

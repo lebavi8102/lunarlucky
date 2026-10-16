@@ -86,7 +86,7 @@ function truncate(s, n) {
 }
 
 /** Kênh khách đến / kênh chốt đơn. */
-const SOURCES = { web: 'Website', ai: 'AI tư vấn', facebook: 'Facebook', zalo: 'Zalo', instagram: 'Instagram', tiktok: 'TikTok', phone: 'Điện thoại', other: 'Khác' };
+const SOURCES = { web: 'Website', ai: 'AI tư vấn', ai_fb: 'AI Fanpage', facebook: 'Facebook', zalo: 'Zalo', instagram: 'Instagram', tiktok: 'TikTok', phone: 'Điện thoại', other: 'Khác' };
 const sourceLabel = (s) => SOURCES[s] || SOURCES.web;
 
 /** Buổi giao (Hà Nội). */

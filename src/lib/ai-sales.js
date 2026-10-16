@@ -254,7 +254,7 @@ async function runTool(name, input, req, out) {
   }
   if (name === 'request_callback') {
     if (!validPhone(input.phone)) return { error: 'Số điện thoại chưa đúng — hỏi lại khách.' };
-    await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: 'Từ AI tư vấn trên web', source: 'ai' });
+    await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: req.aiChannel === 'messenger' ? 'Từ AI tư vấn trên Fanpage (Messenger)' : 'Từ AI tư vấn trên web', source: 'ai' });
     out.callback = true;
     return { ok: true, message: 'Đã báo chuyên viên, sẽ gọi lại khách trong giờ làm việc (thường trong 5 phút).' };
   }
@@ -262,7 +262,12 @@ async function runTool(name, input, req, out) {
 }
 
 /** 1 lượt chat: nhận tin khách, chạy vòng công cụ, trả lời. Lịch sử nằm trong session (chỉ nối thêm, không sửa). */
-async function chat(req, text) {
+// Thêm vào lời dặn khi chat qua Messenger (để riêng, sau phần lời dặn chung đã lưu đệm)
+const CHANNEL_NOTES = {
+  messenger: 'Kênh hiện tại: Facebook Messenger (Fanpage). Không dùng **in đậm** hay markdown — chỉ chữ thường, xuống dòng, gạch đầu dòng "-". Link sản phẩm ghi dạng /san-pham/... (hệ thống tự đổi thành link đầy đủ). Sau prepare_order, hệ thống tự gửi nút "Kiểm tra & đặt hàng" ngay dưới tin của em. Khách muốn gặp người thật thì bảo khách nhắn "gặp nhân viên".',
+};
+
+async function chat(req, text, opts = {}) {
   const s = await settings.all();
   if (!enabled(s)) return { reply: 'Tư vấn tự động đang tạm nghỉ. Anh/chị nhắn Zalo giúp em nhé!', off: true };
   if (!underDailyLimit(s)) return { reply: `Hôm nay em nhận nhiều tin quá, anh/chị nhắn Zalo hoặc gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, off: true };
@@ -275,6 +280,8 @@ async function chat(req, text) {
   const before = history.length;
   history.push({ role: 'user', content: String(text).slice(0, 800) });
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
+  if (CHANNEL_NOTES[opts.channel]) system.push({ type: 'text', text: CHANNEL_NOTES[opts.channel] });
+  req.aiChannel = opts.channel || 'web';
   const toolDefs = tools();
   const out = {};
   let reply = '';

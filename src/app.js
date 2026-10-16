@@ -99,7 +99,7 @@ app.get('/media/:id', async (req, res, next) => {
 });
 
 app.use(express.urlencoded({ extended: false, limit: '200kb' }));
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.url.startsWith('/messenger/')) req.rawBody = buf; } }));
 
 // Webhook Telegram: nút xử lý đơn trong nhóm. Đặt trước session/CSRF vì Telegram gọi trực tiếp.
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/img/apple-touch-icon.png'));
@@ -109,6 +109,19 @@ app.post('/telegram/webhook', (req, res) => {
   if (req.get('x-telegram-bot-api-secret-token') !== tg.webhookSecret()) return res.status(403).end();
   res.sendStatus(200);
   tg.handleUpdate(req.body || {}).catch((err) => console.error('[telegram] webhook lỗi:', err.message));
+});
+
+// Webhook Messenger: khách nhắn Fanpage → AI tư vấn trả lời. Đặt trước session/CSRF vì Facebook gọi trực tiếp.
+app.get('/messenger/webhook', (req, res) => {
+  const challenge = require('./lib/messenger').verifyChallenge(req.query);
+  if (challenge === null) return res.status(403).end();
+  res.type('text/plain').send(challenge);
+});
+app.post('/messenger/webhook', (req, res) => {
+  const m = require('./lib/messenger');
+  if (!m.verifySignature(req.rawBody, req.get('x-hub-signature-256'))) return res.status(403).end();
+  res.sendStatus(200); // trả lời Facebook ngay, AI xử lý sau (có thể mất vài giây)
+  m.handleWebhook(req.body);
 });
 
 // Webhook SePay: báo tiền vào tài khoản → tự xác nhận đơn chuyển khoản. Đặt trước session/CSRF.

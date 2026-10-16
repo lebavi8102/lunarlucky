@@ -236,7 +236,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     code: newCode(),
     user_id: req.session.user && !isStaff(req) ? req.session.user.id : null,
     // Kênh: nhân viên chọn khi đặt hộ; khách tự đặt → kênh khách đến (link ?nguon=, Facebook, Zalo…)
-    source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.aiPrefill ? 'ai' : req.session.source || 'web',
+    source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.aiPrefill ? (req.session.aiPrefill.source === 'ai_fb' ? 'ai_fb' : 'ai') : req.session.source || 'web',
     created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
