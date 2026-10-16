@@ -64,6 +64,7 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
       await settings.save({ daily_capacity: capBefore || '0' });
     } else ok(true, '(bỏ qua kiểm tra ngày kín: chưa có đơn nào)');
     const sysNow = await ai.systemPrompt();
+    ok(/CẨM NANG CHỐT KHÁCH/.test(sysNow) && /KHÔNG giảm giá/.test(sysNow) && /không bịa "sắp hết"/.test(sysNow), 'Lời dặn có cẩm nang chốt khách khó (không giảm giá, không bịa khan hiếm)');
     ok(/từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ/.test(sysNow) && /5–20 giỏ: cần 2–3 ngày chuẩn bị; 21–99 giỏ: cần 5–10 ngày chuẩn bị tùy tình hình thực tế; từ 100 giỏ: Lunar Lucky sẽ xem xét và báo lại/.test(sysNow) && /Trần Thị Lan → "chị Lan"/.test(sysNow) && /đơn từ 5 giỏ đặt cọc 50%/.test(sysNow), 'Lời dặn AI: in logo đúng mức, nhắc thời gian chuẩn bị đơn nhiều giỏ');
 
     // Vòng chat với Claude giả lập: gọi search_products rồi trả lời
