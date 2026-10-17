@@ -159,6 +159,17 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(c6.system.some((b) => /gọi là chị Lan/.test(b.text)) && !/tin ĐẦU TIÊN/.test(lastUser6), 'Tin sau: AI gọi "chị Lan", không chào/hỏi xưng hô lại');
     await db('messenger_threads').where({ psid: PT }).del();
     await db('conv_log').where({ psid: PT }).del();
+    // Facebook chặn đọc hồ sơ → lấy tên từ danh sách hội thoại; có tên thì AI không hỏi tên / anh hay chị
+    const PN = PSID + 'conv';
+    m._setProfile(async () => null);
+    m._setConversation(async () => ({ link: '', name: 'Lê Bá Vĩ' }));
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PN }, recipient: { id: 'PAGE' }, message: { mid: 'n1', text: 'cần tư vấn' } }] }] });
+    const cn = calls[calls.length - 1];
+    const firstN = cn.messages[0].content;
+    ok((await db('messenger_threads').where({ psid: PN }).first()).name === 'Lê Bá Vĩ' && cn.system.some((b) => /Tên Facebook của khách: Lê Bá Vĩ/.test(b.text)) && /KHÔNG hỏi tên, KHÔNG hỏi anh hay chị/.test(firstN),
+      'Không đọc được hồ sơ → lấy tên từ danh sách hội thoại; AI chào theo tên, không hỏi tên/anh chị');
+    await db('messenger_threads').where({ psid: PN }).del();
+    await db('conv_log').where({ psid: PN }).del();
     const P5 = PSID + 'swap';
     m._resetEchoState();
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P5 }, recipient: { id: 'PAGE' }, message: { text: 'cho chị đổi món trong giỏ' } }] }] });

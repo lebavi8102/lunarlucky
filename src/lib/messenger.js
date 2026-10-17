@@ -152,6 +152,14 @@ async function customerName(psid, row) {
   } catch (err) {
     console.error('[messenger] không lấy được tên khách:', err.message);
   }
+  // Facebook chặn đọc hồ sơ khách (cần Tech Provider) → lấy tên hiển thị trong danh sách hội thoại của Fanpage
+  if (!name) {
+    const c = await fetchConversation(psid).catch(() => null);
+    if (c && c.name) {
+      name = c.name.slice(0, 120);
+      console.log(`[messenger] lấy được tên khách …${String(psid).slice(-4)} từ danh sách hội thoại`);
+    }
+  }
   if (name) await saveThread(psid, { name });
   else nameFail.set(psid, Date.now());
   return name;
