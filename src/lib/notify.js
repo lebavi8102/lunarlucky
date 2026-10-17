@@ -113,22 +113,28 @@ async function telegramChatId() {
  * extra.topic: 'order' (mặc định) | 'stock' — gửi vào đúng chủ đề (Topics) của nhóm nếu đã chọn bằng /chondon, /chonkho.
  */
 async function telegram(html, chatIdOverride, extra = {}) {
-  const chatId = chatIdOverride || (await telegramChatId());
+  let chatId = chatIdOverride || (await telegramChatId());
   const { topic = 'order', ...rest } = extra;
   extra = rest;
+  let sideChat = false; // gửi sang nhóm riêng (CHAT VỚI KHÁCH) chứ không phải nhóm đơn hàng
   if (!chatIdOverride && extra.message_thread_id === undefined) {
     const st = await require('./settings').all();
     // Chủ đề nhắc việc chưa chọn (/chonnhac) → gửi vào chủ đề đơn hàng
     // Tư vấn khách (yêu cầu gọi lại, báo giá doanh nghiệp, khách Fanpage cần người thật): mặc định chủ đề General ("TƯ VẤN KHÁCH"), đổi bằng /chontuvan
     // Báo lỗi hệ thống (AI lỗi…): chủ đề BÁO LỖI (/chonloi); chưa chọn → chủ đề tư vấn khách
     // Khách Fanpage cần gặp nhân viên: chủ đề CHAT VỚI KHÁCH (/chonchat); chưa chọn → chủ đề tư vấn khách
-    const thread = topic === 'error'
+    let thread = topic === 'error'
       ? st.telegram_error_thread || st.telegram_consult_thread || ''
       : topic === 'chat'
       ? st.telegram_chat_thread || st.telegram_consult_thread || ''
       : topic === 'consult'
       ? st.telegram_consult_thread || ''
       : st[`telegram_${topic}_thread`] || (['ops', 'money', 'ship'].includes(topic) ? st.telegram_order_thread : '');
+    if (topic === 'chat' && st.telegram_chat_chat_id) {
+      chatId = st.telegram_chat_chat_id;
+      thread = st.telegram_chat_thread || '';
+      sideChat = true;
+    }
     if (thread) extra.message_thread_id = Number(thread);
   }
   if (!config.telegram.token || !chatId) {
@@ -142,7 +148,7 @@ async function telegram(html, chatIdOverride, extra = {}) {
       return await send(extra);
     } catch (err) {
       // Nhóm đổi mã (lỡ không nhận được tin báo đổi mã qua webhook) → lưu mã mới, gửi lại
-      if (err.migrateTo && !chatIdOverride && !config.telegram.chatId) {
+      if (err.migrateTo && !chatIdOverride && !sideChat && !config.telegram.chatId) {
         chatId2 = err.migrateTo;
         await require('./settings').save({ telegram_chat_id: chatId2, telegram_order_thread: '', telegram_stock_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '', telegram_consult_thread: '', telegram_error_thread: '', telegram_chat_thread: '' });
         console.log(`[telegram] nhóm chuyển mã ${chatId} → ${chatId2}, đã cập nhật`);
@@ -159,6 +165,11 @@ async function telegram(html, chatIdOverride, extra = {}) {
   } catch (err) {
     console.error('[telegram] gửi thất bại:', err.message);
     if (chatIdOverride) throw err;
+    // Nhóm riêng lỗi (bot bị xóa khỏi nhóm…) → gửi về chủ đề tư vấn khách của nhóm đơn hàng để không mất tin
+    if (sideChat) {
+      const { message_thread_id, ...noThread } = extra;
+      return telegram(html, null, { ...noThread, topic: 'consult' });
+    }
     return false;
   }
 }

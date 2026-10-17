@@ -515,6 +515,18 @@ async function handleCommand(msg) {
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
+  // Riêng /chonchat được gõ ở nhóm khác (nhóm CHAT VỚI KHÁCH) — người gõ phải là quản trị viên nhóm đơn hàng
+  if (cmd === 'chonchat' && String(msg.chat.id) !== String(allowed)) {
+    let ok = false;
+    try {
+      const mem = await notify.tgApi('getChatMember', { chat_id: allowed, user_id: msg.from && msg.from.id });
+      ok = ['creator', 'administrator'].includes(mem && mem.status);
+    } catch { ok = false; }
+    if (!ok) return reply(msg, 'Chỉ quản trị viên nhóm đơn hàng Lunar Lucky mới chọn được nhóm này.');
+    if (!msg.is_topic_message || !msg.message_thread_id) return reply(msg, 'Gõ lệnh này <b>bên trong</b> chủ đề Chat với khách.');
+    await settings.save({ telegram_chat_chat_id: String(msg.chat.id), telegram_chat_thread: String(msg.message_thread_id) });
+    return reply(msg, '✅ Từ giờ tin <b>khách Fanpage cần gặp nhân viên</b> (kèm nút mở Pancake) gửi vào chủ đề này.');
+  }
   if (String(msg.chat.id) !== String(allowed)) return;
 
   // Lệnh sửa tồn kho / đổi chủ đề nhận tin: chỉ quản trị viên nhóm (shipper, người ngoài không đụng được)
@@ -527,7 +539,7 @@ async function handleCommand(msg) {
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
   if (cmd === 'chonchat') {
     if (!msg.is_topic_message || !msg.message_thread_id) return reply(msg, 'Gõ lệnh này <b>bên trong</b> chủ đề Chat với khách.');
-    await settings.save({ telegram_chat_thread: String(msg.message_thread_id) });
+    await settings.save({ telegram_chat_chat_id: '', telegram_chat_thread: String(msg.message_thread_id) });
     return reply(msg, '✅ Từ giờ tin <b>khách Fanpage cần gặp nhân viên</b> (kèm nút mở Pancake) gửi vào chủ đề này.');
   }
   if (cmd === 'chonloi') {

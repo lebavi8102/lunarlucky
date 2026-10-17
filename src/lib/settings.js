@@ -18,6 +18,7 @@ const DEFAULTS = {
   telegram_consult_thread: '',
   telegram_error_thread: '',
   telegram_chat_thread: '',
+  telegram_chat_chat_id: '', // nhóm riêng cho khách Fanpage cần gặp nhân viên (trống = nhóm đơn hàng)
   shop_tagline: 'Luxury Gifts & Hampers',
   shop_phone: '096 900 09 10',
   shop_email: 'lunarlucky.cskh@gmail.com',

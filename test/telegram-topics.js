@@ -100,6 +100,19 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   await notify.telegram('khách cần người', null, { topic: 'chat' });
   ok(lastSend()?.body.message_thread_id === 6, '/chonchat → khách cần gặp nhân viên vào chủ đề CHAT VỚI KHÁCH');
+  // Nhóm riêng: người không phải quản trị nhóm đơn hàng → bị từ chối; quản trị → chọn được, tin gửi sang nhóm đó
+  const OTHER = -100555;
+  sent.length = 0;
+  await tg.handleUpdate(msg('/chonchat', { chat: { id: OTHER, type: 'supergroup' }, from: { id: 777, first_name: 'Shipper' }, is_topic_message: true, message_thread_id: 6 }));
+  ok(!(await settings.all()).telegram_chat_chat_id, 'Nhóm khác: thành viên thường gõ /chonchat → không đổi được');
+  await tg.handleUpdate(msg('/chonchat', { chat: { id: OTHER, type: 'supergroup' }, from: { id: 1, first_name: 'Chủ' }, is_topic_message: true, message_thread_id: 6 }));
+  sent.length = 0;
+  await notify.telegram('khách cần người', null, { topic: 'chat' });
+  ok(String(lastSend()?.body.chat_id) === String(OTHER) && lastSend()?.body.message_thread_id === 6, '/chonchat ở nhóm riêng (quản trị nhóm đơn) → khách cần gặp nhân viên gửi sang nhóm đó');
+  sent.length = 0;
+  await notify.telegram('đơn mới', null, { topic: 'order' });
+  ok(String(lastSend()?.body.chat_id) !== String(OTHER), 'Đơn hàng vẫn ở nhóm đơn hàng');
+  await settings.save({ telegram_chat_chat_id: '', telegram_chat_thread: '' });
   await tg.handleUpdate(msg('/chontuvan'));
   sent.length = 0;
   await notify.telegram('thử tư vấn', null, { topic: 'consult' });
