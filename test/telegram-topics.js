@@ -112,6 +112,20 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   await notify.telegram('đơn mới', null, { topic: 'order' });
   ok(String(lastSend()?.body.chat_id) !== String(OTHER), 'Đơn hàng vẫn ở nhóm đơn hàng');
+  // Nút "▶️ Bật lại AI" bấm trong nhóm riêng → AI trả lời khách lại, nút đổi thành "đã bật"
+  const PS = 'resume-' + Date.now();
+  await db('messenger_threads').insert({ psid: PS, history: '[]', paused_until_ms: Date.now() + 3600000, updated_ms: Date.now(), name: 'Lê Bá Vĩ' });
+  sent.length = 0;
+  await tg.handleUpdate({ callback_query: { id: 'cb-ai', data: `ai:on:${PS}`, from: { id: 1, first_name: 'Mai' }, message: { message_id: 50, chat: { id: OTHER }, reply_markup: { inline_keyboard: [[{ text: 'Pancake', url: 'https://pancake.vn/x' }], [{ text: '▶️ Bật lại AI', callback_data: `ai:on:${PS}` }]] } } } });
+  const resumed = await db('messenger_threads').where({ psid: PS }).first();
+  const edit = sent.find((x) => x.method === 'editMessageReplyMarkup');
+  ok(Number(resumed.paused_until_ms) === 0 && edit && /AI đã trả lời lại · Mai/.test(JSON.stringify(edit.body.reply_markup)) && /pancake/.test(JSON.stringify(edit.body.reply_markup)),
+    'Bấm ▶️ Bật lại AI → AI trả lời khách lại, nút đổi thành "đã bật" (giữ nút Pancake)');
+  sent.length = 0;
+  await db('messenger_threads').where({ psid: PS }).update({ paused_until_ms: Date.now() + 3600000 });
+  await tg.handleUpdate({ callback_query: { id: 'cb-ai2', data: `ai:on:${PS}`, from: { id: 1 }, message: { message_id: 51, chat: { id: -999 } } } });
+  ok(Number((await db('messenger_threads').where({ psid: PS }).first()).paused_until_ms) > 0, 'Nhóm lạ bấm Bật lại AI → không có tác dụng');
+  await db('messenger_threads').where({ psid: PS }).del();
   await settings.save({ telegram_chat_chat_id: '', telegram_chat_thread: '' });
   await tg.handleUpdate(msg('/chontuvan'));
   sent.length = 0;

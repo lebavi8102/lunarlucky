@@ -300,6 +300,14 @@ async function inboxLinks(psid, row) {
   return { links, name };
 }
 
+/** Nhân viên chat xong, bấm "Bật lại AI" trên Telegram → AI trả lời khách này trở lại ngay. */
+async function resumeAI(psid) {
+  const row = await db('messenger_threads').where({ psid }).first();
+  if (!row) return null;
+  await saveThread(psid, { paused_until_ms: 0 });
+  return { name: row.name || '' };
+}
+
 /** Lưu tên khách tự giới thiệu (AI ghi lại khi chuyển người thật / lên đơn) nếu chưa có tên. */
 async function rememberName(psid, row, name) {
   const n = String(name || '').trim().slice(0, 120);
@@ -319,8 +327,8 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
     links.length ? '👉 Bấm nút dưới để mở cuộc trò chuyện: điện thoại dùng Pancake, máy tính dùng Business Suite.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
     `🔎 Hoặc mở app Pancake / Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
-    `⏸ AI tạm dừng với khách này ${pauseHours} giờ.`,
-  ].filter(Boolean).join('\n'), null, { topic: 'chat', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
+    `⏸ AI tạm dừng với khách này ${pauseHours} giờ. Chat xong bấm ▶️ Bật lại AI.`,
+  ].filter(Boolean).join('\n'), null, { topic: 'chat', reply_markup: { inline_keyboard: [...links.map((l) => [l]), [{ text: '▶️ Bật lại AI (chat xong)', callback_data: `ai:on:${psid}`.slice(0, 64) }]] } }).catch(() => {});
 }
 
 /** Xử lý 1 sự kiện Messenger (tin khách, bấm nút, hoặc tin người thật trả lời từ hộp thư). */
@@ -570,6 +578,7 @@ module.exports = {
   sendRaw: (b) => send(b),
   addNote,
   rememberName,
+  resumeAI,
   _setProfile: (fn) => { fetchProfile = fn; },
   _setConversation: (fn) => { fetchConversation = fn; },
   _setPageId: (id) => { pageId = id; },

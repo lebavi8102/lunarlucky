@@ -652,6 +652,22 @@ async function handleUpdate(update) {
   const cb = update.callback_query;
   if (!cb || !cb.data || !cb.message) return;
 
+  // Nút "▶️ Bật lại AI" dưới tin khách Fanpage cần gặp nhân viên (nhóm đơn hàng hoặc nhóm CHAT VỚI KHÁCH)
+  if (cb.data === 'ai:done') return answer(cb, 'AI đã được bật lại cho khách này.');
+  const ai = /^ai:on:(.{1,58})$/.exec(cb.data);
+  if (ai) {
+    const st = await settings.all();
+    const okChats = [String(await notify.telegramChatId()), String(st.telegram_chat_chat_id || '')].filter((x) => x && x !== 'undefined');
+    if (!okChats.includes(String(cb.message.chat.id))) return answer(cb, 'Cuộc trò chuyện này không có quyền xử lý.', true);
+    const r = await require('./messenger').resumeAI(ai[1]);
+    if (!r) return answer(cb, 'Không tìm thấy cuộc trò chuyện này.', true);
+    const at = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' }).format(new Date());
+    const kb = ((cb.message.reply_markup && cb.message.reply_markup.inline_keyboard) || [])
+      .map((row) => row.map((b) => (b.callback_data === cb.data ? { text: `✅ AI đã trả lời lại · ${personName(cb.from)} ${at}`, callback_data: 'ai:done' } : b)));
+    await notify.tgApi('editMessageReplyMarkup', { chat_id: cb.message.chat.id, message_id: cb.message.message_id, reply_markup: { inline_keyboard: kb } }).catch(() => {});
+    return answer(cb, `Đã bật lại AI${r.name ? ` cho ${r.name}` : ''}. Nếu nhân viên nhắn tiếp trong Pancake, AI sẽ tự tạm dừng lại.`);
+  }
+
   const g = /^g:(\d+):d$/.exec(cb.data);
   if (g) {
     if (String(cb.message.chat.id) !== String(await notify.telegramChatId())) {
