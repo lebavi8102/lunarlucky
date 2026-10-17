@@ -13,7 +13,12 @@ const chatLimiter = rateLimit({ ...limiterKey,
 router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   const text = String((req.body && req.body.message) || '').trim();
   if (!text) return res.status(400).json({ reply: 'Anh/chị nhập câu hỏi giúp em nhé.' });
-  const r = await ai.chat(req, text);
+  // Chế độ thử (header x-lunar-test): giả lập kênh Fanpage + tên Facebook để kiểm thử kịch bản; không tạo yêu cầu gọi lại thật
+  const test = req.get('x-lunar-test') === '1';
+  let fbName = '';
+  try { fbName = decodeURIComponent(String(req.get('x-lunar-name') || '')).slice(0, 80); } catch { fbName = ''; }
+  const opts = test && req.get('x-lunar-channel') === 'messenger' ? { channel: 'messenger', customerName: fbName } : {};
+  const r = await ai.chat(req, text, opts);
   const learn = require('../lib/ai-learn');
   const id = `web:${String(req.sessionID || '').slice(0, 40)}`;
   // Lượt chat thử của chủ shop / kiểm thử (header x-lunar-test) không tính vào số liệu tỉ lệ chốt
@@ -23,6 +28,7 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
     if (r.action) await learn.log(id, 'event', 'order_button');
     if (r.callback) await learn.log(id, 'event', 'human');
   }
+  if (!test) { delete r.tools; delete r.usage; }
   res.set('Cache-Control', 'no-store').json(r);
 });
 

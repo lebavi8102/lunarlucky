@@ -292,6 +292,7 @@ const validPhone = (v) => /^(0|84)\d{9,10}$/.test(digits(v));
 
 async function runTool(name, input, req, out) {
   const s = await settings.all();
+  out.tools = [...(out.tools || []), name];
   if (name === 'search_products') {
     const { products, catName } = await catalog();
     let list = input.query ? search(products, input.query, Object.entries(catName).map(([id, n]) => ({ id: Number(id), name: n }))) : products;
@@ -373,7 +374,8 @@ async function runTool(name, input, req, out) {
   }
   if (name === 'request_callback') {
     if (!validPhone(input.phone)) return { error: 'Số điện thoại chưa đúng — hỏi lại khách.' };
-    await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: req.aiChannel === 'messenger' ? 'Từ AI tư vấn trên Fanpage (Messenger)' : 'Từ AI tư vấn trên web', source: 'ai' });
+    const isTest = typeof req.get === 'function' && req.get('x-lunar-test') === '1';
+    if (!isTest) await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: req.aiChannel === 'messenger' ? 'Từ AI tư vấn trên Fanpage (Messenger)' : 'Từ AI tư vấn trên web', source: 'ai' });
     out.callback = true;
     return { ok: true, message: 'Đã báo chuyên viên, sẽ gọi lại khách trong giờ làm việc (thường trong 5 phút).' };
   }
@@ -501,6 +503,11 @@ async function chat(req, text, opts = {}) {
     const dropped = (res.input_transformations || []).filter((t) => t.type === 'thinking_dropped').length;
     if (dropped) console.log(`[AI tư vấn] bỏ ${dropped} khối suy nghĩ cũ không còn khớp (lời dặn/công cụ đã đổi)`);
     if (res.usage) console.log(`[AI tư vấn] ${res.model} in=${res.usage.input_tokens} cache=${res.usage.cache_read_input_tokens || 0} ghi=${res.usage.cache_creation_input_tokens || 0} out=${res.usage.output_tokens}`);
+    if (res.usage) { // cộng dồn số token của lượt này (chế độ thử dùng để tự tính tiền, dừng trước khi hết credit)
+      const u = (out.usage = out.usage || { model: res.model, in: 0, cache: 0, write: 0, out: 0 });
+      u.in += res.usage.input_tokens || 0; u.cache += res.usage.cache_read_input_tokens || 0;
+      u.write += res.usage.cache_creation_input_tokens || 0; u.out += res.usage.output_tokens || 0;
+    }
     if (res.stop_reason === 'refusal') {
       reply = 'Câu này em chưa hỗ trợ được. Anh/chị cần chọn quà Tết thì em tư vấn ngay ạ!';
       history.push({ role: 'assistant', content: reply });
@@ -526,7 +533,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null };
 }
 
 module.exports = { getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
