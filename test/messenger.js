@@ -148,8 +148,8 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(t5 && t5.name === 'chị Hoa', 'AI ghi lại tên khách tự giới thiệu → tin báo sau hiện tên');
     const tgSent = tgCalls.filter((x) => /AI chuyển khách Fanpage/.test(x.html)).pop();
     const kb = tgSent && tgSent.extra.reply_markup && tgSent.extra.reply_markup.inline_keyboard.flat();
-    ok(tgSent && /chị Hoa/.test(tgSent.html) && kb && kb.some((b) => /business\.facebook\.com\/latest\/inbox\/all\/\?asset_id=112418327083235&selected_item_id=/.test(b.url)) && kb.some((b) => b.url === 'https://www.facebook.com/msg/t_123'),
-      'Tin Telegram có tên khách + nút mở thẳng cuộc trò chuyện');
+    ok(tgSent && /chị Hoa/.test(tgSent.html) && kb && kb.some((b) => /business\.facebook\.com\/latest\/inbox\/all\/\?asset_id=112418327083235&selected_item_id=/.test(b.url)) && kb.some((b) => b.url === `https://pancake.vn/112418327083235?c_id=112418327083235_${P5}`),
+      'Tin Telegram có tên khách + nút Pancake (điện thoại) và Business Suite (máy tính)');
     ok(t5 && Number(t5.paused_until_ms) > Date.now(), 'AI gọi transfer_to_human → tạm dừng, chờ chuyên viên trả lời tại Fanpage');
     notifyMod.telegram = realTg;
     // AI tắt → khách Fanpage không bị bảo nhắn Zalo, người thật trả lời

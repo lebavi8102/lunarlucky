@@ -245,7 +245,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
       p.delivery_date ? `📅 Muốn giao ${e(String(p.delivery_date).split('-').reverse().join('/'))}${p.province ? ` · ${e(p.province)}` : ''}` : null,
       p.payment_method ? `💳 ${p.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}` : null,
       '👉 Gọi hoặc nhắn khách trong hộp thư Fanpage để chốt đơn (có thể đặt hộ trên web).',
-      `📱 Điện thoại: mở app Meta Business Suite → Hộp thư → tìm ${e(name || p.customer_name || 'tên khách')}.`,
+      `📱 Điện thoại: bấm nút Pancake, hoặc mở app Pancake → tìm ${e(name || p.customer_name || 'tên khách')}.`,
     ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
     sentCount += 1;
   }
@@ -284,11 +284,14 @@ let fetchConversation = async (psid) => {
 
 async function inboxLinks(psid, row) {
   const links = [];
-  if (pageId) links.push({ text: '💻 Mở trên máy tính (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
+  if (pageId) {
+    // Facebook không có link mở thẳng cuộc trò chuyện trong app điện thoại → dùng Pancake (mở được trên điện thoại)
+    links.push({ text: '📱 Mở trên Pancake (điện thoại)', url: `https://pancake.vn/${pageId}?c_id=${pageId}_${encodeURIComponent(psid)}` });
+    links.push({ text: '💻 Mở trên máy tính (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
+  }
   let name = (row && row.name) || '';
   if (configured()) {
     const c = await fetchConversation(psid).catch(() => null);
-    if (c && c.link) links.push({ text: '💻 Mở trên máy tính (Facebook)', url: c.link });
     if (c && c.name && !name) {
       name = c.name;
       await saveThread(psid, { name });
@@ -338,19 +341,15 @@ async function rememberName(psid, row, name) {
 async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
   const e = require('./notify').escapeTg;
   const fresh = (await db('messenger_threads').where({ psid }).first()) || row;
-  const { links: basic, name } = await inboxLinks(psid, fresh);
-  // Đang thử kiểu link mở đúng trên điện thoại → gắn đủ các kiểu (đánh số); chọn được thì chỉ giữ 1 nút
-  const cands = await candidateLinks(psid).catch(() => []);
-  const links = cands.length ? cands : basic;
+  const { links, name } = await inboxLinks(psid, fresh);
   const at = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date());
   await require('./notify').telegram([
     `💬 <b>${e(title)}</b>`,
     `👤 ${name ? e(name) : 'Khách Fanpage (chưa rõ tên)'} · nhắn lúc ${at}`,
     summary ? `📝 ${e(summary)}` : null,
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
-    links.length ? '👉 Bấm nút dưới để mở thẳng cuộc trò chuyện của khách.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
-    cands.length ? '🧪 Đang thử: nút số mấy mở đúng trên điện thoại thì báo lại để giữ nút đó.' : null,
-    `📱 Không mở được: app Meta Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
+    links.length ? '👉 Bấm nút dưới để mở cuộc trò chuyện: điện thoại dùng Pancake, máy tính dùng Business Suite.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
+    `🔎 Hoặc mở app Pancake / Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
     `⏸ AI tạm dừng với khách này ${pauseHours} giờ.`,
   ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
 }
