@@ -44,7 +44,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     // 1) Khách đòi gặp người thật → cảnh báo trên Telegram có hướng dẫn reply
     await m.handleWebhook(msg('cho mình gặp nhân viên'));
     const alert = tg.find((t) => /cần gặp người thật/.test(t.html));
-    ok(alert && /Trả lời \(reply\) tin này/.test(alert.html) && alert.extra.topic === 'consult', 'Cảnh báo "gặp người thật" có hướng dẫn trả lời ngay trong Telegram');
+    ok(alert && /✍️ Trả lời khách/.test(alert.html) && alert.extra.topic === 'consult', 'Cảnh báo "gặp người thật" có hướng dẫn trả lời ngay trong Telegram');
 
     // 2) Nhân viên reply cảnh báo → khách nhận tin, AI tạm dừng, có ghi chú cho AI
     sent.length = 0; api.length = 0;
