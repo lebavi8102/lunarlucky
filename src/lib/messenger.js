@@ -397,7 +397,10 @@ async function handleEvent(ev) {
     const who = row && row.title ? `${row.title}${given ? ` ${given}` : ''}` : 'anh/chị';
     const you = row && row.title ? row.title : 'anh/chị';
     const hello = history.length ? '' : `Dạ Lunar Lucky xin chào ${who} ạ. `;
-    await sendText(psid, `${hello}Dạ vâng ${who}, ${you} vui lòng đợi em một chút, em sẽ trao đổi trực tiếp với ${you} ngay đây ạ ❤️`);
+    // Ngoài giờ trực Pancake (mặc định 8h–24h): hẹn sáng mai, không hứa "ngay đây"
+    await sendText(psid, ai.staffOnline(s)
+      ? `${hello}Dạ vâng ${who}, ${you} vui lòng đợi em một chút, em sẽ trao đổi trực tiếp với ${you} ngay đây ạ ❤️`
+      : `${hello}Dạ vâng ${who}, em ghi nhận rồi ạ. Sáng mai từ ${Number(s.staff_from_hour ?? 8)}h em sẽ trao đổi trực tiếp với ${you} ngay ạ ❤️`);
     await alertHuman(psid, row, { title: 'Khách Fanpage cần gặp người thật', last: text, pauseHours });
     return 'human';
   }

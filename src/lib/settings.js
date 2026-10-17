@@ -60,7 +60,9 @@ const DEFAULTS = {
   ai_voucher_code: '',
   ai_learn_mark: '',
   ai_learn_last: '',
-  ai_escalate_qty: '20',
+  ai_escalate_qty: '5',
+  staff_from_hour: '8', // giờ có người trực Pancake (giờ VN)
+  staff_to_hour: '24',
   ai_escalate_value: '20000000',
   meta_pixel_id: '',
   ga4_id: '',
