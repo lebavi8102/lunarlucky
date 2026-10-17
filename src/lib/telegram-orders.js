@@ -629,6 +629,16 @@ async function handleUpdate(update) {
       return;
     }
     if (String(update.message.text || '').startsWith('/')) return handleCommand(update.message);
+    // Trả lời (reply) tin khách Fanpage → bot gửi cho khách qua Messenger
+    if (update.message.reply_to_message && String(update.message.chat.id) === String(await notify.telegramChatId())) {
+      const r = await require('./messenger').replyFromTelegram(update.message);
+      if (r && r.ok) {
+        await notify.tgApi('setMessageReaction', { chat_id: update.message.chat.id, message_id: update.message.message_id, reaction: [{ type: 'emoji', emoji: '👍' }] })
+          .catch(() => reply(update.message, `✅ Đã gửi cho ${notify.escapeTg(r.name)}.`));
+      } else if (r) {
+        await reply(update.message, `⚠️ Chưa gửi được cho ${notify.escapeTg(r.name)}: ${notify.escapeTg(r.why)}`);
+      }
+    }
     return;
   }
   if (update.my_chat_member) return rememberChat(update.my_chat_member.chat);
