@@ -307,8 +307,13 @@ async function linkCandidates(query) {
   else q = q.where('paused_until_ms', '>', Date.now());
   const row = (await q.first()) || (!query && (await db('messenger_threads').orderBy('updated_ms', 'desc').first()));
   if (!row) return null;
-  const psid = encodeURIComponent(row.psid);
-  const c = configured() ? await fetchConversation(row.psid).catch(() => null) : null;
+  return { name: row.name || 'khách (chưa rõ tên)', links: await candidateLinks(row.psid), hasPage: !!pageId };
+}
+
+/** Các kiểu link mở cuộc trò chuyện (đánh số để chủ shop báo kiểu nào mở đúng trên điện thoại). */
+async function candidateLinks(rawPsid) {
+  const psid = encodeURIComponent(rawPsid);
+  const c = configured() ? await fetchConversation(rawPsid).catch(() => null) : null;
   const tid = c && c.id ? encodeURIComponent(c.id) : '';
   const pg = pageId;
   const list = [];
@@ -320,7 +325,7 @@ async function linkCandidates(query) {
     list.push({ text: '5 · Facebook di động', url: `https://m.facebook.com/messages/read/?tid=cid.c.${psid}&entrypoint=page_inbox&page_id=${pg}` });
   }
   if (c && c.link) list.push({ text: '6 · Link Facebook trả về', url: c.link });
-  return { name: row.name || 'khách (chưa rõ tên)', links: list, hasPage: !!pg };
+  return list;
 }
 
 /** Lưu tên khách tự giới thiệu (AI ghi lại khi chuyển người thật / lên đơn) nếu chưa có tên. */
@@ -333,15 +338,19 @@ async function rememberName(psid, row, name) {
 async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
   const e = require('./notify').escapeTg;
   const fresh = (await db('messenger_threads').where({ psid }).first()) || row;
-  const { links, name } = await inboxLinks(psid, fresh);
+  const { links: basic, name } = await inboxLinks(psid, fresh);
+  // Đang thử kiểu link mở đúng trên điện thoại → gắn đủ các kiểu (đánh số); chọn được thì chỉ giữ 1 nút
+  const cands = await candidateLinks(psid).catch(() => []);
+  const links = cands.length ? cands : basic;
   const at = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date());
   await require('./notify').telegram([
     `💬 <b>${e(title)}</b>`,
     `👤 ${name ? e(name) : 'Khách Fanpage (chưa rõ tên)'} · nhắn lúc ${at}`,
     summary ? `📝 ${e(summary)}` : null,
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
-    links.length ? `👉 Máy tính: bấm nút dưới để mở đúng cuộc trò chuyện.` : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
-    `📱 Điện thoại: mở app Meta Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
+    links.length ? '👉 Bấm nút dưới để mở thẳng cuộc trò chuyện của khách.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
+    cands.length ? '🧪 Đang thử: nút số mấy mở đúng trên điện thoại thì báo lại để giữ nút đó.' : null,
+    `📱 Không mở được: app Meta Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
     `⏸ AI tạm dừng với khách này ${pauseHours} giờ.`,
   ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
 }
