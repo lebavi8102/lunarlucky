@@ -629,12 +629,12 @@ async function handleUpdate(update) {
       return;
     }
     if (String(update.message.text || '').startsWith('/')) return handleCommand(update.message);
-    // Trả lời (reply) tin khách Fanpage → bot gửi cho khách qua Messenger
-    if (update.message.reply_to_message && String(update.message.chat.id) === String(await notify.telegramChatId())) {
+    // Trả lời (reply) tin khách Fanpage, hoặc tin ngay sau khi bấm "✍️ Trả lời khách" → bot gửi cho khách qua Messenger
+    if (String(update.message.chat.id) === String(await notify.telegramChatId())) {
       const r = await require('./messenger').replyFromTelegram(update.message);
       if (r && r.ok) {
-        await notify.tgApi('setMessageReaction', { chat_id: update.message.chat.id, message_id: update.message.message_id, reaction: [{ type: 'emoji', emoji: '👍' }] })
-          .catch(() => reply(update.message, `✅ Đã gửi cho ${notify.escapeTg(r.name)}.`));
+        await notify.tgApi('setMessageReaction', { chat_id: update.message.chat.id, message_id: update.message.message_id, reaction: [{ type: 'emoji', emoji: '👍' }] }).catch(() => {});
+        await reply(update.message, `✅ Đã gửi cho <b>${notify.escapeTg(r.name)}</b>.`, { reply_markup: { inline_keyboard: [[{ text: '✍️ Trả lời tiếp', callback_data: `fb:r:${r.psid}` }, { text: '▶️ Bật lại AI', callback_data: `fb:a:${r.psid}` }]] } });
       } else if (r) {
         await reply(update.message, `⚠️ Chưa gửi được cho ${notify.escapeTg(r.name)}: ${notify.escapeTg(r.why)}`);
       }

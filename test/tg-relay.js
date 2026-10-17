@@ -101,6 +101,18 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await tgBot.handleUpdate({ message: { message_id: 6, chat: { id: CHAT, type: 'supergroup' }, from: { id: 9 }, text: 'Dạ em gửi báo giá ạ', reply_to_message: { message_id: 5555 } } });
     ok(sent.some((b) => b.message && b.message.text === 'Dạ em gửi báo giá ạ'), 'Gõ vào ô vừa mở → khách nhận được tin');
 
+    // Telegram máy tính không gắn "trả lời": bấm ✍️ rồi gửi tin thường → vẫn tới khách; người khác nhắn thì không
+    await tgBot.handleUpdate({ callback_query: { id: 'c1b', data: `fb:r:${PSID}`, from: { id: 9, first_name: 'Mai' }, message: { message_id: alert.id, chat: { id: CHAT } } } });
+    sent.length = 0;
+    await tgBot.handleUpdate({ message: { message_id: 7, chat: { id: CHAT, type: 'supergroup' }, from: { id: 10 }, text: 'tin của người khác' } });
+    ok(!sent.length, 'Người khác nhắn trong nhóm sau khi Mai bấm ✍️ → không gửi cho khách');
+    await tgBot.handleUpdate({ message: { message_id: 8, chat: { id: CHAT, type: 'supergroup' }, from: { id: 9 }, text: 'em chào chị ạ' } });
+    ok(sent.some((b) => b.message && b.message.text === 'em chào chị ạ'), 'Bấm ✍️ rồi gửi tin thường (không reply) → khách vẫn nhận được');
+    ok(api.some((a) => a.method === 'sendMessage' && /Đã gửi cho/.test(a.body.text) && /fb:r:/.test(JSON.stringify(a.body.reply_markup))), 'Gửi xong → bot báo "Đã gửi" kèm nút Trả lời tiếp');
+    sent.length = 0;
+    await tgBot.handleUpdate({ message: { message_id: 9, chat: { id: CHAT, type: 'supergroup' }, from: { id: 9 }, text: 'nói chuyện nội bộ' } });
+    ok(!sent.length, 'Chỉ tin đầu tiên sau khi bấm mới gửi khách — tin sau đó là chat nội bộ');
+
     api.length = 0;
     await tgBot.handleUpdate({ callback_query: { id: 'c2', data: `fb:h:${PSID}`, from: { id: 9 }, message: { message_id: alert.id, chat: { id: CHAT } } } });
     const hist = api.find((a) => a.method === 'sendMessage');

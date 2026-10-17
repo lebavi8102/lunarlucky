@@ -353,10 +353,11 @@ async function handleTgCallback(cb) {
   const chat = cb.message.chat.id;
   const thread = cb.message.is_topic_message && cb.message.message_thread_id ? { message_thread_id: cb.message.message_thread_id } : {};
   if (act === 'r') {
+    if (cb.from) pendingReply.set(pendingKey(chat, cb.from.id), { psid, thread: thread.message_thread_id || 0, until: Date.now() + PENDING_MS });
     const who = cb.from ? `<a href="tg://user?id=${cb.from.id}">${e(cb.from.first_name || 'Bạn')}</a>` : 'Bạn';
     const sent = await require('./notify').tgApi('sendMessage', {
       chat_id: chat, ...thread, parse_mode: 'HTML',
-      text: `✍️ ${who} gõ tin gửi <b>${e(name)}</b> rồi bấm Gửi (gửi ảnh cũng được):`,
+      text: `✍️ ${who}: tin tiếp theo bạn gửi ở đây (trong 10 phút) sẽ được gửi cho <b>${e(name)}</b> — chữ hoặc ảnh.`,
       reply_to_message_id: cb.message.message_id, allow_sending_without_reply: true,
       reply_markup: { force_reply: true, selective: true, input_field_placeholder: `Tin nhắn cho ${name}`.slice(0, 64) },
     });
@@ -439,12 +440,34 @@ async function staffSend(psid, message) {
  * Nhân viên trả lời (reply) tin khách Fanpage trong nhóm Telegram → gửi cho khách qua Messenger, AI tạm dừng.
  * Trả về null nếu tin được trả lời không phải tin khách Fanpage (để bot xử lý như bình thường).
  */
+// Bấm "✍️ Trả lời khách" → tin kế tiếp của đúng người đó trong đúng chủ đề (10 phút) là tin gửi khách,
+// kể cả khi Telegram (bản máy tính) không gắn tin đó thành "trả lời".
+const PENDING_MS = 10 * 60000;
+const pendingReply = new Map();
+const pendingKey = (chatId, userId) => `${chatId}:${userId}`;
+function takePending(msg) {
+  if (!msg || !msg.from) return null;
+  const key = pendingKey(msg.chat.id, msg.from.id);
+  const p = pendingReply.get(key);
+  if (!p) return null;
+  if (p.until < Date.now()) { pendingReply.delete(key); return null; }
+  if (String(p.thread || 0) !== String((msg.is_topic_message && msg.message_thread_id) || 0)) return null;
+  pendingReply.delete(key);
+  return p.psid;
+}
+
 async function replyFromTelegram(msg) {
+  let psid = null;
   const r = msg && msg.reply_to_message;
-  if (!r) return null;
-  const link = await db('tg_fb_links').where({ chat_id: String(msg.chat.id), message_id: r.message_id }).orderBy('id', 'desc').first();
-  if (!link) return null;
-  const psid = link.psid;
+  if (r) {
+    const link = await db('tg_fb_links').where({ chat_id: String(msg.chat.id), message_id: r.message_id }).orderBy('id', 'desc').first();
+    if (link) psid = link.psid;
+  }
+  // Không phải reply tin khách → xem người này vừa bấm ✍️ chưa
+  const viaButton = !psid && takePending(msg);
+  if (viaButton) psid = viaButton;
+  else if (psid && msg.from) pendingReply.delete(pendingKey(msg.chat.id, msg.from.id));
+  if (!psid) return null;
   const row = await db('messenger_threads').where({ psid }).first();
   const name = (row && row.name) || 'khách';
   if (!configured()) return { ok: false, name, why: 'Máy chủ chưa cài FB_PAGE_TOKEN nên chưa nhắn được cho khách.' };
@@ -480,7 +503,7 @@ async function replyFromTelegram(msg) {
   await addNote(psid, `Nhân viên: ${noted}`);
   await require('./ai-learn').log(psid, 'staff', noted);
   console.log(`[messenger] nhân viên trả lời khách …${String(psid).slice(-4)} từ Telegram → AI tạm dừng ${pauseHours} giờ`);
-  return { ok: true, name, pauseHours };
+  return { ok: true, name, pauseHours, psid, viaButton: !!viaButton };
 }
 
 /** Xử lý 1 sự kiện Messenger (tin khách, bấm nút, hoặc tin người thật trả lời từ hộp thư). */
