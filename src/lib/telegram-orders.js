@@ -629,33 +629,11 @@ async function handleUpdate(update) {
       return;
     }
     if (String(update.message.text || '').startsWith('/')) return handleCommand(update.message);
-    // Trả lời (reply) tin khách Fanpage, hoặc tin ngay sau khi bấm "✍️ Trả lời khách" → bot gửi cho khách qua Messenger
-    if (String(update.message.chat.id) === String(await notify.telegramChatId())) {
-      const r = await require('./messenger').replyFromTelegram(update.message);
-      if (r && r.ok) {
-        await notify.tgApi('setMessageReaction', { chat_id: update.message.chat.id, message_id: update.message.message_id, reaction: [{ type: 'emoji', emoji: '👍' }] }).catch(() => {});
-        await reply(update.message, `✅ Đã gửi cho <b>${notify.escapeTg(r.name)}</b>.`, { reply_markup: { inline_keyboard: [[{ text: '✍️ Trả lời tiếp', callback_data: `fb:r:${r.psid}` }, { text: '▶️ Bật lại AI', callback_data: `fb:a:${r.psid}` }]] } });
-      } else if (r) {
-        await reply(update.message, `⚠️ Chưa gửi được cho ${notify.escapeTg(r.name)}: ${notify.escapeTg(r.why)}`);
-      }
-    }
     return;
   }
   if (update.my_chat_member) return rememberChat(update.my_chat_member.chat);
   const cb = update.callback_query;
   if (!cb || !cb.data || !cb.message) return;
-
-  // Nút dưới tin khách Fanpage: trả lời / xem tin gần đây / bật lại AI
-  if (cb.data.startsWith('fb:')) {
-    if (String(cb.message.chat.id) !== String(await notify.telegramChatId())) {
-      return answer(cb, 'Cuộc trò chuyện này không có quyền xử lý.', true);
-    }
-    const note = await require('./messenger').handleTgCallback(cb).catch((err) => {
-      console.error('[telegram] nút Fanpage lỗi:', err.message);
-      return `Lỗi: ${err.message}`.slice(0, 180);
-    });
-    return answer(cb, note || '');
-  }
 
   const g = /^g:(\d+):d$/.exec(cb.data);
   if (g) {
