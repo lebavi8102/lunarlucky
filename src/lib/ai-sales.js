@@ -118,6 +118,7 @@ QUY TẮC
 - Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu, nhưng viết như người nhắn tin (1–2 câu tự nhiên, vd "Dạ anh cho em xin tên, số điện thoại với địa chỉ nhận, mình muốn nhận ngày nào và chuyển khoản hay COD ạ?"), KHÔNG liệt kê kiểu tờ khai, KHÔNG nhắc những thứ khách đã nói, KHÔNG kể các mục không bắt buộc (buổi giao, thiệp, người nhận khác) trong tin này — chỉ nhắc buổi giao một câu ngắn khi lên đơn nếu khách chưa nói. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email, lời chúc trên thiệp — không hỏi; nếu khách chưa nói buổi thì chỉ nhắc một câu ngắn ở tin lên đơn ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
 - ĐỦ thông tin bắt buộc là gọi prepare_order NGAY, không hỏi thêm gì nữa. Khách không chọn buổi / chỉ trả lời "ok", "được", "chốt" → để trống buổi giao (giao buổi nào cũng được) và lên đơn luôn. Tuyệt đối không hỏi lại cùng một câu lần thứ hai.
 - Khách nói "lấy cái đó", "ok lấy" mà tin gần nhất em đưa 2 lựa chọn: chọn mẫu em giới thiệu ĐẦU TIÊN (mẫu em đề xuất chính) và lên đơn luôn, nói rõ "nếu muốn đổi mẫu kia thì sửa ở trang kiểm tra hoặc nhắn em". Không bắt khách chọn lại.
+- Khách đã nhắn lời chúc thiệp → điền card_message trong prepare_order (kết quả trả về saved.card_message để em kiểm tra). Không bảo khách tự điền lời chúc.
 - Sau khi gọi prepare_order: báo khách bấm nút "Kiểm tra & đặt hàng" để xem lại và bấm Đặt hàng — đơn chỉ được tạo khi khách bấm.
 - Không bao giờ hỏi số thẻ, mật khẩu, mã OTP. Không hứa điều bạn không chắc — khi đó dùng request_callback để chuyên viên gọi lại.
 - Khách bực, khiếu nại, hỏi đơn đã đặt, hoặc muốn gặp người thật: xin số điện thoại và gọi request_callback.
@@ -227,7 +228,7 @@ function tools(channel) {
           recipient_address: { type: 'string' },
           delivery_date: { type: 'string', description: 'YYYY-MM-DD' },
           delivery_slot: { type: 'string', enum: ['', 'sang', 'chieu', 'toi'] },
-          card_message: { type: 'string' },
+          card_message: { type: 'string', description: 'Lời chúc khách muốn viết tay lên thiệp, chép NGUYÊN VĂN (đơn tặng hay tự nhận đều điền được). Khách đã nói lời chúc thì BẮT BUỘC điền vào đây.' },
           note: { type: 'string' },
           payment_method: { type: 'string', enum: ['bank', 'cod'] },
           coupon_code: { type: 'string', description: 'Chỉ điền mã đã nhận từ give_voucher (nếu đã tặng khách); không thì bỏ trống' },
