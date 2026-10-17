@@ -645,6 +645,18 @@ async function handleUpdate(update) {
   const cb = update.callback_query;
   if (!cb || !cb.data || !cb.message) return;
 
+  // Nút dưới tin khách Fanpage: trả lời / xem tin gần đây / bật lại AI
+  if (cb.data.startsWith('fb:')) {
+    if (String(cb.message.chat.id) !== String(await notify.telegramChatId())) {
+      return answer(cb, 'Cuộc trò chuyện này không có quyền xử lý.', true);
+    }
+    const note = await require('./messenger').handleTgCallback(cb).catch((err) => {
+      console.error('[telegram] nút Fanpage lỗi:', err.message);
+      return `Lỗi: ${err.message}`.slice(0, 180);
+    });
+    return answer(cb, note || '');
+  }
+
   const g = /^g:(\d+):d$/.exec(cb.data);
   if (g) {
     if (String(cb.message.chat.id) !== String(await notify.telegramChatId())) {

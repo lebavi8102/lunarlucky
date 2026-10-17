@@ -250,7 +250,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
       p.payment_method ? `💳 ${p.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}` : null,
       '👉 Gọi hoặc nhắn khách trong hộp thư Fanpage để chốt đơn (có thể đặt hộ trên web).',
       REPLY_HINT,
-    ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => false);
+    ].filter(Boolean).join('\n'), null, { topic: 'consult', reply_markup: tgKeyboard(h.psid, links) }).catch(() => false);
     await linkTg(tg, h.psid);
     sentCount += 1;
   }
@@ -289,11 +289,11 @@ let fetchConversation = async (psid) => {
 
 async function inboxLinks(psid, row) {
   const links = [];
-  if (pageId) links.push({ text: '💻 Mở trên máy tính (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
+  if (pageId) links.push({ text: '💻 Máy tính: Business Suite', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
   let name = (row && row.name) || '';
   if (configured()) {
     const c = await fetchConversation(psid).catch(() => null);
-    if (c && c.link) links.push({ text: '💻 Mở trên máy tính (Facebook)', url: c.link });
+    if (c && c.link) links.push({ text: '💻 Máy tính: Facebook', url: c.link });
     if (c && c.name && !name) {
       name = c.name;
       await saveThread(psid, { name });
@@ -320,16 +320,70 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
     summary ? `📝 ${e(summary)}` : null,
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
     REPLY_HINT,
-    links.length ? '💻 Hoặc bấm nút dưới (máy tính) để mở hộp thư Fanpage.' : `💻 Hoặc mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at}.`,
-    `⏸ AI tạm dừng với khách này ${pauseHours} giờ. Tin khách nhắn tiếp sẽ hiện ở đây.`,
-  ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => false);
+    `⏸ AI tạm dừng với khách này ${pauseHours} giờ. Tin khách nhắn tiếp sẽ hiện ở đây. Xong việc bấm "▶️ Bật lại AI".`,
+  ].filter(Boolean).join('\n'), null, { topic: 'consult', reply_markup: tgKeyboard(psid, links) }).catch(() => false);
   await linkTg(tg, psid);
   await saveThread(psid, { relay_until_ms: Date.now() + pauseHours * 3600000 });
 }
 
 // ——— Trả lời khách Fanpage ngay trong Telegram ———
 const STAFF_TAG = 'lunar-staff';
-const REPLY_HINT = '↩️ <b>Trả lời (reply) tin này</b> ngay trong Telegram là nhắn được cho khách (chữ hoặc ảnh).';
+const REPLY_HINT = '📱 Bấm <b>✍️ Trả lời khách</b> (hoặc reply tin này) để nhắn khách ngay trong Telegram — chữ hoặc ảnh.';
+
+/** Nút dưới mỗi tin khách Fanpage trên Telegram: trả lời / xem tin gần đây / bật lại AI (dùng tốt trên điện thoại) + link mở trên máy tính. */
+function tgKeyboard(psid, links = []) {
+  const id = String(psid);
+  const rows = [
+    [{ text: '✍️ Trả lời khách', callback_data: `fb:r:${id}` }],
+    [{ text: '📜 Xem tin gần đây', callback_data: `fb:h:${id}` }, { text: '▶️ Bật lại AI', callback_data: `fb:a:${id}` }],
+  ];
+  if (links.length) rows.push(links);
+  return { inline_keyboard: rows };
+}
+
+/** Bấm nút fb:* trên Telegram. Trả về chuỗi để hiện thông báo nhỏ (answerCallbackQuery). */
+async function handleTgCallback(cb) {
+  const m = /^fb:([rha]):(.{1,60})$/.exec(String(cb.data || ''));
+  if (!m) return 'Lệnh không hợp lệ.';
+  const [, act, psid] = m;
+  const row = await db('messenger_threads').where({ psid }).first();
+  if (!row) return 'Không tìm thấy cuộc trò chuyện này (có thể đã quá 90 ngày).';
+  const e = require('./notify').escapeTg;
+  const name = row.name || 'khách';
+  const chat = cb.message.chat.id;
+  const thread = cb.message.is_topic_message && cb.message.message_thread_id ? { message_thread_id: cb.message.message_thread_id } : {};
+  if (act === 'r') {
+    const who = cb.from ? `<a href="tg://user?id=${cb.from.id}">${e(cb.from.first_name || 'Bạn')}</a>` : 'Bạn';
+    const sent = await require('./notify').tgApi('sendMessage', {
+      chat_id: chat, ...thread, parse_mode: 'HTML',
+      text: `✍️ ${who} gõ tin gửi <b>${e(name)}</b> rồi bấm Gửi (gửi ảnh cũng được):`,
+      reply_to_message_id: cb.message.message_id, allow_sending_without_reply: true,
+      reply_markup: { force_reply: true, selective: true, input_field_placeholder: `Tin nhắn cho ${name}`.slice(0, 64) },
+    });
+    await linkTg(sent, psid);
+    return 'Gõ tin nhắn ở ô bên dưới rồi bấm Gửi.';
+  }
+  if (act === 'h') {
+    const rows = await db('conv_log').where({ psid }).whereIn('role', ['customer', 'ai', 'staff']).orderBy('id', 'desc').limit(10);
+    if (!rows.length) return 'Chưa có tin nào được lưu.';
+    const label = { customer: `👤 ${e(name)}`, ai: '🤖 AI', staff: '👩‍💼 Nhân viên' };
+    const text = rows.reverse().map((r) => `${label[r.role]}: ${e(String(r.text).slice(0, 300))}`).join('\n');
+    const sent = await require('./notify').tgApi('sendMessage', {
+      chat_id: chat, ...thread, parse_mode: 'HTML', disable_web_page_preview: true,
+      text: `📜 <b>10 tin gần nhất với ${e(name)}</b>\n${text}`.slice(0, 4000),
+      reply_markup: { inline_keyboard: [[{ text: '✍️ Trả lời khách', callback_data: `fb:r:${psid}` }]] },
+    });
+    await linkTg(sent, psid);
+    return '';
+  }
+  // act === 'a': nhân viên xong việc → AI trả lời khách trở lại
+  await saveThread(psid, { paused_until_ms: 0, relay_until_ms: 0 });
+  await require('./notify').tgApi('sendMessage', {
+    chat_id: chat, ...thread, parse_mode: 'HTML',
+    text: `▶️ AI đã trả lời lại <b>${e(name)}</b> (bật bởi ${e((cb.from && cb.from.first_name) || 'nhân viên')}). Tin khách sẽ không hiện ở đây nữa.`,
+  }).catch(() => {});
+  return 'Đã bật lại AI cho khách này.';
+}
 
 /** Ghi nhớ: tin Telegram này thuộc khách Fanpage nào. */
 async function linkTg(tgMsg, psid) {
@@ -348,8 +402,7 @@ async function relayToTelegram(psid, row, { who, text, attachments }) {
   const tg = await require('./notify').telegram([
     `${head}: ${text ? e(String(text).slice(0, 1500)) : ''}`,
     pics.length ? pics.join(' · ') : null,
-    who === 'staff' ? null : '<i>↩️ reply tin này để trả lời khách</i>',
-  ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => false);
+  ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(who === 'staff' ? {} : { reply_markup: tgKeyboard(psid) }) }).catch(() => false);
   await linkTg(tg, psid);
 }
 
@@ -691,6 +744,7 @@ module.exports = {
   addNote,
   rememberName,
   replyFromTelegram,
+  handleTgCallback,
   STAFF_TAG,
   _setUpload: (fn) => { uploadImage = fn; },
   _setDownloadTg: (fn) => { downloadTgPhoto = fn; },

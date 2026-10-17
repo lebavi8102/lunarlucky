@@ -86,6 +86,35 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await tgBot.handleUpdate({ message: { message_id: 4, chat: { id: CHAT, type: 'supergroup' }, from: { id: 9 }, text: 'ok', reply_to_message: { message_id: 1 } } });
     ok(!api.length && !sent.length, 'Reply tin thường trong nhóm → không gửi gì cho khách');
 
+    // 7b) Nút trên điện thoại: Trả lời khách → bot mở ô gõ sẵn (force reply); gõ vào đó là gửi cho khách
+    const kb = alert.extra.reply_markup.inline_keyboard;
+    ok(kb[0][0].callback_data === `fb:r:${PSID}` && kb[1].some((b) => b.callback_data === `fb:a:${PSID}`), 'Cảnh báo có nút ✍️ Trả lời khách, 📜 Xem tin, ▶️ Bật lại AI');
+    ok(relayed.extra.reply_markup && relayed.extra.reply_markup.inline_keyboard[0][0].callback_data === `fb:r:${PSID}`, 'Tin khách chuyển về cũng có nút Trả lời');
+    api.length = 0;
+    const realSendApi = notify.tgApi;
+    notify.tgApi = async (method, body) => { api.push({ method, body }); return method === 'sendMessage' ? { message_id: 5555, chat: { id: CHAT } } : true; };
+    await tgBot.handleUpdate({ callback_query: { id: 'c1', data: `fb:r:${PSID}`, from: { id: 9, first_name: 'Mai' }, message: { message_id: alert.id, chat: { id: CHAT } } } });
+    const prompt = api.find((a) => a.method === 'sendMessage');
+    ok(prompt && prompt.body.reply_markup.force_reply && prompt.body.reply_markup.selective && /tg:\/\/user\?id=9/.test(prompt.body.text), 'Bấm ✍️ → bot mở ô gõ cho đúng người bấm');
+    m._setSend(async (b) => { sent.push(b); return { message_id: 'x' + Math.random() }; });
+    sent.length = 0;
+    await tgBot.handleUpdate({ message: { message_id: 6, chat: { id: CHAT, type: 'supergroup' }, from: { id: 9 }, text: 'Dạ em gửi báo giá ạ', reply_to_message: { message_id: 5555 } } });
+    ok(sent.some((b) => b.message && b.message.text === 'Dạ em gửi báo giá ạ'), 'Gõ vào ô vừa mở → khách nhận được tin');
+
+    api.length = 0;
+    await tgBot.handleUpdate({ callback_query: { id: 'c2', data: `fb:h:${PSID}`, from: { id: 9 }, message: { message_id: alert.id, chat: { id: CHAT } } } });
+    const hist = api.find((a) => a.method === 'sendMessage');
+    ok(hist && /10 tin gần nhất/.test(hist.body.text) && /gặp nhân viên/.test(hist.body.text) && /Dạ em gửi báo giá/.test(hist.body.text), 'Bấm 📜 → xem lại cuộc trò chuyện (khách + nhân viên)');
+
+    await tgBot.handleUpdate({ callback_query: { id: 'c3', data: `fb:a:${PSID}`, from: { id: 9, first_name: 'Mai' }, message: { message_id: alert.id, chat: { id: CHAT } } } });
+    const th2 = await db('messenger_threads').where({ psid: PSID }).first();
+    ok(Number(th2.paused_until_ms) === 0 && Number(th2.relay_until_ms) === 0, 'Bấm ▶️ → AI trả lời khách trở lại, tin khách thôi chuyển về Telegram');
+    sent.length = 0; tg.length = 0;
+    await m.handleWebhook(msg('giỏ nào hợp biếu sếp?'));
+    ok(sent.some((b) => b.message && b.message.text === 'Dạ em chào chị.') && !tg.length, 'Sau khi bật lại → AI trả lời, không báo về nhóm');
+    notify.tgApi = realSendApi;
+    sent.length = 0;
+
     // 8) Nhóm lạ không dùng được
     await tgBot.handleUpdate({ message: { message_id: 5, chat: { id: -1, type: 'supergroup' }, from: { id: 9 }, text: 'hack', reply_to_message: { message_id: alert.id } } });
     ok(!sent.length, 'Nhóm Telegram khác không nhắn được cho khách');
