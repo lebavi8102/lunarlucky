@@ -70,6 +70,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(h.prefill.psid === PSID, 'Link đặt hàng nhớ người nhắn Messenger');
 
     // Khách đã chốt (có link) mà 2 giờ sau chưa đặt → nhắc nhóm gọi lại, mỗi khách 1 lần
+    await db('ai_handoffs').whereNot({ psid: PSID }).update({ followed: true }); // dữ liệu thừa của lần chạy thử trước không được tính
     await db('ai_handoffs').where({ psid: PSID }).update({ created_ms: Date.now() - 3 * 3600000 });
     ok(await m.followUpAbandoned() === 1 && await m.followUpAbandoned() === 0, 'Chốt mà chưa đặt sau 2 giờ → báo TƯ VẤN KHÁCH gọi lại (1 lần)');
     await db('ai_handoffs').where({ psid: PSID }).update({ followed: false });
@@ -195,7 +196,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     sent.length = 0;
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P2 }, recipient: { id: 'PAGE' }, message: { text: 'cho mình gặp nhân viên' } }] }] });
     const t2 = await db('messenger_threads').where({ psid: P2 }).first();
-    ok(t2 && Number(t2.paused_until_ms) > Date.now() && /chuyên viên/.test(sent[0].message.text), '"gặp nhân viên" → báo chuyên viên, AI tạm dừng');
+    ok(t2 && Number(t2.paused_until_ms) > Date.now() && /vui lòng đợi em một chút/.test(sent[0].message.text) && !/chuyên viên/.test(sent[0].message.text), '"gặp nhân viên" → câu mẫu "vui lòng đợi em", AI tạm dừng');
 
     // Ảnh / sticker
     const P3 = PSID + 'a';

@@ -392,7 +392,12 @@ async function handleEvent(ev) {
 
   if (HUMAN.test(text)) {
     await pause(psid, pauseHours);
-    await sendText(psid, `Dạ em đã báo chuyên viên Lunar Lucky, anh/chị đợi một chút sẽ có người trả lời ngay tại đây ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
+    // Câu mẫu chủ shop: gọi đúng khách (đã biết anh/chị + tên), tin đầu thì chào ngắn trước
+    const given = row && row.name ? String(row.name).trim().split(/\s+/).pop() : '';
+    const who = row && row.title ? `${row.title}${given ? ` ${given}` : ''}` : 'anh/chị';
+    const you = row && row.title ? row.title : 'anh/chị';
+    const hello = history.length ? '' : `Dạ Lunar Lucky xin chào ${who} ạ. `;
+    await sendText(psid, `${hello}Dạ vâng ${who}, ${you} vui lòng đợi em một chút, em sẽ trao đổi trực tiếp với ${you} ngay đây ạ ❤️`);
     await alertHuman(psid, row, { title: 'Khách Fanpage cần gặp người thật', last: text, pauseHours });
     return 'human';
   }
