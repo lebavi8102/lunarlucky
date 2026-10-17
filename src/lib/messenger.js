@@ -320,7 +320,7 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
     links.length ? '👉 Bấm nút dưới để mở cuộc trò chuyện: điện thoại dùng Pancake, máy tính dùng Business Suite.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
     `🔎 Hoặc mở app Pancake / Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
     `⏸ AI tạm dừng với khách này ${pauseHours} giờ.`,
-  ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
+  ].filter(Boolean).join('\n'), null, { topic: 'chat', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
 }
 
 /** Xử lý 1 sự kiện Messenger (tin khách, bấm nút, hoặc tin người thật trả lời từ hộp thư). */

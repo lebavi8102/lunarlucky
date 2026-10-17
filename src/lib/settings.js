@@ -17,6 +17,7 @@ const DEFAULTS = {
   telegram_money_thread: '',
   telegram_consult_thread: '',
   telegram_error_thread: '',
+  telegram_chat_thread: '',
   shop_tagline: 'Luxury Gifts & Hampers',
   shop_phone: '096 900 09 10',
   shop_email: 'lunarlucky.cskh@gmail.com',
