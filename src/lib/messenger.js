@@ -141,7 +141,8 @@ let fetchProfile = async (psid) => {
 };
 
 /** Họ tên khách theo thứ tự tiếng Việt (họ trước, tên sau). '' nếu không lấy được. */
-const nameFail = new Map(); // lấy tên lỗi → 6 giờ sau mới thử lại (không gọi Facebook mỗi tin)
+const nameFail = new Map();
+const errAlerted = new Map(); // khách đã được báo "AI lỗi" lúc nào (tránh báo dồn dập) // lấy tên lỗi → 6 giờ sau mới thử lại (không gọi Facebook mỗi tin)
 async function customerName(psid, row) {
   if (row && row.name) return row.name;
   if (Date.now() - (nameFail.get(psid) || 0) < 6 * 3600000) return '';
@@ -335,7 +336,7 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
     links.length ? '👉 Bấm nút dưới để mở cuộc trò chuyện: điện thoại dùng Pancake, máy tính dùng Business Suite.' : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
     `🔎 Hoặc mở app Pancake / Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
-    `⏸ AI tạm dừng với khách này ${pauseHours} giờ. Chat xong bấm ▶️ Bật lại AI.`,
+    pauseHours ? `⏸ AI tạm dừng với khách này ${pauseHours} giờ. Chat xong bấm ▶️ Bật lại AI.` : '⚠️ AI vẫn bật, sẽ thử trả lời tin tiếp theo của khách.',
   ].filter(Boolean).join('\n'), null, { topic: 'chat', reply_markup: { inline_keyboard: [...links.map((l) => [l]), [{ text: '▶️ Bật lại AI (chat xong)', callback_data: `ai:on:${psid}`.slice(0, 64) }]] } }).catch(() => {});
 }
 
@@ -434,7 +435,13 @@ async function handleEvent(ev) {
     return 'off';
   }
   if (r.error) {
-    await sendText(psid, `Dạ em đang bị gián đoạn một chút, anh/chị gửi lại giúp em sau ít phút nhé. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} ạ!`);
+    // AI lỗi sau khi đã tự thử lại → nhắn khách tự nhiên + báo nhân viên trả lời thay ngay (mỗi khách tối đa 1 lần / 30 phút)
+    await sendText(psid, 'Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️');
+    if (Date.now() - (errAlerted.get(psid) || 0) > 30 * 60000) {
+      errAlerted.set(psid, Date.now());
+      const why = r.errorKind === 'credit' ? 'hết tiền Claude — cần nạp ngay' : 'Claude lỗi/quá tải';
+      await alertHuman(psid, row, { title: `AI chưa trả lời được (${why}) — nhân viên trả lời khách giúp`, last: text, pauseHours: 0 });
+    }
     return 'error';
   }
   await sendChat(psid, r.reply);

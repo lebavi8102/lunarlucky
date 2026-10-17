@@ -14,7 +14,8 @@ const { money, todayVN, SLOTS } = require('./format');
 
 const Anthropic = AnthropicSDK.default || AnthropicSDK;
 let client = null;
-const getClient = () => (client ||= new Anthropic()); // khóa lấy từ ANTHROPIC_API_KEY (Render → Environment)
+// khóa lấy từ ANTHROPIC_API_KEY (Render → Environment). Quá tải / mạng chập chờn → tự thử lại tối đa 4 lần trước khi báo lỗi
+const getClient = () => (client ||= new Anthropic({ maxRetries: 4, timeout: 60000 }));
 
 const MAX_TURNS = 20; // số tin khách trong 1 cuộc trò chuyện (không cắt bớt lịch sử: giữ nguyên để không lệch ngữ cảnh)
 const MAX_TOOL_ROUNDS = 6;
@@ -112,7 +113,7 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 QUY TẮC
 - Chỉ giới thiệu giỏ có trong danh mục; giá, thành phần, tồn kho lấy từ công cụ, không đoán. Không tự đặt ra giảm giá, quà tặng thêm hay cam kết ngoài danh sách trên. Không tư vấn sức khỏe/chữa bệnh.
 - Ngày giao: luôn gọi delivery_options trước khi hứa ngày/buổi.
-- Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email, lời chúc trên thiệp — chỉ nhắc kèm một lần ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
+- Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu, nhưng viết như người nhắn tin (1–2 câu tự nhiên, vd "Dạ anh cho em xin tên, số điện thoại với địa chỉ nhận, mình muốn nhận ngày nào và chuyển khoản hay COD ạ?"), KHÔNG liệt kê kiểu tờ khai, KHÔNG nhắc những thứ khách đã nói, KHÔNG kể các mục không bắt buộc (buổi giao, thiệp, người nhận khác) trong tin này — chỉ nhắc buổi giao một câu ngắn khi lên đơn nếu khách chưa nói. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email, lời chúc trên thiệp — không hỏi; nếu khách chưa nói buổi thì chỉ nhắc một câu ngắn ở tin lên đơn ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
 - ĐỦ thông tin bắt buộc là gọi prepare_order NGAY, không hỏi thêm gì nữa. Khách không chọn buổi / chỉ trả lời "ok", "được", "chốt" → để trống buổi giao (giao buổi nào cũng được) và lên đơn luôn. Tuyệt đối không hỏi lại cùng một câu lần thứ hai.
 - Khách nói "lấy cái đó", "ok lấy" mà tin gần nhất em đưa 2 lựa chọn: chọn mẫu em giới thiệu ĐẦU TIÊN (mẫu em đề xuất chính) và lên đơn luôn, nói rõ "nếu muốn đổi mẫu kia thì sửa ở trang kiểm tra hoặc nhắn em". Không bắt khách chọn lại.
 - Sau khi gọi prepare_order: báo khách bấm nút "Kiểm tra & đặt hàng" để xem lại và bấm Đặt hàng — đơn chỉ được tạo khi khách bấm.
@@ -498,7 +499,7 @@ async function chat(req, text, opts = {}) {
       alertTeam(err);
       history.length = before; // lượt này lỗi → bỏ cả lượt (tin khách + phần dở dang) để lần sau gửi lại sạch sẽ
       req.session.aiChat = history;
-      return { reply: `Em đang bị gián đoạn một chút. Anh/chị thử gửi lại, hoặc nhắn Zalo / gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true };
+      return { reply: `Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️ Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true, errorKind: /credit|balance|billing/i.test(String(err && err.message)) ? 'credit' : (err && err.status) || 'network' };
     }
     const dropped = (res.input_transformations || []).filter((t) => t.type === 'thinking_dropped').length;
     if (dropped) console.log(`[AI tư vấn] bỏ ${dropped} khối suy nghĩ cũ không còn khớp (lời dặn/công cụ đã đổi)`);

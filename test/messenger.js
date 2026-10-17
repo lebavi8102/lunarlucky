@@ -216,6 +216,24 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { text: 'Xóa dữ liệu' } }] }] });
     ok(!(await db('messenger_threads').where({ psid: P3 }).first()) && /đã xóa/.test(sent[0].message.text), 'Khách nhắn "xóa dữ liệu" → xóa lịch sử, báo xác nhận');
     // Mã trang sắp hết hạn truy cập dữ liệu → báo BÁO LỖI trước 14 ngày
+    // Claude lỗi (sau khi đã tự thử lại) → khách nhận câu tự nhiên, nhân viên được báo ngay (1 lần / 30 phút / khách)
+    {
+      const PE = PSID + 'err';
+      const ntE = require('../src/lib/notify'); const realTE = ntE.telegram; const tgE = [];
+      ntE.telegram = async (html, c, extra = {}) => { tgE.push({ html, extra }); return false; };
+      const err = Object.assign(new Error('overloaded'), { status: 529 });
+      ai._setClient({ beta: { messages: { create: async () => { throw err; } } } });
+      sent.length = 0;
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PE }, recipient: { id: 'PAGE' }, message: { mid: 'e1', text: 'giỏ 1tr có không' } }] }] });
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PE }, recipient: { id: 'PAGE' }, message: { mid: 'e2', text: 'alo' } }] }] });
+      const toCust = sent.filter((b) => b.message && b.message.text).map((b) => b.message.text);
+      const staff = tgE.filter((x) => /AI chưa trả lời được/.test(x.html));
+      ok(toCust.length === 2 && toCust.every((t) => /đợi em một chút/.test(t) && !/gián đoạn/.test(t)) && staff.length === 1 && staff[0].extra.topic === 'chat' && /AI vẫn bật/.test(staff[0].html),
+        'Claude lỗi → khách nhận câu tự nhiên, nhân viên được báo 1 lần vào CHAT VỚI KHÁCH');
+      ntE.telegram = realTE;
+      await db('messenger_threads').where({ psid: PE }).del();
+      await db('conv_log').where({ psid: PE }).del();
+    }
     const nt = require('../src/lib/notify'); const realT = nt.telegram; const errs = [];
     nt.telegram = async (html, c, extra = {}) => { errs.push({ html, extra }); return false; };
     m._setDebugToken(async () => ({ is_valid: true, expires_at: 0, data_access_expires_at: Math.floor(Date.now() / 1000) + 10 * 86400 }));
