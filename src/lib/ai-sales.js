@@ -332,8 +332,9 @@ async function runTool(name, input, req, out) {
   if (name === 'prepare_order') {
     if (!Array.isArray(input.items) || !input.items.length) return { error: 'Chưa có giỏ nào trong đơn.' };
     if (!validPhone(input.phone)) return { error: 'Số điện thoại người đặt chưa đúng — hỏi lại khách.' };
-    if (input.is_gift && (!input.recipient_name || !validPhone(input.recipient_phone) || !input.recipient_address)) {
-      return { error: 'Đơn tặng cần tên, số điện thoại và địa chỉ người nhận.' };
+    if (input.is_gift) { // nói rõ thiếu ô nào để AI không phải đoán và gọi lại nhiều lần
+      const miss = [!String(input.recipient_name || '').trim() && 'recipient_name', !validPhone(input.recipient_phone) && 'recipient_phone (SĐT người nhận hợp lệ)', !String(input.recipient_address || '').trim() && 'recipient_address'].filter(Boolean);
+      if (miss.length) return { error: `Đơn tặng (is_gift=true) còn thiếu: ${miss.join(', ')}. Điền đúng các ô này từ thông tin khách đã gửi rồi gọi lại; khách tự nhận quà thì để is_gift=false.` };
     }
     const { isHanoi, tetClosed } = checkoutHelpers();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.delivery_date))) return { error: 'Ngày giao phải dạng YYYY-MM-DD.' };
@@ -378,7 +379,11 @@ async function runTool(name, input, req, out) {
       payment_method: method,
       payment_note: gift && input.payment_method === 'cod' ? 'Đơn gửi tặng chuyển sang chuyển khoản (không thu tiền người nhận).' : null,
       deposit_text: deposit ? `Đơn COD này cần cọc ${money(deposit)} qua QR, phần còn lại trả khi nhận.` : null,
-      next_step: 'Nút "Kiểm tra & đặt hàng" đã hiện cho khách. Đơn chỉ được tạo khi khách bấm Đặt hàng ở trang đó.',
+      saved: { // những gì đã điền sẵn vào trang thanh toán — đã lưu, KHÔNG cần gọi lại prepare_order
+        delivery_date: input.delivery_date, delivery_slot: req.session.aiPrefill.delivery_slot || 'buổi nào cũng được',
+        card_message: req.session.aiPrefill.card_message || null, is_gift: gift, recipient: gift ? req.session.aiPrefill.recipient_name : null,
+      },
+      next_step: 'Đã xong, không gọi lại prepare_order (trừ khi khách đổi ý). Nút "Kiểm tra & đặt hàng" đã hiện cho khách. Đơn chỉ được tạo khi khách bấm Đặt hàng ở trang đó.',
     };
   }
   if (name === 'request_callback') {
