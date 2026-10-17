@@ -28,7 +28,7 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
     if (r.action) await learn.log(id, 'event', 'order_button');
     if (r.callback) await learn.log(id, 'event', 'human');
   }
-  if (!test) { delete r.tools; delete r.usage; }
+  if (!test) { delete r.tools; delete r.usage; delete r.debug; }
   res.set('Cache-Control', 'no-store').json(r);
 });
 

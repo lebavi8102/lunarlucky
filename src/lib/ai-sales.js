@@ -543,6 +543,9 @@ async function chat(req, text, opts = {}) {
         console.error('[AI tư vấn] lỗi công cụ', u.name, err.message);
         result = { error: 'Lỗi hệ thống, thử cách khác hoặc request_callback.' };
       }
+      if (typeof req.get === 'function' && req.get('x-lunar-test') === '1') { // chế độ thử: ghi chi tiết để chấm
+        out.debug = [...(out.debug || []), { tool: u.name, input: u.input, result }].slice(-8);
+      }
       if (result && result.error) { // ghi lý do lỗi (chế độ thử hiện ra để chấm; log để xem trên Render)
         out.tools = [...(out.tools || []).slice(0, -1), `${u.name}✗(${String(result.error).slice(0, 80)})`];
         console.log(`[AI tư vấn] ${u.name} lỗi: ${String(result.error).slice(0, 160)}`);
@@ -552,7 +555,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
 
 module.exports = { getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
