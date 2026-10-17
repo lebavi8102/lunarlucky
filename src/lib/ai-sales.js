@@ -228,12 +228,12 @@ function tools(channel) {
           recipient_address: { type: 'string' },
           delivery_date: { type: 'string', description: 'YYYY-MM-DD' },
           delivery_slot: { type: 'string', enum: ['', 'sang', 'chieu', 'toi'] },
-          card_message: { type: 'string', description: 'Lời chúc khách muốn viết tay lên thiệp, chép NGUYÊN VĂN (đơn tặng hay tự nhận đều điền được). Khách đã nói lời chúc thì BẮT BUỘC điền vào đây.' },
+          card_message: { type: 'string', description: 'Lời chúc khách muốn viết tay lên thiệp, chép NGUYÊN VĂN (đơn tặng hay tự nhận đều điền được). Khách đã nói lời chúc thì BẮT BUỘC điền vào đây; khách chưa nói thì để chuỗi rỗng "".' },
           note: { type: 'string' },
           payment_method: { type: 'string', enum: ['bank', 'cod'] },
           coupon_code: { type: 'string', description: 'Chỉ điền mã đã nhận từ give_voucher (nếu đã tặng khách); không thì bỏ trống' },
         },
-        required: ['items', 'customer_name', 'phone', 'province', 'address', 'is_gift', 'delivery_date', 'payment_method'],
+        required: ['items', 'customer_name', 'phone', 'province', 'address', 'is_gift', 'delivery_date', 'payment_method', 'card_message'],
       },
     },
     {
@@ -331,6 +331,10 @@ async function runTool(name, input, req, out) {
     };
   }
   if (name === 'prepare_order') {
+    // Cùng một lượt gọi lại y hệt → đã lưu rồi, chặn vòng lặp (từng làm AI hết lượt và trả lời trống)
+    const sig = JSON.stringify(input);
+    if (out.lastPrepare === sig && out.action) return { ok: true, note: 'Đơn này ĐÃ được lưu ở lần gọi trước. Không gọi công cụ nữa — trả lời khách ngay.' };
+    out.lastPrepare = sig;
     if (!Array.isArray(input.items) || !input.items.length) return { error: 'Chưa có giỏ nào trong đơn.' };
     if (!validPhone(input.phone)) return { error: 'Số điện thoại người đặt chưa đúng — hỏi lại khách.' };
     if (input.is_gift) { // nói rõ thiếu ô nào để AI không phải đoán và gọi lại nhiều lần
