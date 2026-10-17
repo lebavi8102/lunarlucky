@@ -237,7 +237,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
     const e = require('./notify').escapeTg;
     const { money } = require('./format');
     const items = lines.map((l) => `${nameOf[l.productId] || 'giỏ #' + l.productId} × ${l.qty}`).join(', ');
-    const { links } = await inboxLinks(h.psid, await db('messenger_threads').where({ psid: h.psid }).first());
+    const { links, name } = await inboxLinks(h.psid, await db('messenger_threads').where({ psid: h.psid }).first());
     await require('./notify').telegram([
       '🔥 <b>KHÁCH FANPAGE ĐÃ CHỐT NHƯNG CHƯA ĐẶT</b> (quá 2 giờ)',
       `👤 ${e(p.customer_name || 'Khách')}${p.phone ? ` · 📞 ${e(p.phone)}` : ''}`,
@@ -245,6 +245,7 @@ async function followUpAbandoned({ afterMs = 2 * 3600000 } = {}) {
       p.delivery_date ? `📅 Muốn giao ${e(String(p.delivery_date).split('-').reverse().join('/'))}${p.province ? ` · ${e(p.province)}` : ''}` : null,
       p.payment_method ? `💳 ${p.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}` : null,
       '👉 Gọi hoặc nhắn khách trong hộp thư Fanpage để chốt đơn (có thể đặt hộ trên web).',
+      `📱 Điện thoại: mở app Meta Business Suite → Hộp thư → tìm ${e(name || p.customer_name || 'tên khách')}.`,
     ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
     sentCount += 1;
   }
@@ -283,11 +284,11 @@ let fetchConversation = async (psid) => {
 
 async function inboxLinks(psid, row) {
   const links = [];
-  if (pageId) links.push({ text: '📨 Mở cuộc trò chuyện (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
+  if (pageId) links.push({ text: '💻 Mở trên máy tính (Business Suite)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pageId}&selected_item_id=${encodeURIComponent(psid)}&thread_type=FB_MESSAGE` });
   let name = (row && row.name) || '';
   if (configured()) {
     const c = await fetchConversation(psid).catch(() => null);
-    if (c && c.link) links.push({ text: '💬 Mở trên Facebook', url: c.link });
+    if (c && c.link) links.push({ text: '💻 Mở trên máy tính (Facebook)', url: c.link });
     if (c && c.name && !name) {
       name = c.name;
       await saveThread(psid, { name });
@@ -313,8 +314,9 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
     `👤 ${name ? e(name) : 'Khách Fanpage (chưa rõ tên)'} · nhắn lúc ${at}`,
     summary ? `📝 ${e(summary)}` : null,
     last ? `💭 Tin cuối: “${e(String(last).slice(0, 200))}”` : null,
-    links.length ? `👉 Bấm nút dưới để mở đúng cuộc trò chuyện. AI tạm dừng với khách này ${pauseHours} giờ.`
-      : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời. AI tạm dừng với khách này ${pauseHours} giờ.`,
+    links.length ? `👉 Máy tính: bấm nút dưới để mở đúng cuộc trò chuyện.` : `👉 Mở hộp thư Fanpage, tìm cuộc trò chuyện lúc ${at} để trả lời.`,
+    `📱 Điện thoại: mở app Meta Business Suite → Hộp thư → tìm ${name ? `“${e(name)}”` : `tin nhắn lúc ${at}`}.`,
+    `⏸ AI tạm dừng với khách này ${pauseHours} giờ.`,
   ].filter(Boolean).join('\n'), null, { topic: 'consult', ...(links.length ? { reply_markup: { inline_keyboard: links.map((l) => [l]) } } : {}) }).catch(() => {});
 }
 
