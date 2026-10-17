@@ -89,8 +89,10 @@ CÁCH NÓI CHUYỆN — như nhân viên bán hàng thật đang chat Messenger/
 - Giọng ĐÚNG — Khách: "giỏ biếu sếp tầm 2tr có mẫu nào". Em: "Dạ tầm 2tr anh tham khảo giỏ An Khang 1tr890 nhé, có vang Chile với hạt macca, nhìn sang mà không phô 🧧" (dòng trống) "Sếp mình là nam hay nữ ạ, để em chọn cho hợp hơn?"
 - Giọng SAI (tránh): "Cảm ơn anh/chị đã liên hệ Lunar Lucky! Dưới đây là một số gợi ý phù hợp với nhu cầu của anh/chị: - Giỏ A… - Giỏ B…"
 - Xưng "em". Gọi khách nam là "anh", nữ là "chị", kèm tên gọi khi đã biết tên (tên gọi = chữ cuối của họ tên Việt: Nguyễn Văn Tuấn → "anh Tuấn", Trần Thị Lan → "chị Lan").
-- Xác định nam/nữ theo thứ tự: (1) lời khách tự xưng/tự kể ("anh muốn…", "chị cần…", "vợ anh", "chồng chị"); (2) tên đệm "Thị" → nữ, "Văn" → nam; (3) tên gọi rõ nét: Tuấn, Hùng, Dũng, Cường, Thắng, Hải, Long, Đức, Quân, Sơn → anh; Lan, Hương, Trang, Hoa, Mai, Huyền, Thảo, Nhung, Hằng, Loan → chị. Tên dùng chung cả nam lẫn nữ (Minh, Anh, Linh, Ngọc, Phương, Hà, Thanh, Khánh, Giang, An…), tên tiếng Anh/biệt danh, hoặc chưa biết tên → gọi "anh/chị" (kèm tên nếu có), KHÔNG đoán. Khách sửa cách gọi → làm theo ngay và giữ suốt cuộc trò chuyện. Không hỏi giới tính.
-- Chưa biết tên khách: xin tên MỘT lần, lúc khách đang vui vẻ/bình thường và tin đó không có câu hỏi nào khác (thường ở tin thứ 2–3, hoặc khi chuẩn bị lên đơn thì xin họ tên luôn). KHÔNG xin tên khi khách đang bực, đang hỏi gấp, hoặc ghép chung với câu hỏi khác. Khách không nói thì thôi.
+- Xác định nam/nữ theo thứ tự: (1) lời khách tự xưng/tự kể ("anh muốn…", "chị cần…", "vợ anh", "chồng chị"); (2) tên đệm "Thị" → nữ, "Văn" → nam; (3) tên gọi rõ nét: Tuấn, Hùng, Dũng, Cường, Thắng, Hải, Long, Đức, Quân, Sơn → anh; Lan, Hương, Trang, Hoa, Mai, Huyền, Thảo, Nhung, Hằng, Loan → chị. Tên dùng chung cả nam lẫn nữ (Minh, Anh, Linh, Ngọc, Phương, Hà, Thanh, Khánh, Giang, An…), tên tiếng Anh/biệt danh, hoặc chưa biết tên → gọi "anh/chị" (kèm tên nếu có), KHÔNG đoán. Khách sửa cách gọi → làm theo ngay và giữ suốt cuộc trò chuyện.
+- MỞ ĐẦU CUỘC TRÒ CHUYỆN (bắt buộc, khách nhắn gì cũng vậy: "alo", "giá?", "ib", một câu hỏi dài…): tin trả lời ĐẦU TIÊN luôn mở bằng lời chào, vd "Dạ em chào anh/chị ạ 🌸 Em bên Lunar Lucky đây ạ." (đã biết cách gọi thì chào đúng người: "Dạ em chào anh Tuấn ạ"). Khách có hỏi gì cụ thể thì trả lời ngắn ngay sau lời chào.
+- Xin cách xưng hô: chưa biết khách là anh hay chị, hoặc chưa biết tên → cuối tin đầu tiên hỏi đúng 1 câu, vd "Em xin phép hỏi mình là anh hay chị, tên gì để em tiện xưng hô ạ?" (câu này thay cho câu hỏi tư vấn của tin đó). Đã biết tên mà tên rõ nam/nữ → không hỏi anh hay chị; tên dùng chung nam nữ → chỉ hỏi "anh hay chị ạ". Đã biết đủ → không hỏi.
+- Khách cho biết anh/chị hoặc tên (kể cả tự xưng "anh muốn…", "chị Lan đây") → gọi remember_customer ngay trong lượt đó, rồi gọi đúng như vậy suốt cuộc trò chuyện. Khách lờ câu hỏi xưng hô → KHÔNG hỏi lại, gọi "anh/chị" và tư vấn tiếp. Khách mở đầu bằng khiếu nại / đang bực → chào ngắn, xin lỗi và giải quyết trước, để sau mới hỏi tên.
 - Khi đã đủ thông tin để gợi ý: gọi search_products rồi giới thiệu như trên.
 - Danh tính: không tự giới thiệu mình là AI, bot hay trợ lý tự động — cứ nói chuyện bình thường với tư cách "em bên Lunar Lucky". Không bịa tên riêng, tuổi, chuyện cá nhân. NHƯNG nếu khách hỏi thẳng em là người hay máy / bot / AI → trả lời thật, ngắn gọn, thân thiện: em là trợ lý tự động của shop để trả lời nhanh cả ngày đêm, anh/chị muốn nói chuyện với nhân viên thì em chuyển ngay (rồi chuyển người thật nếu khách muốn). Không bao giờ khẳng định mình là người thật.
 
@@ -247,6 +249,21 @@ function tools(channel) {
     strict: true,
     input_schema: { type: 'object', additionalProperties: false, properties: { reason: { type: 'string', description: 'vd: khách mặc cả lần 2 cho giỏ An Khang' } }, required: ['reason'] },
   });
+  // Ghi nhớ cách xưng hô khách vừa cho biết (anh/chị + tên)
+  list.push({
+    name: 'remember_customer',
+    description: 'Ghi nhớ cách xưng hô khách vừa cho biết: anh hay chị, và tên gọi. Gọi ngay khi khách nói (trả lời câu hỏi xưng hô, hoặc tự xưng). Chỉ điền điều khách đã nói rõ, không đoán.',
+    strict: true,
+    input_schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        title: { type: 'string', enum: ['anh', 'chị'], description: 'Khách là anh hay chị (chỉ điền khi khách đã nói rõ hoặc tự xưng)' },
+        name: { type: 'string', description: 'Tên gọi khách cho biết, vd "Tuấn", "Lan" (không biết thì bỏ trống)' },
+      },
+      required: [],
+    },
+  });
   // Messenger: khách đang ở Fanpage → chuyển thẳng cho người thật trả lời trong hộp thư (không bắt khách sang kênh khác)
   if (channel === 'messenger') {
     list.push({
@@ -373,6 +390,13 @@ async function runTool(name, input, req, out) {
       note: 'Báo khách mã và mức giảm. Khi lên đơn, điền coupon_code = mã này trong prepare_order để tự trừ vào đơn. Không tặng thêm mã khác.',
     };
   }
+  if (name === 'remember_customer') {
+    const title = ['anh', 'chị'].includes(input.title) ? input.title : '';
+    const nm = String(input.name || '').trim().slice(0, 60);
+    out.customer = { ...(out.customer || {}), ...(title ? { title } : {}), ...(nm ? { name: nm } : {}) };
+    if (req.session) req.session.aiCustomer = { ...(req.session.aiCustomer || {}), ...out.customer };
+    return { ok: true, note: `Từ giờ gọi khách là ${title || 'anh/chị'}${nm ? ` ${nm}` : ''}.` };
+  }
   if (name === 'transfer_to_human') {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
     out.human = String(input.summary || '').slice(0, 800);
@@ -412,10 +436,25 @@ async function chat(req, text, opts = {}) {
   }
   day.count += 1;
   const before = history.length;
-  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + String(text).slice(0, 800) });
+  // Cách xưng hô khách đã cho biết (Fanpage lưu theo khách; web lưu trong phiên)
+  const known = (req.session && req.session.aiCustomer) || {};
+  const title = ['anh', 'chị'].includes(opts.customerTitle) ? opts.customerTitle : (['anh', 'chị'].includes(known.title) ? known.title : '');
+  const knownName = String(known.name || '').trim();
+  // Tin đầu tiên của cuộc trò chuyện → nhắc AI chào và xin cách xưng hô (lưu cùng tin khách để lịch sử không đổi)
+  let firstNote = '';
+  if (userTurns === 0 && !opts.noGreet) {
+    const nameHint = knownName || who;
+    firstNote = title && nameHint
+      ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào, gọi khách là ${title} ${nameHint}; không cần hỏi xưng hô.]\n`
+      : nameHint
+        ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào. Đã biết tên "${nameHint}" nhưng chưa chắc anh hay chị: tên rõ nam/nữ thì gọi luôn, tên dùng chung thì cuối tin hỏi "anh hay chị ạ".]\n`
+        : '[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào; chưa biết cách xưng hô → cuối tin xin "anh hay chị, tên gì để em tiện xưng hô".]\n';
+  }
+  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + firstNote + String(text).slice(0, 800) });
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
-  if (CHANNEL_NOTES[opts.channel] || who) {
-    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị").` : ''].filter(Boolean).join('\n') });
+  const knownLine = title ? `Khách đã cho biết cách xưng hô: gọi là ${title}${knownName ? ` ${knownName}` : ''}. Gọi đúng như vậy, không hỏi lại.` : '';
+  if (CHANNEL_NOTES[opts.channel] || who || knownLine) {
+    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị").` : '', knownLine].filter(Boolean).join('\n') });
   }
   req.aiChannel = opts.channel || 'web';
   const toolDefs = tools(opts.channel);
@@ -482,7 +521,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '' };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null };
 }
 
 module.exports = { getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };

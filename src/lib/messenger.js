@@ -406,13 +406,16 @@ async function handleEvent(ev) {
   } catch { context = ''; }
 
   typing(psid);
-  let session = { aiChat: history };
+  const known = row && row.title ? { title: row.title, ...(row.name ? { name: row.name } : {}) } : {};
+  let session = { aiChat: history, aiCustomer: known };
   const name = await customerName(psid, row);
-  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, context });
-  if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger
-    session = { aiChat: [] };
-    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, context });
+  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context });
+  if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger (không chào lại)
+    session = { aiChat: [], aiCustomer: known };
+    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context, noGreet: true });
   }
+  // Khách cho biết anh/chị + tên → lưu để xưng hô đúng cả lần sau và hiện đúng tên trên Telegram
+  if (r.customer) await saveThread(psid, { ...(r.customer.title ? { title: r.customer.title } : {}), ...(r.customer.name ? { name: r.customer.name } : {}) });
   await saveThread(psid, { history: JSON.stringify(session.aiChat || []), ...(context && !r.error ? { notes: null } : {}) });
   if (Math.random() < 0.02) purgeOld();
   // AI tắt / quá giới hạn ngày / lỗi: không đẩy khách sang Zalo — báo người thật trả lời tại Fanpage

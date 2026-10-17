@@ -41,6 +41,9 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
           items: [{ product_id: prod.id, qty: 1 }], customer_name: 'Chị Lan FB', phone: '0912345000', province: 'Hà Nội', address: '3 Phố Huế',
           is_gift: false, delivery_date: todayVN(3), payment_method: 'bank' } }] };
       }
+      if (typeof last.content === 'string' && /chị Lan đây/.test(last.content)) {
+        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'remember_customer', input: { title: 'chị', name: 'Lan' } }] };
+      }
       if (typeof last.content === 'string' && /đổi món/.test(last.content)) {
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ', customer_name: 'chị Hoa' } }] };
       }
@@ -130,7 +133,9 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     const t4 = await db('messenger_threads').where({ psid: P4 }).first();
     ok(t4 && Number(t4.paused_until_ms) < Date.now(), 'Tin tự động của Fanpage ngay sau tin khách → AI không bị dừng');
     const lastSys = calls[calls.length - 1].system;
-    ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /xin tên/.test(lastSys[0].text), 'Không lấy được tên Facebook → AI tự xin tên khách');
+    const firstMsg = calls[calls.length - 1].messages[0].content;
+    ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /MỞ ĐẦU CUỘC TRÒ CHUYỆN/.test(lastSys[0].text) && /tin ĐẦU TIÊN/.test(firstMsg) && /anh hay chị, tên gì/.test(firstMsg),
+      'Tin đầu tiên, chưa biết tên → AI chào và xin "anh hay chị, tên gì"');
 
     // AI tự chuyển cho người thật (đổi món…) — khách đang ở Fanpage, không bị bảo nhắn Zalo
     ok(ai.tools('messenger').some((t) => t.name === 'transfer_to_human') && !ai.tools().some((t) => t.name === 'transfer_to_human'), 'Công cụ chuyển người thật chỉ có trên Messenger');
@@ -141,6 +146,19 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     notifyMod.telegram = async (html, chat, extra = {}) => { tgCalls.push({ html, extra }); return false; };
     m._setPageId('112418327083235');
     m._setConversation(async () => ({ link: 'https://www.facebook.com/msg/t_123', name: '' }));
+    // Khách trả lời câu xưng hô → AI ghi nhớ "chị Lan", lưu theo khách, các tin sau gọi đúng và không chào/hỏi lại
+    const PT = PSID + 'title';
+    m._setProfile(async () => null);
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PT }, recipient: { id: 'PAGE' }, message: { mid: 'a6', text: 'alo' } }] }] });
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PT }, recipient: { id: 'PAGE' }, message: { mid: 'b6', text: 'chị Lan đây em' } }] }] });
+    const t6 = await db('messenger_threads').where({ psid: PT }).first();
+    ok(t6 && t6.title === 'chị' && t6.name === 'Lan', 'Khách nói "chị Lan" → lưu cách xưng hô theo khách');
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PT }, recipient: { id: 'PAGE' }, message: { mid: 'c6', text: 'giỏ 1 triệu có không' } }] }] });
+    const c6 = calls[calls.length - 1];
+    const lastUser6 = c6.messages.filter((x) => x.role === 'user' && typeof x.content === 'string').pop().content;
+    ok(c6.system.some((b) => /gọi là chị Lan/.test(b.text)) && !/tin ĐẦU TIÊN/.test(lastUser6), 'Tin sau: AI gọi "chị Lan", không chào/hỏi xưng hô lại');
+    await db('messenger_threads').where({ psid: PT }).del();
+    await db('conv_log').where({ psid: PT }).del();
     const P5 = PSID + 'swap';
     m._resetEchoState();
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P5 }, recipient: { id: 'PAGE' }, message: { text: 'cho chị đổi món trong giỏ' } }] }] });
