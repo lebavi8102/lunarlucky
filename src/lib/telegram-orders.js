@@ -511,7 +511,7 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'giao', 'thu', 'doingay', 'thulink'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -525,6 +525,13 @@ async function handleCommand(msg) {
   }
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
+  if (cmd === 'thulink') { // thử kiểu link mở thẳng cuộc trò chuyện Fanpage trên điện thoại
+    const r = await require('./messenger').linkCandidates(args);
+    if (!r) return reply(msg, 'Chưa có khách Fanpage nào. Nhắn thử vào Fanpage rồi gõ lại <code>/thulink</code>.');
+    if (!r.links.length) return reply(msg, 'Máy chủ chưa biết mã Fanpage (vừa khởi động lại). Nhắn 1 tin vào Fanpage rồi gõ lại <code>/thulink</code>.');
+    return reply(msg, `🔗 Link thử mở cuộc trò chuyện với <b>${notify.escapeTg(r.name)}</b>.\nBấm <b>từng nút trên điện thoại</b>, rồi báo lại số nút mở <b>đúng</b> cuộc trò chuyện (thấy được tin nhắn).`,
+      { reply_markup: { inline_keyboard: r.links.map((l) => [l]) } });
+  }
   if (cmd === 'chonloi') {
     if (!msg.is_topic_message || !msg.message_thread_id) return reply(msg, 'Gõ lệnh này <b>bên trong</b> chủ đề Báo lỗi.');
     await settings.save({ telegram_error_thread: String(msg.message_thread_id) });

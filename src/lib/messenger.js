@@ -269,7 +269,7 @@ let pageId = process.env.FB_PAGE_ID || ''; // lấy từ webhook (entry.id) nế
  * Thử hỏi Facebook link + tên người nhắn (danh sách hội thoại của trang); luôn kèm link Business Suite theo mã khách.
  */
 let fetchConversation = async (psid) => {
-  const r = await fetch(`${GRAPH}/me/conversations?platform=messenger&user_id=${encodeURIComponent(psid)}&fields=link,participants`, {
+  const r = await fetch(`${GRAPH}/me/conversations?platform=messenger&user_id=${encodeURIComponent(psid)}&fields=id,link,participants`, {
     headers: { Authorization: `Bearer ${env().token}` }, signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) {
@@ -279,7 +279,7 @@ let fetchConversation = async (psid) => {
   const c = ((await r.json()).data || [])[0];
   if (!c) return null;
   const who = ((c.participants && c.participants.data) || []).find((p) => String(p.id) === String(psid));
-  return { link: c.link ? (String(c.link).startsWith('http') ? c.link : `https://www.facebook.com${c.link}`) : '', name: who && who.name ? String(who.name) : '' };
+  return { id: String(c.id || ''), link: c.link ? (String(c.link).startsWith('http') ? c.link : `https://www.facebook.com${c.link}`) : '', name: who && who.name ? String(who.name) : '' };
 };
 
 async function inboxLinks(psid, row) {
@@ -295,6 +295,32 @@ async function inboxLinks(psid, row) {
     }
   }
   return { links, name };
+}
+
+/**
+ * /thulink: nhiều kiểu link mở cuộc trò chuyện của khách → chủ shop bấm thử trên điện thoại, kiểu nào mở đúng thì dùng làm nút chính.
+ * Khách gần nhất đang chờ người thật (AI tạm dừng), hoặc khách có tên chứa `query`.
+ */
+async function linkCandidates(query) {
+  let q = db('messenger_threads').orderBy('updated_ms', 'desc');
+  if (query) q = q.where('name', 'like', `%${String(query).slice(0, 60)}%`);
+  else q = q.where('paused_until_ms', '>', Date.now());
+  const row = (await q.first()) || (!query && (await db('messenger_threads').orderBy('updated_ms', 'desc').first()));
+  if (!row) return null;
+  const psid = encodeURIComponent(row.psid);
+  const c = configured() ? await fetchConversation(row.psid).catch(() => null) : null;
+  const tid = c && c.id ? encodeURIComponent(c.id) : '';
+  const pg = pageId;
+  const list = [];
+  if (pg) {
+    list.push({ text: '1 · Business Suite (mã khách)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pg}&selected_item_id=${psid}&mailbox_id=${pg}&thread_type=FB_MESSAGE` });
+    list.push({ text: '2 · Business Suite Messenger', url: `https://business.facebook.com/latest/inbox/messenger?asset_id=${pg}&selected_item_id=${psid}&mailbox_id=${pg}` });
+    if (tid) list.push({ text: '3 · Business Suite (mã hội thoại)', url: `https://business.facebook.com/latest/inbox/all/?asset_id=${pg}&selected_item_id=${tid}&mailbox_id=${pg}` });
+    list.push({ text: '4 · Facebook (hộp thư trang)', url: `https://www.facebook.com/latest/inbox/all?asset_id=${pg}&selected_item_id=${psid}&mailbox_id=${pg}` });
+    list.push({ text: '5 · Facebook di động', url: `https://m.facebook.com/messages/read/?tid=cid.c.${psid}&entrypoint=page_inbox&page_id=${pg}` });
+  }
+  if (c && c.link) list.push({ text: '6 · Link Facebook trả về', url: c.link });
+  return { name: row.name || 'khách (chưa rõ tên)', links: list, hasPage: !!pg };
 }
 
 /** Lưu tên khách tự giới thiệu (AI ghi lại khi chuyển người thật / lên đơn) nếu chưa có tên. */
@@ -567,6 +593,7 @@ module.exports = {
   sendRaw: (b) => send(b),
   addNote,
   rememberName,
+  linkCandidates,
   _setProfile: (fn) => { fetchProfile = fn; },
   _setConversation: (fn) => { fetchConversation = fn; },
   _setPageId: (id) => { pageId = id; },
