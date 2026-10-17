@@ -202,8 +202,14 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     sent.length = 0;
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { sticker_id: 369239263222822, attachments: [{ type: 'image' }] } }] }] });
     ok(!sent.length, 'Sticker "like" → không trả lời');
-    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { attachments: [{ type: 'image' }] } }] }] });
-    ok(sent.length === 1 && /tặng ai/.test(sent[0].message.text), 'Khách gửi ảnh → hỏi thêm nhu cầu bằng chữ');
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { attachments: [{ type: 'fallback', payload: { url: 'https://x' } }] } }] }] });
+    ok(!sent.length, 'Phần đính kèm không có nội dung (xem trước link…) → không trả lời');
+    const nCalls = calls.length;
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P3 }, recipient: { id: 'PAGE' }, message: { attachments: [{ type: 'image', payload: { url: 'https://cdn/x.jpg' } }] } }] }] });
+    const imgCall = calls[nCalls];
+    const imgMsg = imgCall && imgCall.messages.filter((x) => x.role === 'user' && typeof x.content === 'string').pop().content;
+    ok(imgMsg && /khách vừa gửi ảnh/.test(imgMsg) && /ĐÚNG mạch/.test(imgMsg) && !sent.some((b) => b.message && /tặng ai, tầm bao nhiêu/.test(b.message.text || '')),
+      'Khách gửi ảnh → AI trả lời đúng mạch (không dùng câu soạn sẵn hỏi lại từ đầu)');
 
     // Khách nhắn "xóa dữ liệu" → xóa lịch sử
     sent.length = 0;

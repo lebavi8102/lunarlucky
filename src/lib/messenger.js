@@ -361,7 +361,7 @@ async function handleEvent(ev) {
   const ref = ev.referral || (ev.message && ev.message.referral) || (ev.postback && ev.postback.referral);
   if (ref && ref.ad_id && /^\d{5,30}$/.test(String(ref.ad_id))) await saveThread(psid, { ad_id: String(ref.ad_id) });
   if (ev.referral && !ev.message && !ev.postback) return 'referral'; // chỉ là sự kiện "khách bấm quảng cáo
-  const text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
+  let text = String((ev.message && (ev.message.quick_reply ? ev.message.text || ev.message.quick_reply.payload : ev.message.text))
     || (ev.postback && (ev.postback.title || ev.postback.payload)) || '').trim();
 
   if (text) await require('./ai-learn').log(psid, 'customer', text);
@@ -380,13 +380,13 @@ async function handleEvent(ev) {
   if (!enabled(s)) return 'off';
 
   if (!text) {
-    // Sticker "like" → bỏ qua; ảnh/tệp → nhờ khách gõ chữ
+    // Sticker "like" → bỏ qua. Phần đính kèm không có nội dung thật (xem trước link, vị trí…) → bỏ qua.
     if (ev.message && ev.message.sticker_id) return 'sticker';
-    if (ev.message && ev.message.attachments) {
-      await sendText(psid, 'Dạ em nhận được rồi ạ. Anh/chị nhắn thêm giúp em là tặng ai, tầm bao nhiêu tiền một giỏ để em chọn mẫu cho hợp nha. Cần bên em xem kỹ ảnh thì anh/chị nhắn "gặp nhân viên" ạ.');
-      return 'attachment';
-    }
-    return 'skip';
+    const real = ((ev.message && ev.message.attachments) || []).filter((a) => a && ['image', 'video', 'audio', 'file'].includes(a.type));
+    if (!real.length) return 'skip';
+    // Ảnh/tệp thật → để AI trả lời tiếp đúng mạch cuộc trò chuyện (không dùng câu soạn sẵn hỏi lại từ đầu)
+    const kind = { image: 'ảnh', video: 'video', audio: 'tin nhắn thoại', file: 'tệp' }[real[0].type];
+    text = `[Ghi chú hệ thống: khách vừa gửi ${real.length > 1 ? `${real.length} ` : ''}${kind}, em không xem được nội dung. Trả lời tiếp ĐÚNG mạch đang nói, không hỏi lại từ đầu. Nếu đang chờ khách chuyển khoản thì đó thường là ảnh chuyển khoản → cảm ơn, báo tiền về hệ thống tự xác nhận và gửi tin báo. Nếu khách gửi ảnh mẫu muốn làm giống, ảnh hàng lỗi/khiếu nại, hoặc tin thoại → gọi transfer_to_human để nhân viên xem. Mới bắt đầu trò chuyện → chào theo mẫu rồi hỏi khách cần tìm quà gì.]`;
   }
 
   if (HUMAN.test(text)) {
