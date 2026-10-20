@@ -81,6 +81,7 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     const sysNow = await ai.systemPrompt();
     ok(/CẨM NANG CHỐT KHÁCH/.test(sysNow) && /KHÔNG giảm giá/.test(sysNow) && /không bịa "sắp hết"/.test(sysNow), 'Lời dặn có cẩm nang chốt khách khó (không giảm giá, không bịa khan hiếm)');
     ok(/hóa đơn khống[\s\S]{0,300}chuyển chuyên viên NGAY/.test(sysNow), 'Khách đòi hóa đơn khống / VAT khác giá → chuyển chuyên viên ngay');
+    ok(/xuất VAT[\s\S]{0,400}nhắn Zalo[\s\S]{0,200}mã số thuế/.test(sysNow) && /NGOẠI LỆ duy nhất: đơn xuất hóa đơn VAT/.test(require('fs').readFileSync(require.resolve('../src/lib/ai-sales.js'), 'utf8')), 'Khách hỏi xuất VAT → mời nhắn Zalo gửi thông tin xuất hóa đơn (cả Fanpage)');
     ok(/mô hình bán hàng online kết hợp giao hàng tận nơi/.test(sysNow) && /cung cấp hình ảnh, video thực tế/.test(sysNow) && /trải nghiệm chưa được như mong đợi/.test(sysNow), 'Lời dặn có câu mẫu của chủ shop: showroom, sợ chuyển khoản, khách gắt');
     ok(/XEM GIỎ THẬT[\s\S]{0,200}xin số Zalo[\s\S]{0,300}request_callback NGAY/.test(sysNow), 'Khách muốn xem giỏ thật → xin số Zalo, báo chuyên viên ngay');
     ok(/KHÔNG bắt buộc: buổi giao/.test(sysNow) && /gọi prepare_order NGAY/.test(sysNow) && /Sau khi gọi prepare_order: báo khách bấm nút/.test(sysNow), 'Đủ thông tin bắt buộc → lên đơn ngay, không kẹt ở buổi giao');
