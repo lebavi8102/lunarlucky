@@ -170,7 +170,7 @@
       // Gửi tặng: ẩn COD (không để tài xế thu tiền người được tặng), chọn sẵn chuyển khoản
       const codOpt = $('[data-cod-option]');
       if (codOpt) {
-        codOpt.hidden = giftToggle.checked || !!$('[data-vat-toggle]')?.checked;
+        codOpt.hidden = giftToggle.checked;
         if (codOpt.hidden && $('input', codOpt).checked) $('input[name=payment_method][value=bank]').checked = true;
       }
       $$('input', giftFields).forEach((i) => (i.required = giftToggle.checked));
@@ -179,34 +179,6 @@
     giftToggle.addEventListener('change', sync);
     sync();
   }
-  /* Checkout: xuất VAT → hiện form công ty, chỉ cho chuyển khoản */
-  const vatToggle = $('[data-vat-toggle]');
-  if (vatToggle) {
-    const fields = $('[data-vat-fields]');
-    const cod = $('[data-cod-option]');
-    const syncVat = () => {
-      const on = vatToggle.checked;
-      fields.hidden = !on;
-      $$('input', fields).forEach((i) => (i.required = on));
-      cod.hidden = on || !!$('[data-gift-toggle]')?.checked;
-      const notice = $('[data-vat-notice]');
-      const row = $('[data-vat-row]');
-      const total = $('[data-total]');
-      if (notice) notice.hidden = !on;
-      if (row) row.hidden = !on;
-      if (total) {
-        const v = Number(on ? total.dataset.withVat : total.dataset.base);
-        total.textContent = new Intl.NumberFormat('vi-VN').format(v) + '₫';
-      }
-      if (on) {
-        const codInput = $('input', cod);
-        if (codInput.checked) $('input[name=payment_method][value=bank]').checked = true;
-      }
-    };
-    vatToggle.addEventListener('change', syncVat);
-    syncVat();
-  }
-
   /* Trang thanh toán: + / − / xóa món trong khung Đơn hàng (cập nhật tại chỗ, giữ nguyên thông tin đã điền) */
   const summary = $('.summary[aria-label]');
   if (summary && $('[data-checkout]')) {
@@ -233,10 +205,6 @@
         const doc = new DOMParser().parseFromString(html, 'text/html');
         const fresh = doc.querySelector('.summary[aria-label]');
         if (fresh) summary.innerHTML = fresh.innerHTML;
-        // Dòng "Tiền hàng + phí VAT = Cần thanh toán" ở khung VAT cũng tính lại theo số lượng mới
-        const vb = doc.querySelector('[data-vat-breakdown]');
-        if (vb && $('[data-vat-breakdown]')) $('[data-vat-breakdown]').innerHTML = vb.innerHTML;
-        $('[data-vat-toggle]')?.dispatchEvent(new Event('change')); // tính lại tổng nếu đang chọn xuất VAT
         window.__syncDeposit?.();
       } catch {
         showToast('Không cập nhật được số lượng, vui lòng thử lại.');
@@ -428,7 +396,7 @@
     $$('[data-deposit-row]').forEach((r) => (r.hidden = !on));
   };
   if ($('[data-checkout]')) {
-    document.addEventListener('change', (e) => { if (e.target.matches('input[name=payment_method], [data-vat-toggle], [data-gift-toggle]')) syncDeposit(); });
+    document.addEventListener('change', (e) => { if (e.target.matches('input[name=payment_method], [data-gift-toggle]')) syncDeposit(); });
     syncDeposit();
     window.__syncDeposit = syncDeposit;
   }

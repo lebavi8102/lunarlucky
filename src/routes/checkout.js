@@ -230,20 +230,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;
   const card_message = f.text('card_message', { max: 300 });
   const note = f.text('note', { max: 500 });
-  // Xuất hóa đơn VAT → bắt buộc chuyển khoản (thu vào TK bán lẻ; khách muốn TK công ty thì nhắn Zalo)
-  const needs_vat = f.bool('needs_vat');
-  let vat = {};
-  if (needs_vat) {
-    vat = {
-      vat_company: f.text('vat_company', { label: 'tên công ty', required: true, min: 3, max: 200 }),
-      vat_tax_code: f.text('vat_tax_code', { label: 'mã số thuế', required: true, max: 20 }).replace(/\s/g, ''),
-      vat_address: f.text('vat_address', { label: 'địa chỉ công ty', required: true, min: 6, max: 255 }),
-      vat_email: f.email('vat_email', { required: true }),
-    };
-    if (vat.vat_tax_code && !/^\d{10}(-?\d{3})?$/.test(vat.vat_tax_code)) {
-      f.errors.vat_tax_code = 'Mã số thuế gồm 10 số (hoặc 13 số với chi nhánh).';
-    }
-  }
+  // Xuất hóa đơn VAT không đặt trên web nữa: doanh nghiệp nhắn Zalo để báo giá (chủ shop chốt 2026-10-20)
+  const needs_vat = false;
+  const vat = {};
   let payment_method = f.oneOf('payment_method', ['cod', 'bank'], 'bank');
   if ((needs_vat || is_gift) && payment_method === 'cod') {
     payment_method = 'bank'; // VAT: phải chuyển khoản; gửi tặng: không thu tiền người nhận quà

@@ -119,38 +119,21 @@
 
       <fieldset class="fieldset">
         <legend><span class="num">4</span> Thanh toán</legend>
-        <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
-          <input type="checkbox" name="needs_vat" value="1" <%= values.needs_vat ? 'checked' : '' %> data-vat-toggle>
-          <span><b>Tôi cần xuất hóa đơn VAT</b> <span class="small muted">(+<%= vatPercent %>% phí xuất hóa đơn)</span><br><span class="small muted">Dành cho doanh nghiệp, thanh toán bằng chuyển khoản.</span></span>
-        </label>
-        <div class="flash flash-info" data-vat-notice <%= values.needs_vat ? '' : 'hidden' %> style="margin:0 0 16px">
+        <% if (s.zalo_url) { %>
+        <div class="flash flash-info" style="margin:0 0 16px">
           <svg class="icon"><use href="#i-file"/></svg>
-          <span>
-            <b>Về hóa đơn VAT:</b> hóa đơn được xuất qua đơn vị đối tác của Lunar Lucky.
-            Khách hàng chịu <b>phí xuất hóa đơn <%= vatPercent %>%</b> trên giá trị đơn (tiền hàng sau giảm giá, không tính phí giao).
-            Phí này <b>đã được cộng vào số tiền cần thanh toán</b>.
-            Đơn xuất VAT thanh toán bằng chuyển khoản; hóa đơn điện tử gửi về email bạn cung cấp.
-            <% const vf = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
-            <% if (s.zalo_url) { %><span style="display:block;margin-top:8px">Doanh nghiệp cần chuyển khoản vào tài khoản công ty xuất hóa đơn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:600">Nhắn Zalo Lunar Lucky</a> để nhận thông tin.</span><% } %>
-            <span style="display:block;margin-top:8px" data-vat-breakdown>Tiền hàng <%= money(cart.subtotal - cart.discount) %><% if (cart.shippingFee) { %> + phí giao <%= money(cart.shippingFee) %><% } %> + phí VAT <%= money(vf) %> = <b style="color:var(--lacquer-700)">Cần thanh toán <%= money(cart.total + vf) %></b></span>
-          </span>
+          <span><b>Doanh nghiệp cần xuất hóa đơn VAT?</b> Vui lòng liên hệ Lunar Lucky qua Zalo để được báo giá và hỗ trợ xuất hóa đơn.
+            <a class="btn btn-sm" href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="display:inline-flex;margin-top:10px">Liên hệ qua Zalo</a></span>
         </div>
-        <div data-vat-fields <%= values.needs_vat ? '' : 'hidden' %> style="margin-bottom:20px">
-          <%- include('../partials/field', { name: 'vat_company', label: 'Tên công ty', autocomplete: 'organization', maxlength: 200 }) %>
-          <div class="grid-2" style="margin-top:16px">
-            <%- include('../partials/field', { name: 'vat_tax_code', label: 'Mã số thuế', inputmode: 'numeric', maxlength: 20, placeholder: '0123456789' }) %>
-            <%- include('../partials/field', { name: 'vat_email', label: 'Email nhận hóa đơn', type: 'email', autocomplete: 'email' }) %>
-          </div>
-          <div style="margin-top:16px"><%- include('../partials/field', { name: 'vat_address', label: 'Địa chỉ công ty (theo đăng ký kinh doanh)', maxlength: 255 }) %></div>
-        </div>
+        <% } %>
         <div class="radio-cards">
           <label class="radio-card">
             <input type="radio" name="payment_method" value="bank" <%= values.payment_method !== 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
             <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;white-space:nowrap;display:inline-block">Khuyên dùng</span></strong><span>Quét mã QR sau khi đặt — nhận tiền là chuẩn bị &amp; giao ngay</span></span>
           </label>
-          <label class="radio-card" data-cod-option <%= values.needs_vat || values.is_gift ? 'hidden' : '' %>>
-            <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' && !values.needs_vat ? 'checked' : '' %>>
+          <label class="radio-card" data-cod-option <%= values.is_gift ? 'hidden' : '' %>>
+            <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
             <% const dr = pay.depositRule(s); %>
             <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.<% if (dr.percent || dr.bulkPercent) { %> Cọc qua mã QR: <%= pay.depositText(s) %>; phần còn lại trả khi nhận.<% } %></span></span>
@@ -194,14 +177,12 @@
       </details>
       <% } %>
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
-      <% const vatFeePreview = Math.round((cart.subtotal - cart.discount) * vatPercent / 100); %>
-      <div class="sum-row" data-vat-row <%= values.needs_vat ? '' : 'hidden' %>><span>Phí xuất hóa đơn VAT (<%= vatPercent %>%)</span><span><%= money(vatFeePreview) %></span></div>
       <% const codDep = pay.depositFor({ goods: cart.subtotal - cart.discount, qty: cart.count, total: cart.total }, s); %>
       <% if (codDep) { %>
       <div class="sum-row" data-deposit-row hidden><span>Đặt cọc trước (COD)</span><span><b><%= money(codDep) %></b></span></div>
       <div class="sum-row" data-deposit-row hidden><span>Trả khi nhận hàng</span><span><%= money(cart.total - codDep) %></span></div>
       <% } %>
-      <div class="sum-row total"><span>Tổng cộng</span><span data-total data-base="<%= cart.total %>" data-with-vat="<%= cart.total + vatFeePreview %>"><%= money(values.needs_vat ? cart.total + vatFeePreview : cart.total) %></span></div>
+      <div class="sum-row total"><span>Tổng cộng</span><span data-total><%= money(cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
       <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>
     </aside>

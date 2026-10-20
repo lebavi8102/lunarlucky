@@ -194,30 +194,18 @@ async function addToCart(c, slug, qty = 1) {
     ok((await u('/tai-khoan')).text.includes(code), 'Đơn đặt trước khi có tài khoản → hiện trong lịch sử đơn');
   }
 
-  // 6. Đơn xuất VAT: bắt buộc chuyển khoản, lưu thông tin công ty
+  // 6. Xuất VAT không đặt trên web: trang thanh toán chỉ mời nhắn Zalo, không ghi phí 11%
   const c3 = client();
   const { t: t3 } = await addToCart(c3, 'gio-an-khang', 1);
-  const vatBad = await c3('/thanh-toan', { method: 'POST', form: { _csrf: t3, customer_name: 'Kế toán', phone: '0912345678',
-    province: 'Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Cty X',
-    vat_tax_code: '123', vat_address: '1 Tràng Tiền', vat_email: 'kt@x.vn', payment_method: 'bank' } });
-  ok(vatBad.status === 422 && /Mã số thuế gồm 10 số/.test(vatBad.text), 'Mã số thuế sai → báo lỗi');
+  const ck = (await c3('/thanh-toan')).text;
+  ok(/Doanh nghiệp cần xuất hóa đơn VAT/.test(ck) && /Liên hệ qua Zalo/.test(ck) && !/name="needs_vat"/.test(ck) && !/11%|Phí xuất hóa đơn/.test(ck),
+    'Trang thanh toán: xuất VAT → nút liên hệ Zalo, không ô tích, không ghi 11%');
   const vat = await c3('/thanh-toan', { method: 'POST', form: { _csrf: t3, customer_name: 'Kế toán', phone: '0912345678',
     province: 'Hà Nội', address: '1 Tràng Tiền', delivery_date: deliveryDate, needs_vat: '1', vat_company: 'Công ty TNHH Thử',
-    vat_tax_code: '0101234567', vat_address: '1 Tràng Tiền, Hà Nội', vat_email: 'kt@thu.vn', payment_method: 'cod' } });
-  ok(vat.status === 302, 'Đặt đơn VAT (chọn COD vẫn được chuyển sang chuyển khoản)');
+    vat_tax_code: '0101234567', vat_address: '1 Tràng Tiền, Hà Nội', vat_email: 'kt@thu.vn', payment_method: 'bank' } });
+  ok(vat.status === 302, 'Gửi kèm needs_vat (form cũ) vẫn đặt được như đơn thường');
   const vatPage = (await c3(vat.location)).text;
-  ok(/Hóa đơn VAT/.test(vatPage) && !/tài khoản công ty bên dưới/.test(vatPage), 'Trang đơn VAT: thu vào TK bán lẻ, không lộ TK công ty');
-  const num = (s) => Number(String(s).replace(/[^\d]/g, ''));
-  const sub = num((vatPage.match(/Tạm tính<\/span><span>([\d.]+)₫/) || [])[1]);
-  const ship = /Phí giao hàng<\/span><span>Miễn phí/.test(vatPage) ? 0 : num((vatPage.match(/Phí giao hàng<\/span><span>([\d.]+)₫/) || [])[1]);
-  const fee = num((vatPage.match(/Phí xuất hóa đơn VAT[^<]*<\/span><span>([\d.]+)₫/) || [])[1]);
-  const total = num((vatPage.match(/Tổng cộng<\/span><span>([\d.]+)₫/) || [])[1]);
-  const disc = num((vatPage.match(/class="disc">−([\d.]+)₫/) || [])[1]);
-  ok(fee === Math.round((sub - disc) * 0.11) && total === sub - disc + ship + fee,
-    `Đơn VAT phí 11% chỉ trên tiền hàng: ${sub} − ${disc} + ship ${ship} + ${fee} = ${total}`);
-  await addToCart(c3, 'gio-an-khang', 1);
-  const ck = (await c3('/thanh-toan')).text;
-  ok(/Về hóa đơn VAT/.test(ck) && /data-with-vat="\d+"/.test(ck), 'Trang thanh toán có mục giải thích phí VAT + tổng đã cộng phí');
+  ok(!/Phí xuất hóa đơn VAT/.test(vatPage) && !/Hóa đơn VAT<\/dt>/.test(vatPage), 'Đơn đặt trên web không cộng phí VAT');
   ok(!/Phí xuất hóa đơn VAT[^<]*<\/span><span>[\d.]+₫/.test(orderPage.text), 'Đơn bán lẻ không có phí VAT');
 
   // 7. Báo giá doanh nghiệp
