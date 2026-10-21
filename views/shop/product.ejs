@@ -34,7 +34,7 @@
         <svg class="icon icon-sm"><use href="#i-truck"/></svg>
         <span>Giao từ <b><%= earliest.slice(8) %>/<%= earliest.slice(5, 7) %></b> tại Hà Nội · tỉnh khác 2–4 ngày<br>
         <% if (orderDeadline) { %>Giao quà Tết đến hết <b><%= orderDeadline %></b><br><% } %>
-        <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> cho giỏ này<% } else if (freeShip) { %>Miễn phí giao cho đơn từ <%= money(freeShip) %><% } %></span>
+        <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> <%= ship.differs ? 'tại Hà Nội' : 'cho giỏ này' %><% } else if (freeShip) { %>Miễn phí giao <%= ship.differs ? 'Hà Nội ' : '' %>cho đơn từ <%= money(freeShip) %><% } %></span>
       </p>
       <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>
 

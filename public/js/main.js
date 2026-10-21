@@ -304,6 +304,21 @@
       }
     };
     province?.addEventListener('change', applyProvince);
+    // Phí giao theo vùng (Hà Nội / tỉnh khác): đổi tỉnh → cập nhật phí giao, cọc, tổng tiền
+    const shipEl = $('[data-ship]');
+    let shipAreas = null;
+    try { shipAreas = shipEl?.dataset.shipAreas ? JSON.parse(shipEl.dataset.shipAreas) : null; } catch { shipAreas = null; }
+    if (shipAreas) {
+      province?.addEventListener('change', () => {
+        const a = shipAreas[/hà nội/i.test(province.value.normalize('NFC')) ? 'hn' : 'tinh'];
+        if (!a) return;
+        shipEl.textContent = a.ship;
+        const set = (sel, v) => { const el = $(sel); if (el) el.textContent = v; };
+        set('[data-total]', a.total);
+        set('[data-dep]', a.dep);
+        set('[data-rest]', a.rest);
+      });
+    }
     // Buổi giao: chỉ Hà Nội; bấm chọn → đánh dấu ô
     const slotBox = $('[data-slot-box]');
     const slotHelp = $('[data-slot-help]');

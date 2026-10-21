@@ -270,7 +270,9 @@ const SETTING_GROUPS = [
     ['vat_fee_percent', 'Phí xuất hóa đơn VAT khách chịu (%) — cộng vào tổng đơn, VD: 11. Tiền thu vào tài khoản bán lẻ ở trên'],
   ]],
   ['Giao hàng', [
-    ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
+    ['shipping_fee', 'Phí giao hàng Hà Nội (₫)'], ['free_ship_threshold', 'Hà Nội: miễn phí giao cho đơn từ (₫)'],
+    ['province_shipping_fee', 'Phí giao ngoài Hà Nội (₫) — để trống = giống Hà Nội'],
+    ['province_free_ship_threshold', 'Ngoài Hà Nội: miễn phí giao cho đơn từ (₫) — để trống = giống Hà Nội, 0 = không miễn phí'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
     ['province_min_days', 'Số ngày tối thiểu khi giao ngoài Hà Nội (chuyển phát)'],
     ['bulk_min_qty', 'Mức 1 — đơn từ bao nhiêu giỏ thì cần thêm thời gian chuẩn bị'], ['bulk_min_days', 'Mức 1 — số ngày chuẩn bị tối thiểu (không cho chọn giao sớm hơn)'],

@@ -6,8 +6,7 @@ const { money } = require('./format');
 const payment = require('./payment');
 
 function faq(s = {}) {
-  const fee = money(Number(s.shipping_fee) || 0);
-  const free = money(Number(s.free_ship_threshold) || 0);
+  const ship = require('./cart').shipText(s);
   const bulkText = require('../routes/checkout').bulkTierList(s).map((b) => `đơn ${b.range} giỏ: ${b.text}`).join('; ');
   const vn = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? `${d.slice(8)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : '');
   const deadline = vn(s.order_deadline);
@@ -31,7 +30,7 @@ function faq(s = {}) {
     },
     {
       q: 'Phí giao hàng được tính thế nào?',
-      a: `Phí giao đồng giá ${fee} mỗi đơn, miễn phí cho đơn từ ${free}. Nội thành Hà Nội giao bằng Ahamove hoặc Lunar Lucky tự giao, đúng ngày bạn chọn; các tỉnh khác giao qua đơn vị vận chuyển trong 2–4 ngày.`,
+      a: `Phí giao: ${ship}. Nội thành Hà Nội giao bằng Ahamove hoặc Lunar Lucky tự giao, đúng ngày bạn chọn; các tỉnh khác giao qua đơn vị vận chuyển trong 2–4 ngày.`,
     },
     {
       q: 'Tôi có thể đổi món trong giỏ hoặc làm giỏ theo yêu cầu không?',

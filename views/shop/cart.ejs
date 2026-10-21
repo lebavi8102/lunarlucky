@@ -77,7 +77,8 @@
         <% if (cart.couponError) { %><p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= cart.couponError %></p><% } %>
       <% } %>
 
-      <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
+      <div class="sum-row"><span>Phí giao hàng<% if (cart.shipDiffers) { %> (Hà Nội)<% } %></span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
+      <% if (cart.shipDiffers) { %><p class="tiny muted" style="margin:-4px 0 8px">Phí giao — <%= cart.shipText %>. Tính đúng theo tỉnh ở bước thanh toán.</p><% } %>
       <div class="sum-row total"><span>Tổng cộng</span><span><%= money(cart.total) %></span></div>
 
       <% if (cart.freeShipRemaining) { %>

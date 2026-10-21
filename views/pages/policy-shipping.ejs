@@ -16,8 +16,15 @@
 </ul>
 <h2>Phí giao hàng</h2>
 <ul>
+  <% if (ship.differs) { %>
+  <% for (const [label, p] of [['Nội thành Hà Nội', 'Hà Nội'], ['Ngoài Hà Nội và các tỉnh khác', 'Tỉnh khác']]) { const r = ship.rule(p); %>
+  <li><strong><%= label %>:</strong> <%= r.fee ? money(r.fee) + ' mỗi đơn' : 'miễn phí giao' %><% if (r.fee && r.threshold) { %>, <strong>miễn phí</strong> cho đơn từ <strong><%= money(r.threshold) %></strong><% } %>.</li>
+  <% } %>
+  <li>Mức miễn phí tính trên tiền hàng sau giảm giá.</li>
+  <% } else { %>
   <li>Đồng giá <strong><%= money(s.shipping_fee) %></strong> mỗi đơn.</li>
   <li><strong>Miễn phí giao hàng</strong> cho đơn từ <strong><%= money(s.free_ship_threshold) %></strong> (tính trên tiền hàng sau giảm giá).</li>
+  <% } %>
   <li>Đơn đi huyện đảo, vùng sâu có thể phát sinh phụ phí; Lunar Lucky sẽ báo trước khi giao.</li>
 </ul>
 <h2>Thời gian giao</h2>

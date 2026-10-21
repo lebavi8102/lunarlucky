@@ -106,7 +106,7 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Thiệp viết tay miễn phí theo lời khách nhắn. Đơn gửi tặng không kèm hóa đơn giá tiền.
 - Giao đúng ngày khách chọn; Hà Nội chọn được buổi (${Object.values(SLOTS).join(', ')}); shipper gọi trước; có ảnh xác nhận khi quà tới tay. Tỉnh khác đi chuyển phát 2–4 ngày.
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.
-- Phí giao ${money(Number(s.shipping_fee) || 0)}/đơn, miễn phí cho đơn có tổng tiền hàng TỪ ${money(Number(s.free_ship_threshold) || 0)} trở lên. So số chính xác: thấp hơn dù chỉ 10k (vd 1tr490) là KHÔNG miễn phí — không nói "vừa đủ". Kết quả search_products có sẵn dòng ship_1_basket, nói theo đúng dòng đó.
+- Phí giao: ${cart.shipText(s)} (tính trên tổng tiền hàng TỪ mức đó trở lên). So số chính xác: thấp hơn dù chỉ 10k (vd 1tr490) là KHÔNG miễn phí — không nói "vừa đủ". Kết quả search_products có sẵn dòng ship_1_basket, nói theo đúng dòng đó.
 - Thanh toán: chuyển khoản qua mã QR (tự xác nhận), hoặc COD (trả khi nhận). Đơn COD phải đặt cọc qua QR: ${payment.depositText(s)}. Báo khách số tiền cọc cụ thể khi lên đơn. Đơn gửi tặng và đơn xuất hóa đơn VAT phải chuyển khoản.
 - Thời gian chuẩn bị đơn nhiều giỏ: ${checkoutHelpers().bulkTierList(s).map((b) => `${b.range} giỏ: ${b.text}`).join('; ')}. Báo khách đúng như vậy; ngày giao sớm nhất được chọn = số ngày tối thiểu (delivery_options với qty tính đúng). Không hứa giao gấp cho đơn nhiều giỏ; đơn lớn nên khuyên khách đặt sớm. Đơn từ ${checkoutHelpers().bulkTierList(s).slice(-1)[0].tier.qty} giỏ: KHÔNG hứa ngày giao hay thời gian chuẩn bị — nói Lunar Lucky sẽ xem xét và báo lại, rồi xin số điện thoại để chuyên viên gọi (request_callback) hoặc mời gửi yêu cầu báo giá tại /qua-tang-doanh-nghiep.
 - Doanh nghiệp: nhận từ 5 giỏ, xuất VAT, giao theo danh sách; báo giá trong 24 giờ tại /qua-tang-doanh-nghiep. In logo: từ 5 giỏ in logo lên thiệp; từ 100 giỏ in logo lên hộp và nơ; từ 500 giỏ thiết kế hộp riêng. Từ ${Number(s.ai_escalate_qty) || 5} giỏ trở lên: giá do chuyên viên chốt (em không tự hứa mức giảm, không tự lên đơn) — Messenger: transfer_to_human NGAY; website: xin số điện thoại rồi request_callback hoặc mời gửi yêu cầu báo giá.
@@ -314,8 +314,10 @@ async function runTool(name, input, req, out) {
     if (input.max_price) list = list.filter((p) => p.price <= input.max_price);
     if (input.min_price) list = list.filter((p) => p.price >= input.min_price);
     // Phí giao cho 1 giỏ tính sẵn (AI hay nhầm 1tr490 là "vừa đủ" miễn phí giao 1tr500)
-    const th = Number(s.free_ship_threshold) || 0; const fee = Number(s.shipping_fee) || 0;
-    const shipNote = (p) => (!th || p.price >= th ? 'mua 1 giỏ: MIỄN PHÍ giao' : `mua 1 giỏ: + ${money(fee)} phí giao (chưa tới ${money(th)}); muốn miễn phí cần tổng từ ${money(th)}`);
+    const noteFor = (r, p) => (!r.fee ? 'MIỄN PHÍ giao' : !r.threshold ? `+ ${money(r.fee)} phí giao` : p.price >= r.threshold ? 'MIỄN PHÍ giao' : `+ ${money(r.fee)} phí giao (chưa tới ${money(r.threshold)}); muốn miễn phí cần tổng từ ${money(r.threshold)}`);
+    const shipNote = (p) => (cart.shipRulesDiffer(s)
+      ? `mua 1 giỏ: Hà Nội ${noteFor(cart.shipRule(s, 'Hà Nội'), p)}; tỉnh khác ${noteFor(cart.shipRule(s, 'Tỉnh khác'), p)}`
+      : `mua 1 giỏ: ${noteFor(cart.shipRule(s, 'Hà Nội'), p)}`);
     return { results: list.slice(0, 6).map((p) => ({ ...productCard(p, catName), ship_1_basket: shipNote(p) })), total_found: list.length };
   }
   if (name === 'delivery_options') {
@@ -333,8 +335,8 @@ async function runTool(name, input, req, out) {
       full_dates: dc.fullDates.length ? dc.fullDates : undefined,
       full_dates_note: dc.fullDates.length ? 'Những ngày này đã nhận đủ đơn — không nhận thêm, gợi ý ngày khác.' : undefined,
       last_delivery_before_tet: s.order_deadline ? `${s.order_deadline} (${s.order_deadline_label || ''})` : null,
-      shipping_fee: Number(s.shipping_fee) || 0,
-      free_ship_from: Number(s.free_ship_threshold) || 0,
+      shipping_fee: cart.shipRule(s, input.province).fee,
+      free_ship_from: cart.shipRule(s, input.province).threshold,
     };
   }
   if (name === 'prepare_order') {
@@ -356,8 +358,8 @@ async function runTool(name, input, req, out) {
     const okCode = String(s.ai_voucher_code || '').trim().toUpperCase();
     const c = { lines: [], coupon: okCode && String(input.coupon_code || '').trim().toUpperCase() === okCode ? okCode : null };
     for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
-    let priced = await cart.priceCart(c);
-    if (priced.couponError) { c.coupon = null; priced = await cart.priceCart(c); }
+    let priced = await cart.priceCart(c, { province: input.province });
+    if (priced.couponError) { c.coupon = null; priced = await cart.priceCart(c, { province: input.province }); }
     if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
     const fullSet = await require('./capacity').fullDates(s, priced.count);
     if (fullSet.has(input.delivery_date)) {
