@@ -19,6 +19,7 @@ const router = express.Router();
 const quoteLimiter = rateLimit({ ...limiterKey, windowMs: 30 * 60000, limit: 6, standardHeaders: true, legacyHeaders: false });
 
 async function render(res, data) {
+  res.locals.deliveryModes = DELIVERY_MODES;
   const products = await db('products')
     .where({ is_active: true })
     .orderBy([{ column: 'is_featured', order: 'desc' }, { column: 'sold', order: 'desc' }])
@@ -26,7 +27,7 @@ async function render(res, data) {
   res.locals.seo.title = 'Quà Tết doanh nghiệp · In logo, giao hàng loạt · Lunar Lucky';
   res.locals.seo.description =
     'Giải pháp quà Tết doanh nghiệp trọn gói: tư vấn ngân sách, in logo lên hộp và thiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn trên toàn quốc.';
-  res.render('pages/business', { products, deliveryModes: DELIVERY_MODES, ...data });
+  res.render('pages/business', { products, ...data });
 }
 
 router.get('/qua-tang-doanh-nghiep', async (req, res) => {
