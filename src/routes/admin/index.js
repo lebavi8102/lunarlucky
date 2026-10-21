@@ -256,6 +256,7 @@ const SETTING_GROUPS = [
   ]],
   ['Kênh liên hệ', [
     ['fanpage_url', 'Link fanpage Facebook'], ['messenger_url', 'Link Messenger (m.me/...)'], ['zalo_url', 'Link Zalo (zalo.me/...)'],
+    ['invoice_zalo_url', 'Link Zalo nhận yêu cầu hóa đơn điện tử (Zalo cá nhân, zalo.me/...) — nút "Yêu cầu hóa đơn qua Zalo" ở trang đơn hàng'],
   ]],
   ['Tài khoản bán lẻ (cá nhân)', [
     ['bank_id', 'Ngân hàng', 'bank'], ['bank_name', 'Tên ngân hàng hiển thị cho khách'],

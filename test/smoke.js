@@ -82,6 +82,9 @@ async function addToCart(c, slug, qty = 1) {
   const orderPage = await c(place.location);
   ok(orderPage.status === 200, 'Trang đơn hàng hiển thị');
   ok(/Lưu mã QR về máy/.test(orderPage.text) && /Quét QR/.test(orderPage.text), 'Trang đơn có nút lưu QR + hướng dẫn 3 bước');
+  ok(/href="https:\/\/zalo\.me\/0969000910"[^>]*data-ask="[^"]*Mã đơn hàng: [^"]*"[^>]*>Yêu cầu hóa đơn qua Zalo</.test(orderPage.text)
+    && /Sao chép tin nhắn/.test(orderPage.text), 'Trang xác nhận đơn: nút "Yêu cầu hóa đơn qua Zalo" + mẫu tin nhắn + nút sao chép');
+  ok(/Yêu cầu hóa đơn qua Zalo/.test((await c(`/don-hang/${code}`)).text), 'Trang chi tiết đơn (mở lại sau) cũng có nút yêu cầu hóa đơn');
   const qrDl = await c(`/don-hang/${code}/qr.png`);
   ok(qrDl.status === 200 || qrDl.status === 302, `Tải ảnh QR của đơn mình → ${qrDl.status}`);
 
@@ -206,6 +209,7 @@ async function addToCart(c, slug, qty = 1) {
   ok(vat.status === 302, 'Gửi kèm needs_vat (form cũ) vẫn đặt được như đơn thường');
   const vatPage = (await c3(vat.location)).text;
   ok(!/Phí xuất hóa đơn VAT/.test(vatPage) && !/Hóa đơn VAT<\/dt>/.test(vatPage), 'Đơn đặt trên web không cộng phí VAT');
+  ok(/Yêu cầu hóa đơn qua Zalo/.test(vatPage) && /\(điền mã số thuế\)/.test(vatPage), 'Đơn từ form VAT cũ: mẫu tin nhắn hóa đơn để trống MST cho khách tự điền');
   ok(!/Phí xuất hóa đơn VAT[^<]*<\/span><span>[\d.]+₫/.test(orderPage.text), 'Đơn bán lẻ không có phí VAT');
 
   // 7. Báo giá doanh nghiệp

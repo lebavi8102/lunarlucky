@@ -113,6 +113,19 @@
     </section>
   </div>
 
+  <% if (!cancelled) { %>
+  <section class="card card-cream" style="margin-top:24px" aria-labelledby="invoice-title" id="hoa-don">
+    <h2 id="invoice-title" class="h3">Hóa đơn điện tử</h2>
+    <p class="small muted" style="margin:6px 0 12px">Cần hóa đơn cho đơn <b><%= order.code %></b>? Bấm nút để mở Zalo Lunar Lucky, tin nhắn bên dưới được chép sẵn, bạn chỉ cần dán vào ô chat và gửi.<%= order.needs_vat ? '' : ' Nhớ điền mã số thuế và địa chỉ trước khi gửi.' %></p>
+    <textarea class="textarea" readonly rows="8" style="font-size:14px" aria-label="Mẫu tin nhắn yêu cầu hóa đơn"><%= invoiceMsg %></textarea>
+    <div class="hero-cta" style="margin-top:12px">
+      <a class="btn btn-sm" href="<%= invoiceZalo %>" target="_blank" rel="noopener" data-ask="<%= invoiceMsg %>" data-ask-toast="Đã chép tin nhắn — mở Zalo và dán vào ô chat để gửi.">Yêu cầu hóa đơn qua Zalo</a>
+      <button type="button" class="btn btn-sm btn-quiet" data-copy="<%= invoiceMsg %>"><svg class="icon icon-sm"><use href="#i-copy"/></svg> Sao chép tin nhắn</button>
+    </div>
+    <p class="tiny muted" style="margin:10px 0 0">Zalo không cho điền sẵn tin nhắn. Nếu không tự chép được, bấm “Sao chép tin nhắn” hoặc chép thủ công ở khung trên.</p>
+  </section>
+  <% } %>
+
   <div class="hero-cta" style="justify-content:center;margin-block:48px 96px">
     <a class="btn btn-quiet" href="/bo-suu-tap">Tiếp tục mua sắm</a>
     <a class="btn btn-quiet" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Cần hỗ trợ? Nhắn Zalo</a>
