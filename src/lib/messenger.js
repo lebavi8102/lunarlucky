@@ -268,6 +268,7 @@ async function loadHandoff(token) {
   try { return JSON.parse(row.data); } catch { return null; }
 }
 
+const AI_NOTICE = '🤖 Trợ lý AI của Lunar Lucky đang trả lời. Cần nhân viên, anh/chị nhắn "gặp nhân viên" ạ.';
 const HUMAN = /(gặp|nói chuyện|chat|nối máy|chuyển).{0,12}(người thật|nhân viên|tư vấn viên|chủ shop|admin)|(người thật|nhân viên) (tư vấn|trả lời)/i;
 
 /** Báo chủ đề TƯ VẤN KHÁCH: khách nào (tên, giờ nhắn), cần gì → nhân viên tìm đúng người trong hộp thư Fanpage. */
@@ -426,6 +427,7 @@ async function handleEvent(ev) {
   const known = row && row.title ? { title: row.title, ...(row.name ? { name: row.name } : {}) } : {};
   let session = { aiChat: history, aiCustomer: known };
   const name = await customerName(psid, row);
+  const firstReply = !history.length; // tin AI đầu tiên với khách → ghi rõ là trợ lý AI (Luật AI 134/2025, Điều 11)
   let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context });
   if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger (không chào lại)
     session = { aiChat: [], aiCustomer: known };
@@ -452,6 +454,7 @@ async function handleEvent(ev) {
     }
     return 'error';
   }
+  if (firstReply) await sendText(psid, AI_NOTICE);
   await sendChat(psid, r.reply);
   await require('./ai-learn').log(psid, 'ai', r.reply);
   // Tên khách tự giới thiệu (AI ghi lại) / tên trên đơn → các tin báo sau hiện tên
