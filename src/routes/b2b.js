@@ -15,7 +15,7 @@ async function render(res, data) {
     .limit(4);
   res.locals.seo.title = 'Quà Tết doanh nghiệp · In logo, giao hàng loạt · Lunar Lucky';
   res.locals.seo.description =
-    'Giải pháp quà Tết doanh nghiệp trọn gói: tư vấn ngân sách, in logo lên hộp và thiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn trên toàn quốc.';
+    'Giải pháp quà Tết doanh nghiệp trọn gói: tư vấn ngân sách, in logo lên hộp và thiệp, hỗ trợ hóa đơn VAT, giao hàng loạt đúng hẹn trên toàn quốc.';
   res.render('pages/business', { products, ...data });
 }
 
