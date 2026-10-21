@@ -53,7 +53,8 @@ notify.telegram = async (html) => { tg.push(html); return false; };
     await db('ai_lessons').where({ id: rows[0].id }).update({ status: 'approved' });
     const after = await ai.systemPrompt();
     ok(/SỔ TAY KINH NGHIỆM CỦA SHOP[\s\S]*khắc tên lên thiệp/.test(after), 'Duyệt → bài học vào lời dặn của AI');
-    ok(/CA LỚN \/ CA KHÓ[\s\S]*Đơn từ 20 giỏ/.test(after) && /transfer_to_human/.test(after), 'Lời dặn có ngưỡng ca lớn → chuyển chủ shop');
+    const escQty = Number((await require('../src/lib/settings').all()).ai_escalate_qty) || 5;
+    ok(new RegExp(`CA LỚN / CA KHÓ[\\s\\S]*Đơn từ ${escQty} giỏ`).test(after) && /transfer_to_human/.test(after), 'Lời dặn có ngưỡng ca lớn (theo Cài đặt ai_escalate_qty) → chuyển chủ shop');
   } catch (err) {
     console.error(err);
     fails++;
