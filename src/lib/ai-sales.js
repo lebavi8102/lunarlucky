@@ -874,10 +874,13 @@ async function chat(req, text, opts = {}) {
         // Mô hình phụ (Sonnet…) lỗi yêu cầu → thử lại ngay bằng Opus, khách không bị gián đoạn
         if (e1.status !== 400 || params.model === OPUS) throw e1;
         console.error(`[AI tư vấn] ${params.model} lỗi 400, chuyển sang ${OPUS}:`, String(e1.message).slice(0, 200));
+        require('./ai-errors').log({ kind: 'model_fallback', channel: req.aiChannel, model: params.model, status: 400, message: e1.message });
         res = await getClient().beta.messages.create({ ...params, model: OPUS });
       }
     } catch (err) {
       console.error('[AI tư vấn] lỗi gọi Claude:', err.status || '', err.message);
+      const errs = require('./ai-errors');
+      errs.log({ ...errs.classify(err), channel: req.aiChannel, model: pickModel(s), message: err.message });
       alertTeam(err);
       history.length = before; // lượt này lỗi → bỏ cả lượt (tin khách + phần dở dang) để lần sau gửi lại sạch sẽ
       req.session.aiChat = history;
@@ -892,6 +895,7 @@ async function chat(req, text, opts = {}) {
       u.write += res.usage.cache_creation_input_tokens || 0; u.out += res.usage.output_tokens || 0;
     }
     if (res.stop_reason === 'refusal') {
+      require('./ai-errors').log({ kind: 'refusal', channel: req.aiChannel, model: res.model, message: 'Claude từ chối trả lời một tin của khách (stop_reason=refusal)' });
       reply = 'Câu này em chưa hỗ trợ được. Anh/chị cần chọn quà Tết thì em tư vấn ngay ạ!';
       history.push({ role: 'assistant', content: reply });
       break;
@@ -909,6 +913,7 @@ async function chat(req, text, opts = {}) {
         result = await runTool(u.name, u.input || {}, req, out);
       } catch (err) {
         console.error('[AI tư vấn] lỗi công cụ', u.name, err.message);
+        require('./ai-errors').log({ kind: 'tool_exception', channel: req.aiChannel, message: `${u.name}: ${err.message}` });
         result = { error: 'Lỗi hệ thống, thử cách khác hoặc request_callback.' };
       }
       if (typeof req.get === 'function' && req.get('x-lunar-test') === '1') { // chế độ thử: ghi chi tiết để chấm
@@ -922,6 +927,7 @@ async function chat(req, text, opts = {}) {
     }
     history.push({ role: 'user', content: results });
   }
+  if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
   req.session.aiChat = history;
   return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }

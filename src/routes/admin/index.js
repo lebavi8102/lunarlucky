@@ -752,6 +752,16 @@ router.post('/kien-thuc/:id', async (req, res) => {
   res.redirect('/admin/kien-thuc');
 });
 
+/* ---------- Lỗi chatbot AI ---------- */
+router.get('/ai-loi', async (req, res) => {
+  const errs = require('../../lib/ai-errors');
+  await errs.purgeOld().catch(() => {});
+  const kind = errs.KINDS[req.query.loai] ? req.query.loai : '';
+  const q = db('ai_errors').orderBy('last_at', 'desc').limit(200);
+  if (kind) q.where({ kind });
+  res.render('admin/ai-errors', { title: 'Lỗi chatbot AI', rows: await q, sum: await errs.summary(), kinds: errs.KINDS, serious: errs.SERIOUS, kind });
+});
+
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
   res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });

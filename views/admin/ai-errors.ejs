@@ -1,0 +1,48 @@
+<%- include('_top') %>
+<% const dt = (d) => fmt.dateTime(d); const chLabel = { web: 'Website', messenger: 'Fanpage' }; %>
+<div class="admin-head"><h1>Lỗi chatbot AI</h1><span class="muted small">Giữ 30 ngày gần nhất · lỗi giống nhau liên tiếp được gộp</span></div>
+
+<% if (sum.d1.serious) { %>
+<div class="panel" style="margin-bottom:16px;border-color:#f3c7c2;background:#fdecea">
+  <b>⚠️ 24 giờ qua có <%= sum.d1.serious %> lỗi làm khách chưa được AI trả lời.</b>
+  <span class="small">Xem bảng dưới: "Hết tiền" → nạp thêm tại console.anthropic.com; "Khóa API sai" → kiểm tra ANTHROPIC_API_KEY trên Render; "quá tải" thường tự hết sau vài phút.</span>
+</div>
+<% } else { %>
+<div class="panel" style="margin-bottom:16px"><b>✅ 24 giờ qua không có lỗi nào làm khách chưa được trả lời.</b></div>
+<% } %>
+
+<div class="panel" style="margin-bottom:20px">
+  <h2 class="h3" style="margin:0 0 8px">Tổng hợp theo loại lỗi</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th scope="col">Loại lỗi</th><th scope="col" class="num">24 giờ</th><th scope="col" class="num">7 ngày</th></tr></thead>
+    <tbody>
+    <% Object.entries(kinds).forEach(([k, label]) => { const a = sum.d1.by[k] || 0; const b = sum.d7.by[k] || 0; if (!a && !b) return; %>
+      <tr><td><a href="/admin/ai-loi?loai=<%= k %>"><%= label %></a></td><td class="num"><%= a %></td><td class="num"><%= b %></td></tr>
+    <% }) %>
+    <% if (!sum.d7.total) { %><tr><td colspan="3" class="muted">Chưa ghi nhận lỗi nào trong 7 ngày qua.</td></tr><% } %>
+    </tbody>
+  </table></div>
+</div>
+
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+  <h2 class="h3" style="margin:0"><%= kind ? kinds[kind] : 'Lỗi gần đây' %></h2>
+  <% if (kind) { %><a class="btn btn-sm btn-quiet" href="/admin/ai-loi">Xem tất cả</a><% } %>
+</div>
+<div class="panel">
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th scope="col">Lần cuối</th><th scope="col">Loại lỗi</th><th scope="col">Kênh</th><th scope="col" class="num">Số lần</th><th scope="col">Chi tiết</th></tr></thead>
+    <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><%= dt(r.last_at) %><% if (Number(r.count) > 1) { %><br><span class="tiny muted">từ <%= dt(r.created_at) %></span><% } %></td>
+        <td><span class="status <%= serious.has(r.kind) ? 'status-cancelled' : 'status-pending' %>"><%= kinds[r.kind] || r.kind %></span></td>
+        <td><%= chLabel[r.channel] || r.channel %><% if (r.ref) { %><br><span class="tiny muted"><%= r.ref %></span><% } %></td>
+        <td class="num"><%= r.count %></td>
+        <td class="small"><% if (r.model) { %><span class="tiny muted"><%= r.model %><%= r.status ? ' · mã ' + r.status : '' %></span><br><% } else if (r.status) { %><span class="tiny muted">mã <%= r.status %></span><br><% } %><%= r.message %></td>
+      </tr>
+    <% }) %>
+    <% if (!rows.length) { %><tr><td colspan="5" class="muted">Không có lỗi nào<%= kind ? ' thuộc loại này' : '' %>.</td></tr><% } %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('_bottom') %>

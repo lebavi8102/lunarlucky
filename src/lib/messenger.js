@@ -56,6 +56,7 @@ let send = async (body) => {
   if (!r.ok) {
     const t = await r.text().catch(() => '');
     console.error('[messenger] gửi lỗi', r.status, t.slice(0, 300));
+    require('./ai-errors').log({ kind: 'messenger_send', channel: 'messenger', status: r.status, message: t, ref: body && body.recipient && body.recipient.id });
     return false;
   }
   const j = await r.json().catch(() => null);
@@ -477,7 +478,10 @@ async function handleEvent(ev) {
 const queues = new Map();
 function enqueue(psid, job) {
   const prev = queues.get(psid) || Promise.resolve();
-  const next = prev.then(job).catch((err) => console.error('[messenger] lỗi xử lý tin:', err.message));
+  const next = prev.then(job).catch((err) => {
+    console.error('[messenger] lỗi xử lý tin:', err.message);
+    require('./ai-errors').log({ kind: 'messenger_job', channel: 'messenger', message: err.message, ref: psid });
+  });
   queues.set(psid, next);
   next.finally(() => { if (queues.get(psid) === next) queues.delete(psid); });
   return next;
