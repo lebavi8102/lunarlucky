@@ -238,6 +238,9 @@ function quoteTelegram(q) {
     q.budget ? `Ngân sách/giỏ: ${e(q.budget)}` : null,
     q.delivery_date ? `Ngày giao: ${ymd(q.delivery_date)}` : null,
     q.logo_print ? 'In logo: Có' : null,
+    q.delivery_mode === 'many' ? `🚚 Giao nhiều địa chỉ${q.delivery_points ? `: ~${q.delivery_points} điểm` : ''}` : q.delivery_mode === 'one' ? '🚚 Giao 1 địa chỉ' : null,
+    q.delivery_area ? `📍 ${e(q.delivery_area)}` : null,
+    q.cart_summary ? `🛒 Giỏ đã chọn trên web: ${e(q.cart_summary)}` : null,
     q.message ? `📝 ${e(q.message)}` : null,
     `\n${config.publicUrl}/admin/bao-gia`,
   ]

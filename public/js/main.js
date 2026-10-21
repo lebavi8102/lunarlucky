@@ -319,6 +319,15 @@
     applyProvince();
   }
 
+  /* Báo giá doanh nghiệp: giao nhiều địa chỉ → hỏi số điểm giao */
+  const modeBox = $('[data-delivery-mode]');
+  const pointsBox = $('[data-delivery-points]');
+  if (modeBox && pointsBox) {
+    modeBox.addEventListener('change', () => {
+      pointsBox.hidden = $('input[name=delivery_mode]:checked', modeBox)?.value !== 'many';
+    });
+  }
+
   /* Thanh toán: bấm chọn lời chúc có sẵn */
   $$('[data-wish]').forEach((b) =>
     b.addEventListener('click', () => {

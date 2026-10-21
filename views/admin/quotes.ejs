@@ -12,6 +12,9 @@
       <dt>Ngân sách/giỏ</dt><dd><%= q.budget %></dd>
       <% if (q.delivery_date) { %><dt>Ngày giao</dt><dd><%= fmt.ymd(q.delivery_date) %></dd><% } %>
       <dt>In logo</dt><dd><%= q.logo_print ? 'Có' : 'Không' %></dd>
+      <% if (q.delivery_mode) { %><dt>Giao hàng</dt><dd><%= q.delivery_mode === 'many' ? `Nhiều địa chỉ${q.delivery_points ? ` (~${q.delivery_points} điểm)` : ''}` : '1 địa chỉ' %></dd><% } %>
+      <% if (q.delivery_area) { %><dt>Địa chỉ / khu vực</dt><dd style="white-space:pre-line"><%= q.delivery_area %></dd><% } %>
+      <% if (q.cart_summary) { %><dt>Giỏ đã chọn</dt><dd><%= q.cart_summary %></dd><% } %>
       <% if (q.message) { %><dt>Mô tả</dt><dd style="white-space:pre-line"><%= q.message %></dd><% } %>
     </dl>
   </div>
