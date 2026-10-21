@@ -120,6 +120,15 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     const r2 = await ai.chat(chatReq, 'còn mẫu nào khác không');
     ok(r2.error && chatReq.session.aiChat.length === 4, 'Claude lỗi → báo khách gửi lại, lịch sử giữ nguyên');
 
+    // Chế độ thử x-lunar-test chỉ nhận khi admin đã đăng nhập
+    const hdr = (h) => (k) => h[k.toLowerCase()];
+    ok(!ai.isTestRequest({ get: hdr({ 'x-lunar-test': '1' }), session: {} }), 'x-lunar-test từ khách lạ → bị bỏ qua');
+    ok(!ai.isTestRequest({ get: hdr({ 'x-lunar-test': '1' }), session: { user: { role: 'customer' } } }), 'x-lunar-test từ tài khoản khách → bị bỏ qua');
+    ok(ai.isTestRequest({ get: hdr({ 'x-lunar-test': '1' }), session: { user: { role: 'admin' } } }), 'x-lunar-test từ admin đã đăng nhập → bật chế độ thử');
+    const cbBefore = (await db('callback_requests').count('* as n'))[0].n;
+    await ai.runTool('request_callback', { name: 'Khách lạ', phone: '0912345678', note: 'thử header' }, { get: hdr({ 'x-lunar-test': '1' }), session: {} }, {});
+    ok((await db('callback_requests').count('* as n'))[0].n === cbBefore + 1, 'Khách lạ gửi x-lunar-test vẫn tạo yêu cầu gọi lại thật');
+    await db('callback_requests').where({ interest: 'thử header' }).del();
     // Tắt trong Cài đặt
     const before = (await settings.all()).ai_chat_enabled;
     await settings.save({ ai_chat_enabled: '0' });

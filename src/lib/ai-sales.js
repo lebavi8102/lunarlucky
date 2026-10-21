@@ -303,6 +303,9 @@ function staffOnline(s, now = new Date()) {
 }
 const staffHoursText = (s) => `${Number(s.staff_from_hour ?? 8)}h–${Number(s.staff_to_hour ?? 24)}h`;
 const validPhone = (v) => /^(0|84)\d{9,10}$/.test(digits(v));
+// Chế độ thử (header x-lunar-test: 1) chỉ dành cho admin đã đăng nhập; khách lạ gửi header sẽ bị bỏ qua
+const isTestRequest = (req) => !!req && typeof req.get === 'function' && req.get('x-lunar-test') === '1'
+  && !!(req.session && req.session.user && req.session.user.role === 'admin');
 
 async function runTool(name, input, req, out) {
   const s = await settings.all();
@@ -400,7 +403,7 @@ async function runTool(name, input, req, out) {
   }
   if (name === 'request_callback') {
     if (!validPhone(input.phone)) return { error: 'Số điện thoại chưa đúng — hỏi lại khách.' };
-    const isTest = typeof req.get === 'function' && req.get('x-lunar-test') === '1';
+    const isTest = isTestRequest(req);
     if (!isTest) await require('./callbacks').create({ name: input.name || 'Khách (AI tư vấn)', phone: digits(input.phone), interest: input.note, note: req.aiChannel === 'messenger' ? 'Từ AI tư vấn trên Fanpage (Messenger)' : 'Từ AI tư vấn trên web', source: 'ai' });
     out.callback = true;
     return { ok: true, message: 'Đã báo chuyên viên, sẽ gọi lại khách trong giờ làm việc (thường trong 5 phút).' };
@@ -557,7 +560,7 @@ async function chat(req, text, opts = {}) {
         console.error('[AI tư vấn] lỗi công cụ', u.name, err.message);
         result = { error: 'Lỗi hệ thống, thử cách khác hoặc request_callback.' };
       }
-      if (typeof req.get === 'function' && req.get('x-lunar-test') === '1') { // chế độ thử: ghi chi tiết để chấm
+      if (isTestRequest(req)) { // chế độ thử: ghi chi tiết để chấm
         out.debug = [...(out.debug || []), { tool: u.name, input: u.input, result }].slice(-8);
       }
       if (result && result.error) { // ghi lý do lỗi (chế độ thử hiện ra để chấm; log để xem trên Render)
@@ -573,4 +576,4 @@ async function chat(req, text, opts = {}) {
 }
 
 module.exports = {
-  staffOnline, getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
+  staffOnline, getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, isTestRequest, _setClient: (c) => { client = c; } };
