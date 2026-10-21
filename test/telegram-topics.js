@@ -74,7 +74,14 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   ok(/bên trong/.test(lastSend()?.body.text || ''), '/chondon gõ ngoài chủ đề → hướng dẫn');
 
   // 3. Đơn mới → chủ đề Đơn hàng
-  const o = await db('orders').orderBy('id', 'desc').first();
+  // đơn thử riêng của bài này (không phụ thuộc đơn có sẵn trong máy)
+  const [o0] = await db('orders').insert({
+    code: 'LN26TGTOPIC1', customer_name: 'Thử chủ đề', phone: '0912345000', address: 'x', province: 'Hà Nội', delivery_date: '2026-12-01',
+    payment_method: 'cod', payment_status: 'pending', status: 'new', subtotal: 100000, discount: 0, shipping_fee: 0, total: 100000,
+  });
+  const o = await db('orders').where({ id: typeof o0 === 'object' ? o0.id : o0 }).first();
+  const prod0 = await db('products').first();
+  await db('order_items').insert({ order_id: o.id, product_id: prod0.id, name: prod0.name, price: 100000, qty: 1, line_total: 100000 });
   const items = await db('order_items').where({ order_id: o.id });
   sent.length = 0;
   await tg.sendNewOrder(o, items);
@@ -484,6 +491,8 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   ok(String(await notify.telegramChatId()) === String(MIGRATED), 'Lưu mã nhóm mới cho các lần sau');
   migrateFrom = null;
 
+  await db('order_items').where({ order_id: o.id }).del();
+  await db('orders').where({ id: o.id }).del();
   // khôi phục
   await db('products').where({ id: p.id }).update({ stock: stock0 });
   await settings.save({
