@@ -22,8 +22,9 @@ services:
         value: "true"
       - key: DB_SSL_CA_FILE
         value: certs/aiven-ca.pem
+      # false: production không tự nạp lại sản phẩm/bài viết mẫu khi bảng sản phẩm trống
       - key: SEED_DEMO
-        value: "true"
+        value: "false"
       # Render tự sinh chuỗi ngẫu nhiên
       - key: SESSION_SECRET
         generateValue: true

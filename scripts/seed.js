@@ -1,5 +1,5 @@
 /**
- * Dữ liệu mẫu cho Lunar Lucky: danh mục, sản phẩm, mã giảm giá, bài viết.
+ * Dữ liệu mẫu cho Lunar Lucky: danh mục, sản phẩm, bài viết.
  * Chạy: npm run seed            (bỏ qua nếu đã có sản phẩm)
  *       npm run seed -- --reset (xóa dữ liệu mẫu cũ và tạo lại)
  */
@@ -174,10 +174,7 @@ async function seed({ reset = false, demo = true } = {}) {
       });
     }
 
-    await db('coupons').insert([
-      { code: 'TET2027', description: 'Giảm 10% mùa Tết, tối đa 300.000₫', type: 'percent', value: 10, min_order: 1000000, max_discount: 300000 },
-      { code: 'LUNARVIP', description: 'Giảm 100.000₫ cho đơn từ 1.500.000₫', type: 'fixed', value: 100000, min_order: 1500000 },
-    ]);
+    // Không tạo mã giảm giá mẫu: mã thật do chủ shop tạo trong admin kèm thể lệ, thời hạn (tránh mã demo dùng được trên production)
 
     for (const [i, p] of POSTS.entries()) {
       const cover_id = await svg(art.coverArt({ palette: p.palette, composition: p.composition, id: `cv${i}` }), `cover-${i}.svg`);
