@@ -3,9 +3,11 @@
 # và đánh dấu lần chạy thất bại → GitHub tự gửi email cho chủ repo.
 name: keep-alive
 
+# Repo private: mỗi lần chạy tính tối thiểu 1 phút trong 2.000 phút miễn phí/tháng.
+# 30 phút/lần ≈ 1.440 lần/tháng (thực tế GitHub chạy thưa hơn) → vẫn trong mức miễn phí.
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       test_telegram:
