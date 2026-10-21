@@ -237,6 +237,10 @@ async function addToCart(c, slug, qty = 1) {
     }
     const prods = await a('/admin/san-pham');
     ok(/LL\d{3}/.test(prods.text), 'Danh sách sản phẩm có cột Mã SP');
+    // Giá gạch giảm quá 50% (NĐ 128/2024) → admin chặn
+    const np = await a('/admin/san-pham/moi');
+    const over = await a(`/admin/san-pham/moi?_csrf=${csrf(np.text)}`, { method: 'POST', form: { name: 'Giỏ thử giá gạch', price: 1000000, compare_price: 2500000, stock: 1 } });
+    ok(over.status === 422 && /giảm quá 50%/.test(over.text) && !(await a('/admin/san-pham')).text.includes('Giỏ thử giá gạch'), 'Giá gốc gấp 2,5 lần giá bán → không lưu, báo lỗi');
     const list = await a(`/admin/don-hang?q=${code}`);
     const oid = (list.text.match(/href="\/admin\/don-hang\/(\d+)"/) || [])[1];
     const od = await a(`/admin/don-hang/${oid}`);

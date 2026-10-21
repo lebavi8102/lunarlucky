@@ -22,7 +22,7 @@
     <% if (p.short_desc) { %><p class="p-desc"><%= p.short_desc %></p><% } %>
     <div class="price">
       <span><%= money(p.price) %></span>
-      <% if (p.compare_price && p.compare_price > p.price) { %><del><%= money(p.compare_price) %></del><% } %>
+      <% if (showCompare(p.compare_price, p.price)) { %><del><%= money(p.compare_price) %></del><% } %>
     </div>
   </div>
 </article>

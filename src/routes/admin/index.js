@@ -5,7 +5,7 @@ const notify = require('../../lib/notify');
 const resource = require('./resource');
 const { requireAdmin } = require('../../middleware/auth');
 const { flash } = require('../../middleware/locals');
-const { toDate, todayVN } = require('../../lib/format');
+const { toDate, todayVN, money, showCompare } = require('../../lib/format');
 
 const router = express.Router();
 
@@ -428,7 +428,7 @@ router.use(
       { name: 'slug', label: 'Đường dẫn (slug)', type: 'slug', help: 'Để trống để tự tạo từ tên.' },
       { name: 'category_id', label: 'Danh mục', type: 'select', options: categoryOptions, numeric: true },
       { name: 'price', label: 'Giá bán (₫)', type: 'money', required: true },
-      { name: 'compare_price', label: 'Giá gốc (₫)', type: 'money', help: 'Hiển thị gạch ngang nếu lớn hơn giá bán.' },
+      { name: 'compare_price', label: 'Giá gốc (₫)', type: 'money', help: 'Giá thực đã bán ngay trước khi giảm. Hiển thị gạch ngang nếu lớn hơn giá bán; mức giảm tối đa 50% (NĐ 128/2024). Để trống nếu không khuyến mại.' },
       { name: 'cost_price', label: 'Giá vốn / giá nhập (₫)', type: 'money', help: 'Chỉ hiện trong admin, dùng để tính lợi nhuận. Khách không thấy.' },
       { name: 'stock', label: 'Tồn kho', type: 'number', required: true, default: 0 },
       { name: 'badge', label: 'Nhãn', type: 'text', max: 40, help: 'VD: Bán chạy, Mới, Giới hạn' },
@@ -453,6 +453,9 @@ router.use(
         v.sku = (existing && existing.sku) || (await require('../../lib/inventory').nextSku());
       }
       if (v.price != null && v.price < 0) e.price = 'Giá không hợp lệ.';
+      if (v.compare_price && v.price != null && v.compare_price > v.price && !showCompare(v.compare_price, v.price)) {
+        e.compare_price = `Giá gốc ${money(v.compare_price)} giảm quá 50% so với giá bán (NĐ 128/2024). Giá gốc tối đa ${money(v.price * 2)}, hoặc để trống.`;
+      }
       if (v.stock == null) v.stock = 0;
       if (v.sort == null) v.sort = 0;
       return e;

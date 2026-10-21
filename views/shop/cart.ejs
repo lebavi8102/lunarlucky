@@ -27,7 +27,7 @@
           <a class="thumb" href="<%= l.url %>"><img src="<%= img(l.image_id) %>" alt="" width="112" height="140" loading="lazy"></a>
           <div>
             <h3><a href="<%= l.url %>"><%= l.name %></a></h3>
-            <div class="price small" style="margin-top:4px"><%= money(l.unitPrice) %><% if (l.comparePrice && l.comparePrice > l.unitPrice) { %> <del><%= money(l.comparePrice) %></del><% } %></div>
+            <div class="price small" style="margin-top:4px"><%= money(l.unitPrice) %><% if (showCompare(l.comparePrice, l.unitPrice)) { %> <del><%= money(l.comparePrice) %></del><% } %></div>
           </div>
           <div class="actions">
             <form action="/gio-hang/cap-nhat" method="post" data-qty-form>
