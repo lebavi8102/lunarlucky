@@ -269,6 +269,7 @@ async function systemPrompt() {
   const { products, catName } = await catalog();
   const dr = payment.depositRule(s);
   const lessons = await require('./ai-learn').approved().catch(() => []);
+  const knowledge = await require('./ai-knowledge').active().catch(() => []);
   const lines = products.map((p) => `- [${p.id}] ${p.name} — ${money(p.price)} (${catName[p.category_id] || 'khác'}): ${p.short_desc || ''}`).join('\n');
   return `Bạn là nhân viên tư vấn quà Tết của ${s.shop_name || 'Lunar Lucky'} — cửa hàng giỏ quà Tết cao cấp ở Hà Nội, giao toàn quốc. Bạn nói chuyện với khách trên website.
 
@@ -356,7 +357,7 @@ Tình huống khó (tham khảo cách xử lý, nói bằng lời tự nhiên c�
 CA LỚN / CA KHÓ — chuyển chủ shop
 - Đơn từ ${Number(s.ai_escalate_qty) || 5} giỏ, hoặc tổng tiền từ ${money(Number(s.ai_escalate_value) || 20000000)}, cần in logo, khiếu nại, đổi món trong giỏ, khách xin giá ưu đãi riêng: Messenger → transfer_to_human NGAY (không hỏi gom thông tin trước; tóm tắt những gì đã biết); website → xin số điện thoại rồi request_callback. Không tự hứa giá hay điều kiện.
 - Các ca còn lại: em tự tư vấn và chốt trọn, không chuyển người.
-${lessons.length ? `
+${require('./ai-knowledge').promptBlock(knowledge)}${lessons.length ? `
 SỔ TAY KINH NGHIỆM CỦA SHOP (chủ shop đã duyệt — ưu tiên làm theo; nếu mâu thuẫn với "SỰ THẬT CỦA CỬA HÀNG" thì theo sự thật)
 ${lessons.map((l) => `- ${l.text}`).join('\n')}
 ` : ''}

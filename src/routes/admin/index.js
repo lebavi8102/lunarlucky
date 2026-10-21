@@ -706,6 +706,52 @@ router.post('/ai-hoc/:id', async (req, res) => {
   res.redirect('/admin/ai-hoc');
 });
 
+/* ---------- Kho tri thức AI: chính sách, quy trình, câu hỏi thường gặp do chủ shop viết ---------- */
+router.get('/kien-thuc', async (req, res) => {
+  const kb = require('../../lib/ai-knowledge');
+  const rows = await db('ai_knowledge').orderBy('active', 'desc').orderBy('id');
+  res.render('admin/ai-knowledge', { title: 'Kho tri thức AI', rows, used: await kb.usage(), max: kb.MAX_TOTAL, limits: { title: kb.MAX_TITLE, content: kb.MAX_CONTENT, entries: kb.MAX_ENTRIES } });
+});
+router.post('/kien-thuc', async (req, res) => {
+  const kb = require('../../lib/ai-knowledge');
+  const title = String(req.body.title || '').trim().slice(0, kb.MAX_TITLE);
+  const content = String(req.body.content || '').trim().slice(0, kb.MAX_CONTENT);
+  const [{ n }] = await db('ai_knowledge').count({ n: '*' });
+  if (title.length < 3 || content.length < 10) flash(req, 'error', 'Cần có tiêu đề (ít nhất 3 ký tự) và nội dung (ít nhất 10 ký tự).');
+  else if (Number(n) >= kb.MAX_ENTRIES) flash(req, 'error', `Kho đã đủ ${kb.MAX_ENTRIES} mục — hãy gộp hoặc xóa bớt mục cũ.`);
+  else if ((await kb.usage()) + kb.size({ title, content }) > kb.MAX_TOTAL) flash(req, 'error', 'Kho đã gần đầy — rút gọn nội dung, hoặc ngừng áp dụng / xóa bớt mục cũ rồi thêm lại.');
+  else {
+    await db('ai_knowledge').insert({ title, content, active: true, created_at: new Date(), updated_at: new Date() });
+    flash(req, 'success', 'Đã thêm — AI dùng ngay từ tin tiếp theo.');
+  }
+  res.redirect('/admin/kien-thuc');
+});
+router.post('/kien-thuc/:id', async (req, res) => {
+  const kb = require('../../lib/ai-knowledge');
+  const id = Number(req.params.id);
+  const row = await db('ai_knowledge').where({ id }).first();
+  if (!row) return res.redirect('/admin/kien-thuc');
+  const action = String(req.body.action || '');
+  if (action === 'delete') {
+    await db('ai_knowledge').where({ id }).del();
+    flash(req, 'success', 'Đã xóa mục này.');
+  } else if (action === 'off') {
+    await db('ai_knowledge').where({ id }).update({ active: false, updated_at: new Date() });
+    flash(req, 'success', 'Đã ngừng áp dụng — AI không dùng mục này nữa (vẫn giữ để bật lại).');
+  } else if (action === 'on' || action === 'save') {
+    const title = action === 'save' ? String(req.body.title || '').trim().slice(0, kb.MAX_TITLE) : row.title;
+    const content = action === 'save' ? String(req.body.content || '').trim().slice(0, kb.MAX_CONTENT) : row.content;
+    const willBeActive = action === 'on' || !!row.active;
+    if (title.length < 3 || content.length < 10) flash(req, 'error', 'Cần có tiêu đề (ít nhất 3 ký tự) và nội dung (ít nhất 10 ký tự).');
+    else if (willBeActive && (await kb.usage(id)) + kb.size({ title, content }) > kb.MAX_TOTAL) flash(req, 'error', 'Kho sẽ vượt giới hạn — rút gọn nội dung hoặc ngừng áp dụng bớt mục khác.');
+    else {
+      await db('ai_knowledge').where({ id }).update({ title, content, active: willBeActive, updated_at: new Date() });
+      flash(req, 'success', action === 'on' ? 'Đã bật lại — AI dùng từ tin tiếp theo.' : 'Đã lưu — AI dùng nội dung mới từ tin tiếp theo.');
+    }
+  }
+  res.redirect('/admin/kien-thuc');
+});
+
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
   res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });
