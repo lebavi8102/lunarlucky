@@ -57,6 +57,7 @@ module.exports = async function locals(req, res, next) {
     : '';
   res.locals.fmt = fmt;
   res.locals.money = fmt.money;
+  res.locals.showCompare = fmt.showCompare;
   res.locals.img = img;
   res.locals.asset = asset;
   res.locals.pay = PAY; // tiền cọc / tiền cần trả / tiền thu COD dùng trong giao diện

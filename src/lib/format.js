@@ -4,6 +4,14 @@ function money(n) {
   return `${vnd.format(Math.round(Number(n) || 0))}₫`;
 }
 
+// Giá gạch chỉ hiện khi lớn hơn giá bán và mức giảm không quá 50% (NĐ 128/2024: giảm giá khuyến mại tối đa 50%)
+const MAX_DISCOUNT = 0.5;
+function showCompare(compare, price) {
+  const c = Number(compare) || 0;
+  const p = Number(price) || 0;
+  return c > p && p >= c * (1 - MAX_DISCOUNT);
+}
+
 /** Chuyển mọi dạng thời gian từ MySQL/SQLite về Date. */
 function toDate(v) {
   if (!v) return null;
@@ -101,6 +109,6 @@ function normalizePhone(p) {
 
 module.exports = {
   SLOTS, slotLabel, deliveryWhen, SOURCES, sourceLabel,
-  money, toDate, date, dateTime, longDate, ymd, todayVN, slugify, lines, parseJson, truncate,
+  money, showCompare, MAX_DISCOUNT, toDate, date, dateTime, longDate, ymd, todayVN, slugify, lines, parseJson, truncate,
   normalizePhone,
 };

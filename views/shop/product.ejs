@@ -1,5 +1,5 @@
 <%- include('../partials/top') %>
-<% const save = product.compare_price && product.compare_price > product.price ? Math.round((1 - product.price / product.compare_price) * 100) : 0; %>
+<% const save = showCompare(product.compare_price, product.price) ? Math.round((1 - product.price / product.compare_price) * 100) : 0; %>
 <div class="container">
   <ol class="crumbs" aria-label="Breadcrumb" style="padding-top:24px">
     <li><a href="/">Trang chủ</a></li>

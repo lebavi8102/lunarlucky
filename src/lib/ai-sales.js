@@ -10,7 +10,7 @@ const settings = require('./settings');
 const cart = require('./cart');
 const payment = require('./payment');
 const { search } = require('./search');
-const { money, todayVN, SLOTS } = require('./format');
+const { money, showCompare, todayVN, SLOTS } = require('./format');
 
 const Anthropic = AnthropicSDK.default || AnthropicSDK;
 let client = null;
@@ -61,7 +61,7 @@ function productCard(p, catName) {
     name: p.name,
     price: p.price,
     price_text: money(p.price),
-    compare_price_text: p.compare_price > p.price ? money(p.compare_price) : null,
+    compare_price_text: showCompare(p.compare_price, p.price) ? money(p.compare_price) : null,
     category: catName[p.category_id] || null,
     description: p.short_desc || '',
     contents,
