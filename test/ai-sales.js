@@ -261,6 +261,14 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(rs.reply === 'Dạ em đây ạ' && used.join(',') === 'claude-sonnet-5-5,claude-opus-5-5', 'Sonnet lỗi → tự thử lại bằng Opus, khách vẫn được trả lời');
     await settings.save({ ai_model: mBefore || '' });
 
+    // "3 giỏ 2 triệu" ngay tin đầu → lời dặn bắt hỏi tổng hay mỗi giỏ đi kèm tin khách
+    let sent = '';
+    ai._setClient({ beta: { messages: { create: async (p) => { sent = JSON.stringify(p.messages.at(-1).content); return { stop_reason: 'end_turn', model: p.model, usage: {}, content: [{ type: 'text', text: 'Dạ' }] }; } } } });
+    await ai.chat({ session: {} }, 'mình cần 3 giỏ 2 triệu');
+    ok(/cho cả 3 giỏ hay 2\.000\.000₫ cho mỗi giỏ/.test(sent) && /để câu xin tên sang tin sau/.test(sent), 'Tin "3 giỏ 2 triệu" → AI được dặn hỏi lại tổng hay mỗi giỏ ngay, kể cả tin đầu');
+    await ai.chat({ session: {} }, 'biếu sếp tầm 2tr');
+    ok(!/tổng hay mỗi giỏ/.test(sent), 'Ngân sách rõ ràng → không gắn lời dặn hỏi lại');
+
     // Lỗi API → không làm hỏng lịch sử
     ai._setClient({ beta: { messages: { create: async () => { const e = new Error('overloaded'); e.status = 529; throw e; } } } });
     const r2 = await ai.chat(chatReq, 'còn mẫu nào khác không');

@@ -753,7 +753,12 @@ async function chat(req, text, opts = {}) {
           ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào. Đã biết tên "${nameHint}" nhưng chưa chắc anh hay chị: tên rõ nam/nữ thì gọi luôn, tên dùng chung thì cuối tin hỏi "anh hay chị ạ".]\n`
         : '[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào; chưa biết cách xưng hô → cuối tin xin "anh hay chị, tên gì để em tiện xưng hô".]\n';
   }
-  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + firstNote + String(text).slice(0, 800) });
+  // Khách nói "3 giỏ 2 triệu" (chưa rõ tổng hay mỗi giỏ) → bắt hỏi lại ngay trong tin này, kể cả tin đầu (không để câu xin tên lấn mất)
+  const amb = parseBudget(text);
+  const budgetNote = amb && amb.clarify === 'per_or_total'
+    ? `[Ghi chú hệ thống: chưa rõ ${money(amb.amount)} là tổng hay mỗi giỏ → tin trả lời này PHẢI hỏi đúng câu "Anh/chị dự kiến ${money(amb.amount)} cho cả ${amb.baskets} giỏ hay ${money(amb.amount)} cho mỗi giỏ ạ?" (thay anh/chị bằng cách xưng hô đã biết). Chưa gợi ý giỏ nào, không nói đã tìm được mẫu. Chưa biết xưng hô thì để câu xin tên sang tin sau.]\n`
+    : '';
+  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + firstNote + budgetNote + String(text).slice(0, 800) });
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
   const knownLine = title ? `Khách đã cho biết cách xưng hô: gọi là ${title}${knownName ? ` ${knownName}` : ''}. Gọi đúng như vậy, không hỏi lại.` : '';
   if (CHANNEL_NOTES[opts.channel] || who || knownLine) {
