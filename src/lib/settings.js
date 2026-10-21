@@ -44,6 +44,9 @@ const DEFAULTS = {
   cod_deposit_bulk_percent: '50',
   shipping_fee: '50000',
   free_ship_threshold: '1500000',
+  // Giao ngoài Hà Nội (chuyển phát): để trống = giống Hà Nội
+  province_shipping_fee: '',
+  province_free_ship_threshold: '',
   min_delivery_days: '1',
   province_min_days: '3',
   // Đơn nhiều giỏ cần thời gian chuẩn bị

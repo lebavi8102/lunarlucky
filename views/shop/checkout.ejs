@@ -58,7 +58,7 @@
         </label>
 
         <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
-        <p class="small muted" style="margin-top:8px">Phí giao đồng giá <%= money(s.shipping_fee) %>, <b>miễn phí cho đơn từ <%= money(s.free_ship_threshold) %></b>. Nội thành Hà Nội giao đúng ngày bạn chọn; tỉnh khác 2–4 ngày.</p>
+        <p class="small muted" style="margin-top:8px">Phí giao: <b><%= cart.shipText %></b>. Nội thành Hà Nội giao đúng ngày bạn chọn; tỉnh khác 2–4 ngày.</p>
         <div data-buyer-address <%= values.is_gift ? 'hidden' : '' %> style="margin-top:16px">
           <%- include('../partials/field', { name: 'address', label: 'Địa chỉ nhận hàng', required: true, autocomplete: 'street-address', placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %>
         </div>
@@ -176,11 +176,20 @@
         <p class="small" role="status" aria-live="polite" data-coupon-msg style="color:var(--lacquer-700);margin-top:6px"><%= cart.couponError || '' %></p>
       </details>
       <% } %>
-      <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
-      <% const codDep = pay.depositFor({ goods: cart.subtotal - cart.discount, qty: cart.count, total: cart.total }, s); %>
+      <%
+        const depFor = (total) => pay.depositFor({ goods: cart.subtotal - cart.discount, qty: cart.count, total }, s);
+        const codDep = depFor(cart.total);
+        // Phí giao/tổng/cọc cho cả hai vùng → đổi tỉnh là cập nhật ngay (main.js)
+        const shipAreas = {};
+        for (const [k, a] of Object.entries(cart.areas || {})) {
+          const d = depFor(a.total);
+          shipAreas[k] = { ship: a.shippingFee ? money(a.shippingFee) : 'Miễn phí', total: money(a.total), dep: money(d), rest: money(a.total - d) };
+        }
+      %>
+      <div class="sum-row"><span>Phí giao hàng</span><span data-ship data-ship-areas='<%- cart.shipDiffers ? JSON.stringify(shipAreas).replace(/'/g, '&#39;') : '' %>'><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
       <% if (codDep) { %>
-      <div class="sum-row" data-deposit-row hidden><span>Đặt cọc trước (COD)</span><span><b><%= money(codDep) %></b></span></div>
-      <div class="sum-row" data-deposit-row hidden><span>Trả khi nhận hàng</span><span><%= money(cart.total - codDep) %></span></div>
+      <div class="sum-row" data-deposit-row hidden><span>Đặt cọc trước (COD)</span><span><b data-dep><%= money(codDep) %></b></span></div>
+      <div class="sum-row" data-deposit-row hidden><span>Trả khi nhận hàng</span><span data-rest><%= money(cart.total - codDep) %></span></div>
       <% } %>
       <div class="sum-row total"><span>Tổng cộng</span><span data-total><%= money(cart.total) %></span></div>
       <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>

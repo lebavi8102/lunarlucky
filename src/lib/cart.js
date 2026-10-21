@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const settings = require('./settings');
-const { todayVN } = require('./format');
+const { todayVN, money } = require('./format');
 
 const MAX_QTY = 500;
 
@@ -56,7 +56,39 @@ async function validateCoupon(code, subtotal) {
  * Tính lại toàn bộ giỏ hàng từ DB (không tin giá phía client).
  * Đồng thời dọn các dòng không còn hợp lệ.
  */
-async function priceCart(cart) {
+const isHanoi = (province) => /hà nội/i.test(String(province || '').normalize('NFC'));
+
+/**
+ * Phí giao theo vùng: Hà Nội (shipping_fee, free_ship_threshold) và tỉnh khác
+ * (province_shipping_fee, province_free_ship_threshold — để trống = giống Hà Nội; ngưỡng 0 = không miễn phí).
+ * Chưa chọn tỉnh → tính theo Hà Nội.
+ */
+function shipRule(s, province) {
+  const hn = { fee: Number(s.shipping_fee) || 0, threshold: Number(s.free_ship_threshold) || 0 };
+  if (!String(province || '').trim() || isHanoi(province)) return hn;
+  const or = (v, d) => (String(v ?? '').trim() === '' ? d : Number(v) || 0);
+  return { fee: or(s.province_shipping_fee, hn.fee), threshold: or(s.province_free_ship_threshold, hn.threshold) };
+}
+
+function shipRulesDiffer(s) {
+  const a = shipRule(s, 'Hà Nội');
+  const b = shipRule(s, 'Tỉnh khác');
+  return a.fee !== b.fee || a.threshold !== b.threshold;
+}
+
+/** "50.000₫/đơn, miễn phí cho đơn từ 1.500.000₫" — một vùng. */
+function shipRuleText({ fee, threshold }) {
+  if (!fee) return 'miễn phí giao';
+  return threshold ? `${money(fee)}/đơn, miễn phí cho đơn từ ${money(threshold)}` : `${money(fee)}/đơn`;
+}
+
+/** Câu phí giao cho khách: một câu nếu hai vùng giống nhau, tách Hà Nội / tỉnh khác nếu khác. */
+function shipText(s) {
+  const hn = shipRuleText(shipRule(s, 'Hà Nội'));
+  return shipRulesDiffer(s) ? `Hà Nội: ${hn}. Tỉnh khác: ${shipRuleText(shipRule(s, 'Tỉnh khác'))}` : hn;
+}
+
+async function priceCart(cart, { province } = {}) {
   const s = await settings.all();
   const productIds = cart.lines.filter((l) => l.type === 'product').map((l) => l.productId);
   const products = productIds.length
@@ -104,17 +136,24 @@ async function priceCart(cart) {
       discount = r.discount;
     }
   }
-  const threshold = Number(s.free_ship_threshold) || 0;
-  const fee = Number(s.shipping_fee) || 0;
   const afterDiscount = subtotal - discount;
-  const shippingFee = !lines.length || (threshold && afterDiscount >= threshold) ? 0 : fee;
+  const feeFor = (rule) => (!lines.length || (rule.threshold && afterDiscount >= rule.threshold) ? 0 : rule.fee);
+  const { fee, threshold } = shipRule(s, province);
+  const shippingFee = feeFor({ fee, threshold });
   const count = lines.reduce((a, l) => a + l.qty, 0);
+  // Cả hai vùng — trang thanh toán đổi phí giao/tổng tiền ngay khi khách đổi tỉnh
+  const areas = {};
+  for (const [k, p] of [['hn', 'Hà Nội'], ['tinh', 'Tỉnh khác']]) {
+    const f = feeFor(shipRule(s, p));
+    areas[k] = { shippingFee: f, total: afterDiscount + f };
+  }
 
   return {
     lines, notices, subtotal, discount, coupon, couponCode: cart.coupon, couponError,
-    shippingFee, total: afterDiscount + shippingFee, count,
+    shippingFee, total: afterDiscount + shippingFee, count, areas,
     freeShipRemaining: threshold && afterDiscount < threshold ? threshold - afterDiscount : 0,
     freeShipThreshold: threshold,
+    shipDiffers: shipRulesDiffer(s), shipText: shipText(s),
   };
 }
 
@@ -124,5 +163,5 @@ function cartCount(req) {
 }
 
 module.exports = {
-  getCart, addProduct, updateQty, removeLine, priceCart, validateCoupon, cartCount,
+  getCart, addProduct, updateQty, removeLine, priceCart, validateCoupon, cartCount, shipRule, shipRulesDiffer, shipText, isHanoi,
 };

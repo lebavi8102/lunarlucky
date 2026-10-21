@@ -135,7 +135,8 @@ function checkoutDefaults(req) {
 }
 
 router.get('/thanh-toan', async (req, res) => {
-  const priced = await cart.priceCart(cart.getCart(req));
+  const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
+  const priced = await cart.priceCart(cart.getCart(req), { province: defaults.province });
   if (!priced.lines.length) {
     // Giỏ vừa hết hàng (khách khác mua mất) → mang lời báo về trang giỏ, không để khách thấy giỏ trống không lý do
     if (priced.notices.length) flash(req, 'error', `${priced.notices.join(' ')} Mời bạn chọn mẫu khác hoặc nhắn Lunar Lucky để được gợi ý.`);
@@ -143,8 +144,7 @@ router.get('/thanh-toan', async (req, res) => {
   }
   res.locals.seo.title = 'Thanh toán · Lunar Lucky';
   res.locals.seo.noindex = true;
-  // AI tư vấn đã chuẩn bị đơn → điền sẵn, khách chỉ cần kiểm tra và bấm Đặt hàng
-  const defaults = { ...checkoutDefaults(req), ...(req.session.aiPrefill || {}) };
+  // AI tư vấn đã chuẩn bị đơn → điền sẵn (defaults ở trên), khách chỉ cần kiểm tra và bấm Đặt hàng
   const dc = dateCtx(res.locals.s, defaults.province, priced.count, await fullFor(req, res.locals.s, priced.count));
   res.locals.track.events.push({ name: 'begin_checkout', value: priced.total, items: priced.lines.map((l) => ({ item_id: l.productId || l.key, item_name: l.name, price: l.price, quantity: l.qty })) });
   res.render('shop/checkout', {
@@ -163,7 +163,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
       /* bản chụp hỏng: bỏ qua */
     }
   }
-  const priced = await cart.priceCart(c);
+  const priced = await cart.priceCart(c, { province: req.body.province });
   if (!priced.lines.length) {
     // Giỏ vừa hết hàng (khách khác mua mất) → mang lời báo về trang giỏ, không để khách thấy giỏ trống không lý do
     if (priced.notices.length) flash(req, 'error', `${priced.notices.join(' ')} Mời bạn chọn mẫu khác hoặc nhắn Lunar Lucky để được gợi ý.`);

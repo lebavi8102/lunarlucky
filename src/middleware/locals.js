@@ -1,7 +1,7 @@
 const config = require('../config');
 const settings = require('../lib/settings');
 const fmt = require('../lib/format');
-const { cartCount } = require('../lib/cart');
+const { cartCount, shipRule, shipRulesDiffer, shipText } = require('../lib/cart');
 
 /**
  * Mã phiên bản file tĩnh = hash nội dung CSS/JS lúc khởi động.
@@ -59,6 +59,8 @@ module.exports = async function locals(req, res, next) {
   res.locals.money = fmt.money;
   res.locals.img = img;
   res.locals.asset = asset;
+  // Phí giao theo vùng (Hà Nội / tỉnh khác)
+  res.locals.ship = { rule: (p) => shipRule(s, p), differs: shipRulesDiffer(s), text: shipText(s) };
   res.locals.pay = PAY; // tiền cọc / tiền cần trả / tiền thu COD dùng trong giao diện
   res.locals.siteUrl = config.siteUrl;
   res.locals.path = req.path;
