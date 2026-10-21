@@ -26,6 +26,7 @@ const DEFAULTS = {
   fanpage_url: 'https://www.facebook.com/Lunarlucky.vn',
   messenger_url: 'https://m.me/Lunarlucky.vn',
   zalo_url: 'https://zalo.me/0969000910',
+  invoice_zalo_url: 'https://zalo.me/0969000910', // Zalo cá nhân nhận yêu cầu hóa đơn điện tử (trang đơn hàng)
   bank_id: 'VCB',
   bank_name: 'Vietcombank',
   bank_account: '0000000000',

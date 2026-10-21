@@ -464,7 +464,7 @@
     const a = e.target.closest('a[data-ask]');
     if (!a) return;
     navigator.clipboard?.writeText(a.dataset.ask).then(
-      () => showToast('Đã chép câu hỏi — mở Zalo và dán vào ô chat để gửi.'),
+      () => showToast(a.dataset.askToast || 'Đã chép câu hỏi — mở Zalo và dán vào ô chat để gửi.'),
       () => {},
     );
   });

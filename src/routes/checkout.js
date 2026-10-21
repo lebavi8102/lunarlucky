@@ -7,6 +7,7 @@ const cart = require('../lib/cart');
 const notify = require('../lib/notify');
 const payment = require('../lib/payment');
 const bankPayments = require('../lib/bank-payments');
+const invoiceRequest = require('../lib/invoice-request');
 const { Form } = require('../lib/validate');
 const { normalizePhone, todayVN, SOURCES } = require('../lib/format');
 const { flash } = require('../middleware/locals');
@@ -450,6 +451,7 @@ router.get('/don-hang/:code', async (req, res, next) => {
     order, items, qr: qrFor(order, res.locals.s), payee: payment.accountForOrder(order, res.locals.s), isNew: req.query.moi === '1',
     staffShare: isStaff(req) ? shareLink(order.code) : null,
     autoConfirm: bankPayments.enabled(), holdHours: bankPayments.holdHours(res.locals.s),
+    invoiceZalo: invoiceRequest.zaloUrl(res.locals.s), invoiceMsg: invoiceRequest.message(order),
   });
 });
 
