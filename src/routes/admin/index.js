@@ -261,13 +261,12 @@ const SETTING_GROUPS = [
     ['bank_id', 'Ngân hàng', 'bank'], ['bank_name', 'Tên ngân hàng hiển thị cho khách'],
     ['bank_account', 'Số tài khoản'], ['bank_holder', 'Chủ tài khoản (IN HOA, không dấu)'],
   ], 'qr:bank'],
-  ['Thanh toán & hóa đơn VAT', [
+  ['Thanh toán', [
     ['payment_hold_hours', 'Giữ hàng cho đơn chuyển khoản / chờ cọc chưa trả tiền (giờ) — quá hạn tự hủy, trả lại kho. Chỉ áp dụng khi đã nối SePay'],
     ['cod_deposit_percent', 'Đơn COD cần cọc: tỉ lệ cọc (%) — để 0 nếu không thu cọc'],
     ['cod_deposit_min_total', 'Đơn COD cần cọc khi tiền hàng TRÊN (₫)'],
     ['cod_deposit_min_qty', 'Hoặc khi số giỏ TỪ (giỏ trở lên)'],
     ['cod_deposit_bulk_qty', 'Đơn nhiều giỏ: từ bao nhiêu giỏ thì cọc cao hơn'], ['cod_deposit_bulk_percent', 'Tỉ lệ cọc cho đơn nhiều giỏ (%)'],
-    ['vat_fee_percent', 'Phí xuất hóa đơn VAT khách chịu (%) — cộng vào tổng đơn, VD: 11. Tiền thu vào tài khoản bán lẻ ở trên'],
   ]],
   ['Giao hàng', [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
