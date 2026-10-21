@@ -13,8 +13,8 @@ const chatLimiter = rateLimit({ ...limiterKey,
 router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   const text = String((req.body && req.body.message) || '').trim();
   if (!text) return res.status(400).json({ reply: 'Anh/chị nhập câu hỏi giúp em nhé.' });
-  // Chế độ thử (header x-lunar-test): giả lập kênh Fanpage + tên Facebook để kiểm thử kịch bản; không tạo yêu cầu gọi lại thật
-  const test = req.get('x-lunar-test') === '1';
+  // Chế độ thử (header x-lunar-test, chỉ admin đã đăng nhập): giả lập kênh Fanpage + tên Facebook để kiểm thử kịch bản; không tạo yêu cầu gọi lại thật
+  const test = ai.isTestRequest(req);
   let fbName = '';
   try { fbName = decodeURIComponent(String(req.get('x-lunar-name') || '')).slice(0, 80); } catch { fbName = ''; }
   const opts = test && req.get('x-lunar-channel') === 'messenger' ? { channel: 'messenger', customerName: fbName } : {};
@@ -22,7 +22,7 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   const learn = require('../lib/ai-learn');
   const id = `web:${String(req.sessionID || '').slice(0, 40)}`;
   // Lượt chat thử của chủ shop / kiểm thử (header x-lunar-test) không tính vào số liệu tỉ lệ chốt
-  if (!r.off && !r.error && req.get('x-lunar-test') !== '1') {
+  if (!r.off && !r.error && !test) {
     await learn.log(id, 'customer', text);
     await learn.log(id, 'ai', r.reply);
     if (r.action) await learn.log(id, 'event', 'order_button');
