@@ -9,7 +9,7 @@ const db = require('../db');
 const settings = require('./settings');
 const cart = require('./cart');
 const payment = require('./payment');
-const { search } = require('./search');
+const { fold } = require('./search');
 const { money, todayVN, SLOTS } = require('./format');
 
 const Anthropic = AnthropicSDK.default || AnthropicSDK;
@@ -70,6 +70,198 @@ function productCard(p, catName) {
   };
 }
 
+// ── Ngân sách khách nói trong câu hỏi ("tầm 2tr", "dưới 1tr5", "từ 1tr đến 2tr", "trên 3tr") ──
+// Số tiền kiểu chat: 2tr, 1tr5, 1tr890, 800k, 2 triệu, 1.500.000đ, 1500000
+// (số dính liền sau "tr" như 1tr5 mới tính là phần lẻ — "2tr 3 giỏ" là 2tr; số trơn bắt đầu bằng 0 là SĐT, bỏ qua)
+const MONEY_RE = /(?<![\d.,])(\d+(?:[.,]\d+)?)\s*(trieu|tr|cu|k|nghin|ngan)(\d{1,3})?(?![a-z\d])|(?<![\d.,])([1-9]\d{0,2}(?:[.,]\d{3}){1,3}|[1-9]\d{4,9})(?![.,]?\d)\s*(?:d|dong|vnd)?(?![a-z])/g;
+function moneyValue(m) {
+  if (m[4]) return Number(m[4].replace(/[.,]/g, ''));
+  let v = parseFloat(m[1].replace(',', '.'));
+  const big = !/^(k|nghin|ngan)$/.test(m[2]);
+  v *= big ? 1000000 : 1000;
+  if (m[3] && big) v += Number(m[3]) * 10 ** (6 - m[3].length); // 1tr5 → 1.500.000; 1tr890 → 1.890.000
+  return Math.round(v);
+}
+const RANGE_SEP = /^\s*(-|–|den|toi|va|\.\.\.)\s*$/;
+const MAX_WORDS = /(^|\s)(duoi|toi da|khong qua|khong hon|max|tam|khoang|co)\s*$/;
+const MIN_WORDS = /(^|\s)(tren|tu|hon|min|it nhat|toi thieu)\s*$/;
+// "tổng 6 triệu", "tất cả 6tr", "6 triệu cho 3 giỏ" → ngân sách chung cho nhiều giỏ, không phải giá mỗi giỏ
+const TOTAL_BEFORE = /(^|\s)(tong|tat ca)(\s+(cong|ngan sach|tien|chi phi|la|khoang|tam|het|duoi|toi da|khong qua))*\s*$/;
+// "2 triệu cho 3 giỏ", "3 giỏ 2 triệu": không rõ là tổng hay mỗi giỏ → phải hỏi lại (chủ shop chốt)
+const QTY_AFTER = /^\s*(cho\s+(ca\s+)?)?(\d+)\s*(gio|hop|phan|suat|set)(?![a-z])/;
+const QTY_BEFORE = /(?<![\d.,])(\d+)\s*(gio|hop|phan|suat|set)(\s+(qua|tet|qua tet))?\s*(tam|khoang|co|la)?\s*$/;
+const PER_BASKET = /(^|\s)(moi|mot|1)\s+(gio|hop|phan|suat|set)\s*(tam|khoang|co|la)?\s*$|^\s*(\/|moi|mot|1)\s*(gio|hop|phan|suat|set)(?![a-z])/;
+const QTY_RE = /(?<![\d.,])(\d{1,4})\s*(gio|hop|phan|suat|set)(?![a-z])/g;
+/**
+ * Đọc ngân sách trong câu khách (null nếu không có số tiền). Trả về
+ * { min, max, total, baskets, clarify, spans }:
+ * - "tầm/khoảng/dưới/tối đa X" hoặc chỉ "X" → trần X; "trên/từ/hơn X", "X trở lên" → chỉ mức tối thiểu;
+ * - "từ X đến Y", "X - Y", "2 đến 3 triệu", "2-3tr" → khoảng [X, Y]; nhiều điều kiện trong một câu → gộp (min lớn nhất, max nhỏ nhất);
+ * - "tổng X cho N giỏ" → trần mỗi giỏ = X / N; tổng mà chưa rõ số giỏ, hoặc các giỏ ngân sách khác nhau → clarify (không tự đặt trần);
+ * - min > max → clarify = 'conflict'. spans: vị trí số tiền trong câu đã bỏ dấu (để tách khỏi từ khóa).
+ */
+function parseBudget(query) {
+  const f = fold(query);
+  const hits = [...f.matchAll(MONEY_RE)].map((m) => ({ v: moneyValue(m), i: m.index, end: m.index + m[0].length, unit: m[2] || null })).filter((h) => h.v > 0);
+  if (!hits.length) return null;
+  const conds = [];
+  for (let k = 0; k < hits.length; k++) {
+    const h = hits[k];
+    if (h.used) continue;
+    const nx = hits[k + 1];
+    if (nx && RANGE_SEP.test(f.slice(h.end, nx.i))) { // "1tr5 tới 2tr", "2tr–3tr"
+      conds.push({ min: Math.min(h.v, nx.v), max: Math.max(h.v, nx.v), i: h.i, end: nx.end });
+      nx.used = true;
+      continue;
+    }
+    // "2 đến 3 triệu", "2-3tr": số đầu thiếu đơn vị → mượn đơn vị của số sau
+    const bare = h.unit && /(?<![\d.,])(\d+(?:[.,]\d+)?)\s*(-|–|den|toi)\s*$/.exec(f.slice(0, h.i));
+    const lo = bare ? moneyValue([null, bare[1], h.unit]) : 0;
+    if (bare && lo > 0 && lo < h.v) { conds.push({ min: lo, max: h.v, i: bare.index, end: h.end }); continue; }
+    const before = f.slice(Math.max(0, h.i - 24), h.i);
+    const after = f.slice(h.end, h.end + 16);
+    const qa = QTY_AFTER.exec(after); const qb = QTY_BEFORE.exec(before);
+    if (TOTAL_BEFORE.test(before)) conds.push({ total: h.v, i: h.i, end: h.end });
+    else if ((qa || qb) && !PER_BASKET.test(before) && !PER_BASKET.test(after)) {
+      conds.push({ ambiguous: h.v, qty: Number((qa && qa[3]) || (qb && qb[1])), i: h.i, end: h.end });
+    }
+    else if (MAX_WORDS.test(before)) conds.push({ max: h.v, i: h.i, end: h.end });
+    else if (MIN_WORDS.test(before) || /^\s*(tro len|tro di|do len)/.test(after)) conds.push({ min: h.v, i: h.i, end: h.end });
+    else conds.push({ max: h.v, i: h.i, end: h.end });
+  }
+  const spans = conds.map((c) => [c.i, c.end]);
+  const inSpan = (i) => spans.some(([a, b]) => i >= a && i < b);
+  const qtys = [...new Set([...f.matchAll(QTY_RE)].filter((m) => !inSpan(m.index)).map((m) => Number(m[1])).filter((n) => n > 0))];
+  const out = { min: null, max: null, total: null, baskets: null, clarify: null, spans };
+  const amb = conds.find((c) => c.ambiguous != null);
+  if (amb) return { ...out, clarify: 'per_or_total', amount: amb.ambiguous, baskets: amb.qty };
+  const totals = conds.filter((c) => c.total != null);
+  if (totals.length) {
+    out.total = totals[0].total;
+    // Tổng + số giỏ rõ ràng (một con số), không kèm giá riêng từng giỏ → chia đều
+    if (totals.length === 1 && conds.length === 1 && qtys.length === 1 && !/khac nhau|tuy gio|moi gio mot/.test(f)) {
+      out.baskets = qtys[0];
+      out.max = Math.floor(out.total / qtys[0]);
+      return out;
+    }
+    out.clarify = qtys.length ? 'mixed' : 'no_qty';
+    return out;
+  }
+  const maxes = conds.filter((c) => c.max != null && c.min == null).map((c) => c.max);
+  if (new Set(maxes).size > 1) { out.clarify = 'mixed'; return out; } // "1 giỏ 3tr, 2 giỏ 1tr" → mỗi giỏ một mức, phải hỏi lại
+  const mins = conds.filter((c) => c.min != null).map((c) => c.min);
+  const allMax = conds.filter((c) => c.max != null).map((c) => c.max);
+  out.min = mins.length ? Math.max(...mins) : null;
+  out.max = allMax.length ? Math.min(...allMax) : null;
+  if (out.min != null && out.max != null && out.min > out.max) out.clarify = 'conflict';
+  return out;
+}
+const CLARIFY_NOTE = {
+  no_qty: 'Khách nêu NGÂN SÁCH TỔNG nhưng chưa rõ số giỏ. Chưa gợi ý giỏ nào: hỏi khách đặt mấy giỏ và mỗi giỏ tầm bao nhiêu.',
+  mixed: 'Ngân sách mỗi giỏ chưa rõ (các giỏ có thể khác mức, hoặc tổng tiền kèm giá riêng). Chưa gợi ý giỏ nào: hỏi khách mỗi giỏ tầm bao nhiêu.',
+  conflict: 'Mức giá tối thiểu lớn hơn mức tối đa — điều kiện mâu thuẫn. Chưa gợi ý giỏ nào: hỏi lại khách ngân sách mỗi giỏ.',
+  per_or_total: (b) => `Chưa rõ ${money(b.amount)} là tổng hay mỗi giỏ. Chưa gợi ý giỏ nào: hỏi khách đúng câu "Anh/chị dự kiến ${money(b.amount)} cho cả ${b.baskets} giỏ hay ${money(b.amount)} cho mỗi giỏ ạ?" rồi tìm lại theo câu trả lời.`,
+};
+// ── Từ khóa khách: dịp tặng / người nhận (không bắt buộc), kiểu dáng (không bắt buộc), thành phần (bắt buộc), phủ định ──
+// Dịp tặng / người nhận: chỉ dùng để xếp ưu tiên, không bắt giỏ phải ghi chữ đó ("biếu sếp tầm 2tr" vẫn ra giỏ 1tr890)
+// (động từ chung "biếu, tặng, kính biếu, cảm ơn, chúc Tết" chỉ là chữ chung, không dùng để xếp)
+const GIFT_VERBS = ['kinh bieu', 'bieu', 'tang', 'cam on', 'chuc tet', 'gui', 'danh cho', 'lam qua'];
+const OCCASION = ['tri an', 'sep', 'cap tren', 'lanh dao', 'thay co', 'thay giao', 'co giao', 'giao vien',
+  'bo me', 'cha me', 'ong ba', 'doi tac', 'khach hang', 'nhan vien', 'dong nghiep', 'nguoi yeu', 'ban be', 'ban gai', 'ban trai', 'gia dinh', 'ho hang',
+  'noi ngoai', 'nguoi than', 'nguoi lon tuoi', 'lon tuoi', 'cac bac', 'hang xom', 'vo', 'chong', 'con chau', 'nguoi tre', 'doanh nghiep', 'cong ty'];
+const OCCASION_SYN = { 'bo me': ['cha me', 'ba me'], 'cha me': ['bo me', 'ba me'], 'ba me': ['bo me', 'cha me'], 'thay co': ['thay giao', 'co giao', 'giao vien'],
+  'thay giao': ['thay co', 'giao vien'], 'co giao': ['thay co', 'giao vien'], 'giao vien': ['thay co'], sep: ['cap tren', 'lanh dao'], 'cap tren': ['sep', 'lanh dao'],
+  'lanh dao': ['sep', 'cap tren'], 'ong ba': ['nguoi lon tuoi'], 'nguoi lon tuoi': ['ong ba'] };
+// Kiểu dáng / mức độ: cũng không bắt buộc
+const SOFT = ['sang trong', 'trang trong', 'cao cap', 'nho xinh', 'y nghia', 'truyen thong', 'hien dai', 'lich su', 'thanh lich', 'binh dan', 'tiet kiem',
+  'dac biet', 'sang', 'dep', 're', 'vip', 'luxury', 'xinh', 'gon'];
+// Chữ chung (giỏ, quà, có, gồm…) — bỏ khi tìm thành phần
+const STOPWORDS = new Set(['gio', 'qua', 'tet', 'hop', 'mua', 'can', 'tim', 'xin', 'mau', 'loai', 'nao', 'the', 'co', 'gom', 'kem', 'mon', 'thanh', 'phan',
+  'san', 'pham', 'nhe', 'a', 'ah', 'oi', 'voi', 'cua', 'la', 'minh', 'em', 'nhung', 'cac', 'it', 'nhieu', 'them', 'nay', 'dip', 'de', 'duoc', 'nguoi', 'ban',
+  'va', 'hoac', 'hay', 'khong', 'biet', 'chon', 'gi', 'giup', 'goi', 'tu', 'van', 'nen', 'muon', 'dang', 'phu', 'hop', 'tot', 'nhat', 'ok', 'vay', 'sao', 'chua', 'ai', 'cung']);
+// Thành phần gọi nhiều cách: khách nói một tên thì giỏ ghi tên kia cũng tính là có
+// (khóa = tên bỏ dấu; giá trị viết đúng dấu tiếng Việt)
+const SYNONYMS = { 'ruou vang': ['vang'], 'nhan sam': ['sâm'], 'ca phe': ['cafe', 'coffee'], cafe: ['cà phê'], socola: ['chocolate', 'sô cô la'], chocolate: ['socola'] };
+// "không cồn", "không có rượu", "kiêng đường"… (bỏ qua "không biết/cần/rõ…")
+const NEGATION = /(?<![a-z])(khong|ko|kieng|tranh)\s+(co\s+)?(?!(biet|can|ro|sao|nhi|a|nhe|duoc|phai|lam|nhieu|qua|hon)(?![a-z]))([a-z]+(?:\s+[a-z]+)?)/;
+const hasAccent = (w) => fold(w) !== w.toLowerCase();
+const wordsOf = (text) => String(text || '').toLowerCase().normalize('NFC').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+const containsPhrase = (words, phrase) => {
+  const p = phrase.split(' ');
+  for (let i = 0; i + p.length <= words.length; i++) if (p.every((w, j) => words[i + j] === w)) return true;
+  return false;
+};
+/**
+ * Bộ kiểm "giỏ có thật sự ghi thành phần này" (tên / mô tả / thành phần; so NGUYÊN TỪ, không khớp nửa chữ).
+ * So đúng dấu khi khách gõ có dấu, hoặc khi chữ khách gõ (không dấu) có y nguyên trong danh mục — "vang" (rượu) ≠ "vàng" (viền vàng);
+ * chỉ khi khách gõ không dấu và danh mục không có chữ y nguyên mới so bỏ dấu ("tra" → "trà").
+ */
+function ingredientMatcher(products, term) {
+  const t = wordsOf(term).join(' ');
+  const alts = [t, ...(SYNONYMS[fold(t)] || [])];
+  const raw = new Map(products.map((p) => [p, wordsOf([p.name, p.short_desc, p.contents].join(' '))]));
+  const exactHit = (p, a) => containsPhrase(raw.get(p), wordsOf(a).join(' '));
+  const exact = hasAccent(t) || products.some((p) => alts.some((a) => exactHit(p, a)));
+  return (p) => alts.some((a) => (exact ? exactHit(p, a) : containsPhrase(raw.get(p).map(fold), fold(a))));
+}
+/**
+ * Tách câu khách (đã bỏ phần ngân sách) thành: negated (yêu cầu "không X"), occasion (dịp/người nhận), soft (kiểu dáng),
+ * ingredients (thành phần bắt buộc — mỗi cụm chữ liền nhau là một thành phần, giữ dấu như khách gõ).
+ */
+function classifyQuery(text) {
+  const raw = String(text || '').toLowerCase().normalize('NFC');
+  const neg = NEGATION.exec(fold(raw)); // fold giữ nguyên độ dài chuỗi NFC → cắt lại đúng chữ khách gõ
+  if (neg) return { negated: raw.length === fold(raw).length ? raw.slice(neg.index, neg.index + neg[0].length) : neg[0], occasion: [], soft: [], ingredients: [] };
+  const out = { negated: null, occasion: [], soft: [], ingredients: [] };
+  // Dấu phẩy, "|" (chỗ đã tách ngân sách / chữ "và") ngăn cách các yêu cầu: "bánh và trà" là 2 thành phần
+  for (const seg of raw.split(/[,;|/]+/)) {
+    const rw = wordsOf(seg); const fw = rw.map(fold);
+    const tag = fw.map(() => null);
+    const mark = (list, kind) => {
+      for (const ph of [...list].sort((a, b) => b.split(' ').length - a.split(' ').length)) {
+        const p = ph.split(' ');
+        for (let i = 0; i + p.length <= fw.length; i++) {
+          if (p.every((w, j) => fw[i + j] === w && !tag[i + j])) for (let j = 0; j < p.length; j++) tag[i + j] = { kind, start: i, len: p.length };
+        }
+      }
+    };
+    mark(OCCASION, 'occasion');
+    mark(SOFT, 'soft');
+    mark(GIFT_VERBS, 'stop');
+    fw.forEach((w, i) => { if (!tag[i] && (STOPWORDS.has(w) || /^\d+$/.test(w) || w.length < 2)) tag[i] = { kind: 'stop' }; });
+    let cur = [];
+    const flush = () => { if (cur.length) out.ingredients.push(cur.join(' ')); cur = []; };
+    rw.forEach((w, i) => {
+      const t = tag[i];
+      if (!t) { cur.push(w); return; }
+      flush();
+      // Dịp / kiểu dáng: giữ nguyên chữ khách gõ (có dấu thì so có dấu: "vợ" ≠ "vỏ")
+      if (t.kind !== 'stop' && t.start === i) {
+        const ph = rw.slice(i, i + t.len).join(' ');
+        if (!out[t.kind].includes(ph)) out[t.kind].push(ph);
+      }
+    });
+    flush();
+  }
+  return out;
+}
+
+// Chữ chỉ ngân sách / số lượng còn sót sau khi tách số tiền — không phải yêu cầu về giỏ
+const BUDGET_WORDS = /(?<![a-z])(toi da|toi thieu|khong qua|khong hon|it nhat|tro len|tro di|do len|moi gio|tong cong|tong|tat ca|ngan sach|tam|khoang|duoi|tren|tu|hon|den|toi|va|cho|max|min)(?![a-z])|(?<![\d.,])\d+\s*(gio|hop|phan|suat|set|chiec|cai)(?![a-z])|[-–,.]/g;
+const validPrice = (p) => typeof p.price !== 'boolean' && p.price !== null && p.price !== '' && Number.isFinite(Number(p.price)) && Number(p.price) > 0;
+/**
+ * Lọc + xếp giỏ theo ngân sách. list: thứ tự sẵn có (độ khớp từ khóa, hoặc giá tăng dần).
+ * Bỏ giỏ giá không hợp lệ và giỏ hết hàng (chỉ đếm). Có trần → chỉ giỏ ≤ trần, sát trần trước (giá giảm dần);
+ * cùng giá giữ nguyên thứ tự cũ (sort của JS ổn định). Không có trần → giữ thứ tự cũ.
+ */
+function rankByBudget(list, { min = null, max = null } = {}) {
+  const inRange = list.filter(validPrice).filter((p) => (min == null || Number(p.price) >= min) && (max == null || Number(p.price) <= max));
+  const items = inRange.filter((p) => Number(p.stock) > 0);
+  if (max != null) items.sort((a, b) => Number(b.price) - Number(a.price));
+  return { items, outOfStock: inRange.length - items.length };
+}
+const posInt = (v) => (Number.isInteger(v) && v > 0 ? v : null);
+
 /** Phần cố định của lời dặn (đặt cache). Không chứa ngày giờ / số tồn kho để không làm hỏng cache. */
 async function systemPrompt() {
   const s = await settings.all();
@@ -114,6 +306,8 @@ SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 
 QUY TẮC
 - Chỉ giới thiệu giỏ có trong danh mục; giá, thành phần, tồn kho lấy từ công cụ, không đoán. Không tự đặt ra giảm giá, quà tặng thêm hay cam kết ngoài danh sách trên. Không tư vấn sức khỏe/chữa bệnh.
+- Ngân sách: khách nói "tầm/khoảng/dưới/tối đa X" → gọi search_products với max_price = X; "từ X đến Y" → min_price X, max_price Y; "trên/từ X" → chỉ min_price. Chỉ giới thiệu giỏ có giá KHÔNG VƯỢT ngân sách, ưu tiên giỏ sát ngân sách nhất (kết quả đã xếp sẵn). Không tự nâng ngân sách, không gợi ý giỏ đắt hơn kể cả khi thấy hợp hơn; khách tự hỏi mẫu cao hơn thì mới tìm lại. Không có giỏ hợp ngân sách → nói thật và hỏi khách có muốn điều chỉnh ngân sách không.
+- Kết quả search_products: "budget" = ngân sách hệ thống đã hiểu (min = giá tối thiểu, max = giá tối đa mỗi giỏ, total/baskets = tổng tiền chia cho số giỏ) — có cả min và max thì chỉ giới thiệu giỏ trong khoảng đó; cách hiểu khác ý khách thì hỏi lại. "note" = việc em PHẢI làm theo (hỏi lại khách, báo không có giỏ khớp yêu cầu…) — có note thì làm đúng note, không tự tìm cách khác. "out_of_stock_count" = số giỏ hợp ý nhưng đang HẾT HÀNG, đã bị loại: không giới thiệu, không hứa có hàng; chỉ nói "mẫu đó đang hết" nếu khách hỏi. Từ khóa (món khách yêu cầu) không khớp giỏ nào → báo khách thật, hỏi có muốn xem giỏ khác không; khách đồng ý mới tìm lại không kèm từ khóa. Khách nói tổng tiền cho nhiều giỏ mà chưa rõ số giỏ / mỗi giỏ một mức → hỏi rõ mỗi giỏ tầm bao nhiêu trước khi gợi ý. "has_requested" = thành phần khách hỏi mà giỏ đó CÓ ghi trong dữ liệu. "occasion_match" = giỏ có ghi đúng dịp/người nhận khách nói; false thì chỉ tư vấn theo món thật trong giỏ, không nói giỏ "dành riêng" cho dịp đó. Khách muốn giỏ KHÔNG có món nào (không cồn, kiêng đường…) → không tự khẳng định, làm theo note.
 - Ngày giao: luôn gọi delivery_options trước khi hứa ngày/buổi.
 - Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu, nhưng viết như người nhắn tin (1–2 câu tự nhiên, vd "Dạ anh cho em xin tên, số điện thoại với địa chỉ nhận, mình muốn nhận ngày nào và chuyển khoản hay COD ạ?"), KHÔNG liệt kê kiểu tờ khai, KHÔNG nhắc những thứ khách đã nói, KHÔNG kể các mục không bắt buộc (buổi giao, thiệp, người nhận khác) trong tin này — chỉ nhắc buổi giao một câu ngắn khi lên đơn nếu khách chưa nói. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email, lời chúc trên thiệp — không hỏi; nếu khách chưa nói buổi thì chỉ nhắc một câu ngắn ở tin lên đơn ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
 - ĐỦ thông tin bắt buộc là gọi prepare_order NGAY, không hỏi thêm gì nữa. Khách không chọn buổi / chỉ trả lời "ok", "được", "chốt" → để trống buổi giao (giao buổi nào cũng được) và lên đơn luôn. Tuyệt đối không hỏi lại cùng một câu lần thứ hai.
@@ -173,15 +367,15 @@ function tools(channel) {
   const list = [
     {
       name: 'search_products',
-      description: 'Tìm giỏ quà trong danh mục theo nhu cầu (từ khóa không dấu cũng được) và/hoặc khoảng giá. Trả về giá, thành phần, tồn kho, đường dẫn.',
+      description: 'Tìm giỏ quà còn hàng trong danh mục theo nhu cầu (từ khóa không dấu cũng được) và/hoặc ngân sách. Có ngân sách tối đa → chỉ trả giỏ không vượt ngân sách, giỏ sát ngân sách đứng trước. Trả về giá, thành phần, tồn kho, đường dẫn.',
       strict: true,
       input_schema: {
         type: 'object',
         additionalProperties: false,
         properties: {
           query: { type: 'string', description: 'Ví dụ: "biếu sếp", "rượu vang", "trà", "bố mẹ", "nhân viên". Để trống nếu chỉ lọc giá.' },
-          max_price: { type: 'integer', description: 'Giá tối đa mỗi giỏ (đồng)' },
-          min_price: { type: 'integer', description: 'Giá tối thiểu mỗi giỏ (đồng)' },
+          max_price: { type: 'integer', description: 'Ngân sách tối đa mỗi giỏ (đồng) — khách nói "tầm/khoảng/dưới/tối đa X" thì điền X' },
+          min_price: { type: 'integer', description: 'Giá tối thiểu mỗi giỏ (đồng) — chỉ khi khách nói "trên/từ X"' },
         },
         required: [],
       },
@@ -309,14 +503,80 @@ async function runTool(name, input, req, out) {
   out.tools = [...(out.tools || []), name];
   if (name === 'search_products') {
     const { products, catName } = await catalog();
-    let list = input.query ? search(products, input.query, Object.entries(catName).map(([id, n]) => ({ id: Number(id), name: n }))) : products;
-    if (input.query && !list.length) list = products; // không khớp từ khóa → vẫn cho xem theo giá
-    if (input.max_price) list = list.filter((p) => p.price <= input.max_price);
-    if (input.min_price) list = list.filter((p) => p.price >= input.min_price);
+    const empty = (note, budget) => ({ results: [], total_found: 0, ...(budget ? { budget } : {}), note });
+    // max_price 0 / âm / không phải số nguyên → không bỏ qua thành "không giới hạn": từ chối, nhờ AI hỏi lại
+    if (input.max_price != null && !posInt(input.max_price)) {
+      return { ...empty('max_price không hợp lệ (phải là số đồng > 0). Chưa gợi ý giỏ nào: khách có nêu ngân sách thì gọi lại với đúng số đó, chưa nêu thì gọi lại không kèm max_price hoặc hỏi khách.'), error: 'max_price không hợp lệ' };
+    }
+    // Ngân sách: lấy từ max_price/min_price và từ câu khách ("tầm 2tr"); cả hai cùng có → lấy giới hạn chặt hơn
+    const said = input.query ? parseBudget(input.query) : null;
+    const maxes = [posInt(input.max_price), said && said.max].filter((v) => v != null);
+    const mins = [posInt(input.min_price), said && said.min].filter((v) => v != null);
+    const budget = { min: mins.length ? Math.max(...mins) : null, max: maxes.length ? Math.min(...maxes) : null };
+    if (said && said.total != null) Object.assign(budget, { total: said.total, baskets: said.baskets });
+    const hasBudget = budget.max != null || budget.min != null || budget.total != null;
+    if (said && said.clarify) {
+      const n = CLARIFY_NOTE[said.clarify];
+      return empty(typeof n === 'function' ? n(said) : n, said.clarify === 'per_or_total' ? { ...budget, amount: said.amount, baskets: said.baskets } : budget);
+    }
+    if (budget.min != null && budget.max != null && budget.min > budget.max) return empty(CLARIFY_NOTE.conflict, budget);
+    // Số tiền + chữ chỉ ngân sách tách khỏi từ khóa (tránh bộ tìm chung hiểu "tầm 2tr" thành 1tr5–2tr5).
+    // Làm song song trên câu gốc (giữ dấu, để phân biệt "vang"/"vàng") và câu bỏ dấu (cùng độ dài khi đã chuẩn hóa NFC).
+    const rawQ = String(input.query || '').normalize('NFC').toLowerCase();
+    const fq = fold(rawQ);
+    const keep = [...fq].map(() => true);
+    if (said) for (const [a, b] of said.spans) for (let i = a; i < b; i++) keep[i] = false;
+    for (const m of fq.matchAll(BUDGET_WORDS)) for (let i = m.index; i < m.index + m[0].length; i++) keep[i] = false;
+    const base = rawQ.length === fq.length ? rawQ : fq;
+    const cleanQ = [...base].map((c, i) => (keep[i] ? c : '|')).join('').replace(/\s+/g, ' ').trim();
+    const ask = (what) => empty(`Không có giỏ nào ${what}. Chưa gợi ý giỏ khác: báo khách thật là chưa có giỏ đúng yêu cầu đó, hỏi khách có muốn xem các giỏ khác${hasBudget ? ' trong ngân sách' : ''} không; khách đồng ý thì mới gọi lại search_products KHÔNG kèm từ khóa thành phần (giữ nguyên ngân sách).`, hasBudget ? budget : null);
+    const want = classifyQuery(cleanQ);
+    // "không cồn", "không có rượu"…: dữ liệu sản phẩm không ghi được điều này → không tự khẳng định giỏ nào đáp ứng
+    if (want.negated) {
+      return empty(`Khách yêu cầu "${want.negated}". Dữ liệu sản phẩm không xác nhận được điều này nên chưa gợi ý giỏ nào và KHÔNG nói giỏ nào đáp ứng. Messenger: gọi transfer_to_human (ghi rõ yêu cầu "${want.negated}"${hasBudget ? ' và ngân sách' : ''}); website: xin số điện thoại rồi request_callback để nhân viên xác nhận.`, hasBudget ? budget : null);
+    }
+    // Có yêu cầu cụ thể → giỏ bán chạy đứng trước khi cùng mức ưu tiên (như bộ tìm chung vẫn làm)
+    let list = want.ingredients.length || want.occasion.length || want.soft.length ? [...products].sort((a, b) => (b.sold || 0) - (a.sold || 0)) : products;
+    let occasionHits = null;
+    if (want.ingredients.length) {
+      // Thành phần: chỉ giữ giỏ có ĐỦ mọi thành phần (so nguyên từ), không dựa vào khớp nửa chữ của bộ tìm chung
+      const checks = want.ingredients.map((t) => ingredientMatcher(products, t));
+      list = products.filter((p) => checks.every((has) => has(p)));
+      if (!list.length) return ask(`có ${want.ingredients.map((t) => `"${t}"`).join(' và ')}`);
+    }
+    if (want.occasion.length || want.soft.length) {
+      // Dịp tặng / kiểu dáng: giỏ có ghi đúng chữ đó (nguyên từ, kể cả tên danh mục) xếp lên trước, nhưng không loại giỏ khác
+      const textOf = (p) => wordsOf([p.name, p.short_desc, p.contents, p.badge, catName[p.category_id]].join(' '));
+      // khách gõ có dấu → so có dấu ("vợ" ≠ "vỏ"); gõ không dấu → so bỏ dấu (bỏ qua chữ quá ngắn như "vo": không đủ căn cứ);
+      // kèm cách gọi tương đương ("bố mẹ" ~ "cha mẹ")
+      const hit = (p, list2) => list2.some((ph) => {
+        const w = textOf(p); const fw = w.map(fold);
+        if (hasAccent(ph) ? containsPhrase(w, ph) : ph.length > 2 && containsPhrase(fw, ph)) return true;
+        return (OCCASION_SYN[fold(ph)] || []).some((x) => containsPhrase(fw, x));
+      });
+      occasionHits = new Set(list.filter((p) => hit(p, want.occasion)).map((p) => p.id));
+      const softHits = new Set(list.filter((p) => hit(p, want.soft)).map((p) => p.id));
+      const score = (p) => (occasionHits.has(p.id) ? 2 : 0) + (softHits.has(p.id) ? 1 : 0);
+      list = [...list].sort((a, b) => score(b) - score(a)); // sort ổn định: cùng điểm giữ thứ tự cũ
+    }
+    const { items, outOfStock } = rankByBudget(list, budget);
     // Phí giao cho 1 giỏ tính sẵn (AI hay nhầm 1tr490 là "vừa đủ" miễn phí giao 1tr500)
     const th = Number(s.free_ship_threshold) || 0; const fee = Number(s.shipping_fee) || 0;
     const shipNote = (p) => (!th || p.price >= th ? 'mua 1 giỏ: MIỄN PHÍ giao' : `mua 1 giỏ: + ${money(fee)} phí giao (chưa tới ${money(th)}); muốn miễn phí cần tổng từ ${money(th)}`);
-    return { results: list.slice(0, 6).map((p) => ({ ...productCard(p, catName), ship_1_basket: shipNote(p) })), total_found: list.length };
+    const r = { results: items.slice(0, 6).map((p) => ({ ...productCard(p, catName), ship_1_basket: shipNote(p),
+      ...(want.ingredients.length ? { has_requested: want.ingredients } : {}),
+      ...(occasionHits && want.occasion.length ? { occasion_match: occasionHits.has(p.id) } : {}) })), total_found: items.length };
+    if (hasBudget) r.budget = budget;
+    if (want.occasion.length) r.occasion = want.occasion;
+    if (outOfStock) r.out_of_stock_count = outOfStock; // giỏ hợp ngân sách nhưng đang hết hàng (không đưa vào kết quả)
+    if (!items.length && hasBudget) {
+      r.note = 'Không có giỏ còn hàng trong mức ngân sách này. Báo khách thật, hỏi khách có muốn điều chỉnh ngân sách không. KHÔNG tự gợi ý giỏ vượt ngân sách.';
+    } else if (budget.total != null) {
+      r.note = `Đã hiểu là tổng ${money(budget.total)} cho ${budget.baskets} giỏ → mỗi giỏ tối đa ${money(budget.max)}. Nói rõ cách hiểu này với khách khi gợi ý; khách muốn chia khác thì hỏi lại.`;
+    } else if (want.occasion.length && items.length && !items.slice(0, 6).some((p) => occasionHits.has(p.id))) {
+      r.note = `Không giỏ nào trong kết quả ghi rõ dành cho "${want.occasion.join(', ')}". Tư vấn dựa trên mô tả/thành phần thật của giỏ; không nói giỏ "chuyên dành cho" dịp/người nhận này.`;
+    }
+    return r;
   }
   if (name === 'delivery_options') {
     const { dateCtx, isHanoi, tetClosed } = checkoutHelpers();
@@ -573,4 +833,4 @@ async function chat(req, text, opts = {}) {
 }
 
 module.exports = {
-  staffOnline, getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, _setClient: (c) => { client = c; } };
+  staffOnline, getClient, pickModel, chat, enabled, systemPrompt, tools, runTool, parseBudget, rankByBudget, _setClient: (c) => { client = c; } };
