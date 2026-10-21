@@ -8,7 +8,7 @@ if (db.isMysql && !process.env.ALLOW_REMOTE) { console.error('Chỉ chạy với
 process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'test-key';
 const ai = require('../src/lib/ai-sales');
 const settings = require('../src/lib/settings');
-const { todayVN } = require('../src/lib/format');
+const { todayVN, money } = require('../src/lib/format');
 
 let fails = 0;
 const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++; };
@@ -94,6 +94,41 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(sOkLast.results.length && sOkLast.results.every((p) => p.price <= 2000000) && !sOkLast.note, 'Câu khách rõ ngân sách mỗi giỏ → gợi ý bình thường');
     const sAnswered = await ai.runTool('search_products', { max_price: 666666 }, req, { userText: '2 triệu cho cả 3 giỏ nhé' });
     ok(!/hay .* cho mỗi giỏ/.test(sAnswered.note || ''), 'Khách đã trả lời "cho cả 3 giỏ" → không hỏi lại lần nữa');
+    // Tra cứu đơn: chỉ khi mã đơn + số điện thoại cùng khớp; chỉ trả thông tin khách cần
+    {
+      const prod = (await db('products').first());
+      const [lr] = await db('orders').insert({
+        code: 'LN261021TRA1', customer_name: 'Khách Tra', phone: '0912345678', email: 'kin@example.com', address: 'Số 1 Phố Bí Mật', province: 'Hà Nội',
+        delivery_date: '2026-12-20', delivery_slot: 'sang', payment_method: 'cod', payment_status: 'deposit', deposit_amount: 300000, deposit_paid_at: new Date(),
+        status: 'packing', subtotal: 1000000, discount: 0, shipping_fee: 50000, total: 1050000, admin_note: 'BÍ MẬT NỘI BỘ', shipper: 'Hùng', vat_company: 'Cty Bí Mật',
+      });
+      const lid = typeof lr === 'object' ? lr.id : lr;
+      await db('order_items').insert({ order_id: lid, product_id: prod.id, name: 'Giỏ Thử Tra', price: 500000, qty: 2, line_total: 1000000 });
+      try {
+        const lreq = () => ({ session: {}, get: () => '' });
+        const good = await ai.runTool('lookup_order', { order_code: 'ln261021tra1', phone: '+84 912 345 678' }, lreq(), {});
+        ok(good.found && good.tinh_trang === 'Shop đang đóng gói' && good.san_pham[0] === '2 × Giỏ Thử Tra' && good.con_phai_thu_khi_giao === money(750000),
+          'lookup_order: mã + SĐT khớp (gõ thường, +84, dấu cách) → đúng tình trạng, sản phẩm, số tiền còn phải thu (trừ cọc)');
+        const dump = JSON.stringify(good);
+        ok(!/BÍ MẬT|Hùng|Cty|kin@example|Phố Bí Mật|0912345678/.test(dump), 'lookup_order: không lộ ghi chú nội bộ, shipper, hóa đơn, email, địa chỉ, SĐT');
+        const bad = await ai.runTool('lookup_order', { order_code: 'LN261021TRA1', phone: '0999888777' }, lreq(), {});
+        const none = await ai.runTool('lookup_order', { order_code: 'LN261021ZZZZ', phone: '0912345678' }, lreq(), {});
+        ok(bad.found === false && none.found === false && bad.note === none.note && !/packing|đóng gói|Giỏ Thử/.test(JSON.stringify(bad)),
+          'lookup_order: sai SĐT hoặc mã không có → cùng một câu trả lời, không lộ đơn có tồn tại');
+        ok((await ai.runTool('lookup_order', { order_code: 'abc', phone: '0912345678' }, lreq(), {})).error && (await ai.runTool('lookup_order', { order_code: 'LN261021TRA1', phone: '12' }, lreq(), {})).error,
+          'lookup_order: mã sai dạng / SĐT ngắn → nhờ khách đưa lại, chưa tra');
+        const sess = { session: {}, get: () => '' };
+        for (let i = 0; i < 5; i++) await ai.runTool('lookup_order', { order_code: 'LN261021TRA1', phone: `09000000${i}0` }, sess, {});
+        const blocked = await ai.runTool('lookup_order', { order_code: 'LN261021TRA1', phone: '0912345678' }, sess, {});
+        ok(blocked.error && /quá nhiều lần/.test(blocked.error) && !blocked.found, 'lookup_order: sai 5 lần trong một cuộc trò chuyện → chặn, kể cả lần có SĐT đúng');
+        await db('orders').where({ id: lid }).update({ status: 'cancelled' });
+        const cx = await ai.runTool('lookup_order', { order_code: 'LN261021TRA1', phone: '0912345678' }, lreq(), {});
+        ok(cx.tinh_trang === 'Đơn đã hủy' && !cx.con_phai_thu_khi_giao, 'lookup_order: đơn đã hủy → báo hủy, không còn số tiền phải thu');
+      } finally {
+        await db('order_items').where({ order_id: lid }).del();
+        await db('orders').where({ id: lid }).del();
+      }
+    }
     const sNone = await ai.runTool('search_products', { max_price: 100000 }, req, out);
     ok(sNone.results.length === 0 && /KHÔNG tự gợi ý giỏ vượt ngân sách/.test(sNone.note || ''), 'Không giỏ nào trong ngân sách → rỗng + dặn AI hỏi khách điều chỉnh');
     const sAll = await ai.runTool('search_products', { query: 'ruou vang' }, req, out);
