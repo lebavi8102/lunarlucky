@@ -121,7 +121,8 @@ function parseBudget(query) {
     const before = f.slice(Math.max(0, h.i - 24), h.i);
     const after = f.slice(h.end, h.end + 16);
     const qa = QTY_AFTER.exec(after); const qb = QTY_BEFORE.exec(before);
-    if (TOTAL_BEFORE.test(before)) conds.push({ total: h.v, i: h.i, end: h.end });
+    // "2 triệu cho cả 3 giỏ" = tổng (cũng là câu khách trả lời khi được hỏi lại "cho cả N giỏ hay mỗi giỏ")
+    if (TOTAL_BEFORE.test(before) || (qa && qa[2])) conds.push({ total: h.v, i: h.i, end: h.end });
     else if ((qa || qb) && !PER_BASKET.test(before) && !PER_BASKET.test(after)) {
       conds.push({ ambiguous: h.v, qty: Number((qa && qa[3]) || (qb && qb[1])), i: h.i, end: h.end });
     }
@@ -510,6 +511,12 @@ async function runTool(name, input, req, out) {
     }
     // Ngân sách: lấy từ max_price/min_price và từ câu khách ("tầm 2tr"); cả hai cùng có → lấy giới hạn chặt hơn
     const said = input.query ? parseBudget(input.query) : null;
+    // AI hay chỉ gửi max_price mà bỏ mất chữ "3 giỏ" → đọc thêm câu khách vừa nhắn: chưa rõ tổng hay mỗi giỏ thì vẫn bắt hỏi lại
+    const lastSaid = out.userText && !(said && said.clarify) ? parseBudget(out.userText) : null;
+    if (lastSaid && lastSaid.clarify && lastSaid.clarify !== 'conflict') {
+      const n = CLARIFY_NOTE[lastSaid.clarify];
+      return empty(typeof n === 'function' ? n(lastSaid) : n, lastSaid.clarify === 'per_or_total' ? { amount: lastSaid.amount, baskets: lastSaid.baskets } : null);
+    }
     const maxes = [posInt(input.max_price), said && said.max].filter((v) => v != null);
     const mins = [posInt(input.min_price), said && said.min].filter((v) => v != null);
     const budget = { min: mins.length ? Math.max(...mins) : null, max: maxes.length ? Math.min(...maxes) : null };
@@ -754,7 +761,7 @@ async function chat(req, text, opts = {}) {
   }
   req.aiChannel = opts.channel || 'web';
   const toolDefs = tools(opts.channel);
-  const out = {};
+  const out = { userText: String(text).slice(0, 800) };
   let reply = '';
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     let res;

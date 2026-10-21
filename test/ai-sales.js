@@ -85,6 +85,15 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     ok(sRange.results.every((p) => p.price >= 1000000 && p.price <= 2000000) && sRange.results[0].price === under2[0], 'search_products "từ 1tr đến 2tr" → trong khoảng, sát 2tr trước');
     const sMin = await ai.runTool('search_products', { query: 'trên 2tr' }, req, out);
     ok(sMin.results.length && sMin.results.every((p) => p.price > 2000000) && sMin.budget.max === null, 'search_products "trên 2tr" → chỉ giỏ trên 2tr, không có trần');
+    const cc = ai.parseBudget('2 triệu cho cả 3 giỏ');
+    ok(cc.total === 2000000 && cc.baskets === 3 && cc.max === 666666 && !cc.clarify, '"2 triệu cho cả 3 giỏ" (khách trả lời câu hỏi lại) → tổng, mỗi giỏ tối đa 666k, không hỏi vòng lặp');
+    // AI chỉ gửi max_price, bỏ mất "3 giỏ" → vẫn đọc câu khách vừa nhắn và bắt hỏi lại
+    const sLastAmb = await ai.runTool('search_products', { max_price: 2000000 }, req, { userText: 'mình cần 3 giỏ 2 triệu' });
+    ok(sLastAmb.results.length === 0 && /cho cả 3 giỏ hay/.test(sLastAmb.note || ''), 'Câu khách "3 giỏ 2 triệu" + AI chỉ gửi max_price → không gợi ý, bắt hỏi tổng hay mỗi giỏ');
+    const sOkLast = await ai.runTool('search_products', { max_price: 2000000 }, req, { userText: 'biếu sếp tầm 2tr' });
+    ok(sOkLast.results.length && sOkLast.results.every((p) => p.price <= 2000000) && !sOkLast.note, 'Câu khách rõ ngân sách mỗi giỏ → gợi ý bình thường');
+    const sAnswered = await ai.runTool('search_products', { max_price: 666666 }, req, { userText: '2 triệu cho cả 3 giỏ nhé' });
+    ok(!/hay .* cho mỗi giỏ/.test(sAnswered.note || ''), 'Khách đã trả lời "cho cả 3 giỏ" → không hỏi lại lần nữa');
     const sNone = await ai.runTool('search_products', { max_price: 100000 }, req, out);
     ok(sNone.results.length === 0 && /KHÔNG tự gợi ý giỏ vượt ngân sách/.test(sNone.note || ''), 'Không giỏ nào trong ngân sách → rỗng + dặn AI hỏi khách điều chỉnh');
     const sAll = await ai.runTool('search_products', { query: 'ruou vang' }, req, out);
