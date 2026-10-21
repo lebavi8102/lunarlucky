@@ -4,11 +4,22 @@ const { limiterKey } = require('../lib/client-ip');
 const db = require('../db');
 const notify = require('../lib/notify');
 const { Form } = require('../lib/validate');
+const cart = require('../lib/cart');
+
+const DELIVERY_MODES = { one: 'Giao 1 địa chỉ', many: 'Giao nhiều địa chỉ (theo danh sách người nhận)' };
+
+/** Giỏ khách đang chọn trên web → "Phú Quý × 10; An Khang × 5" để đưa vào yêu cầu báo giá. */
+async function cartSummary(req) {
+  const priced = await cart.priceCart(cart.getCart(req));
+  if (!priced.lines.length) return null;
+  return { count: priced.count, text: priced.lines.map((l) => `${l.name} × ${l.qty}`).join('; ').slice(0, 2000) };
+}
 
 const router = express.Router();
 const quoteLimiter = rateLimit({ ...limiterKey, windowMs: 30 * 60000, limit: 6, standardHeaders: true, legacyHeaders: false });
 
 async function render(res, data) {
+  res.locals.deliveryModes = DELIVERY_MODES;
   const products = await db('products')
     .where({ is_active: true })
     .orderBy([{ column: 'is_featured', order: 'desc' }, { column: 'sold', order: 'desc' }])
@@ -19,9 +30,12 @@ async function render(res, data) {
   res.render('pages/business', { products, ...data });
 }
 
-router.get('/qua-tang-doanh-nghiep', (req, res) => {
+router.get('/qua-tang-doanh-nghiep', async (req, res) => {
   if (req.query['da-gui'] === '1') res.locals.track.events.push({ name: 'generate_lead', value: 0 }); // gửi yêu cầu báo giá
-  render(res, { values: {}, errors: {}, sent: req.query['da-gui'] === '1' });
+  // Từ giỏ hàng (5 giỏ trở lên) sang: điền sẵn số lượng, kèm danh sách giỏ đã chọn
+  const fromCart = req.query['tu-gio'] === '1' ? await cartSummary(req) : null;
+  const values = fromCart ? { quantity: Math.max(5, fromCart.count), from_cart: '1' } : {};
+  render(res, { values, errors: {}, sent: req.query['da-gui'] === '1', fromCart });
 });
 
 router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
@@ -37,10 +51,17 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
     delivery_date: f.date('delivery_date', { label: 'ngày giao dự kiến', minOffset: 2, maxOffset: 365 }) || null,
     logo_print: f.bool('logo_print'),
     message: f.text('message', { max: 2000 }) || null,
+    delivery_mode: f.oneOf('delivery_mode', Object.keys(DELIVERY_MODES), 'one'),
+    delivery_points: null,
+    delivery_area: f.text('delivery_area', { max: 500 }) || null,
+    cart_summary: null,
   };
+  if (q.delivery_mode === 'many') q.delivery_points = f.int('delivery_points', { label: 'số điểm giao', min: 2, max: 100000 }) || null;
+  const fromCart = req.body.from_cart === '1' ? await cartSummary(req) : null;
+  if (fromCart) q.cart_summary = fromCart.text;
   if (!f.ok) {
     res.status(422);
-    return render(res, { values: f.values, errors: f.errors, sent: false });
+    return render(res, { values: f.values, errors: f.errors, sent: false, fromCart });
   }
   await db('quotes').insert(q);
   notify.telegram(notify.quoteTelegram(q), null, { topic: 'consult' });

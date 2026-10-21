@@ -9,6 +9,8 @@
 <tr><td style="padding:0 0 8px;color:#75685e">Ngân sách mỗi giỏ</td><td align="right"><%= q.budget %></td></tr>
 <% if (q.delivery_date) { %><tr><td style="padding:0 0 8px;color:#75685e">Ngày cần giao</td><td align="right"><%= ymd(q.delivery_date) %></td></tr><% } %>
 <% if (q.logo_print) { %><tr><td style="padding:0 0 8px;color:#75685e">In logo</td><td align="right">Có</td></tr><% } %>
+<% if (q.delivery_mode === 'many') { %><tr><td style="padding:0 0 8px;color:#75685e">Giao hàng</td><td align="right">Nhiều địa chỉ<%= q.delivery_points ? ` (~${q.delivery_points} điểm)` : '' %></td></tr><% } %>
+<% if (q.cart_summary) { %><tr><td style="padding:0 0 8px;color:#75685e">Giỏ đã chọn</td><td align="right"><%= q.cart_summary %></td></tr><% } %>
 </table>
 <p style="margin:16px 0 0;line-height:1.7;color:#4a3f38">Để báo giá sát hơn, bạn có thể <b>trả lời email này</b> kèm danh sách người nhận (Excel) và file logo.</p>
 <% if (s.zalo_url) { %><p style="margin:24px 0 0"><a href="<%= s.zalo_url %>" style="display:inline-block;background:#7a1622;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">Nhắn Zalo Lunar Lucky</a></p><% } %>

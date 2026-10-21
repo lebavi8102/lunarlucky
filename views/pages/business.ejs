@@ -36,6 +36,18 @@
           <%- include('../partials/field', { name: 'budget', label: 'Ngân sách mỗi giỏ', as: 'select', options: budgets }) %>
         </div>
         <div style="margin-top:16px"><%- include('../partials/field', { name: 'delivery_date', label: 'Ngày cần giao', type: 'date', optional: true }) %></div>
+        <fieldset style="margin-top:16px;border:0;padding:0" data-delivery-mode>
+          <legend class="label">Giao hàng</legend>
+          <% Object.entries(deliveryModes).forEach(([k, label]) => { %>
+          <label class="check"><input type="radio" name="delivery_mode" value="<%= k %>" <%= (values.delivery_mode || 'one') === k ? 'checked' : '' %>> <%= label %></label>
+          <% }) %>
+        </fieldset>
+        <div style="margin-top:12px" data-delivery-points <%= values.delivery_mode === 'many' ? '' : 'hidden' %>><%- include('../partials/field', { name: 'delivery_points', label: 'Số điểm giao (ước tính)', type: 'number', optional: true, min: 2, inputmode: 'numeric', placeholder: 'VD: 30' }) %></div>
+        <div style="margin-top:12px"><%- include('../partials/field', { name: 'delivery_area', label: 'Địa chỉ giao / khu vực', optional: true, maxlength: 500, placeholder: 'VD: văn phòng ở Cầu Giấy, Hà Nội; hoặc đối tác tại Hà Nội, TP.HCM, Đà Nẵng' }) %></div>
+        <% if (fromCart) { %>
+        <input type="hidden" name="from_cart" value="1">
+        <p class="small muted" style="margin-top:12px;padding:10px 12px;background:var(--cream-100);border-radius:10px">Giỏ bạn đã chọn sẽ gửi kèm: <b><%= fromCart.text %></b></p>
+        <% } %>
         <label class="check"><input type="checkbox" name="logo_print" value="1" <%= values.logo_print ? 'checked' : '' %>> Tôi muốn in logo doanh nghiệp lên hộp/thiệp</label>
         <div style="margin-top:12px"><%- include('../partials/field', { name: 'message', label: 'Mô tả thêm', as: 'textarea', optional: true, maxlength: 2000, placeholder: 'Đối tượng nhận quà, phong cách mong muốn, yêu cầu đặc biệt…' }) %></div>
         <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Gửi yêu cầu báo giá</button>

@@ -87,7 +87,14 @@
       </div>
       <% } %>
 
-      <a class="btn btn-lg btn-block" href="/thanh-toan" style="margin-top:20px">Tiến hành đặt hàng <svg class="icon"><use href="#i-arrow"/></svg></a>
+      <% const quoteFrom = Number(s.ai_escalate_qty) || 5; %>
+      <% if (cart.count >= quoteFrom) { %>
+      <div class="card" style="margin-top:16px;padding:14px 16px;background:var(--cream-100);box-shadow:none" data-bulk-quote>
+        <p class="small"><b>Đặt từ <%= quoteFrom %> giỏ?</b> Nhận báo giá riêng: ưu đãi theo số lượng, in logo, giao nhiều địa chỉ, hỗ trợ hóa đơn VAT. Lunar Lucky phản hồi trong 24 giờ làm việc.</p>
+        <a class="btn btn-block" href="/qua-tang-doanh-nghiep?tu-gio=1#bao-gia" style="margin-top:10px">Nhận báo giá cho <%= cart.count %> giỏ</a>
+      </div>
+      <% } %>
+      <a class="btn btn-lg btn-block <%= cart.count >= quoteFrom ? 'btn-quiet' : '' %>" href="/thanh-toan" style="margin-top:<%= cart.count >= quoteFrom ? 12 : 20 %>px">Tiến hành đặt hàng <svg class="icon"><use href="#i-arrow"/></svg></a>
       <p class="secure-note"><svg class="icon icon-sm"><use href="#i-shield"/></svg> Thanh toán COD hoặc chuyển khoản VietQR</p>
       <div style="margin-top:16px"><%- include('../partials/callback', { source: 'gio-hang', title: 'Muốn đặt nhanh qua điện thoại?' }) %></div>
     </aside>
