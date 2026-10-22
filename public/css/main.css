@@ -588,6 +588,11 @@ ul, ol { margin: 0; padding: 0; }
 .link-btn { border: 0; background: none; padding: 0; color: var(--primary); text-decoration: underline; cursor: pointer; font: inherit; }
 .remember-note { margin-top: 10px; }
 .buy-bar { display: none; }
+/* Điện thoại, trang sản phẩm: nút nổi mờ đi khi đang đè lên ảnh (lớp do main.js bật/tắt) */
+@media (max-width: 959px) {
+  .float-contact, .ai-fab { transition: opacity 180ms var(--ease), visibility 0s linear 0s; }
+  body.fab-over-media .float-contact, body.fab-over-media .ai-fab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms var(--ease), visibility 0s linear 180ms; }
+}
 @media (max-width: 959px) {
   .buy-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.08); transform: translateY(110%); transition: transform 200ms var(--ease); }
   .buy-bar.show { transform: none; }

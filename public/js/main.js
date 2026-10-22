@@ -389,6 +389,22 @@
     }).observe(buyRow);
   }
 
+  /* Trang sản phẩm (điện thoại): nút nổi (Tư vấn chọn quà, Zalo) tự ẩn khi đang nằm đè lên ảnh sản phẩm, hiện lại khi cuộn qua khỏi ảnh */
+  const productMedia = $('.gallery-main');
+  if (productMedia && 'IntersectionObserver' in window) {
+    let watcher;
+    const FAB_ZONE = 150; // chiều cao vùng đáy màn hình có nút nổi (kể cả khi đã đẩy lên trên thanh Mua ngay)
+    const watch = () => {
+      if (watcher) watcher.disconnect();
+      watcher = new IntersectionObserver(([en]) => document.body.classList.toggle('fab-over-media', en.isIntersecting), {
+        rootMargin: `-${Math.max(0, window.innerHeight - FAB_ZONE)}px 0px 0px 0px`, // chỉ xét dải đáy màn hình
+      });
+      watcher.observe(productMedia);
+    };
+    watch();
+    window.addEventListener('resize', watch);
+  }
+
   /* Thanh toán: chọn COD ở đơn cần cọc → hiện "Đặt cọc trước / Trả khi nhận" */
   const syncDeposit = () => {
     const cod = $('input[name=payment_method][value=cod]');
