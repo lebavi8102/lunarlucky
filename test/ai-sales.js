@@ -14,9 +14,14 @@ let fails = 0;
 const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++; };
 
 (async () => {
+  let swapped = null;
   try {
     await db.migrate.latest();
-    const prod = await db('products').where({ is_active: true }).andWhere('stock', '>', 5).orderBy('price').first();
+    // Bài này viết cho bộ sản phẩm MẪU (LL001–LL012: có giỏ dưới 1tr, mô tả thầy cô, cà phê…): tạm bật mẫu, ẩn sản phẩm thật; xong trả lại
+    swapped = await db('products').select('id', 'sku', 'is_active');
+    await db('products').update({ is_active: false });
+    await db('products').whereIn('id', swapped.filter((p) => /^LL\d{3}$/.test(p.sku || '')).map((p) => p.id)).update({ is_active: true });
+    const prod = await db('products').where({ is_active: true }).andWhere('stock', '>=', 5).orderBy('price').first();
     const sys = await ai.systemPrompt();
     ok(sys.includes(`[${prod.id}] ${prod.name}`) && /Hạn dùng tối thiểu 3 tháng/.test(sys) && !/\d{4}-\d{2}-\d{2}T/.test(sys), 'Lời dặn AI có danh mục thật + cam kết, không chứa giờ (giữ cache)');
     const defs = ai.tools();
@@ -319,6 +324,7 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     console.error(err);
     fails++;
   } finally {
+    for (const p of swapped || []) await db('products').where({ id: p.id }).update({ is_active: !!p.is_active });
     await db.destroy();
   }
   console.log(fails ? `\n${fails} kiểm thử lỗi` : '\nTất cả kiểm thử đều đạt');

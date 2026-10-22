@@ -20,7 +20,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
 (async () => {
   try {
     await db.migrate.latest();
-    const prod = await db('products').where({ is_active: true }).andWhere('stock', '>', 5).orderBy('price').first();
+    const prod = await db('products').where({ is_active: true }).andWhere('stock', '>=', 5).orderBy('price').first();
 
     // Chữ ký & bước xác minh webhook
     const raw = Buffer.from(JSON.stringify(msg('hi')));
