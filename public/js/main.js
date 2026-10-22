@@ -382,7 +382,7 @@
   const productMedia = $('.gallery-main');
   if (productMedia && 'IntersectionObserver' in window) {
     let watcher;
-    const FAB_ZONE = 150; // chiều cao vùng đáy màn hình có nút nổi (kể cả khi đã đẩy lên trên thanh Mua ngay)
+    const FAB_ZONE = 260; // chiều cao vùng đáy màn hình có nút nổi: cụm 3 nút liên hệ + khi đã đẩy lên trên thanh Mua ngay
     const watch = () => {
       if (watcher) watcher.disconnect();
       watcher = new IntersectionObserver(([en]) => document.body.classList.toggle('fab-over-media', en.isIntersecting), {

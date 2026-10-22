@@ -729,9 +729,10 @@ ul, ol { margin: 0; padding: 0; }
   .header-inner { gap: 6px; }
   .header-actions { gap: 0; }
   .hide-sm { display: none !important; }
-  .float-contact { right: 12px; bottom: 12px; }
-  .float-contact a:not(.zalo) { display: none; }
-  .float-contact a { width: 48px; height: 48px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
+  /* Điện thoại: hiện đủ 3 nút liên hệ (Zalo, Fanpage/Messenger, Gọi hotline), gọn 44px để ít che ảnh */
+  .float-contact { right: 12px; bottom: 12px; gap: 8px; }
+  .float-contact a { width: 44px; height: 44px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
+  .float-contact .zalo { font-size: 12px; }
   .hero-float { left: 8px; bottom: 16px; }
   .hero-seal { width: 84px; height: 84px; font-size: 13px; right: 4px; }
   /* Màn hình đầu trên điện thoại: chữ ngắn gọn, ảnh nhỏ lại để khách thấy giỏ quà sớm */
