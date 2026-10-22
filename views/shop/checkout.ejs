@@ -103,18 +103,8 @@
       </fieldset>
 
       <fieldset class="fieldset">
-        <legend><span class="num">3</span> Thiệp &amp; lời nhắn</legend>
-        <p class="small muted" style="margin:-4px 0 10px">Bấm chọn một lời chúc có sẵn, hoặc tự viết. Có thể để trống.</p>
-        <ul class="chips wish-picks" style="margin-bottom:12px">
-          <% ['An Khang Thịnh Vượng – Vạn Sự Như Ý!', 'Kính chúc gia đình năm mới sức khỏe, bình an và hạnh phúc!', 'Cảm ơn Quý đối tác đã đồng hành. Chúc năm mới phát tài phát lộc!', 'Chúc năm mới an khang, mọi điều như ý!'].forEach(w => { %>
-            <li><button type="button" class="chip" data-wish="<%= w %>"><%= w.length > 34 ? w.slice(0, 32) + '…' : w %></button></li>
-          <% }) %>
-        </ul>
-        <%- include('../partials/field', { name: 'card_message', label: 'Lời chúc trên thiệp', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Kính chúc gia đình chú Hai một năm mới An Khang Thịnh Vượng!', help: 'Lunar Lucky viết tay lời chúc này lên thiệp.' }) %>
-        <details class="more-note" style="margin-top:14px" <%= values.note ? 'open' : '' %>>
-          <summary>＋ Thêm ghi chú cho Lunar Lucky</summary>
-          <div style="margin-top:10px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú', as: 'textarea', optional: true, maxlength: 500, placeholder: 'VD: giao giờ hành chính, gọi trước 30 phút…' }) %></div>
-        </details>
+        <legend><span class="num">3</span> Ghi chú</legend>
+        <%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar Lucky', as: 'textarea', optional: true, maxlength: 500, placeholder: 'VD: giao giờ hành chính, gọi trước 30 phút…' }) %>
       </fieldset>
 
       <fieldset class="fieldset">

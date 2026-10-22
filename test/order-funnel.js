@@ -63,9 +63,9 @@ async function addToCart(c) {
       await X('/gio-hang/them', { method: 'POST', form: { _csrf: csrf(pg.text), product_id: ak.id, qty: 1 } });
       const ck = await X('/thanh-toan');
       await db('products').where({ id: kn.id }).update({ stock: 0 }); // khách khác vừa mua mất
-      const form = { _csrf: csrf(ck.text), customer_name: 'Khách Hai Mẫu', phone: '0966777888', province: 'Hà Nội', address: '3 Lý Thái Tổ', delivery_date: deliveryDate, payment_method: 'bank', card_message: 'Chúc mừng năm mới' };
+      const form = { _csrf: csrf(ck.text), customer_name: 'Khách Hai Mẫu', phone: '0966777888', province: 'Hà Nội', address: '3 Lý Thái Tổ', delivery_date: deliveryDate, payment_method: 'bank', note: 'Gọi trước khi giao' };
       const r1 = await X('/thanh-toan', { method: 'POST', form });
-      ok(r1.status === 409 && /Giỏ hàng vừa thay đổi/.test(r1.text) && /Giỏ Kim Ngân/.test(r1.text) && /Khách Hai Mẫu/.test(r1.text) && /Chúc mừng năm mới/.test(r1.text),
+      ok(r1.status === 409 && /Giỏ hàng vừa thay đổi/.test(r1.text) && /Giỏ Kim Ngân/.test(r1.text) && /Khách Hai Mẫu/.test(r1.text) && /Gọi trước khi giao/.test(r1.text),
         'Giỏ 2 mẫu, 1 mẫu vừa hết → KHÔNG tự đặt; báo rõ, giữ nguyên thông tin đã điền');
       const r2 = await X('/thanh-toan', { method: 'POST', form: { ...form, _csrf: csrf(r1.text) } });
       const code2b = (/\/don-hang\/(LN\w+)/.exec(r2.location || '') || [])[1];

@@ -1,6 +1,6 @@
 /**
  * Bot tự nhắc việc vận hành (không cần ai nhớ gõ lệnh):
- *  - Sáng (mặc định 7h): việc hôm nay — đơn giao theo buổi, thiệp cần viết, đơn tỉnh phải gửi chuyển phát,
+ *  - Sáng (mặc định 7h): việc hôm nay — đơn giao theo buổi, đơn tỉnh phải gửi chuyển phát,
  *    đơn quá ngày giao chưa xong, đơn mới chưa ai xử lý, soạn trước cho ngày mai.
  *  - Trong ngày (8h–21h, 30 phút/lần): đơn đã sẵn sàng mà quá 2 giờ chưa ai bấm xác nhận → nhắc 1 lần.
  *  - Tối (mặc định 21h): đơn hôm nay chưa giao xong + đối soát tiền COD.
@@ -30,7 +30,6 @@ async function morning(day = todayVN()) {
     for (const o of plan.ready) bySlot[o.delivery_slot || ''] = (bySlot[o.delivery_slot || ''] || 0) + 1;
     const slots = ['sang', 'chieu', 'toi', ''].filter((k) => bySlot[k]).map((k) => `${k ? slotLabel(k).split(' ')[0] : 'Không hẹn buổi'} ${bySlot[k]}`).join(' · ');
     lines.push(`🚚 Giao <b>${plan.ready.length} đơn · ${plan.baskets} giỏ</b> (${slots})${plan.codTotal ? ` · thu COD ${money(plan.codTotal)}` : ''}`);
-    if (plan.cards) lines.push(`💌 ${plan.cards} thiệp cần viết tay`);
     lines.push('Gõ <code>/giao</code> để xem danh sách chi tiết.');
   } else {
     lines.push('🚚 Hôm nay không có đơn cần giao.');

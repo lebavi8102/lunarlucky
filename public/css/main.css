@@ -364,7 +364,7 @@ ul, ol { margin: 0; padding: 0; }
 /* ---------- Journey ---------- */
 .journey { display: grid; gap: var(--space-6); grid-template-columns: 1fr; list-style: none; counter-reset: j; }
 @media (min-width: 640px) { .journey { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .journey { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) { .journey { grid-template-columns: repeat(3, 1fr); } }
 .journey li { position: relative; padding-top: var(--space-5); border-top: 1px solid var(--gold-500); }
 .journey li::before { counter-increment: j; content: '0' counter(j); display: block; font-family: var(--font-display); font-size: 44px; line-height: 1; color: var(--gold-600); margin-bottom: var(--space-3); }
 .journey h3 { font-size: 24px; margin-bottom: 6px; }
@@ -581,8 +581,6 @@ ul, ol { margin: 0; padding: 0; }
 .date-pick { display: grid; gap: 2px; padding: 10px 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: center; font-size: 13px; color: var(--ink-700); min-height: 56px; }
 .date-pick b { font-size: 14px; color: var(--ink-900); }
 .date-pick[aria-pressed="true"] { border-color: var(--lacquer-700); background: var(--cream-100); box-shadow: inset 0 0 0 1px var(--lacquer-700); }
-.wish-picks .chip { font-size: 13px; text-align: left; }
-.wish-picks .chip[aria-current="true"] { border-color: var(--lacquer-700); color: var(--lacquer-700); }
 .more-note > summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 14px; list-style: none; }
 .more-note > summary::-webkit-details-marker { display: none; }
 .link-btn { border: 0; background: none; padding: 0; color: var(--primary); text-decoration: underline; cursor: pointer; font: inherit; }

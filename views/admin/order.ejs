@@ -6,7 +6,7 @@
     <p class="small muted">Đặt lúc <%= fmt.dateTime(order.created_at) %></p>
   </div>
   <div class="actions">
-    <a class="btn btn-sm btn-quiet" href="/admin/don-hang/<%= order.id %>/in" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-printer"/></svg> In phiếu &amp; thiệp</a>
+    <a class="btn btn-sm btn-quiet" href="/admin/don-hang/<%= order.id %>/in" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-printer"/></svg> In phiếu giao</a>
     <a class="btn btn-sm btn-quiet" href="/don-hang/<%= order.code %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-eye"/></svg> Trang khách xem</a>
   </div>
 </div>
@@ -79,7 +79,7 @@
       <% } %>
       <% if (order.status !== 'cancelled' && order.status !== 'completed') { %>
       <details id="sua-giao" style="margin-top:16px">
-        <summary class="btn btn-sm btn-quiet">✏️ Sửa ngày giao / địa chỉ / lời chúc</summary>
+        <summary class="btn btn-sm btn-quiet">✏️ Sửa ngày giao / địa chỉ / ghi chú</summary>
         <form action="/admin/don-hang/<%= order.id %>/giao" method="post" style="margin-top:16px;display:grid;gap:12px">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -98,7 +98,6 @@
             <div class="field"><label class="label" for="ph">SĐT người đặt</label><input class="input" id="ph" name="phone" type="tel" value="<%= order.phone || '' %>" required></div>
             <div class="field"><label class="label" for="ad">Địa chỉ</label><input class="input" id="ad" name="address" value="<%= order.address || '' %>" required></div>
           <% } %>
-          <div class="field"><label class="label" for="cm">Lời chúc trên thiệp</label><textarea class="textarea" id="cm" name="card_message" maxlength="300"><%= order.card_message || '' %></textarea></div>
           <div class="field"><label class="label" for="nt">Ghi chú của khách</label><textarea class="textarea" id="nt" name="note" maxlength="500"><%= order.note || '' %></textarea></div>
           <button class="btn btn-sm" type="submit">Lưu thông tin giao</button>
           <p class="tiny muted">Thay đổi được ghi vào lịch sử và cập nhật tin đơn trong Telegram. Tỉnh/thành không đổi được ở đây (ảnh hưởng phí giao).</p>

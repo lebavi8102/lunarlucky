@@ -319,17 +319,6 @@
     applyProvince();
   }
 
-  /* Thanh toán: bấm chọn lời chúc có sẵn */
-  $$('[data-wish]').forEach((b) =>
-    b.addEventListener('click', () => {
-      const ta = $('textarea[name=card_message]');
-      if (!ta) return;
-      ta.value = b.dataset.wish;
-      ta.dispatchEvent(new Event('input', { bubbles: true }));
-      $$('[data-wish]').forEach((x) => x.setAttribute('aria-current', String(x === b)));
-    }),
-  );
-
   /* Thanh toán: ghi nhớ thông tin người đặt trên máy này (lần sau khỏi gõ lại) */
   // Đặt hộ: xem trước tổng sau điều chỉnh giá (đổi món)
   const adj = $('[data-adjust]');

@@ -17,7 +17,6 @@
 <div class="stat-grid">
   <div class="stat hl"><div class="label">Đơn cần giao</div><div class="value"><%= d.ready.length %></div><div class="small" style="opacity:.8">Hà Nội <%= d.hanoi %> · tỉnh <%= d.provinces %></div></div>
   <div class="stat"><div class="label">Tổng số giỏ</div><div class="value"><%= d.baskets %></div></div>
-  <div class="stat"><div class="label">Thiệp cần viết</div><div class="value"><%= d.cards %></div></div>
   <div class="stat"><div class="label">Tiền COD cần thu</div><div class="value"><%= money(d.codTotal) %></div></div>
 </div>
 
@@ -32,15 +31,6 @@
     <table class="table"><thead><tr><th scope="col">Giỏ quà</th><th scope="col" class="num">Số giỏ</th><th scope="col" class="num">Số đơn</th></tr></thead><tbody>
       <% d.picking.forEach(p => { %><tr><td class="wrap"><%= p.name %><% if (p.sku) { %> <span class="small muted"><%= p.sku %></span><% } %></td><td class="num"><b><%= p.qty %></b></td><td class="num"><%= p.orders %></td></tr><% }) %>
     </tbody></table>
-    <% } %>
-  </section>
-  <section class="panel">
-    <h2>Thiệp cần viết</h2>
-    <% const cards = d.ready.filter(o => o.card_message); %>
-    <% if (!cards.length) { %><p class="muted small">Không có lời chúc nào.</p><% } else { %>
-    <ol class="small" style="padding-left:18px;display:grid;gap:10px">
-      <% cards.forEach(o => { %><li><b><%= o.code %></b>: “<%= o.card_message %>”</li><% }) %>
-    </ol>
     <% } %>
   </section>
 </div>

@@ -83,7 +83,7 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   if (!category) return next();
   const data = await listing(req, res, category);
   res.locals.seo.title = `${category.name} · Lunar Lucky`;
-  res.locals.seo.description = truncate(`${category.name}: ${category.tagline || category.description || 'giỏ quà Tết tuyển chọn'}. Giỏ quà Tết Lunar Lucky đóng hộp sơn mài, thiệp viết tay, giao toàn quốc, miễn phí giao từ 1.500.000₫.`, 160);
+  res.locals.seo.description = truncate(`${category.name}: ${category.tagline || category.description || 'giỏ quà Tết tuyển chọn'}. Giỏ quà Tết Lunar Lucky đóng hộp sơn mài, giao toàn quốc, miễn phí giao từ 1.500.000₫.`, 160);
   if (category.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${category.image_id}`;
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
   res.render('shop/collection', { ...data, category, sorts: Object.keys(SORTS), ranges: Object.keys(PRICE_RANGES) });

@@ -43,7 +43,7 @@ const ok = (c, m) => {
   };
   try {
     const today = todayVN();
-    await mk({ code: 'LN26OPS0SANG', delivery_date: today, delivery_slot: 'sang', card_message: 'Chúc mừng năm mới' });
+    await mk({ code: 'LN26OPS0SANG', delivery_date: today, delivery_slot: 'sang' });
     await mk({ code: 'LN26OPS0CHIE', delivery_date: today, delivery_slot: 'chieu', status: 'shipping', shipper: 'Hùng' });
     await mk({ code: 'LN26OPS0TINH', delivery_date: todayVN(2), province: 'Đà Nẵng' });
     await mk({ code: 'LN26OPS0TRE1', delivery_date: todayVN(-2) });
@@ -52,7 +52,7 @@ const ok = (c, m) => {
 
     const m = await digest.morning(today);
     ok(/VIỆC HÔM NAY/.test(m) && /Giao <b>2 đơn · 4 giỏ<\/b> \(Sáng 1 · Chiều 1\)/.test(m), 'Tin sáng: số đơn, số giỏ, chia theo buổi');
-    ok(/1 thiệp cần viết tay/.test(m), 'Tin sáng: số thiệp cần viết');
+    ok(!/thiệp/i.test(m), 'Tin sáng: không còn nhắc thiệp viết tay');
     ok(/Gửi chuyển phát hôm nay \(1 đơn tỉnh\)/.test(m) && /LN26OPS0TINH · Đà Nẵng/.test(m), 'Tin sáng: đơn tỉnh phải gửi chuyển phát hôm nay');
     ok(/Quá ngày giao chưa hoàn tất/.test(m) && /LN26OPS0TRE1/.test(m), 'Tin sáng: đơn quá ngày giao chưa xong');
     ok(/Ngày mai [^:]+: \d+ đơn · \d+ giỏ<\/b> — soạn trước/.test(m), 'Tin sáng: soạn trước cho ngày mai');

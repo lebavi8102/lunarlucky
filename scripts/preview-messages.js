@@ -21,7 +21,7 @@ const text = (html) => html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<br
     status: 'new', payment_status: 'pending', deposit_amount: 0, is_gift: false, created_at: new Date(),
   };
   const cod10 = { ...base, payment_method: 'cod', deposit_amount: payment.depositFor({ goods: 18900000, qty: 10, total: 18900000 }, s) };
-  const gift = { ...base, code: 'LN261015MAU2', payment_method: 'bank', is_gift: true, recipient_name: 'Bác Ba', recipient_phone: '0987654321', recipient_address: '5 Hàng Bông', card_message: 'Chúc bác an khang', total: 1890000, subtotal: 1890000 };
+  const gift = { ...base, code: 'LN261015MAU2', payment_method: 'bank', is_gift: true, recipient_name: 'Bác Ba', recipient_phone: '0987654321', recipient_address: '5 Hàng Bông', total: 1890000, subtotal: 1890000 };
   const render = (tpl, data) => ejs.renderFile(path.join(__dirname, '../views/emails', `${tpl}.ejs`), { ...data, money, ymd, siteUrl: 'https://lunarlucky.vn' });
   const qr = 'https://img.vietqr.io/x.png';
   const payee = payment.accountForOrder(base, s);

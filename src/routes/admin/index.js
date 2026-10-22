@@ -147,7 +147,7 @@ router.post('/don-hang/:id', async (req, res, next) => {
   res.redirect(`/admin/don-hang/${r.order.id}`);
 });
 
-// Sửa thông tin giao: ngày, buổi, địa chỉ, SĐT, lời chúc…
+// Sửa thông tin giao: ngày, buổi, địa chỉ, SĐT, ghi chú…
 router.post('/don-hang/:id/giao', async (req, res, next) => {
   const order = await db('orders').where({ id: Number(req.params.id) }).first();
   if (!order) return next();
@@ -156,7 +156,6 @@ router.post('/don-hang/:id/giao', async (req, res, next) => {
   const changes = {
     delivery_date: f.date('delivery_date', { label: 'ngày giao', required: true, minOffset: -30, maxOffset: 365 }),
     delivery_slot: f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], ''),
-    card_message: f.text('card_message', { max: 300 }),
     note: f.text('note', { max: 500 }),
   };
   if (order.is_gift) {
@@ -614,7 +613,7 @@ router.get('/giao-hang/excel', async (req, res) => {
     return {
       stt: i + 1, code: o.code, name: t.name, phone: t.phone, address: t.address, area: plan.area(o), slot: require('../../lib/format').slotLabel(o.delivery_slot),
       items: o.items.map((x) => `${x.name} × ${x.qty}`).join(', '), cod: delivery.codDue(o),
-      gift: o.is_gift ? 'Gửi tặng – không kèm hóa đơn giá' : '', note: o.note || '', card: o.card_message || '',
+      gift: o.is_gift ? 'Gửi tặng – không kèm hóa đơn giá' : '', note: o.note || '',
     };
   });
   const buf = buildXlsx([
@@ -632,7 +631,6 @@ router.get('/giao-hang/excel', async (req, res) => {
         { header: 'Thu COD', key: 'cod', type: 'money', width: 13 },
         { header: 'Lưu ý', key: 'gift', width: 22 },
         { header: 'Ghi chú khách', key: 'note', width: 26 },
-        { header: 'Lời chúc trên thiệp', key: 'card', width: 34 },
       ],
       rows,
     },

@@ -76,7 +76,7 @@ async function addToCart(c, slug, qty = 1) {
   ok(cbOk.status === 200 && /gọi lại/.test(cbOk.text), 'Gọi lại: gửi tên + SĐT thành công');
   const place = await c('/thanh-toan', { method: 'POST', form: {
     _csrf: t, customer_name: 'Khách Thử', phone: '0912345678', province: 'Hà Nội', address: '12 Phố Huế',
-    delivery_date: deliveryDate, card_message: 'Chúc mừng năm mới', payment_method: 'bank' } });
+    delivery_date: deliveryDate, payment_method: 'bank' } });
   ok(place.status === 302 && /^\/don-hang\/LN/.test(place.location || ''), `Đặt đơn bán lẻ → ${place.location}`);
   const code = (place.location || '').split('/')[2]?.split('?')[0];
   const orderPage = await c(place.location);

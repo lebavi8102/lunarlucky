@@ -228,7 +228,6 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   }
   // Buổi giao: chỉ hẹn được ở Hà Nội (tỉnh khác đi chuyển phát)
   const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;
-  const card_message = f.text('card_message', { max: 300 });
   const note = f.text('note', { max: 500 });
   // Xuất hóa đơn VAT không đặt trên web nữa: doanh nghiệp nhắn Zalo để báo giá (chủ shop chốt 2026-10-20)
   const needs_vat = false;
@@ -285,7 +284,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,
     is_gift, recipient_name, recipient_phone, recipient_address, delivery_date, delivery_slot,
-    card_message: card_message || null, note: note || null, invoice_info,
+    note: note || null, invoice_info,
     needs_vat, vat_company: vat.vat_company || null, vat_tax_code: vat.vat_tax_code || null,
     vat_address: vat.vat_address || null, vat_email: vat.vat_email || null,
     ...payment.snapshot(payment.accountFromSettings('personal', res.locals.s)),

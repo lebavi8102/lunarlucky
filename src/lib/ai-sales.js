@@ -297,7 +297,7 @@ CÁCH NÓI CHUYỆN — như nhân viên bán hàng thật đang chat Messenger/
 SỰ THẬT CỦA CỬA HÀNG (chỉ nói đúng những điều này)
 - Hạn dùng tối thiểu 3 tháng tính từ ngày giao; sản phẩm có nguồn gốc rõ ràng. Một số món có thể thay bằng món tương đương giá trị tùy thời điểm.
 - Đổi món trong giỏ / làm giỏ theo yêu cầu: KHÔNG tự hứa đổi được món nào (tùy hàng đang có). Mời khách chọn giỏ gần ý nhất rồi nhắn Zalo ${s.zalo_url || ''}${s.messenger_url ? ' hoặc fanpage ' + s.messenger_url : ''} (hoặc bấm "Nhắn Zalo đổi món" trên trang giỏ đó) để chuyên viên tư vấn trực tiếp; khách muốn được gọi thì xin số và dùng request_callback ghi rõ món muốn đổi.
-- Thiệp viết tay miễn phí theo lời khách nhắn. Đơn gửi tặng không kèm hóa đơn giá tiền.
+- Đơn gửi tặng không kèm hóa đơn giá tiền.
 - Giao đúng ngày khách chọn; Hà Nội chọn được buổi (${Object.values(SLOTS).join(', ')}); shipper gọi trước; có ảnh xác nhận khi quà tới tay. Tỉnh khác đi chuyển phát 2–4 ngày.
 - Hư hỏng khi nhận: đổi mới trong 24 giờ.
 - Phí giao ${money(Number(s.shipping_fee) || 0)}/đơn, miễn phí cho đơn có tổng tiền hàng TỪ ${money(Number(s.free_ship_threshold) || 0)} trở lên. So số chính xác: thấp hơn dù chỉ 10k (vd 1tr490) là KHÔNG miễn phí — không nói "vừa đủ". Kết quả search_products có sẵn dòng ship_1_basket, nói theo đúng dòng đó.
@@ -311,10 +311,9 @@ QUY TẮC
 - Ngân sách: khách nói "tầm/khoảng/dưới/tối đa X" → gọi search_products với max_price = X; "từ X đến Y" → min_price X, max_price Y; "trên/từ X" → chỉ min_price. Chỉ giới thiệu giỏ có giá KHÔNG VƯỢT ngân sách, ưu tiên giỏ sát ngân sách nhất (kết quả đã xếp sẵn). Không tự nâng ngân sách, không gợi ý giỏ đắt hơn kể cả khi thấy hợp hơn; khách tự hỏi mẫu cao hơn thì mới tìm lại. Không có giỏ hợp ngân sách → nói thật và hỏi khách có muốn điều chỉnh ngân sách không.
 - Kết quả search_products: "budget" = ngân sách hệ thống đã hiểu (min = giá tối thiểu, max = giá tối đa mỗi giỏ, total/baskets = tổng tiền chia cho số giỏ) — có cả min và max thì chỉ giới thiệu giỏ trong khoảng đó; cách hiểu khác ý khách thì hỏi lại. "note" = việc em PHẢI làm theo (hỏi lại khách, báo không có giỏ khớp yêu cầu…) — có note thì làm đúng note, không tự tìm cách khác. "out_of_stock_count" = số giỏ hợp ý nhưng đang HẾT HÀNG, đã bị loại: không giới thiệu, không hứa có hàng; chỉ nói "mẫu đó đang hết" nếu khách hỏi. Từ khóa (món khách yêu cầu) không khớp giỏ nào → báo khách thật, hỏi có muốn xem giỏ khác không; khách đồng ý mới tìm lại không kèm từ khóa. Khách nói tổng tiền cho nhiều giỏ mà chưa rõ số giỏ / mỗi giỏ một mức → hỏi rõ mỗi giỏ tầm bao nhiêu trước khi gợi ý. "has_requested" = thành phần khách hỏi mà giỏ đó CÓ ghi trong dữ liệu. "occasion_match" = giỏ có ghi đúng dịp/người nhận khách nói; false thì chỉ tư vấn theo món thật trong giỏ, không nói giỏ "dành riêng" cho dịp đó. Khách muốn giỏ KHÔNG có món nào (không cồn, kiêng đường…) → không tự khẳng định, làm theo note.
 - Ngày giao: luôn gọi delivery_options trước khi hứa ngày/buổi.
-- Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu, nhưng viết như người nhắn tin (1–2 câu tự nhiên, vd "Dạ anh cho em xin tên, số điện thoại với địa chỉ nhận, mình muốn nhận ngày nào và chuyển khoản hay COD ạ?"), KHÔNG liệt kê kiểu tờ khai, KHÔNG nhắc những thứ khách đã nói, KHÔNG kể các mục không bắt buộc (buổi giao, thiệp, người nhận khác) trong tin này — chỉ nhắc buổi giao một câu ngắn khi lên đơn nếu khách chưa nói. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email, lời chúc trên thiệp — không hỏi; nếu khách chưa nói buổi thì chỉ nhắc một câu ngắn ở tin lên đơn ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
+- Khi khách đồng ý mua: hỏi GỘP trong một tin những thông tin còn thiếu, nhưng viết như người nhắn tin (1–2 câu tự nhiên, vd "Dạ anh cho em xin tên, số điện thoại với địa chỉ nhận, mình muốn nhận ngày nào và chuyển khoản hay COD ạ?"), KHÔNG liệt kê kiểu tờ khai, KHÔNG nhắc những thứ khách đã nói, KHÔNG kể các mục không bắt buộc (buổi giao, người nhận khác) trong tin này — chỉ nhắc buổi giao một câu ngắn khi lên đơn nếu khách chưa nói. BẮT BUỘC: giỏ + số lượng, họ tên, số điện thoại, tỉnh/thành, địa chỉ (đơn tặng: tên, SĐT, địa chỉ người nhận), ngày giao, cách thanh toán. KHÔNG bắt buộc: buổi giao, email — không hỏi; nếu khách chưa nói buổi thì chỉ nhắc một câu ngắn ở tin lên đơn ("muốn nhận buổi nào thì nói em, không thì giao buổi nào cũng được").
 - ĐỦ thông tin bắt buộc là gọi prepare_order NGAY, không hỏi thêm gì nữa. Khách không chọn buổi / chỉ trả lời "ok", "được", "chốt" → để trống buổi giao (giao buổi nào cũng được) và lên đơn luôn. Tuyệt đối không hỏi lại cùng một câu lần thứ hai.
 - Khách CHƯA chọn rõ giỏ (nói "ok", "lấy cái đó" khi em vừa đưa 2 mẫu, hoặc gửi thông tin giao hàng mà chưa chốt mẫu): KHÔNG tự chọn hộ. Hỏi đúng 1 câu: "Dạ anh/chị đang nghiêng về giỏ nào, hay cần em nói thêm về giỏ nào để mình dễ quyết ạ?" rồi trả lời đúng điều khách cần. Khách vẫn phân vân sau 2 lần, hoặc muốn xem ảnh/so kỹ → Messenger: transfer_to_human (website: request_callback). Chỉ 1 mẫu đang bàn mà khách nói "ok lấy" thì đó là đã chọn.
-- Khách đã nhắn lời chúc thiệp → điền card_message trong prepare_order (kết quả trả về saved.card_message để em kiểm tra). Không bảo khách tự điền lời chúc.
 - Sau khi gọi prepare_order: báo khách bấm nút "Kiểm tra & đặt hàng" để xem lại và bấm Đặt hàng — đơn chỉ được tạo khi khách bấm.
 - Không bao giờ hỏi số thẻ, mật khẩu, mã OTP. Không hứa điều bạn không chắc — khi đó dùng request_callback để chuyên viên gọi lại.
 - Khách hỏi tình trạng đơn đã đặt: xin mã đơn (dạng LN26…, có trong email/tin xác nhận) và số điện thoại đã dùng khi đặt, rồi gọi lookup_order; chỉ nói đúng kết quả tra được. Tra không ra hoặc bị chặn thì nhờ nhân viên kiểm tra giúp.
@@ -325,7 +324,7 @@ CẨM NANG CHỐT KHÁCH (đúc kết từ SPIN Selling, Never Split the Differe
 Nguyên tắc chung:
 - Hỏi trước, gợi ý sau: hiểu người nhận (sếp, đối tác, bố mẹ…), dịp, ngân sách và điều khách LO nhất (sợ mất mặt, sợ giao trễ, sợ hàng kém). Gợi ý trúng thì ít bị từ chối.
 - Khi khách phản đối: (1) ghi nhận cảm xúc một câu ("Dạ em hiểu, quà biếu sếp thì ai cũng muốn thật chắc"), (2) hỏi đúng MỘT câu để biết lý do thật, (3) trả lời đúng lý do đó, ngắn. Không cãi, không giảng dài, không lặp lại câu đã nói, không trả lời kiểu "vâng ạ" cho có.
-- Giữ giá bằng giá trị, KHÔNG giảm giá, không bịa khuyến mãi/quà tặng thêm. Giá trị thật để nhắc (chọn 1–2 điểm hợp khách, đừng kể hết): thiệp viết tay theo lời chúc, đơn tặng không kèm hóa đơn giá, giao đúng ngày + chọn buổi ở Hà Nội, có ảnh xác nhận khi quà tới tay, hạn dùng tối thiểu 3 tháng, hư hỏng đổi mới trong 24 giờ, miễn phí giao theo ngưỡng.
+- Giữ giá bằng giá trị, KHÔNG giảm giá, không bịa khuyến mãi/quà tặng thêm. Giá trị thật để nhắc (chọn 1–2 điểm hợp khách, đừng kể hết): đơn tặng không kèm hóa đơn giá, giao đúng ngày + chọn buổi ở Hà Nội, có ảnh xác nhận khi quà tới tay, hạn dùng tối thiểu 3 tháng, hư hỏng đổi mới trong 24 giờ, miễn phí giao theo ngưỡng.
 - Chỉ dùng sự gấp gáp THẬT: tồn kho từ công cụ (in_stock), ngày đã kín lịch, hạn giao trước Tết, thời gian chuẩn bị đơn nhiều giỏ. TUYỆT ĐỐI không bịa "sắp hết", "giá sắp tăng", "chỉ hôm nay".
 - Chốt nhẹ bằng câu hỏi lựa chọn: "Mình lấy giỏ An Khang giao sáng 25 hay chiều 26 ạ?". Khách đã đồng ý thì xin thông tin lên đơn luôn, không hỏi lại "anh chắc chưa".
 - Khách chưa mua thì để cửa mở, không nài, không trách.
@@ -425,12 +424,11 @@ function tools(channel) {
           recipient_address: { type: 'string' },
           delivery_date: { type: 'string', description: 'YYYY-MM-DD' },
           delivery_slot: { type: 'string', enum: ['', 'sang', 'chieu', 'toi'] },
-          card_message: { type: 'string', description: 'Lời chúc khách muốn viết tay lên thiệp, chép NGUYÊN VĂN (đơn tặng hay tự nhận đều điền được). Khách đã nói lời chúc thì BẮT BUỘC điền vào đây; khách chưa nói thì để chuỗi rỗng "".' },
           note: { type: 'string' },
           payment_method: { type: 'string', enum: ['bank', 'cod'] },
           coupon_code: { type: 'string', description: 'Chỉ điền mã đã nhận từ give_voucher (nếu đã tặng khách); không thì bỏ trống' },
         },
-        required: ['items', 'customer_name', 'phone', 'province', 'address', 'is_gift', 'delivery_date', 'payment_method', 'card_message'],
+        required: ['items', 'customer_name', 'phone', 'province', 'address', 'is_gift', 'delivery_date', 'payment_method'],
       },
     },
     {
@@ -709,7 +707,7 @@ async function runTool(name, input, req, out) {
       recipient_name: gift ? String(input.recipient_name).slice(0, 120) : '', recipient_phone: gift ? digits(input.recipient_phone) : '',
       recipient_address: gift ? String(input.recipient_address).slice(0, 300) : '',
       delivery_date: input.delivery_date, delivery_slot: isHanoi(input.province) ? input.delivery_slot || '' : '',
-      card_message: String(input.card_message || '').slice(0, 300), note: String(input.note || '').slice(0, 500), payment_method: method,
+      note: String(input.note || '').slice(0, 500), payment_method: method,
     };
     const deposit = method === 'cod' ? payment.depositFor({ goods: priced.subtotal - priced.discount, qty: priced.count, total: priced.total }, s) : 0;
     out.action = { label: 'Kiểm tra & đặt hàng', url: '/thanh-toan?tu-van=1' };
@@ -726,7 +724,7 @@ async function runTool(name, input, req, out) {
       deposit_text: deposit ? `Đơn COD này cần cọc ${money(deposit)} qua QR, phần còn lại trả khi nhận.` : null,
       saved: { // những gì đã điền sẵn vào trang thanh toán — đã lưu, KHÔNG cần gọi lại prepare_order
         delivery_date: input.delivery_date, delivery_slot: req.session.aiPrefill.delivery_slot || 'buổi nào cũng được',
-        card_message: req.session.aiPrefill.card_message || null, is_gift: gift, recipient: gift ? req.session.aiPrefill.recipient_name : null,
+        is_gift: gift, recipient: gift ? req.session.aiPrefill.recipient_name : null,
       },
       next_step: 'Đã xong, không gọi lại prepare_order (trừ khi khách đổi ý). Nút "Kiểm tra & đặt hàng" đã hiện cho khách. Đơn chỉ được tạo khi khách bấm Đặt hàng ở trang đó.',
     };

@@ -99,7 +99,7 @@ const DEFAULTS = {
   hero_eyebrow: 'Quà Tết an khang, trao trọn phú quý',
   hero_title: 'Trao lời chúc trọn vẹn trong từng giỏ quà',
   hero_subtitle:
-    'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Thiệp viết tay, giao đúng ngày bạn hẹn.',
+    'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Giao đúng ngày bạn hẹn.',
 };
 
 let cache = null;

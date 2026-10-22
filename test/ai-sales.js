@@ -219,7 +219,7 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     const closed = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 1 }], customer_name: 'A', phone: '0912345678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: false, delivery_date: '2027-02-07', payment_method: 'bank' }, req, out);
     ok(/nghỉ Tết/.test(closed.error || ''), 'prepare_order: ngày nghỉ Tết → từ chối');
     const good = await ai.runTool('prepare_order', { items: [{ product_id: prod.id, qty: 2 }], customer_name: 'Chị Mai', phone: '0912 345 678', province: 'Hà Nội', address: '1 Phố Huế', is_gift: true,
-      recipient_name: 'Bác Ba', recipient_phone: '0987654321', recipient_address: '5 Hàng Bông', delivery_date: todayVN(3), delivery_slot: 'sang', card_message: 'Chúc bác an khang', payment_method: 'cod' }, req, out);
+      recipient_name: 'Bác Ba', recipient_phone: '0987654321', recipient_address: '5 Hàng Bông', delivery_date: todayVN(3), delivery_slot: 'sang', payment_method: 'cod' }, req, out);
     ok(good.ok && req.session.cart.lines[0].qty === 2 && req.session.aiPrefill.payment_method === 'bank' && req.session.aiPrefill.delivery_slot === 'sang',
       'prepare_order: bỏ 2 giỏ vào giỏ khách, điền sẵn; đơn tặng chọn COD → chuyển khoản');
     ok(out.action && out.action.url === '/thanh-toan?tu-van=1', 'Trả về nút "Kiểm tra & đặt hàng"');

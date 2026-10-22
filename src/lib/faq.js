@@ -23,7 +23,7 @@ function faq(s = {}) {
     },
     {
       q: 'Tôi muốn gửi quà tặng trực tiếp cho người thân, đối tác?',
-      a: 'Bạn chọn "Gửi tặng người khác" khi thanh toán và nhập thông tin người nhận. Hóa đơn giá tiền sẽ không được đặt trong giỏ quà, kèm thiệp chúc viết tay theo lời nhắn của bạn. Đơn gửi tặng thanh toán bằng chuyển khoản để không thu tiền người nhận.',
+      a: 'Bạn chọn "Gửi tặng người khác" khi thanh toán và nhập thông tin người nhận. Hóa đơn giá tiền sẽ không được đặt trong giỏ quà. Đơn gửi tặng thanh toán bằng chuyển khoản để không thu tiền người nhận.',
     },
     {
       q: 'Lunar Lucky nhận những hình thức thanh toán nào?',

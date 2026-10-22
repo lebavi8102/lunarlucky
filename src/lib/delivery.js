@@ -38,7 +38,6 @@ async function forDate(day) {
     unpaid,
     picking: [...pick.values()].sort((a, b) => b.qty - a.qty),
     baskets: ready.reduce((a, o) => a + o.items.reduce((x, i) => x + i.qty, 0), 0),
-    cards: ready.filter((o) => o.card_message).length,
     codTotal: ready.reduce((a, o) => a + payment.codDue(o), 0),
     hanoi: ready.filter((o) => area(o) === 'Hà Nội').length,
     provinces: ready.filter((o) => area(o) !== 'Hà Nội').length,
