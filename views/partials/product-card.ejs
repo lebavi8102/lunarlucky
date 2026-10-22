@@ -24,5 +24,14 @@
       <span><%= money(p.price) %></span>
       <% if (p.compare_price && p.compare_price > p.price) { %><del><%= money(p.compare_price) %></del><% } %>
     </div>
+    <% if (p.stock > 0) { %>
+    <%# Điện thoại / cảm ứng: nút nằm DƯỚI giá, không đè lên ảnh (máy tính vẫn dùng nút hiện khi rê chuột lên ảnh ở trên) %>
+    <form class="p-add" action="/gio-hang/them" method="post" data-add-to-cart data-track-id="<%= p.id %>" data-track-name="<%= p.name %>" data-track-price="<%= p.price %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="product_id" value="<%= p.id %>">
+      <input type="hidden" name="qty" value="1">
+      <button class="btn btn-sm btn-ghost" type="submit"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Thêm vào giỏ</button>
+    </form>
+    <% } %>
   </div>
 </article>
