@@ -568,7 +568,7 @@ router.use(
         options: profit.EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c })), default: profit.EXPENSE_CATEGORIES[0],
       },
       { name: 'amount', label: 'Số tiền (₫)', type: 'money', required: true },
-      { name: 'note', label: 'Ghi chú', type: 'text', max: 300, help: 'VD: Ship GHTK 12 đơn tuần 2/12, in 200 thiệp...' },
+      { name: 'note', label: 'Ghi chú', type: 'text', max: 300, help: 'VD: Ship GHTK 12 đơn tuần 2/12, in 200 thẻ cảm ơn...' },
     ],
     validate: (v) => (v.amount != null && v.amount <= 0 ? { amount: 'Số tiền phải lớn hơn 0.' } : {}),
   }),

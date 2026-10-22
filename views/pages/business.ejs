@@ -7,7 +7,7 @@
       <h2 class="h2" style="margin-top:16px">Kể cho Lunar Lucky <em>về món quà</em> bạn hình dung</h2>
       <p class="lead" style="margin-top:20px">Càng nhiều thông tin, báo giá càng sát nhu cầu. Lunar Lucky phản hồi trong vòng 24 giờ làm việc.</p>
       <ul class="feature-list" style="margin-top:32px">
-        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>In logo thương hiệu</strong><span>Trên hộp, nơ lụa và thiệp chúc</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>In logo thương hiệu</strong><span>Logo doanh nghiệp trên hộp và nơ lụa</span></div></li>
         <li><span class="feature-ico"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Hóa đơn VAT đầy đủ</strong><span>Hợp đồng, biên bản giao nhận theo yêu cầu</span></div></li>
         <li><span class="feature-ico"><svg class="icon"><use href="#i-truck"/></svg></span><div><strong>Giao đến từng đối tác</strong><span>Theo danh sách Excel, toàn quốc</span></div></li>
       </ul>
@@ -36,7 +36,7 @@
           <%- include('../partials/field', { name: 'budget', label: 'Ngân sách mỗi giỏ', as: 'select', options: budgets }) %>
         </div>
         <div style="margin-top:16px"><%- include('../partials/field', { name: 'delivery_date', label: 'Ngày cần giao', type: 'date', optional: true }) %></div>
-        <label class="check"><input type="checkbox" name="logo_print" value="1" <%= values.logo_print ? 'checked' : '' %>> Tôi muốn in logo doanh nghiệp lên hộp/thiệp</label>
+        <label class="check"><input type="checkbox" name="logo_print" value="1" <%= values.logo_print ? 'checked' : '' %>> Tôi muốn in logo doanh nghiệp</label>
         <div style="margin-top:12px"><%- include('../partials/field', { name: 'message', label: 'Mô tả thêm', as: 'textarea', optional: true, maxlength: 2000, placeholder: 'Đối tượng nhận quà, phong cách mong muốn, yêu cầu đặc biệt…' }) %></div>
         <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Gửi yêu cầu báo giá</button>
       </form>
@@ -50,11 +50,11 @@
     <div>
       <span class="eyebrow">Quà tặng doanh nghiệp</span>
       <h1 class="display" style="margin-top:20px;font-size:clamp(40px,5.6vw,72px)">Món quà mang <em>dấu ấn</em> thương hiệu</h1>
-      <p class="lead" style="margin-top:24px">Lunar Lucky thiết kế giỏ quà Tết theo ngân sách và tinh thần doanh nghiệp: in logo lên hộp và thiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn đến từng đối tác trên toàn quốc.</p>
+      <p class="lead" style="margin-top:24px">Lunar Lucky thiết kế giỏ quà Tết theo ngân sách và tinh thần doanh nghiệp: in logo doanh nghiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn đến từng đối tác trên toàn quốc.</p>
       <div class="hero-cta"><a class="btn btn-gold btn-lg" href="#bao-gia">Nhận báo giá trong 24h</a><a class="btn btn-ghost-light btn-lg" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>"><svg class="icon"><use href="#i-phone"/></svg> <%= s.shop_phone %></a></div>
     </div>
     <ul class="tiers">
-      <li><div class="qty-range">5 – 99 giỏ</div><p>Báo giá theo số lượng, in thiệp có logo, giao theo danh sách.</p></li>
+      <li><div class="qty-range">5 – 99 giỏ</div><p>Báo giá theo số lượng, in logo doanh nghiệp, giao theo danh sách.</p></li>
       <li><div class="qty-range">100 – 499 giỏ</div><p>In logo lên hộp và nơ, ưu đãi theo số lượng, chuyên viên riêng.</p></li>
       <li><div class="qty-range">Từ 500 giỏ</div><p>Thiết kế hộp riêng theo nhận diện thương hiệu, lịch giao linh hoạt.</p></li>
     </ul>
