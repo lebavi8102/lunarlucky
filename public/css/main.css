@@ -298,8 +298,9 @@ ul, ol { margin: 0; padding: 0; }
 @media (min-width: 1100px) { .product-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .p-card { position: relative; display: flex; flex-direction: column; }
 .p-media { position: relative; aspect-ratio: 4 / 5; border-radius: var(--radius); overflow: hidden; background: var(--cream-200); }
-.p-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 800ms var(--ease); }
-.p-card:hover .p-media img { transform: scale(1.045); }
+/* Thẻ sản phẩm: ảnh 4:5 khớp khung; nếu có ảnh khác tỉ lệ thì giữ phần đầu ảnh (logo), cắt phần sàn phía dưới */
+.p-media img { width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 800ms var(--ease); }
+.p-card:hover .p-media img { transform: scale(1.02); transform-origin: center top; }
 .p-badge { position: absolute; top: 12px; left: 12px; z-index: 1; padding: 5px 11px; border-radius: 999px; background: var(--lacquer-700); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 .p-badge.gold { background: var(--gold-500); color: var(--lacquer-950); }
 .p-badge.out { background: var(--ink-700); }
@@ -443,11 +444,13 @@ ul, ol { margin: 0; padding: 0; }
 /* ---------- Product detail ---------- */
 .pdp { display: grid; gap: var(--space-7); padding-block: var(--space-6) var(--space-8); }
 @media (min-width: 960px) { .pdp { grid-template-columns: 1.1fr 1fr; gap: var(--space-8); } .pdp-info { position: sticky; top: calc(var(--header-h) + 24px); align-self: start; } }
+/* Ảnh sản phẩm là 4:5 và có logo ở phía trên: khung luôn 4:5 trên mọi màn hình, ảnh `contain` để KHÔNG BAO GIỜ bị cắt
+   (ảnh khác tỉ lệ chỉ có thêm viền kem). Không giới hạn chiều cao theo màn hình như trước vì làm cắt mất logo. */
 .gallery-main { aspect-ratio: 4 / 5; border-radius: var(--radius-lg); overflow: hidden; background: var(--cream-200); }
-.gallery-main img { width: 100%; height: 100%; object-fit: cover; }
-@media (max-width: 959px) { .gallery-main { aspect-ratio: auto; height: min(58vh, 420px); } }
+.gallery-main img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+@media (min-width: 600px) and (max-width: 959px) { .gallery-main { max-width: 520px; margin-inline: auto; } .thumbs { justify-content: center; } }
 .thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; padding-bottom: 4px; list-style: none; }
-.thumbs button { flex: none; width: 76px; height: 92px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--cream-200); opacity: 0.7; transition: opacity 200ms, border-color 200ms; }
+.thumbs button { flex: none; width: 76px; height: 95px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--cream-200); opacity: 0.7; transition: opacity 200ms, border-color 200ms; }
 .thumbs button[aria-current='true'], .thumbs button:hover { opacity: 1; border-color: var(--ink-900); }
 .thumbs img { width: 100%; height: 100%; object-fit: cover; }
 .pdp-info h1 { font-size: clamp(34px, 4vw, 48px); font-weight: 500; margin-top: var(--space-3); }
