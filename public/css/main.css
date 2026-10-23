@@ -317,6 +317,26 @@ ul, ol { margin: 0; padding: 0; }
 /* ---------- Category cards ---------- */
 .cat-grid { display: grid; gap: var(--space-5); grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 960px) { .cat-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-6); } }
+/* "Hành trình một giỏ quà": banner ảnh 8:3 giữ nguyên tỉ lệ, 3 bước nằm trên vùng nền kem phía dưới ảnh (khớp từng cảnh).
+   Điện thoại: 3 bước xếp dọc, mỗi bước dùng đúng một phần ảnh */
+.journey-sec { background: #f7eee4; padding-bottom: var(--space-8); }
+.journey-banner { position: relative; }
+.jb-img { display: none; width: 100%; height: auto; }
+.jb-steps { list-style: none; display: grid; gap: var(--space-7); padding: 0 16px; margin: 0 auto; max-width: 560px; }
+.jb-photo { aspect-ratio: 667 / 585; border-radius: 16px; background: #f7eee4 url('/img/journey-banner-2000.webp') no-repeat; background-size: 300% auto; background-position: var(--bx, 0%) 0; margin-bottom: var(--space-4); }
+.jb-steps li:nth-child(2) { --bx: 50%; }
+.jb-steps li:nth-child(3) { --bx: 100%; }
+.jb-num { display: block; font-family: var(--font-display); font-size: 36px; line-height: 1; color: var(--gold-600); margin-bottom: 8px; }
+.jb-steps h3 { font-size: 24px; margin-bottom: 6px; }
+.jb-steps p { font-size: 15px; line-height: 1.65; color: var(--ink-700); }
+@media (min-width: 900px) {
+  .jb-img { display: block; }
+  .jb-photo { display: none; }
+  .journey-banner { margin-top: var(--space-6); }
+  .jb-steps { max-width: none; padding: 0; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: -6.6vw; position: relative; }
+  .jb-steps li { text-align: center; padding-inline: clamp(24px, 4.5vw, 84px); }
+  .jb-num { margin-inline: auto; }
+}
 .cat-card { display: flex; flex-direction: column; align-items: center; text-align: center; } /* nút "Khám phá" thẳng hàng dù mô tả 1 hay 2 dòng */
 .cat-card .arch { width: 100%; }
 .cat-card .arch { aspect-ratio: 3 / 4; transition: box-shadow 300ms var(--ease); }
