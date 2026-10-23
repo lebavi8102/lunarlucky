@@ -51,6 +51,8 @@
     fab.focus();
   };
   fab.addEventListener('click', () => (box.hidden ? open() : close()));
+  // Nút "Tư vấn gửi quà" ở trang chủ: mở khung chat (chưa bật JS thì vẫn là link sang bộ sưu tập)
+  document.querySelectorAll('[data-ai-start]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); if (box.hidden) open(); }));
   box.querySelector('[data-ai-close]').addEventListener('click', close);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) close(); });
 
