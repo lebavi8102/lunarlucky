@@ -461,6 +461,15 @@ ul, ol { margin: 0; padding: 0; }
 .steps span { font-size: 15px; color: rgb(253 250 245 / 0.72); }
 .gift-visual { position: relative; width: 100%; max-width: 520px; margin-inline: auto; }
 .gift-visual .arch { aspect-ratio: 1 / 1.1; background: var(--lacquer-800); }
+/* Ảnh "Gửi quà thay bạn": bo góc nhẹ, không viền, bóng nhẹ, giữ màu ảnh tự nhiên.
+   Máy tính: ảnh cao đúng bằng cột chữ (trên ngang dòng "Gửi quà thay bạn", dưới ngang đáy nút tư vấn) */
+.gift-photo { aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; background: var(--lacquer-800); box-shadow: 0 8px 22px rgb(0 0 0 / .2); }
+.gift-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+@media (min-width: 960px) {
+  .gift-split { align-items: stretch; }
+  .gift-split .gift-visual { display: flex; max-width: 440px; margin-inline: auto 0; margin-top: 9px; }
+  .gift-split .gift-photo { flex: 1; aspect-ratio: auto; }
+}
 
 /* ---------- B2B ---------- */
 .b2b-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-6); display: grid; gap: var(--space-6); }
