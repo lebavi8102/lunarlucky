@@ -317,13 +317,18 @@ ul, ol { margin: 0; padding: 0; }
 /* ---------- Category cards ---------- */
 .cat-grid { display: grid; gap: var(--space-5); grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 960px) { .cat-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-6); } }
-.cat-card { display: block; text-align: center; }
+.cat-card { display: flex; flex-direction: column; align-items: center; text-align: center; } /* nút "Khám phá" thẳng hàng dù mô tả 1 hay 2 dòng */
+.cat-card .arch { width: 100%; }
 .cat-card .arch { aspect-ratio: 3 / 4; transition: box-shadow 300ms var(--ease); }
 .cat-card img { transition: transform 700ms var(--ease); }
 .cat-card:hover img { transform: scale(1.05); }
 .cat-card:hover .arch { box-shadow: var(--shadow); }
 .cat-card h3 { font-size: 24px; margin-top: var(--space-4); }
-.cat-card p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+.cat-card p { font-size: 14px; color: var(--text-muted); margin-top: 4px; flex: 1; }
+.cat-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--primary); border-bottom: 1px solid transparent; transition: gap 200ms var(--ease), border-color 200ms var(--ease); }
+.cat-card:hover .cat-cta, .cat-card:focus-visible .cat-cta { gap: 10px; border-color: currentColor; }
+.cat-card h3 { transition: color 200ms var(--ease); }
+.cat-card:hover h3 { color: var(--primary); }
 
 /* ---------- Product cards ---------- */
 .product-grid { display: grid; gap: var(--space-6) var(--space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }

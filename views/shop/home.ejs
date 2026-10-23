@@ -76,8 +76,8 @@
   <div class="container">
     <div class="section-head center reveal">
       <span class="eyebrow center">Bộ sưu tập</span>
-      <h2 class="h2">Mỗi lời chúc, <em>một dáng quà</em></h2>
-      <p class="lead">Từ hộp quà nhỏ xinh gửi bạn bè đến giỏ quà sơn mài biếu đối tác, chọn theo người nhận và ngân sách của bạn.</p>
+      <h2 class="h2">Mỗi món quà, <em>trọn một lời chúc</em></h2>
+      <p class="lead">Khám phá những giỏ quà Tết tinh tế dành tặng gia đình, bạn bè và đối tác. Đa dạng lựa chọn, phù hợp từng người nhận và ngân sách của bạn.</p>
     </div>
     <div class="cat-grid">
       <% categories.slice(0, 4).forEach((c, i) => { %>
@@ -85,6 +85,7 @@
         <div class="arch"><img src="<%= img(c.image_id) %>" alt="" loading="lazy" width="600" height="800"></div>
         <h3><%= c.name %></h3>
         <% if (c.tagline) { %><p><%= c.tagline %></p><% } %>
+        <span class="cat-cta">Khám phá <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow"/></svg></span>
       </a>
       <% }) %>
     </div>

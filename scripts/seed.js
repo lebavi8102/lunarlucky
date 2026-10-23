@@ -12,13 +12,13 @@ const art = require('./art');
 const svg = (s, name) => saveBuffer(Buffer.from(s), 'image/svg+xml', name, null);
 
 const CATEGORIES = [
-  { name: 'Biếu sếp & đối tác', slug: 'bieu-sep-doi-tac', tagline: 'Sang trọng, chỉn chu cho người quan trọng', palette: 'lacquer', composition: 'box',
+  { name: 'Quà tặng sếp & đối tác', slug: 'bieu-sep-doi-tac', tagline: 'Chỉn chu món quà, trọn vẹn tri ân', palette: 'lacquer', composition: 'box',
     description: 'Những giỏ quà sơn mài cao cấp với rượu vang nhập khẩu, trà cổ thụ và đặc sản tuyển chọn, dành cho cấp trên, đối tác và khách hàng thân thiết.' },
-  { name: 'Quà gia đình', slug: 'qua-gia-dinh', tagline: 'Ấm áp, đủ đầy cho ngày sum vầy', palette: 'cream', composition: 'basket',
+  { name: 'Quà tặng gia đình', slug: 'qua-gia-dinh', tagline: 'Gửi trao sum vầy, đong đầy yêu thương', palette: 'cream', composition: 'basket',
     description: 'Giỏ quà đủ đầy bánh mứt, trà, hạt và trái cây sấy để biếu ông bà, cha mẹ, họ hàng dịp Tết đoàn viên.' },
-  { name: 'Quà doanh nghiệp', slug: 'qua-doanh-nghiep', tagline: 'Số lượng lớn, in logo thương hiệu', palette: 'jade', composition: 'stack',
+  { name: 'Quà tặng doanh nghiệp', slug: 'qua-doanh-nghiep', tagline: 'Đặt quà số lượng lớn, mang dấu ấn riêng', palette: 'jade', composition: 'stack',
     description: 'Mẫu giỏ quà tối ưu cho doanh nghiệp tặng nhân viên, đối tác với số lượng lớn, hỗ trợ in logo và xuất hóa đơn VAT.' },
-  { name: 'Hộp quà nhỏ xinh', slug: 'hop-qua-nho-xinh', tagline: 'Gửi bạn bè, đồng nghiệp, dưới 1 triệu', palette: 'blush', composition: 'round',
+  { name: 'Quà tặng bạn bè', slug: 'hop-qua-nho-xinh', tagline: 'Món quà tinh tế, gửi lời chúc thân tình', palette: 'blush', composition: 'round',
     description: 'Hộp quà gọn gàng, tinh tế để gửi bạn bè, đồng nghiệp, thầy cô với ngân sách vừa phải.' },
 ];
 
