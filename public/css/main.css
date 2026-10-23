@@ -410,6 +410,14 @@ ul, ol { margin: 0; padding: 0; }
 /* màn hình rất rộng: nới khung chữ sang phải để chữ không chạm giỏ */
 @media (min-width: 1500px) { .commit-wrap { max-width: 1560px; } }
 
+/* Trang chủ ≥1360px: lớp phủ kem mờ dần phía sau chữ banner + chữ đậm hơn (tắt hẳn trước khi chạm hai giỏ) */
+@media (min-width: 1360px) {
+  .hero-home .photo { position: relative; }
+  .hero-home .photo::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(252,247,238,.94) 0%, rgba(252,247,238,.84) 28%, rgba(252,247,238,0) 46%); }
+  .hero-home .hero-copy .lead { color: var(--ink-900); font-weight: 500; }
+  .hero-home .hero-copy .eyebrow { color: var(--gold-700); font-weight: 700; }
+}
+
 /* Trang Giới thiệu ≥1360px: lớp phủ kem mờ dần phía sau chữ + chữ đậm hơn, để chữ nổi và rõ trên ảnh (lớp phủ tắt hẳn trước khi chạm người/giỏ) */
 @media (min-width: 1360px) {
   .hero-about .photo { position: relative; }

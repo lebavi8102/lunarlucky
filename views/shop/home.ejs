@@ -1,7 +1,7 @@
 <%- include('../partials/top') %>
 <% const catById = Object.fromEntries(categories.map(c => [c.id, c.name])); const star = featured[0] || bestsellers[0]; %>
 
-<section class="hero">
+<section class="hero hero-home">
   <div class="container hero-grid">
     <div class="hero-copy">
       <span class="eyebrow"><%= s.hero_eyebrow %></span>
