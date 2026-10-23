@@ -37,13 +37,6 @@
       </p>
       <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>
 
-      <% if (contents.length) { %>
-      <div class="contents">
-        <h2>Trong giỏ quà có</h2>
-        <ul><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
-      </div>
-      <% } %>
-
       <% if (product.stock > 0) { %>
       <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form" data-track-id="<%= product.id %>" data-track-name="<%= product.name %>" data-track-price="<%= product.price %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -72,6 +65,13 @@
         <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar Lucky để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
         <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="Lunar Lucky ơi, mình muốn hỏi giỏ <%= product.name %> khi nào có hàng lại? <%= siteUrl %>/san-pham/<%= product.slug %>">Nhắn Zalo tư vấn</a></div>
         <%- include('../partials/callback', { source: 'san-pham', productId: product.id, title: 'Muốn được báo khi có hàng?' }) %>
+      <% } %>
+
+      <% if (contents.length) { %>
+      <div class="contents">
+        <h2>Trong giỏ quà có</h2>
+        <ul><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
+      </div>
       <% } %>
 
       <ul class="assure">
