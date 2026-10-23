@@ -97,7 +97,7 @@
           </div>
           <% if (typeof bulkNote !== 'undefined' && bulkNote) { %><p class="help" style="margin-top:6px;color:var(--primary);font-weight:600"><%= bulkNote %></p><% } %>
           <% if (typeof fullDates !== 'undefined' && fullDates.length) { %><p class="help" style="margin-top:6px">Đã kín lịch giao: <%= fullDates.slice(0, 8).map((d) => d.slice(8) + '/' + d.slice(5, 7)).join(', ') %><%= fullDates.length > 8 ? '…' : '' %>.</p><% } %>
-          <% if (orderDeadline) { %><p class="help" style="margin-top:6px">Giao quà Tết đến hết <b><%= orderDeadline %></b><% if (typeof dateRules !== 'undefined' && dateRules.closedFrom) { %>; nghỉ Tết <%= dateRules.closedFrom.slice(8) %>/<%= dateRules.closedFrom.slice(5, 7) %>–<%= dateRules.closedTo.slice(8) %>/<%= dateRules.closedTo.slice(5, 7) %><% } %>.</p><% } %>
+          <% if (typeof dateRules !== 'undefined' && dateRules.closedFrom) { %><p class="help" style="margin-top:6px">Nghỉ Tết <%= dateRules.closedFrom.slice(8) %>/<%= dateRules.closedFrom.slice(5, 7) %>–<%= dateRules.closedTo.slice(8) %>/<%= dateRules.closedTo.slice(5, 7) %>.</p><% } %>
           <p class="help" style="margin-top:6px" data-slot-help><%= /hà nội/i.test(values.province || 'Hà Nội') ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.' %></p>
         </div>
       </fieldset>
