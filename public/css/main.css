@@ -476,6 +476,8 @@ ul, ol { margin: 0; padding: 0; }
 @media (min-width: 960px) { .b2b-card { grid-template-columns: 1.1fr 1fr; padding: var(--space-8); gap: var(--space-8); align-items: center; } }
 .feature-list { list-style: none; display: grid; gap: var(--space-5); }
 @media (min-width: 640px) { .feature-list.two { grid-template-columns: 1fr 1fr; } }
+/* Khối Quà tặng doanh nghiệp (trang chủ): hai nút nằm cùng một hàng khi đủ chỗ */
+.corp-cta .btn { padding-inline: 22px; white-space: nowrap; }
 .feature-list li { display: flex; gap: var(--space-4); }
 .feature-ico { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--cream-100); color: var(--lacquer-700); }
 .feature-list strong { display: block; font-size: 16px; margin-bottom: 2px; }
