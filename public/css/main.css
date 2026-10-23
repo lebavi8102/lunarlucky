@@ -116,6 +116,10 @@ ul, ol { margin: 0; padding: 0; }
 .eyebrow.center::after { content: ''; width: 28px; height: 1px; background: currentColor; }
 .display { font-size: clamp(42px, 6.4vw, 84px); font-weight: 500; line-height: 1.02; letter-spacing: -0.02em; }
 .display em, .h2 em { font-style: italic; color: var(--primary); font-weight: 500; }
+/* Tiêu đề banner trang chủ: đúng 2 dòng, mỗi dòng không ngắt; cỡ chữ co theo màn hình để dòng dài nhất ("Gửi trọn thịnh vượng") luôn vừa khung */
+.hero-title .line { display: block; white-space: nowrap; }
+.hero .hero-title { font-size: clamp(34px, 11vw, 60px); line-height: 1.08; }
+@media (min-width: 960px) { .hero .hero-title { font-size: clamp(44px, 5.6vw, 72px); } }
 .h2 { font-size: clamp(32px, 4.2vw, 52px); font-weight: 500; }
 .h3 { font-size: clamp(24px, 2.4vw, 30px); }
 .lead { font-size: clamp(16px, 1.4vw, 18px); color: var(--ink-700); max-width: 56ch; }

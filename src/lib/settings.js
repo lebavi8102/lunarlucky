@@ -96,8 +96,8 @@ const DEFAULTS = {
   ops_morning_last: '',
   ops_evening_last: '',
   announcement: 'Miễn phí giao hàng cho đơn từ 1.500.000₫ · Đặt trước Tết để chọn ngày giao',
-  hero_eyebrow: 'Quà Tết an khang, trao trọn phú quý',
-  hero_title: 'Trao lời chúc trọn vẹn trong từng giỏ quà',
+  hero_eyebrow: 'LUNAR LUCKY · QUÀ TẾT 2027',
+  hero_title: 'Trao quà tinh tế / Gửi trọn thịnh vượng',
   hero_subtitle:
     'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Giao đúng ngày bạn hẹn.',
 };

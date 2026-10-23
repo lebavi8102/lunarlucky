@@ -311,7 +311,7 @@ const SETTING_GROUPS = [
   ]],
   ['Trang chủ', [
     ['announcement', 'Dòng thông báo trên cùng'], ['hero_eyebrow', 'Dòng nhỏ trên tiêu đề'],
-    ['hero_title', 'Tiêu đề lớn'], ['hero_subtitle', 'Mô tả dưới tiêu đề', 'textarea'],
+    ['hero_title', 'Tiêu đề lớn (dấu / để xuống dòng, vd: Trao quà tinh tế / Gửi trọn thịnh vượng)'], ['hero_subtitle', 'Mô tả dưới tiêu đề', 'textarea'],
   ]],
 ];
 
