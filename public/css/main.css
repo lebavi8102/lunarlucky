@@ -459,6 +459,7 @@ ul, ol { margin: 0; padding: 0; }
 .journey { display: grid; gap: var(--space-6); grid-template-columns: 1fr; list-style: none; counter-reset: j; }
 @media (min-width: 640px) { .journey { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .journey { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .journey.journey-4 { grid-template-columns: repeat(4, 1fr); gap: var(--space-5); } } /* trang doanh nghiệp: 4 bước trên một hàng */
 .journey li { position: relative; padding-top: var(--space-5); border-top: 1px solid var(--gold-500); }
 .journey li::before { counter-increment: j; content: '0' counter(j); display: block; font-family: var(--font-display); font-size: 44px; line-height: 1; color: var(--gold-600); margin-bottom: var(--space-3); }
 .journey h3 { font-size: 24px; margin-bottom: 6px; }
@@ -747,6 +748,14 @@ ul, ol { margin: 0; padding: 0; }
 
 /* ---------- Business page ---------- */
 .b2b-hero { padding-block: var(--space-8); }
+/* Khối mức số lượng: ảnh xưởng làm nền, làm mờ + phủ đỏ sẫm để chữ nổi; thẻ kính mờ giữ chữ rõ */
+.b2b-bg { position: absolute; inset: 0; z-index: -2; }
+.b2b-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; filter: blur(3px) saturate(1); transform: scale(1.05); }
+.b2b-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(34 6 12 / .72), rgb(34 6 12 / .52) 50%, rgb(34 6 12 / .74)); }
+.b2b-hero .container { position: relative; z-index: 1; }
+.b2b-hero .section-head .h2 { text-shadow: 0 2px 18px rgb(20 2 6 / .55); }
+.b2b-hero .tiers li { background: rgb(34 6 12 / .58); border-color: rgb(201 161 90 / .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+.b2b-hero .tiers p { color: rgb(253 250 245 / .92); }
 .tiers { display: grid; gap: var(--space-4); list-style: none; }
 @media (min-width: 768px) { .tiers { grid-template-columns: repeat(3, 1fr); } }
 .tiers li { padding: var(--space-6); border: 1px solid rgb(201 161 90 / 0.35); border-radius: var(--radius-lg); }

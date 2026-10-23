@@ -1,5 +1,18 @@
 <%- include('../partials/top') %>
 <% const budgets = ['Cần tư vấn', 'Dưới 500.000₫', '500.000₫ – 1.000.000₫', '1.000.000₫ – 2.000.000₫', '2.000.000₫ – 5.000.000₫', 'Trên 5.000.000₫']; %>
+<section class="hero hero-about">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">Quà Tết doanh nghiệp</span>
+      <h1 class="display hero-title" style="margin-top:20px"><span class="line">Món quà mang</span> <span class="line"><em>dấu ấn</em> thương hiệu</span></h1>
+      <p class="lead lead-full">Lunar Lucky thiết kế giỏ quà Tết theo ngân sách và tinh thần doanh nghiệp: in logo doanh nghiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn đến từng đối tác trên toàn quốc.</p>
+      <div class="hero-cta"><a class="btn btn-lg" href="#bao-gia">Nhận báo giá trong 24h</a><a class="btn btn-ghost btn-lg" href="tel:<%= s.shop_phone.replace(/s/g,'') %>"><svg class="icon"><use href="#i-phone"/></svg> <%= s.shop_phone %></a></div>
+    </div>
+    <div class="hero-visual hero-photo">
+      <div class="photo"><picture><source media="(min-width: 1360px)" srcset="/img/b2b-hero-wide-2000.webp" width="2000" height="750"><img src="/img/b2b-hero-crop-1040.webp" alt="Hai đối tác doanh nghiệp trao nhau giỏ quà Tết Lunar Lucky trong văn phòng" width="1060" height="750" fetchpriority="high"></picture></div>
+    </div>
+  </div>
+</section>
 <section class="section" id="bao-gia" style="background:var(--cream-100)">
   <div class="container split" style="align-items:start">
     <div>
@@ -46,13 +59,9 @@
 </section>
 
 <section class="lacquer b2b-hero">
-  <div class="container split">
-    <div>
-      <span class="eyebrow">Quà tặng doanh nghiệp</span>
-      <h1 class="display" style="margin-top:20px;font-size:clamp(40px,5.6vw,72px)">Món quà mang <em>dấu ấn</em> thương hiệu</h1>
-      <p class="lead" style="margin-top:24px">Lunar Lucky thiết kế giỏ quà Tết theo ngân sách và tinh thần doanh nghiệp: in logo doanh nghiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn đến từng đối tác trên toàn quốc.</p>
-      <div class="hero-cta"><a class="btn btn-gold btn-lg" href="#bao-gia">Nhận báo giá trong 24h</a><a class="btn btn-ghost-light btn-lg" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>"><svg class="icon"><use href="#i-phone"/></svg> <%= s.shop_phone %></a></div>
-    </div>
+  <div class="b2b-bg" aria-hidden="true"><img src="/img/b2b-xuong-1600.webp" alt="" width="1600" height="900" loading="lazy"></div>
+  <div class="container">
+    <div class="section-head center"><span class="eyebrow center">Theo quy mô đơn hàng</span><h2 class="h2">Từ 5 đến <em>hơn 500 giỏ</em></h2></div>
     <ul class="tiers">
       <li><div class="qty-range">5 – 99 giỏ</div><p>Báo giá theo số lượng, in logo doanh nghiệp, giao theo danh sách.</p></li>
       <li><div class="qty-range">100 – 499 giỏ</div><p>In logo lên hộp và nơ, ưu đãi theo số lượng, chuyên viên riêng.</p></li>
@@ -64,11 +73,11 @@
 <section class="section">
   <div class="container">
     <div class="section-head center"><span class="eyebrow center">Quy trình</span><h2 class="h2">Bốn bước, <em>không phải lo nghĩ</em></h2></div>
-    <ol class="journey">
-      <li><h3>Tư vấn</h3><p>Gửi yêu cầu, chuyên viên Lunar Lucky liên hệ trong 24 giờ để hiểu ngân sách và đối tượng nhận quà.</p></li>
-      <li><h3>Duyệt mẫu</h3><p>Nhận bản phối giỏ quà, mẫu in logo và báo giá chi tiết. Có thể gửi giỏ mẫu thực tế.</p></li>
-      <li><h3>Sản xuất</h3><p>Lunar Lucky đóng gói và in ấn theo danh sách người nhận bạn cung cấp.</p></li>
-      <li><h3>Giao hàng loạt</h3><p>Giao đến từng địa chỉ, cập nhật tiến độ và ảnh xác nhận cho từng người nhận.</p></li>
+    <ol class="journey journey-4">
+      <li><h3>Tư vấn</h3><p>Lắng nghe nhu cầu, tư vấn quà tặng phù hợp với ngân sách và người nhận.</p></li>
+      <li><h3>Duyệt mẫu</h3><p>Thống nhất mẫu quà, thiết kế logo và báo giá trước khi thực hiện.</p></li>
+      <li><h3>Đóng gói</h3><p>Chuẩn bị, kiểm tra và hoàn thiện từng phần quà theo mẫu đã duyệt.</p></li>
+      <li><h3>Giao quà tận nơi</h3><p>Giao theo danh sách, cập nhật tiến độ và xác nhận từng đơn hàng.</p></li>
     </ol>
   </div>
 </section>
