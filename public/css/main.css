@@ -262,12 +262,15 @@ ul, ol { margin: 0; padding: 0; }
 }
 .hero-float img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
 .hero-float strong { display: block; font-family: var(--font-display); font-size: 19px; line-height: 1.2; }
+/* Con dấu "Tết 2027 Đinh Mùi": đỏ trầm phẳng, chữ trắng, viền vàng mảnh bên trong */
 .hero-seal {
-  position: absolute; right: -6px; top: 40px; width: 104px; height: 104px; border-radius: 50%;
-  display: grid; place-items: center; text-align: center; background: var(--lacquer-700); color: var(--gold-300);
-  font-family: var(--font-display); font-size: 15px; line-height: 1.15; box-shadow: var(--shadow); transform: rotate(-8deg);
+  position: absolute; right: -6px; top: 40px; width: 76px; height: 76px; border-radius: 50%;
+  display: grid; place-items: center; align-content: center; text-align: center; background: #861d2b; color: #fff;
+  font-family: var(--font-display); font-size: 10px; font-weight: 600; line-height: 1.15; box-shadow: 0 6px 18px rgb(60 10 18 / .28);
 }
-.hero-seal b { display: block; font-size: 26px; color: #fff; }
+.hero-seal::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; border: 1px solid rgb(214 178 110 / .75); pointer-events: none; }
+.hero-seal span { position: relative; z-index: 1; }
+.hero-seal b { display: block; font-size: 19px; font-weight: 700; line-height: 1.05; margin-block: 1px; color: #fff; }
 @media (min-width: 960px) {
   .hero { padding-block: var(--space-8) var(--space-9); }
   .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-8); }
@@ -279,7 +282,7 @@ ul, ol { margin: 0; padding: 0; }
 .hero-photo .photo { aspect-ratio: 5 / 4; border-radius: 20px; overflow: hidden; background: var(--cream-100); box-shadow: var(--shadow-lg); }
 .hero-photo .photo picture { display: block; height: 100%; }
 .hero-photo .photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
-.hero-photo .hero-seal { right: 12px; top: 12px; }
+.hero-photo .hero-seal { left: 8px; right: auto; top: 6px; } /* góc trên trái ảnh: cành hoa nằm bên phải nên không bị che */
 /* Điện thoại / máy tính bảng: thẻ "Gợi ý" nằm dưới ảnh, không đè lên giỏ */
 @media (max-width: 1359px) { .hero-photo .hero-float { position: static; margin-top: 12px; max-width: none; } }
 @media (min-width: 700px) { .hero-photo .photo { aspect-ratio: 3 / 2; } }
@@ -293,7 +296,8 @@ ul, ol { margin: 0; padding: 0; }
   .hero-trust { display: none; } /* đã có thanh "Hạn dùng · Giao đúng ngày · Đổi mới" ngay dưới banner */
   .hero-visual.hero-photo { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
   .hero-photo .photo { height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; background: transparent; }
-  .hero-photo .hero-seal { right: 4%; top: 32px; }
+  .hero-photo .hero-seal { left: auto; right: 3%; top: auto; bottom: 36px; width: 84px; height: 84px; font-size: 11px; } /* máy tính: góc dưới phải (bệ đá trống), không che hoa */
+  .hero-photo .hero-seal b { font-size: 21px; }
   .hero-about { min-height: 37.5vw; align-items: center; padding-block: 56px; } /* 37.5vw = đúng tỉ lệ ảnh 8:3, hai người và giỏ không bị cắt */
   .hero-photo .hero-float { position: absolute; pointer-events: auto; max-width: 300px; margin-top: 0; left: max(32px, calc((100vw - var(--container)) / 2 + 32px)); right: auto; bottom: 40px; }
 }
@@ -841,7 +845,7 @@ ul, ol { margin: 0; padding: 0; }
   .float-contact a { width: 44px; height: 44px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
   .float-contact .zalo { font-size: 12px; }
   .hero-float { left: 8px; bottom: 16px; }
-  .hero-seal { width: 84px; height: 84px; font-size: 13px; right: 4px; }
+  .hero-seal { width: 64px; height: 64px; font-size: 8.5px; right: 4px; }
   /* Màn hình đầu trên điện thoại: chữ ngắn gọn, ảnh nhỏ lại để khách thấy giỏ quà sớm */
   .hero { padding-block: var(--space-5) var(--space-6); }
   .hero-grid { gap: var(--space-5); }
@@ -849,7 +853,7 @@ ul, ol { margin: 0; padding: 0; }
   .hero-trust { display: none; }
   .hero-visual { max-width: 300px; }
   .featured-first { padding-top: var(--space-6); }
-  .hero-seal b { font-size: 21px; }
+  .hero-seal b { font-size: 16px; }
 }
 @media (max-width: 559px) {
   .usp-grid { grid-template-columns: 1fr; }
