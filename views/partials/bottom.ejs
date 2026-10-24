@@ -53,11 +53,11 @@
 <%# Điện thoại: MỘT nút "Hỗ trợ" thay cho hai nút nổi; bấm mở: AI tư vấn / Zalo / Gọi điện %>
 <div class="support-fab no-print" data-support>
   <div class="support-menu" data-support-menu role="menu" hidden>
-    <% if (aiReady) { %><button type="button" class="support-item" role="menuitem" data-support-ai><svg class="icon icon-sm"><use href="#i-sparkle"/></svg> Tư vấn chọn quà (Trợ Lý Lunar Lucky)</button><% } %>
+    <% if (aiReady) { %><button type="button" class="support-item" role="menuitem" data-support-ai><svg class="icon icon-sm"><use href="#i-sparkle"/></svg> Tư vấn chọn quà (AI)</button><% } %>
     <a class="support-item" role="menuitem" href="<%= s.zalo_url %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-chat"/></svg> Nhắn Zalo</a>
     <a class="support-item" role="menuitem" href="tel:<%= s.shop_phone.replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg> Gọi điện</a>
   </div>
-  <button type="button" class="support-toggle" data-support-toggle aria-haspopup="menu" aria-expanded="false"><svg class="icon icon-sm"><use href="#i-chat"/></svg> <%= aiReady ? 'Chat với trợ lý AI' : 'Hỗ trợ' %></button>
+  <button type="button" class="support-toggle" data-support-toggle aria-haspopup="menu" aria-expanded="false"><svg class="icon icon-sm"><use href="#i-chat"/></svg> Hỗ trợ</button>
 </div>
 
 <% if (aiReady) { %><%- include('ai-chat') %><% } %>
