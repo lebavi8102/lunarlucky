@@ -137,6 +137,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
     earliest: todayVN(Number(res.locals.s.min_delivery_days) || 1),
     contents: lines(product.contents),
     descriptionHtml: md(product.description),
+    depositText: require('../lib/payment').depositText(res.locals.s),
   });
 });
 

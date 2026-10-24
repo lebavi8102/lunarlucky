@@ -602,11 +602,6 @@ ul, ol { margin: 0; padding: 0; }
 .pdp-info .price { font-size: 26px; margin-top: var(--space-4); }
 .pdp-info .price .save { font-size: 13px; font-weight: 600; color: var(--jade-700); background: var(--jade-100); padding: 3px 10px; border-radius: 999px; }
 .pdp-info .short { margin-top: var(--space-4); color: var(--ink-700); font-size: 16px; }
-.contents { margin-top: var(--space-5); padding: var(--space-5); background: var(--cream-100); border-radius: var(--radius); }
-.contents h2 { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--space-3); }
-.contents ul { list-style: none; display: grid; gap: 8px; font-size: 15px; }
-.contents li { display: flex; gap: 10px; align-items: flex-start; }
-.contents li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: 10px; border-radius: 50%; background: var(--gold-500); }
 .buy-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
 .buy-row .btn { flex: 1 1 180px; }
 /* Trang sản phẩm: số lượng trên, "Mua ngay" nổi nhất, "Thêm vào giỏ" phụ, Zalo ngay dưới */
@@ -617,21 +612,30 @@ ul, ol { margin: 0; padding: 0; }
 .buy-ask-note { margin-top: 8px; line-height: 1.5; }
 .buy-ask-note a { color: var(--primary); font-weight: 600; text-decoration: underline; }
 .gallery-video { margin-top: 12px; }
-.pdp-faq { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--line); }
-.pdp-faq h2 { font-size: 18px; margin: 0 0 8px; }
-.pdp-faq details { border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 14px; color: var(--ink-700); }
-.pdp-faq summary { cursor: pointer; font-weight: 600; color: var(--ink-900); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-.pdp-faq summary::-webkit-details-marker { display: none; }
-.pdp-faq summary::after { content: "+"; color: var(--gold-700); font-size: 18px; line-height: 1; }
-.pdp-faq details[open] summary::after { content: "–"; }
-.pdp-faq details p { margin: 8px 0 0; line-height: 1.6; }
-.pdp-faq > p { margin-top: 12px; }
-.pdp-faq > p a { color: var(--primary); text-decoration: underline; }
+/* Chi tiết dưới hai cột: 3 mục đóng/mở dùng chung chiều rộng nội dung trang */
+.pdp-details { border-top: 1px solid var(--line); padding-block: var(--space-6) var(--space-7); }
+.pdp-acc { border-bottom: 1px solid var(--line); }
+.pdp-acc > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; font-family: var(--font-display); font-size: 24px; color: var(--ink-900); }
+.pdp-acc > summary::-webkit-details-marker { display: none; }
+.pdp-acc > summary::after { content: "+"; flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1.5px solid var(--gold-700); border-radius: 50%; font-family: var(--font-body); font-size: 18px; line-height: 1; color: var(--gold-700); }
+.pdp-acc[open] > summary::after { content: "–"; }
+.pdp-acc-body { padding: 0 0 24px; font-size: 15px; line-height: 1.7; color: var(--ink-700); }
+.contents-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px 40px; grid-template-columns: 1fr; font-size: 15px; }
+@media (min-width: 768px) { .contents-grid { grid-template-columns: 1fr 1fr; } }
+.contents-grid li { display: flex; gap: 10px; align-items: flex-start; }
+.contents-grid li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: 10px; border-radius: 50%; background: var(--gold-500); }
+.pdp-desc { margin-top: var(--space-5); max-width: none; font-size: 16px; line-height: 1.75; }
+.pdp-note { margin: var(--space-4) 0 0; font-size: 14px; color: var(--ink-700); }
+.pdp-list { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+.pdp-qa { margin: 0; display: grid; gap: 4px; }
+.pdp-qa dt { font-weight: 700; color: var(--ink-900); margin-top: 12px; }
+.pdp-qa dt:first-child { margin-top: 0; }
+.pdp-qa dd { margin: 0; }
+.pdp-acc .small { margin-top: var(--space-4); }
+.pdp-acc .small a { color: var(--primary); text-decoration: underline; }
+.buy-terms { margin-top: var(--space-3); line-height: 1.5; }
 .stock-note { margin-top: var(--space-3); font-size: 14px; color: var(--jade-700); display: flex; gap: 8px; align-items: center; }
 .stock-note.low { color: var(--danger); }
-.assure { list-style: none; display: grid; gap: 12px; margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-700); }
-.assure li { display: flex; gap: 12px; align-items: center; }
-.assure .icon { color: var(--gold-700); }
 
 /* Qty stepper */
 .qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); height: 48px; }

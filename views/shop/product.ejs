@@ -32,13 +32,14 @@
         <span><%= money(product.price) %></span>
         <% if (save) { %><del><%= money(product.compare_price) %></del><span class="save">Tiết kiệm <%= save %>%</span><% } %>
       </div>
-      <% const freeShip = Number(s.free_ship_threshold) || 0; %>
+      <% const freeShip = Number(s.free_ship_threshold) || 0;
+         const twoSentences = (t) => { const m = String(t || '').match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, 2).join('').trim() : String(t || '').trim(); }; %>
+      <% if (product.short_desc) { %><p class="short"><%= twoSentences(product.short_desc) %></p><% } %>
       <p class="ship-promise">
         <svg class="icon icon-sm"><use href="#i-truck"/></svg>
         <span>Giao từ <b><%= earliest.slice(8) %>/<%= earliest.slice(5, 7) %></b> tại Hà Nội · tỉnh khác 2–4 ngày<br>
         <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> cho giỏ này<% } else if (freeShip) { %>Phí giao đồng giá <%= money(s.shipping_fee) %> · miễn phí từ <%= money(freeShip) %><% } %></span>
       </p>
-      <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>
 
       <% if (product.stock > 0) { %>
       <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form" data-track-id="<%= product.id %>" data-track-name="<%= product.name %>" data-track-price="<%= product.price %>">
@@ -60,7 +61,7 @@
       </form>
       <% const askProduct = `Lunar Lucky ơi, mình đang xem giỏ ${product.name} (${money(product.price)}) và muốn hỏi thêm: ${siteUrl}/san-pham/${product.slug}`; %>
       <a class="btn btn-quiet btn-block buy-ask" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="<%= askProduct %>"><svg class="icon"><use href="#i-chat"/></svg> Hỏi về giỏ này qua Zalo</a>
-      <p class="buy-ask-note small muted">Bấm nút, tên giỏ và đường dẫn được chép sẵn, bạn chỉ cần dán vào ô chat Zalo<% if (s.messenger_url) { %>. Dùng Facebook? <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent(askProduct) %>" target="_blank" rel="noopener">Nhắn Messenger</a><% } %>.</p>
+      <% if (s.messenger_url) { %><p class="buy-ask-note small muted">Dùng Facebook? <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent(askProduct) %>" target="_blank" rel="noopener">Nhắn Messenger</a></p><% } %>
       <div class="buy-bar" data-buy-bar aria-hidden="true">
         <div class="buy-bar-info"><span><%= product.name %></span><b><%= money(product.price) %></b></div>
         <button class="btn" type="submit" form="buy-form" name="buy_now" value="1" data-no-ajax tabindex="-1">Mua ngay</button>
@@ -69,46 +70,52 @@
         <svg class="icon icon-sm"><use href="#i-<%= product.stock <= 5 ? 'alert' : 'check' %>"/></svg>
         <%= product.stock <= 5 ? `Chỉ còn ${product.stock} giỏ, đặt sớm để giữ hàng` : 'Còn hàng, sẵn sàng giao' %>
       </p>
-      <%- include('../partials/callback', { source: 'san-pham', productId: product.id }) %>
+      <p class="buy-terms small muted">Thanh toán qua VietQR / chuyển khoản hoặc COD. Đơn COD cần đặt cọc để giữ hàng: <%= depositText %>; phần còn lại trả khi nhận.</p>
       <% } else { %>
         <div class="flash flash-info"><svg class="icon"><use href="#i-info"/></svg><span>Mẫu giỏ này tạm hết hàng. Nhắn Lunar Lucky để được báo khi có hàng hoặc gợi ý mẫu tương tự.</span></div>
         <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="Lunar Lucky ơi, mình muốn hỏi giỏ <%= product.name %> khi nào có hàng lại? <%= siteUrl %>/san-pham/<%= product.slug %>">Nhắn Zalo tư vấn</a></div>
         <%- include('../partials/callback', { source: 'san-pham', productId: product.id, title: 'Muốn được báo khi có hàng?' }) %>
       <% } %>
-
-      <% if (contents.length) { %>
-      <div class="contents">
-        <h2>Trong giỏ quà có</h2>
-        <ul><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
-      </div>
-      <% } %>
-
-      <ul class="assure">
-        <li><svg class="icon"><use href="#i-leaf"/></svg> Hạn dùng tối thiểu 3 tháng tính từ ngày giao</li>
-        <li><svg class="icon"><use href="#i-calendar"/></svg> <span><b>Nội thành Hà Nội:</b> giao đúng ngày bạn chọn, chọn được buổi sáng / chiều / tối<br><b>Tỉnh khác:</b> 2–4 ngày, báo ngày dự kiến khi xác nhận đơn</span></li>
-        <li><svg class="icon"><use href="#i-truck"/></svg> Phí giao đồng giá <%= money(s.shipping_fee) %>, miễn phí cho đơn từ <%= money(s.free_ship_threshold) %> · kèm ảnh xác nhận khi quà tới tay</li>
-        <li><svg class="icon"><use href="#i-shield"/></svg> Hư hỏng khi nhận: đổi mới trong 24 giờ</li>
-        <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
-      </ul>
-      <div class="pdp-faq" aria-label="Đổi trả và hỗ trợ">
-        <h2>Đổi trả &amp; hỗ trợ</h2>
-        <details><summary>Trường hợp nào được đổi?</summary><p>Giỏ vỡ, móp, hư hỏng khi vận chuyển; giao sai mẫu hoặc thiếu món; sản phẩm hết hạn hoặc có dấu hiệu hư hỏng. Đổi ý khi giỏ còn nguyên vẹn, đúng mẫu thì không áp dụng đổi trả.</p></details>
-        <details><summary>Cần gửi ảnh và liên hệ trong bao lâu?</summary><p>Trong <b>24 giờ</b> kể từ khi nhận. Bạn nên quay video khi mở giỏ, rồi gửi mã đơn kèm ảnh/video qua Zalo, hotline <%= s.shop_phone %> hoặc email. Lunar Lucky phản hồi trong ngày.</p></details>
-        <details><summary>Ai chịu phí khi lỗi do shop hoặc vận chuyển?</summary><p>Lunar Lucky chịu. Bạn được đổi giỏ mới tương đương, giao bổ sung miễn phí, hoặc hoàn tiền phần món bị lỗi qua chuyển khoản trong 3 ngày làm việc.</p></details>
-        <details><summary>Giỏ giao trực tiếp cho người nhận quà thì sao?</summary><p>Người nhận cứ quay video khi mở giỏ và gửi ảnh/video cho bạn (hoặc nhắn thẳng Lunar Lucky). Bạn báo mã đơn trong 24 giờ kể từ lúc quà tới tay. Lunar Lucky xử lý với bạn, người nhận không phải trả khoản nào.</p></details>
-        <p class="small"><a href="/chinh-sach-doi-tra">Xem đầy đủ chính sách đổi trả</a></p>
-      </div>
     </div>
   </div>
 
-  <% if (descriptionHtml && descriptionHtml.trim()) { %>
-  <section class="section-tight" style="border-top:1px solid var(--line)">
-    <div class="split" style="align-items:start">
-      <div><span class="eyebrow">Câu chuyện giỏ quà</span><h2 class="h2" style="margin-top:12px">Về <em><%= product.name %></em></h2></div>
-      <div class="prose"><%- descriptionHtml %></div>
-    </div>
+  <section class="pdp-details" aria-label="Thông tin chi tiết giỏ quà">
+    <details class="pdp-acc" open>
+      <summary>Thành phần giỏ quà</summary>
+      <div class="pdp-acc-body">
+        <% if (contents.length) { %>
+        <ul class="contents-grid"><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
+        <% } %>
+        <% if (descriptionHtml && descriptionHtml.trim()) { %><div class="prose pdp-desc"><%- descriptionHtml %></div><% } %>
+        <p class="pdp-note">Hạn dùng tối thiểu 3 tháng tính từ ngày giao.</p>
+      </div>
+    </details>
+    <details class="pdp-acc">
+      <summary>Giao hàng &amp; thanh toán</summary>
+      <div class="pdp-acc-body">
+        <ul class="pdp-list">
+          <li><b>Nội thành Hà Nội:</b> giao đúng ngày bạn chọn, chọn được buổi sáng / chiều / tối.</li>
+          <li><b>Tỉnh khác:</b> 2–4 ngày, báo ngày dự kiến khi xác nhận đơn.</li>
+          <li>Phí giao đồng giá <%= money(s.shipping_fee) %>, miễn phí cho đơn từ <%= money(s.free_ship_threshold) %>. Kèm ảnh xác nhận khi quà tới tay.</li>
+          <li>Thanh toán qua VietQR / chuyển khoản (hệ thống tự xác nhận khi tiền về) hoặc COD. Đơn COD cần đặt cọc để giữ hàng: <%= depositText %>; phần còn lại trả khi nhận.</li>
+          <li>Gửi tặng trực tiếp, không kèm hóa đơn giá tiền.</li>
+        </ul>
+        <p class="small"><a href="/chinh-sach-giao-hang">Xem đầy đủ chính sách giao hàng</a></p>
+      </div>
+    </details>
+    <details class="pdp-acc">
+      <summary>Đổi trả &amp; hỗ trợ</summary>
+      <div class="pdp-acc-body">
+        <dl class="pdp-qa">
+          <dt>Trường hợp nào được đổi?</dt><dd>Giỏ vỡ, móp, hư hỏng khi vận chuyển; giao sai mẫu hoặc thiếu món; sản phẩm hết hạn hoặc có dấu hiệu hư hỏng. Hư hỏng khi nhận: đổi mới trong 24 giờ. Đổi ý khi giỏ còn nguyên vẹn, đúng mẫu thì không áp dụng đổi trả.</dd>
+          <dt>Cần gửi ảnh và liên hệ trong bao lâu?</dt><dd>Trong <b>24 giờ</b> kể từ khi nhận. Bạn nên quay video khi mở giỏ, rồi gửi mã đơn kèm ảnh/video qua Zalo, hotline <%= s.shop_phone %> hoặc email. Lunar Lucky phản hồi trong ngày.</dd>
+          <dt>Ai chịu phí khi lỗi do shop hoặc vận chuyển?</dt><dd>Lunar Lucky chịu. Bạn được đổi giỏ mới tương đương, giao bổ sung miễn phí, hoặc hoàn tiền phần món bị lỗi qua chuyển khoản trong 3 ngày làm việc.</dd>
+          <dt>Giỏ giao trực tiếp cho người nhận quà thì sao?</dt><dd>Người nhận cứ quay video khi mở giỏ và gửi ảnh/video cho bạn (hoặc nhắn thẳng Lunar Lucky). Bạn báo mã đơn trong 24 giờ kể từ lúc quà tới tay. Lunar Lucky xử lý với bạn, người nhận không phải trả khoản nào.</dd>
+        </dl>
+        <p class="small"><a href="/chinh-sach-doi-tra">Xem đầy đủ chính sách đổi trả</a></p>
+      </div>
+    </details>
   </section>
-  <% } %>
 
   <% if (reviews && reviews.length) { %>
   <section class="section-tight" style="border-top:1px solid var(--line)" aria-labelledby="pr-reviews">
