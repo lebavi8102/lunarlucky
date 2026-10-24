@@ -33,7 +33,7 @@
       <p class="ship-promise">
         <svg class="icon icon-sm"><use href="#i-truck"/></svg>
         <span>Giao từ <b><%= earliest.slice(8) %>/<%= earliest.slice(5, 7) %></b> tại Hà Nội · tỉnh khác 2–4 ngày<br>
-        <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> cho giỏ này<% } else if (freeShip) { %>Miễn phí giao cho đơn từ <%= money(freeShip) %><% } %></span>
+        <% if (freeShip && product.price >= freeShip) { %><b style="color:var(--jade-700)">Miễn phí giao hàng</b> cho giỏ này<% } else if (freeShip) { %>Phí giao đồng giá <%= money(s.shipping_fee) %> · miễn phí từ <%= money(freeShip) %><% } %></span>
       </p>
       <% if (product.short_desc) { %><p class="short"><%= product.short_desc %></p><% } %>
 
@@ -76,7 +76,8 @@
 
       <ul class="assure">
         <li><svg class="icon"><use href="#i-leaf"/></svg> Hạn dùng tối thiểu 3 tháng tính từ ngày giao</li>
-        <li><svg class="icon"><use href="#i-calendar"/></svg> Chọn ngày & buổi giao, kèm ảnh khi quà tới tay</li>
+        <li><svg class="icon"><use href="#i-calendar"/></svg> <span><b>Nội thành Hà Nội:</b> giao đúng ngày bạn chọn, chọn được buổi sáng / chiều / tối<br><b>Tỉnh khác:</b> 2–4 ngày, báo ngày dự kiến khi xác nhận đơn</span></li>
+        <li><svg class="icon"><use href="#i-truck"/></svg> Phí giao đồng giá <%= money(s.shipping_fee) %>, miễn phí cho đơn từ <%= money(s.free_ship_threshold) %> · kèm ảnh xác nhận khi quà tới tay</li>
         <li><svg class="icon"><use href="#i-shield"/></svg> Hư hỏng khi nhận: đổi mới trong 24 giờ</li>
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
         <li><svg class="icon"><use href="#i-chat"/></svg> <span>Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></span></li>

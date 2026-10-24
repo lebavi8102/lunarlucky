@@ -99,7 +99,7 @@ const DEFAULTS = {
   hero_eyebrow: 'LUNAR LUCKY · QUÀ TẾT 2027',
   hero_title: 'Trao quà tinh tế / Gửi trọn thịnh vượng',
   hero_subtitle:
-    'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Giao đúng ngày bạn hẹn.',
+    'Giỏ quà Tết cao cấp biếu gia đình, sếp, đối tác hay tặng nhân viên. Hà Nội giao đúng ngày bạn hẹn, tỉnh khác 2–4 ngày.',
 };
 
 let cache = null;

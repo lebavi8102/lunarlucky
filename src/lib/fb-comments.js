@@ -86,7 +86,7 @@ async function handleComment(v, { pageId } = {}) {
   const range = await priceRange();
   const msg = phone
     ? `Dạ em chào ${who}, Lunar Lucky đã nhận số điện thoại và chuyên viên sẽ gọi ${who} sớm nhất ạ. Trong lúc chờ, ${who} cần xem mẫu hay hỏi gì cứ nhắn em ngay tại đây nhé!`
-    : `Dạ em chào ${who}, em bên Lunar Lucky đây ạ 🧧 Giỏ Tết bên em ${range ? `từ ${range}, ` : ''}giao đúng ngày mình chọn.\n${who.charAt(0).toUpperCase() + who.slice(1)} định tặng ai và tầm bao nhiêu một giỏ để em chọn mẫu cho hợp ạ?`;
+    : `Dạ em chào ${who}, em bên Lunar Lucky đây ạ 🧧 Giỏ Tết bên em ${range ? `từ ${range}, ` : ''}giao tận nơi, nội thành Hà Nội đúng ngày mình chọn.\n${who.charAt(0).toUpperCase() + who.slice(1)} định tặng ai và tầm bao nhiêu một giỏ để em chọn mẫu cho hợp ạ?`;
   const m = require('./messenger');
   const res = await m.sendRaw({ recipient: { comment_id: v.comment_id }, message: { text: msg, metadata: m.AI_TAG } }).catch(() => null);
   const psid = res && res.recipient_id ? String(res.recipient_id) : null;
