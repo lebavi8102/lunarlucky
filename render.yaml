@@ -11,6 +11,10 @@ services:
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true
+    # Tên miền riêng (đăng ký 24/10/2026 tại P.A Việt Nam). Render tự thêm www.lunarlucky.vn và chuyển về tên miền gốc.
+    # Cần tạo bản ghi DNS theo hướng dẫn Render hiện sau khi đồng bộ Blueprint.
+    domains:
+      - lunarlucky.vn
     envVars:
       - key: NODE_ENV
         value: production
