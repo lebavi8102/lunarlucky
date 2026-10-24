@@ -8,7 +8,7 @@
    const kind = typeof as !== 'undefined' ? as : 'input';
    const req = typeof required !== 'undefined' && required; %>
 <div class="field <%= e ? 'has-error' : '' %>">
-  <label class="label" for="<%= id %>"><%= label %><% if (typeof optional !== 'undefined' && optional) { %> <span class="opt">(không bắt buộc)</span><% } %></label>
+  <label class="label" for="<%= id %>"><%= label %><% if (req) { %><span class="req" aria-hidden="true"> *</span><% } %><% if (typeof optional !== 'undefined' && optional) { %> <span class="opt">(không bắt buộc)</span><% } %></label>
   <% if (kind === 'textarea') { %>
     <textarea class="textarea" id="<%= id %>" name="<%= name %>" <%= req ? 'required' : '' %> <% if (typeof maxlength !== 'undefined') { %>maxlength="<%= maxlength %>"<% } %> <% if (typeof placeholder !== 'undefined') { %>placeholder="<%= placeholder %>"<% } %> <% if (e) { %>aria-invalid="true" aria-describedby="<%= id %>-err"<% } %>><%= v %></textarea>
   <% } else if (kind === 'select') { %>

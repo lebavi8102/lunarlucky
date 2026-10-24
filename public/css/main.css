@@ -630,6 +630,7 @@ ul, ol { margin: 0; padding: 0; }
 .field { display: grid; gap: 6px; align-content: start; }
 .field + .field { margin-top: var(--space-4); }
 .label { font-size: 14px; font-weight: 600; color: var(--ink-900); }
+.label .req { color: #c62828; font-weight: 700; }
 .label .opt { font-weight: 400; color: var(--text-muted); }
 .input, .select, .textarea {
   width: 100%; min-height: 48px; padding: 12px 16px; background: var(--surface);
