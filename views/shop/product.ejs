@@ -81,15 +81,6 @@
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
         <li><svg class="icon"><use href="#i-chat"/></svg> <span>Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></span></li>
       </ul>
-      <% const askCustom = `Lunar Lucky ơi, mình muốn đặt ${product.name} (${money(product.price)}) nhưng đổi một vài món trong giỏ: … Shop tư vấn giúp mình nhé. ${siteUrl}/san-pham/${product.slug}`; %>
-      <div class="custom-box">
-        <strong><svg class="icon icon-sm"><use href="#i-sparkle"/></svg> Muốn đổi món trong giỏ?</strong>
-        <p>Chọn giỏ gần ý bạn nhất rồi nhắn Lunar Lucky — chuyên viên tư vấn đổi món theo hàng đang có và báo giá ngay.</p>
-        <div class="custom-actions">
-          <a class="btn btn-sm" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="<%= askCustom %>">Nhắn Zalo đổi món</a>
-          <% if (s.messenger_url) { %><a class="btn btn-sm btn-quiet" href="<%= s.messenger_url %>?text=<%= encodeURIComponent(askCustom) %>" target="_blank" rel="noopener">Nhắn Fanpage</a><% } %>
-        </div>
-      </div>
     </div>
   </div>
 
