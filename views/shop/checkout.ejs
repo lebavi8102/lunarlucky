@@ -54,7 +54,7 @@
         <legend><span class="num">2</span> Giao hàng</legend>
         <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
           <input type="checkbox" name="is_gift" value="1" <%= values.is_gift ? 'checked' : '' %> data-gift-toggle>
-          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền. Đơn gửi tặng thanh toán chuyển khoản trước để người nhận không phải trả tiền.</span></span>
+          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền. Người đặt thanh toán trước bằng chuyển khoản, người nhận không phải trả tiền.</span></span>
         </label>
 
         <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
@@ -66,13 +66,15 @@
         <div data-gift-fields <%= values.is_gift ? '' : 'hidden' %> style="margin-top:20px;padding-top:20px;border-top:1px dashed var(--line)">
           <p class="label" style="margin-bottom:12px">Thông tin người nhận quà</p>
           <div class="grid-2">
-            <%- include('../partials/field', { name: 'recipient_name', label: 'Tên người nhận', maxlength: 120 }) %>
-            <%- include('../partials/field', { name: 'recipient_phone', label: 'SĐT người nhận', type: 'tel', inputmode: 'tel' }) %>
+            <%- include('../partials/field', { name: 'recipient_name', label: 'Tên người nhận', required: true, maxlength: 120 }) %>
+            <%- include('../partials/field', { name: 'recipient_phone', label: 'SĐT người nhận', type: 'tel', required: true, inputmode: 'tel' }) %>
           </div>
-          <div style="margin-top:16px"><%- include('../partials/field', { name: 'recipient_address', label: 'Địa chỉ người nhận', placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %></div>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'recipient_address', label: 'Địa chỉ người nhận', required: true, placeholder: 'Số nhà, đường, phường/xã', maxlength: 255 }) %></div>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'gift_wish', label: 'Lời chúc gửi kèm', as: 'textarea', optional: true, maxlength: 300, placeholder: 'VD: Chúc ông bà năm mới an khang…' }) %></div>
         </div>
 
         <div style="margin-top:16px">
+          <div data-date-picks <%= /hà nội/i.test(values.province || 'Hà Nội') ? '' : 'hidden' %>>
           <p class="label" style="margin-bottom:8px">Ngày giao mong muốn</p>
           <div class="date-picks" role="group" aria-label="Chọn nhanh ngày giao" data-date-rules='<%- JSON.stringify(typeof dateRules !== "undefined" ? dateRules : {}) %>'>
             <% const wd = (d) => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][new Date(d + 'T00:00:00Z').getUTCDay()]; %>
@@ -83,9 +85,10 @@
             <% }) %>
             <button type="button" class="date-pick" data-date-other aria-pressed="<%= !!(values.delivery_date && !(quickDates || []).includes(values.delivery_date)) %>"><b>Ngày khác</b><span>Chọn lịch</span></button>
           </div>
-          <p class="small muted" data-date-hint style="margin-top:8px" <%= /hà nội/i.test(values.province || 'Hà Nội') ? 'hidden' : '' %>>Giao ngoài Hà Nội đi chuyển phát 2–4 ngày, sớm nhất từ <b data-date-hint-day><%= minDate.split('-').reverse().join('/') %></b>.</p>
-          <div data-date-input style="margin-top:10px" <%= values.delivery_date && (quickDates || []).includes(values.delivery_date) && !errors.delivery_date ? 'hidden' : '' %>>
-            <%- include('../partials/field', { name: 'delivery_date', label: 'Chọn ngày giao', type: 'date', required: true, min: minDate, max: maxDate }) %>
+          </div>
+          <p class="small muted" data-date-hint style="margin-top:8px" <%= /hà nội/i.test(values.province || 'Hà Nội') ? 'hidden' : '' %>><b>Ngày nhận dự kiến:</b> từ <b data-date-hint-day><%= minDate.split('-').reverse().join('/') %></b> (chuyển phát 2–4 ngày, giao giờ hành chính). Bạn có thể chọn ngày muộn hơn; Lunar Lucky không hẹn chính xác buổi giao.</p>
+          <div data-date-input style="margin-top:10px" <%= /hà nội/i.test(values.province || 'Hà Nội') && values.delivery_date && (quickDates || []).includes(values.delivery_date) && !errors.delivery_date ? 'hidden' : '' %>>
+            <%- include('../partials/field', { name: 'delivery_date', label: /hà nội/i.test(values.province || 'Hà Nội') ? 'Chọn ngày giao' : 'Ngày nhận dự kiến', type: 'date', required: true, min: minDate, max: maxDate }) %>
           </div>
           <div data-slot-box style="margin-top:14px" <%= /hà nội/i.test(values.province || 'Hà Nội') ? '' : 'hidden' %>>
             <p class="label" style="margin-bottom:8px">Buổi giao</p>
@@ -100,15 +103,15 @@
           <% if (typeof dateRules !== 'undefined' && dateRules.closedFrom) { %><p class="help" style="margin-top:6px">Nghỉ Tết <%= dateRules.closedFrom.slice(8) %>/<%= dateRules.closedFrom.slice(5, 7) %>–<%= dateRules.closedTo.slice(8) %>/<%= dateRules.closedTo.slice(5, 7) %>.</p><% } %>
           <p class="help" style="margin-top:6px" data-slot-help><%= /hà nội/i.test(values.province || 'Hà Nội') ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.' %></p>
         </div>
+
+        <details class="more-note note-more" <%= (values.note || errors.note) ? 'open' : '' %> style="margin-top:20px">
+          <summary>Thêm lời nhắn / yêu cầu giao hàng</summary>
+          <div style="margin-top:12px"><%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar Lucky', as: 'textarea', optional: true, maxlength: 500, placeholder: 'VD: giao giờ hành chính, gọi trước 30 phút…' }) %></div>
+        </details>
       </fieldset>
 
       <fieldset class="fieldset">
-        <legend><span class="num">3</span> Ghi chú</legend>
-        <%- include('../partials/field', { name: 'note', label: 'Ghi chú cho Lunar Lucky', as: 'textarea', optional: true, maxlength: 500, placeholder: 'VD: giao giờ hành chính, gọi trước 30 phút…' }) %>
-      </fieldset>
-
-      <fieldset class="fieldset">
-        <legend><span class="num">4</span> Thanh toán</legend>
+        <legend><span class="num">3</span> Thanh toán</legend>
         <% if (s.zalo_url) { %>
         <div class="flash flash-info" style="margin:0 0 16px">
           <svg class="icon"><use href="#i-file"/></svg>
@@ -120,15 +123,22 @@
           <label class="radio-card">
             <input type="radio" name="payment_method" value="bank" <%= values.payment_method !== 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
-            <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;white-space:nowrap;display:inline-block">Khuyên dùng</span></strong><span>Quét mã QR sau khi đặt — nhận tiền là chuẩn bị &amp; giao ngay</span></span>
+            <span><strong>Chuyển khoản VietQR <span style="margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--lacquer-700);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;white-space:nowrap;display:inline-block">Khuyên dùng</span></strong><span>Mã QR hiển thị sau khi đặt hàng. Đơn được chuẩn bị sau khi xác nhận thanh toán và giao theo lịch đã thống nhất.</span></span>
           </label>
           <label class="radio-card" data-cod-option <%= values.is_gift ? 'hidden' : '' %>>
             <input type="radio" name="payment_method" value="cod" <%= values.payment_method === 'cod' ? 'checked' : '' %>>
             <span class="dot"></span>
             <% const dr = pay.depositRule(s); %>
-            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.<% if (dr.percent || dr.bulkPercent) { %> Cọc qua mã QR: <%= pay.depositText(s) %>; phần còn lại trả khi nhận.<% } %></span></span>
+            <span><strong>Thanh toán khi nhận hàng (COD)</strong><span>Trả tiền mặt khi nhận; Lunar Lucky gọi xác nhận trước khi giao.</span></span>
           </label>
         </div>
+        <div class="cod-box" data-cod-box hidden role="status" aria-live="polite">
+          <div class="sum-row"><span>Đặt cọc</span><b data-cod-deposit></b></div>
+          <div class="sum-row"><span>Còn lại khi nhận hàng</span><b data-cod-rest></b></div>
+          <p class="small" data-cod-none hidden>Đơn này không cần đặt cọc, trả toàn bộ khi nhận hàng.</p>
+          <% if (dr.percent || dr.bulkPercent) { %><p class="small muted">Quy định cọc qua mã QR: <%= pay.depositText(s) %>.</p><% } %>
+        </div>
+        <p class="small muted gift-pay-note" data-gift-pay-note <%= values.is_gift ? '' : 'hidden' %>>Đơn gửi tặng: người đặt thanh toán trước bằng chuyển khoản, người nhận quà không phải trả tiền.</p>
       </fieldset>
     </div>
 
@@ -169,13 +179,21 @@
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
       <% const codDep = pay.depositFor({ goods: cart.subtotal - cart.discount, qty: cart.count, total: cart.total }, s); %>
       <% if (codDep) { %>
-      <div class="sum-row" data-deposit-row hidden><span>Đặt cọc trước (COD)</span><span><b><%= money(codDep) %></b></span></div>
-      <div class="sum-row" data-deposit-row hidden><span>Trả khi nhận hàng</span><span><%= money(cart.total - codDep) %></span></div>
+      <div class="sum-row" data-deposit-row hidden><span>Đặt cọc</span><span><b><%= money(codDep) %></b></span></div>
+      <div class="sum-row" data-deposit-row hidden><span>Còn lại khi nhận hàng</span><span><%= money(cart.total - codDep) %></span></div>
       <% } %>
+      <span hidden data-cod-info data-deposit="<%= codDep || 0 %>" data-rest="<%= cart.total - (codDep || 0) %>"></span>
       <div class="sum-row total"><span>Tổng cộng</span><span data-total><%= money(cart.total) %></span></div>
-      <button class="btn btn-lg btn-block" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
-      <p class="tiny muted" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>
+      <button class="btn btn-lg btn-block summary-submit" type="submit" style="margin-top:20px" data-submit>Đặt hàng</button>
+      <p class="tiny muted summary-terms" style="margin-top:12px;text-align:center">Khi đặt hàng, bạn đồng ý với <a href="/dieu-khoan" style="text-decoration:underline">điều khoản</a> và <a href="/chinh-sach-bao-mat" style="text-decoration:underline">chính sách bảo mật</a> của Lunar Lucky.</p>
     </aside>
+    <div class="checkout-bar" data-checkout-bar>
+      <div class="cb-main">
+        <div class="cb-total"><span class="small">Tổng cộng</span><b data-bar-total></b></div>
+        <button class="btn" type="submit" data-submit>Đặt hàng</button>
+      </div>
+      <p class="cb-terms">Đặt hàng là bạn đồng ý với <a href="/dieu-khoan">điều khoản</a> và <a href="/chinh-sach-bao-mat">chính sách bảo mật</a>.</p>
+    </div>
   </form>
   <div style="max-width:720px;margin:24px 0 0">
     <%- include('../partials/callback', { source: 'thanh-toan', title: 'Ngại điền thông tin? Để Lunar Lucky gọi cho bạn' }) %>

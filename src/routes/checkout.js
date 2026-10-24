@@ -163,6 +163,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
       /* bản chụp hỏng: bỏ qua */
     }
   }
+  // Bấm gửi hai lần / tải lại ngay sau khi đặt: cùng giỏ trong 60 giây → về lại đơn vừa tạo, không tạo đơn thứ hai
+  const lo = req.session.lastOrder;
+  if (lo && Date.now() - lo.at < 60000 && !c.lines.length && String(req.body.cart_snapshot || '') === lo.snap) return res.redirect(`/don-hang/${lo.code}?moi=1`);
   const priced = await cart.priceCart(c);
   if (!priced.lines.length) {
     // Giỏ vừa hết hàng (khách khác mua mất) → mang lời báo về trang giỏ, không để khách thấy giỏ trống không lý do
@@ -228,7 +231,9 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
   }
   // Buổi giao: chỉ hẹn được ở Hà Nội (tỉnh khác đi chuyển phát)
   const delivery_slot = isHanoi(req.body.province) ? f.oneOf('delivery_slot', ['', 'sang', 'chieu', 'toi'], '') || null : null;
-  const note = f.text('note', { max: 500 });
+  // Lời chúc gửi kèm (đơn gửi tặng, tùy chọn): ghi vào ghi chú để người soạn hàng thấy
+  const gift_wish = is_gift ? f.text('gift_wish', { max: 300 }) : '';
+  const note = [f.text('note', { max: 500 }), gift_wish ? `Lời chúc: ${gift_wish}` : ''].filter(Boolean).join(' | ').slice(0, 500);
   // Xuất hóa đơn VAT không đặt trên web nữa: doanh nghiệp nhắn Zalo để báo giá (chủ shop chốt 2026-10-20)
   const needs_vat = false;
   const vat = {};
@@ -363,6 +368,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
 
   req.session.cart = { lines: [], coupon: null };
   delete req.session.aiPrefill;
+  req.session.lastOrder = { code: order.code, snap: String(req.body.cart_snapshot || ''), at: Date.now() };
   rememberOrder(req, order.code);
 
   const tgOrders = require('../lib/telegram-orders');

@@ -304,6 +304,17 @@
       }
     };
     province?.addEventListener('change', applyProvince);
+    const picksBox = $('[data-date-picks]');
+    const dateLabel = $('label[for=f-delivery_date]');
+    const syncMode = () => {
+      if (!province) return;
+      const hn = /hà nội/i.test(province.value.normalize('NFC'));
+      if (picksBox) picksBox.hidden = !hn;
+      if (dateLabel && dateLabel.firstChild) dateLabel.firstChild.textContent = hn ? 'Chọn ngày giao' : 'Ngày nhận dự kiến';
+      // Hà Nội: ô ngày chỉ hiện khi chọn "Ngày khác"; tỉnh khác: luôn hiện ngày nhận dự kiến
+      dateInputWrap.hidden = hn ? !!$('[data-date-pick][aria-pressed=true]') : false;
+    };
+    province?.addEventListener('change', syncMode);
     // Buổi giao: chỉ Hà Nội; bấm chọn → đánh dấu ô
     const slotBox = $('[data-slot-box]');
     const slotHelp = $('[data-slot-help]');
@@ -317,6 +328,7 @@
       if (slotHelp) slotHelp.textContent = hn ? 'Shipper gọi trước khi giao.' : 'Giao tỉnh qua đơn vị vận chuyển, giao trong giờ hành chính.';
     });
     applyProvince();
+    syncMode();
   }
 
   /* Thanh toán: ghi nhớ thông tin người đặt trên máy này (lần sau khỏi gõ lại) */
@@ -399,6 +411,24 @@
     const cod = $('input[name=payment_method][value=cod]');
     const on = !!(cod && cod.checked && !cod.closest('[hidden]'));
     $$('[data-deposit-row]').forEach((r) => (r.hidden = !on));
+    // Ô "Đặt cọc / Còn lại khi nhận hàng" ngay dưới phương thức thanh toán: số lấy từ khung Đơn hàng nên tự đổi theo số lượng / mã giảm giá
+    const box = $('[data-cod-box]');
+    if (box) {
+      const info = $('[data-cod-info]');
+      const dep = Number(info?.dataset.deposit || 0);
+      const rest = Number(info?.dataset.rest || 0);
+      const money = (n) => n.toLocaleString('vi-VN') + '₫';
+      box.hidden = !on;
+      $('[data-cod-deposit]', box).textContent = money(dep);
+      $('[data-cod-rest]', box).textContent = money(rest);
+      $$('.sum-row', box).forEach((r) => (r.hidden = !dep));
+      $('[data-cod-none]', box).hidden = !!dep;
+    }
+    const giftNote = $('[data-gift-pay-note]');
+    const giftBox = $('[data-gift-toggle]');
+    if (giftNote && giftBox) giftNote.hidden = !giftBox.checked;
+    const barTotal = $('[data-bar-total]');
+    if (barTotal) barTotal.textContent = $('[data-total]')?.textContent || '';
   };
   if ($('[data-checkout]')) {
     document.addEventListener('change', (e) => { if (e.target.matches('input[name=payment_method], [data-gift-toggle]')) syncDeposit(); });
@@ -408,10 +438,30 @@
 
   const checkout = $('[data-checkout]');
   if (checkout) {
-    checkout.addEventListener('submit', () => {
-      const b = $('[data-submit]', checkout);
-      setTimeout(() => { b.disabled = true; b.textContent = 'Đang gửi đơn…'; }, 0);
+    // Ba nút "Đặt hàng" (cuối phần thanh toán, khung Đơn hàng, thanh cố định trên điện thoại) dùng chung một luồng:
+    // kiểm tra ô bắt buộc đang hiện, rồi khóa tất cả nút để không tạo đơn trùng
+    checkout.addEventListener('submit', (e) => {
+      if (checkout.dataset.sending) return e.preventDefault();
+      const bad = $$('input[required], select[required], textarea[required]', checkout).find((el) => !el.closest('[hidden]') && !el.checkValidity());
+      if (bad) {
+        e.preventDefault();
+        bad.reportValidity?.();
+        return;
+      }
+      checkout.dataset.sending = '1';
+      setTimeout(() => $$('[data-submit]', checkout).forEach((b) => { b.disabled = true; b.textContent = 'Đang gửi đơn…'; }), 0);
     });
+    addEventListener('pageshow', (e) => { // quay lại bằng nút Back: cho đặt lại
+      if (!e.persisted) return;
+      delete checkout.dataset.sending;
+      $$('[data-submit]', checkout).forEach((b) => { b.disabled = false; b.textContent = 'Đặt hàng'; });
+    });
+    // Điện thoại: thanh tổng tiền + Đặt hàng cố định ở đáy → nâng các nút nổi lên trên thanh
+    const mq = matchMedia('(max-width: 959px)');
+    const syncBarClass = () => document.body.classList.toggle('has-checkout-bar', mq.matches);
+    mq.addEventListener?.('change', syncBarClass);
+    syncBarClass();
+    window.__syncDeposit?.();
   }
   $('[data-focus-on-load]')?.focus();
 
