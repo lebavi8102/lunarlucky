@@ -45,10 +45,19 @@
 </footer>
 
 <div class="float-contact no-print" aria-label="Liên hệ nhanh">
-  <button type="button" class="fc-toggle" data-fc-toggle aria-expanded="false" aria-label="Liên hệ"><svg class="icon fc-ic-open"><use href="#i-chat"/></svg><svg class="icon fc-ic-close"><use href="#i-x"/></svg><span>Liên hệ</span></button>
   <a href="<%= s.zalo_url %>" class="zalo" target="_blank" rel="noopener" aria-label="Nhắn Zalo">Zalo</a>
   <a href="<%= s.messenger_url %>" target="_blank" rel="noopener" aria-label="Nhắn Messenger"><svg class="icon"><use href="#i-chat"/></svg></a>
   <a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>" aria-label="Gọi hotline <%= s.shop_phone %>"><svg class="icon"><use href="#i-phone"/></svg></a>
+</div>
+
+<%# Điện thoại: MỘT nút "Hỗ trợ" thay cho hai nút nổi; bấm mở: AI tư vấn / Zalo / Gọi điện %>
+<div class="support-fab no-print" data-support>
+  <div class="support-menu" data-support-menu role="menu" hidden>
+    <% if (aiReady) { %><button type="button" class="support-item" role="menuitem" data-support-ai><svg class="icon icon-sm"><use href="#i-sparkle"/></svg> Tư vấn chọn quà (Trợ Lý Lunar Lucky)</button><% } %>
+    <a class="support-item" role="menuitem" href="<%= s.zalo_url %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-chat"/></svg> Nhắn Zalo</a>
+    <a class="support-item" role="menuitem" href="tel:<%= s.shop_phone.replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg> Gọi điện</a>
+  </div>
+  <button type="button" class="support-toggle" data-support-toggle aria-haspopup="menu" aria-expanded="false"><svg class="icon icon-sm"><use href="#i-chat"/></svg> <%= aiReady ? 'Chat với trợ lý AI' : 'Hỗ trợ' %></button>
 </div>
 
 <% if (aiReady) { %><%- include('ai-chat') %><% } %>

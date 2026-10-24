@@ -5,7 +5,7 @@
    const basePath = category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap';
    const qs = (o) => { const q = new URLSearchParams(Object.entries({ sap_xep: sort !== 'noi-bat' ? sort : '', gia: range, ...o }).filter(([, v]) => v)); const s2 = q.toString(); return s2 ? '?' + s2 : ''; };
 %>
-<section class="page-head">
+<section class="page-head collection-head">
   <div class="container">
     <ol class="crumbs" aria-label="Breadcrumb">
       <li><a href="/">Trang chủ</a></li>
@@ -17,14 +17,26 @@
   </div>
 </section>
 
-<section class="section-tight">
+<section class="section-tight collection-section">
   <div class="container">
-    <nav aria-label="Danh mục" style="margin-bottom:20px;overflow-x:auto">
+    <nav aria-label="Danh mục" class="cat-scroll" style="margin-bottom:20px;overflow-x:auto">
       <ul class="chips" style="flex-wrap:nowrap">
         <li><a class="chip" href="/bo-suu-tap" aria-current="<%= !category %>">Tất cả</a></li>
         <% categories.forEach(c => { %><li><a class="chip" href="/bo-suu-tap/<%= c.slug %>" aria-current="<%= !!(category && category.id === c.id) %>"><%= c.name %></a></li><% }) %>
       </ul>
     </nav>
+    <%# Điện thoại: một hàng gọn (khoảng giá + sắp xếp), danh mục là hàng chip cuộn ngang %>
+    <form class="filter-row" method="get" action="<%= basePath %>" data-autosubmit>
+      <label class="sr-only" for="gia-m">Khoảng giá</label>
+      <select class="select" id="gia-m" name="gia">
+        <option value="">Mọi mức giá</option>
+        <% for (const r of ranges) { %><option value="<%= r %>" <%= r === range ? 'selected' : '' %>><%= rangeLabels[r] %></option><% } %>
+      </select>
+      <label class="sr-only" for="sort-m">Sắp xếp</label>
+      <select class="select" id="sort-m" name="sap_xep">
+        <% for (const k of sorts) { %><option value="<%= k %>" <%= k === sort ? 'selected' : '' %>><%= sortLabels[k] %></option><% } %>
+      </select>
+    </form>
     <div class="toolbar">
       <ul class="chips" aria-label="Khoảng giá">
         <% for (const r of ranges) { %>
@@ -40,7 +52,7 @@
         <noscript><button class="btn btn-sm" type="submit">Áp dụng</button></noscript>
       </form>
     </div>
-    <p class="small muted" style="margin-bottom:24px"><%= total %> giỏ quà</p>
+    <p class="small muted collection-count" style="margin-bottom:24px"><%= total %> giỏ quà</p>
 
     <% if (products.length) { %>
       <div class="product-grid cols-4">

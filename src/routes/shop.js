@@ -68,14 +68,17 @@ async function listing(req, res, category) {
     .limit(perPage)
     .offset((page - 1) * perPage);
   const categories = await db('categories').where({ is_active: true }).orderBy('sort');
-  return { products, categories, sort, range, page, pages: Math.max(1, Math.ceil(Number(n) / perPage)), total: Number(n) };
+  // Chỉ hiện khoảng giá đang có sản phẩm (trong danh mục đang xem); khoảng đang chọn luôn giữ lại
+  const prices = await (category ? activeProducts().andWhere({ category_id: category.id }) : activeProducts()).select('price');
+  const ranges = Object.keys(PRICE_RANGES).filter((k) => k === range || prices.some((x) => x.price >= PRICE_RANGES[k][0] && (!PRICE_RANGES[k][1] || x.price <= PRICE_RANGES[k][1])));
+  return { products, categories, ranges, sort, range, page, pages: Math.max(1, Math.ceil(Number(n) / perPage)), total: Number(n) };
 }
 
 router.get('/bo-suu-tap', async (req, res) => {
   const data = await listing(req, res, null);
   res.locals.seo.title = 'Tất cả giỏ quà Tết · Lunar Lucky';
   res.locals.seo.description = 'Khám phá toàn bộ bộ sưu tập giỏ quà Tết Lunar Lucky: hộp sơn mài, giỏ mây tre, quà doanh nghiệp, giá từ vài trăm nghìn đến cao cấp.';
-  res.render('shop/collection', { ...data, category: null, sorts: Object.keys(SORTS), ranges: Object.keys(PRICE_RANGES) });
+  res.render('shop/collection', { ...data, category: null, sorts: Object.keys(SORTS) });
 });
 
 router.get('/bo-suu-tap/:slug', async (req, res, next) => {
@@ -86,7 +89,7 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   res.locals.seo.description = truncate(`${category.name}: ${category.tagline || category.description || 'giỏ quà Tết tuyển chọn'}. Giỏ quà Tết Lunar Lucky đóng hộp sơn mài, giao toàn quốc, miễn phí giao từ 1.500.000₫.`, 160);
   if (category.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${category.image_id}`;
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
-  res.render('shop/collection', { ...data, category, sorts: Object.keys(SORTS), ranges: Object.keys(PRICE_RANGES) });
+  res.render('shop/collection', { ...data, category, sorts: Object.keys(SORTS) });
 });
 
 router.get('/san-pham/:slug', async (req, res, next) => {

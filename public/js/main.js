@@ -379,15 +379,23 @@
 
   /* Trang sản phẩm (điện thoại): hiện thanh "Mua ngay" khi nút mua đã cuộn khỏi màn hình */
   const buyBar = $('[data-buy-bar]');
-  const buyRow = $('#buy-form .buy-row');
-  if (buyBar && buyRow && 'IntersectionObserver' in window) {
-    new IntersectionObserver(([en]) => {
-      const show = !en.isIntersecting; // nút mua đang khuất (ở dưới hoặc đã cuộn qua) → hiện thanh Mua ngay
+  const buyMain = $('#buy-form button[name=buy_now]'); // nút mua chính
+  if (buyBar && buyMain) {
+    // Đọc vị trí khi cuộn (không dùng IntersectionObserver: cuộn nhảy qua nút mà nút chưa từng hiện trên màn hình thì nó không báo)
+    let ticking = false;
+    const syncBuyBar = () => {
+      ticking = false;
+      const show = buyMain.getBoundingClientRect().bottom < 0; // nút mua chính đã cuộn khỏi màn hình (lên phía trên) → hiện thanh; nút hiện lại → ẩn
+      if (buyBar.classList.contains('show') === show) return;
       buyBar.classList.toggle('show', show);
       buyBar.setAttribute('aria-hidden', String(!show));
       $('button', buyBar).tabIndex = show ? 0 : -1;
       document.body.classList.toggle('has-buy-bar', show);
-    }).observe(buyRow);
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(syncBuyBar); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    syncBuyBar();
   }
 
   /* Trang sản phẩm (điện thoại): nút nổi (Tư vấn chọn quà, Zalo) tự ẩn khi đang nằm đè lên ảnh sản phẩm, hiện lại khi cuộn qua khỏi ảnh */
@@ -583,13 +591,39 @@
     }
   });
 
-  // Điện thoại: nút "Liên hệ" gộp — bấm để xòe/thu 3 kênh, bấm ra ngoài thì thu lại
-  const fc = $('.float-contact');
-  const fcBtn = fc && $('[data-fc-toggle]', fc);
-  if (fcBtn) {
-    const setFc = (open) => { fc.classList.toggle('open', open); fcBtn.setAttribute('aria-expanded', String(open)); };
-    fcBtn.addEventListener('click', () => setFc(!fc.classList.contains('open')));
-    document.addEventListener('click', (e) => { if (!fc.contains(e.target)) setFc(false); });
+  // Điện thoại: nút "Hỗ trợ" gộp — bấm mở AI tư vấn / Zalo / Gọi; bấm ra ngoài hoặc Esc thì đóng
+  const sup = $('[data-support]');
+  if (sup) {
+    const toggle = $('[data-support-toggle]', sup);
+    const menu = $('[data-support-menu]', sup);
+    const setSup = (open) => { menu.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); };
+    toggle.addEventListener('click', () => setSup(menu.hidden));
+    document.addEventListener('click', (e) => { if (!sup.contains(e.target)) setSup(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setSup(false); });
+    $('[data-support-ai]', sup)?.addEventListener('click', () => { setSup(false); $('.ai-fab')?.click(); }); // dùng đúng chatbot AI hiện có
+  }
+
+  // Điện thoại: bàn phím mở thì ẩn các thanh / nút cố định để không che ô đang nhập
+  const kbTyping = 'input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]), select, textarea';
+  const mobileMq = matchMedia('(max-width: 959px)');
+  document.addEventListener('focusin', (e) => { if (mobileMq.matches && e.target.matches?.(kbTyping)) document.body.classList.add('kb-open'); });
+  document.addEventListener('focusout', () => setTimeout(() => {
+    if (!document.activeElement || !document.activeElement.matches?.(kbTyping)) document.body.classList.remove('kb-open');
+  }, 150));
+
+  // Giỏ hàng: thanh tổng tiền + nút đặt hàng cố định (điện thoại); ô mã giảm giá thu gọn, máy tính luôn mở
+  const cartBar = $('[data-cart-bar]');
+  if (cartBar) {
+    const syncCartBar = () => document.body.classList.toggle('has-cart-bar', mobileMq.matches);
+    mobileMq.addEventListener?.('change', syncCartBar);
+    syncCartBar();
+  }
+  const couponFold = $('[data-coupon-fold]');
+  if (couponFold) {
+    const wideMq = matchMedia('(min-width: 960px)');
+    const openWide = () => { if (wideMq.matches) couponFold.open = true; };
+    wideMq.addEventListener?.('change', openWide);
+    openWide();
   }
 
   // Form báo giá doanh nghiệp: chặn bấm gửi nhiều lần; ô lỗi nằm trong mục thu gọn thì tự mở ra

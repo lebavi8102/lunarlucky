@@ -560,7 +560,6 @@ ul, ol { margin: 0; padding: 0; }
   transition: transform 200ms var(--ease), background-color 200ms;
 }
 .float-contact a:hover { transform: translateY(-2px); background: var(--lacquer-700); color: #fff; }
-.fc-toggle { display: none; }
 .float-contact .zalo { font-weight: 700; font-size: 13px; letter-spacing: 0.02em; }
 
 /* ---------- Page header & breadcrumb ---------- */
@@ -757,6 +756,8 @@ ul, ol { margin: 0; padding: 0; }
 /* Điện thoại, trang sản phẩm: nút nổi mờ đi khi đang đè lên ảnh (lớp do main.js bật/tắt) */
 @media (max-width: 959px) {
   .float-contact, .ai-fab { transition: opacity 180ms var(--ease), visibility 0s linear 0s; }
+  .support-fab { transition: opacity 180ms var(--ease), visibility 0s linear 0s; }
+  body.fab-over-media .support-fab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms var(--ease), visibility 0s linear 180ms; }
   body.fab-over-media .float-contact, body.fab-over-media .ai-fab { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms var(--ease), visibility 0s linear 180ms; }
 }
 @media (max-width: 959px) {
@@ -767,6 +768,7 @@ ul, ol { margin: 0; padding: 0; }
   .buy-bar-info b { color: var(--lacquer-700); }
   .buy-bar .btn { flex: none; }
   body.has-buy-bar .float-contact { bottom: 88px; }
+  body.has-buy-bar { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   body.has-buy-bar .toast { bottom: 88px; }
 }
 /* Form báo giá: chừa lề cho cụm nút liên hệ nổi, không che form */
@@ -803,6 +805,54 @@ ul, ol { margin: 0; padding: 0; }
 .milestone-notes p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-700); }
 @media (max-width: 959px) { .milestones { grid-template-columns: repeat(2, 1fr); } .milestone-notes { grid-template-columns: 1fr; } }
 @media (max-width: 559px) { .milestones { grid-template-columns: 1fr; } }
+/* ---- Điện thoại: nút "Hỗ trợ" gộp, đầu trang sản phẩm gọn, bộ lọc gọn, thanh giỏ hàng ---- */
+.support-fab { display: none; }
+.cart-bar { display: none; }
+.filter-row { display: none; }
+.coupon-fold > summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 14px; min-height: 44px; display: flex; align-items: center; list-style: none; }
+.coupon-fold > summary::-webkit-details-marker { display: none; }
+@media (min-width: 960px) { .coupon-fold > summary { display: none; } }
+.pdp-crumbs { padding-top: 24px; }
+@media (max-width: 767px) {
+  .support-fab { display: block; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; }
+  .support-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--lacquer-700); color: #fff; font: inherit; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); cursor: pointer; }
+  .support-menu { position: absolute; right: 0; bottom: calc(100% + 10px); display: grid; gap: 6px; min-width: 300px; max-width: calc(100vw - 32px); padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 36px rgb(40 10 14 / 0.2); }
+  .support-menu[hidden] { display: none; }
+  .support-item { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-900); font: inherit; font-size: 15px; font-weight: 600; text-align: left; line-height: 1.3; padding-block: 8px; cursor: pointer; }
+  .support-item:hover, .support-item:active { background: var(--cream-100); }
+  .support-item .icon { color: var(--lacquer-700); flex: none; }
+  body.has-buy-bar .support-fab, body.has-cart-bar .support-fab { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  body.ai-open .support-fab, body.kb-open .support-fab { display: none; }
+  body.kb-open .buy-bar, body.kb-open .cart-bar { display: none; }
+
+  /* Trang sản phẩm: tên + giá lên sớm, ảnh giữ nguyên tỉ lệ 4:5 và hiện trọn giỏ */
+  .pdp-crumbs { padding-top: 8px; }
+  .pdp { gap: 16px; padding-block: 8px var(--space-6); }
+  .gallery-main { width: min(100%, calc(min(112vw, 47vh) * 0.8)); width: min(100%, calc(min(112vw, 47svh) * 0.8)); margin-inline: auto; }
+  .thumbs { justify-content: center; }
+  .pdp-info h1 { margin-top: 6px; }
+  .pdp-info .price { margin-top: 8px; }
+
+  /* Bộ sưu tập: danh mục là hàng chip cuộn ngang, giá + sắp xếp gọn một hàng, sản phẩm lên sớm */
+  .collection-head { padding-block: 14px 4px; border-bottom: 0; }
+  .collection-head h1 { font-size: 32px; margin-top: 6px; }
+  .collection-head .lead { display: none; }
+  .collection-section { padding-block: 8px 32px; }
+  .cat-scroll { margin-bottom: 10px !important; scrollbar-width: none; }
+  .cat-scroll::-webkit-scrollbar { display: none; }
+  .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .filter-row .select { min-height: 44px; font-size: 15px; padding-block: 8px; }
+  .collection-section .toolbar { display: none; }
+  .collection-count { margin-bottom: 12px !important; }
+}
+@media (max-width: 959px) {
+  /* Giỏ hàng: thanh cố định tổng tiền + nút; chỉ một nút đặt hàng */
+  .cart-submit { display: none; }
+  .cart-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.08); }
+  .cart-bar .cb-total { display: grid; line-height: 1.15; }
+  .cart-bar .cb-total b { color: var(--lacquer-700); font-size: 20px; font-variant-numeric: tabular-nums; }
+  body.has-cart-bar { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
 /* Thanh toán gọn: ô cọc COD, nút Đặt hàng cuối phần thanh toán, thanh cố định trên điện thoại */
 .cod-box { margin-top: 12px; padding: 12px 16px; background: var(--cream-100); border: 1px solid var(--line); border-radius: var(--radius); }
 .cod-box .sum-row { padding-block: 4px; }
@@ -813,7 +863,7 @@ ul, ol { margin: 0; padding: 0; }
 @media (max-width: 959px) {
   .summary-submit, .summary-terms { display: none; }
   /* Trang thanh toán (điện thoại): bỏ hai nút nổi, đã có link "Cần hỗ trợ?" trong trang */
-  body.has-checkout-bar .float-contact, body.has-checkout-bar .ai-fab { display: none !important; }
+  body.has-checkout-bar .float-contact, body.has-checkout-bar .ai-fab, body.has-checkout-bar .support-fab { display: none !important; }
   body.has-checkout-bar .toast { bottom: calc(var(--checkout-bar-h, 96px) + 12px); }
   body.has-checkout-bar.kb-open .checkout-bar { display: none; }
   .checkout-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 8px 16px calc(6px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.08); }
@@ -978,16 +1028,10 @@ ul, ol { margin: 0; padding: 0; }
   .header-actions { gap: 0; }
   .hide-sm { display: none !important; }
   /* Điện thoại: hiện đủ 3 nút liên hệ (Zalo, Fanpage/Messenger, Gọi hotline), gọn 44px để ít che ảnh */
+  .float-contact, .ai-fab { display: none !important; } /* thay bằng nút "Hỗ trợ" */
   .float-contact { right: 12px; bottom: 12px; gap: 8px; }
   .float-contact a { width: 44px; height: 44px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
   .float-contact .zalo { font-size: 12px; }
-  /* Điện thoại: gộp 3 nút thành một nút "Liên hệ", bấm mới xòe ra Zalo / Messenger / Gọi */
-  .float-contact { justify-items: end; }
-  .float-contact a { display: none; }
-  .float-contact.open a { display: grid; }
-  .fc-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--lacquer-700); color: #fff; font: inherit; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); cursor: pointer; order: 9; }
-  .fc-toggle .fc-ic-close, .float-contact.open .fc-toggle .fc-ic-open { display: none; }
-  .float-contact.open .fc-toggle .fc-ic-close { display: inline-block; }
   .hero-float { left: 8px; bottom: 16px; }
   .hero-seal { width: 64px; height: 64px; font-size: 8.5px; right: 4px; }
   /* Màn hình đầu trên điện thoại: chữ ngắn gọn, ảnh nhỏ lại để khách thấy giỏ quà sớm */

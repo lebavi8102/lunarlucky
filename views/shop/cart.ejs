@@ -68,13 +68,16 @@
           <span class="disc">−<%= money(cart.discount) %></span>
         </div>
       <% } else { %>
-        <form class="coupon-form" action="/gio-hang/ma-giam-gia" method="post">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label class="sr-only" for="coupon">Mã giảm giá</label>
-          <input class="input" id="coupon" name="code" placeholder="Mã giảm giá" autocomplete="off" maxlength="40">
-          <button class="btn btn-sm btn-ghost" type="submit">Áp dụng</button>
-        </form>
-        <% if (cart.couponError) { %><p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= cart.couponError %></p><% } %>
+        <details class="coupon-fold" data-coupon-fold <%= cart.couponError ? 'open' : '' %>>
+          <summary>Có mã giảm giá?</summary>
+          <form class="coupon-form" action="/gio-hang/ma-giam-gia" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label class="sr-only" for="coupon">Mã giảm giá</label>
+            <input class="input" id="coupon" name="code" placeholder="Mã giảm giá" autocomplete="off" maxlength="40">
+            <button class="btn btn-sm btn-ghost" type="submit">Áp dụng</button>
+          </form>
+          <% if (cart.couponError) { %><p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg><%= cart.couponError %></p><% } %>
+        </details>
       <% } %>
 
       <div class="sum-row"><span>Phí giao hàng</span><span><%= cart.shippingFee ? money(cart.shippingFee) : 'Miễn phí' %></span></div>
@@ -87,10 +90,15 @@
       </div>
       <% } %>
 
-      <a class="btn btn-lg btn-block" href="/thanh-toan" style="margin-top:20px">Tiến hành đặt hàng <svg class="icon"><use href="#i-arrow"/></svg></a>
+      <a class="btn btn-lg btn-block cart-submit" href="/thanh-toan" style="margin-top:20px">Tiến hành đặt hàng <svg class="icon"><use href="#i-arrow"/></svg></a>
       <p class="secure-note"><svg class="icon icon-sm"><use href="#i-shield"/></svg> Thanh toán COD hoặc chuyển khoản VietQR</p>
       <div style="margin-top:16px"><%- include('../partials/callback', { source: 'gio-hang', title: 'Muốn đặt nhanh qua điện thoại?' }) %></div>
     </aside>
+  </div>
+  <%# Điện thoại: thanh cố định tổng tiền + nút đặt hàng (chỉ có khi giỏ có hàng) %>
+  <div class="cart-bar no-print" data-cart-bar>
+    <div class="cb-total"><span class="small">Tổng cộng</span><b><%= money(cart.total) %></b></div>
+    <a class="btn" href="/thanh-toan">Tiến hành đặt hàng</a>
   </div>
   <% } %>
 </div>
