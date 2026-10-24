@@ -560,6 +560,7 @@ ul, ol { margin: 0; padding: 0; }
   transition: transform 200ms var(--ease), background-color 200ms;
 }
 .float-contact a:hover { transform: translateY(-2px); background: var(--lacquer-700); color: #fff; }
+.fc-toggle { display: none; }
 .float-contact .zalo { font-weight: 700; font-size: 13px; letter-spacing: 0.02em; }
 
 /* ---------- Page header & breadcrumb ---------- */
@@ -882,6 +883,13 @@ ul, ol { margin: 0; padding: 0; }
   .float-contact { right: 12px; bottom: 12px; gap: 8px; }
   .float-contact a { width: 44px; height: 44px; background: var(--lacquer-700); color: #fff; border-color: var(--lacquer-700); }
   .float-contact .zalo { font-size: 12px; }
+  /* Điện thoại: gộp 3 nút thành một nút "Liên hệ", bấm mới xòe ra Zalo / Messenger / Gọi */
+  .float-contact { justify-items: end; }
+  .float-contact a { display: none; }
+  .float-contact.open a { display: grid; }
+  .fc-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--lacquer-700); color: #fff; font: inherit; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); cursor: pointer; order: 9; }
+  .fc-toggle .fc-ic-close, .float-contact.open .fc-toggle .fc-ic-open { display: none; }
+  .float-contact.open .fc-toggle .fc-ic-close { display: inline-block; }
   .hero-float { left: 8px; bottom: 16px; }
   .hero-seal { width: 64px; height: 64px; font-size: 8.5px; right: 4px; }
   /* Màn hình đầu trên điện thoại: chữ ngắn gọn, ảnh nhỏ lại để khách thấy giỏ quà sớm */

@@ -485,4 +485,13 @@
       showToast('Không sao chép được, vui lòng chép thủ công.');
     }
   });
+
+  // Điện thoại: nút "Liên hệ" gộp — bấm để xòe/thu 3 kênh, bấm ra ngoài thì thu lại
+  const fc = $('.float-contact');
+  const fcBtn = fc && $('[data-fc-toggle]', fc);
+  if (fcBtn) {
+    const setFc = (open) => { fc.classList.toggle('open', open); fcBtn.setAttribute('aria-expanded', String(open)); };
+    fcBtn.addEventListener('click', () => setFc(!fc.classList.contains('open')));
+    document.addEventListener('click', (e) => { if (!fc.contains(e.target)) setFc(false); });
+  }
 })();

@@ -45,6 +45,7 @@
 </footer>
 
 <div class="float-contact no-print" aria-label="Liên hệ nhanh">
+  <button type="button" class="fc-toggle" data-fc-toggle aria-expanded="false" aria-label="Liên hệ"><svg class="icon fc-ic-open"><use href="#i-chat"/></svg><svg class="icon fc-ic-close"><use href="#i-x"/></svg><span>Liên hệ</span></button>
   <a href="<%= s.zalo_url %>" class="zalo" target="_blank" rel="noopener" aria-label="Nhắn Zalo">Zalo</a>
   <a href="<%= s.messenger_url %>" target="_blank" rel="noopener" aria-label="Nhắn Messenger"><svg class="icon"><use href="#i-chat"/></svg></a>
   <a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>" aria-label="Gọi hotline <%= s.shop_phone %>"><svg class="icon"><use href="#i-phone"/></svg></a>

@@ -77,9 +77,9 @@ const DEFAULTS = {
   // Ngày giao cuối cùng trước Tết (YYYY-MM-DD) + cách gọi theo âm lịch; để trống thì không hiện
   order_deadline: '2027-02-05',
   order_deadline_label: '29 tháng Chạp',
-  // Nghỉ Tết: không nhận giao trong khoảng này (YYYY-MM-DD)
-  tet_closed_from: '2027-02-06',
-  tet_closed_to: '2027-02-10',
+  // Nghỉ Tết: không nhận giao trong khoảng này (YYYY-MM-DD); để trống = không nghỉ (chủ shop tắt 24/10/2026)
+  tet_closed_from: '',
+  tet_closed_to: '',
   telegram_admin_only: '1',
   ops_digest: '1',
   // AI tư vấn bán hàng (cần ANTHROPIC_API_KEY trên Render)
