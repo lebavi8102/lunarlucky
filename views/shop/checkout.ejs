@@ -3,6 +3,7 @@
   <div class="container">
     <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/gio-hang">Giỏ hàng</a></li><li aria-current="page">Thanh toán</li></ol>
     <h1>Hoàn tất đơn quà</h1>
+    <p class="checkout-help"><a href="<%= s.zalo_url %>" target="_blank" rel="noopener">Cần hỗ trợ? Liên hệ Lunar Lucky</a></p>
   </div>
 </section>
 
@@ -45,7 +46,10 @@
         <%- include('../partials/field', { name: 'customer_name', label: 'Họ và tên', required: true, autocomplete: 'name', maxlength: 120 }) %>
         <div class="grid-2" style="margin-top:16px">
           <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại', type: 'tel', required: true, autocomplete: 'tel', inputmode: 'tel', placeholder: '0912 345 678' }) %>
-          <%- include('../partials/field', { name: 'email', label: 'Email', type: 'email', optional: true, autocomplete: 'email', help: 'Để nhận xác nhận đơn hàng.' }) %>
+          <details class="email-more" data-email-more <%= (values.email || errors.email) ? 'open' : '' %>>
+            <summary>Thêm email nhận xác nhận</summary>
+            <div class="email-more-body"><%- include('../partials/field', { name: 'email', label: 'Email', type: 'email', optional: true, autocomplete: 'email', help: 'Để nhận xác nhận đơn hàng.' }) %></div>
+          </details>
         </div>
         <p class="small muted remember-note" data-remember-note hidden>✓ Đã điền sẵn thông tin lần trước. <button type="button" class="link-btn" data-remember-clear>Xóa</button></p>
       </fieldset>
@@ -54,7 +58,7 @@
         <legend><span class="num">2</span> Giao hàng</legend>
         <label class="check" style="margin-bottom:16px;padding:14px 16px;background:var(--cream-100);border-radius:12px">
           <input type="checkbox" name="is_gift" value="1" <%= values.is_gift ? 'checked' : '' %> data-gift-toggle>
-          <span><b>Gửi tặng trực tiếp cho người khác</b><br><span class="small muted">Lunar Lucky giao đến người nhận, không kèm hóa đơn giá tiền. Người đặt thanh toán trước bằng chuyển khoản, người nhận không phải trả tiền.</span></span>
+          <span><b>Gửi trực tiếp cho người nhận quà</b><br><span class="small muted">Không kèm giá tiền. Người đặt thanh toán trước, người nhận không phải trả tiền.</span></span>
         </label>
 
         <%- include('../partials/field', { name: 'province', label: 'Giao đến Tỉnh / Thành phố', as: 'select', required: true, options: provinces }) %>
@@ -192,7 +196,7 @@
         <div class="cb-total"><span class="small">Tổng cộng</span><b data-bar-total></b></div>
         <button class="btn" type="submit" data-submit>Đặt hàng</button>
       </div>
-      <p class="cb-terms">Đặt hàng là bạn đồng ý với <a href="/dieu-khoan">điều khoản</a> và <a href="/chinh-sach-bao-mat">chính sách bảo mật</a>.</p>
+      <p class="cb-terms">Đặt hàng là đồng ý với <a href="/dieu-khoan">điều khoản</a> và <a href="/chinh-sach-bao-mat">chính sách bảo mật</a>.</p>
     </div>
   </form>
   <div style="max-width:720px;margin:24px 0 0">

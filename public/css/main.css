@@ -812,17 +812,35 @@ ul, ol { margin: 0; padding: 0; }
 .checkout-bar { display: none; }
 @media (max-width: 959px) {
   .summary-submit, .summary-terms { display: none; }
-  body.has-checkout-bar .float-contact, body.has-checkout-bar .ai-fab, body.has-checkout-bar .toast { bottom: 112px; }
-  .checkout-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 16px calc(8px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.08); }
+  /* Trang thanh toán (điện thoại): bỏ hai nút nổi, đã có link "Cần hỗ trợ?" trong trang */
+  body.has-checkout-bar .float-contact, body.has-checkout-bar .ai-fab { display: none !important; }
+  body.has-checkout-bar .toast { bottom: calc(var(--checkout-bar-h, 96px) + 12px); }
+  body.has-checkout-bar.kb-open .checkout-bar { display: none; }
+  .checkout-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 8px 16px calc(6px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgb(0 0 0 / 0.08); }
   .checkout-bar .cb-main { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
-  .checkout-bar .cb-terms { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--ink-700); }
-  .checkout-bar .cb-terms a { text-decoration: underline; }
-  .checkout-bar .cb-total { display: grid; }
+  .checkout-bar .cb-terms { margin: 0; font-size: 12px; line-height: 1.3; color: var(--ink-700); }
+  .checkout-bar .cb-terms a { text-decoration: underline; display: inline-block; padding: 3px 1px; }
+  .checkout-bar .cb-total { display: grid; line-height: 1.15; }
   .checkout-bar .cb-total b { color: var(--lacquer-700); font-size: 20px; font-variant-numeric: tabular-nums; }
-  [data-checkout].cart-layout { padding-bottom: calc(var(--space-9) + 96px); }
+  [data-checkout].cart-layout { padding-bottom: calc(var(--checkout-bar-h, 96px) + 16px); }
 }
-/* Điện thoại: chữ phụ và điều kiện thanh toán rõ hơn (đậm màu, 14px) */
+/* Điện thoại: chữ phụ và điều kiện thanh toán rõ hơn (đậm màu, 14px); khoảng cách giữa các mục gọn lại ~28% */
+.checkout-help { margin-top: 6px; font-size: 14px; }
+.checkout-help a { color: var(--primary); text-decoration: underline; display: inline-block; padding: 6px 0; }
+@media (min-width: 960px) { .checkout-help { display: none; } }
+.email-more > summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 14px; min-height: 44px; display: flex; align-items: center; list-style: none; }
+.email-more > summary::-webkit-details-marker { display: none; }
+@media (min-width: 640px) { .email-more > summary { display: none; } }
+.email-more-body { margin-top: 4px; }
 @media (max-width: 767px) {
+  [data-checkout].cart-layout { gap: 34px; padding-top: 24px; }
+  [data-checkout] .fieldset + .fieldset { margin-top: 34px; }
+  [data-checkout] .fieldset legend { margin-bottom: 17px; }
+  [data-checkout] .grid-2 { gap: 12px; }
+  [data-checkout] [style*="margin-top:16px"] { margin-top: 12px !important; }
+  [data-checkout] [style*="margin-top:20px"] { margin-top: 14px !important; }
+  [data-checkout] .input, [data-checkout] .select, [data-checkout] .textarea { min-height: 48px; font-size: 16px; }
+  [data-checkout] :is(input, select, textarea) { scroll-margin-block: 90px calc(var(--checkout-bar-h, 96px) + 24px); }
   [data-checkout] .muted, [data-checkout] .small, [data-checkout] .help, [data-checkout] .tiny, [data-checkout] .radio-card span { color: var(--ink-700); }
   [data-checkout] .small, [data-checkout] .help, [data-checkout] .radio-card span { font-size: 14px; }
   [data-checkout] .tiny { font-size: 13px; }

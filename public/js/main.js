@@ -440,12 +440,30 @@
   if (checkout) {
     // Ba nút "Đặt hàng" (cuối phần thanh toán, khung Đơn hàng, thanh cố định trên điện thoại) dùng chung một luồng:
     // kiểm tra ô bắt buộc đang hiện, rồi khóa tất cả nút để không tạo đơn trùng
+    const labelOf = (el) => {
+      const l = el.id && $(`label[for="${el.id}"]`, checkout);
+      return l ? (l.firstChild ? l.firstChild.textContent : l.textContent).replace(/\s*\*\s*$/, '').trim().toLowerCase() : 'thông tin này';
+    };
+    const flagField = (el) => {
+      const wrap = el.closest('.field');
+      if (!wrap) return;
+      wrap.classList.add('has-error');
+      el.setAttribute('aria-invalid', 'true');
+      let p = $('[data-client-err]', wrap);
+      if (!p) { p = document.createElement('p'); p.className = 'err'; p.dataset.clientErr = '1'; wrap.appendChild(p); }
+      p.textContent = el.validity.valueMissing
+        ? (el.tagName === 'SELECT' ? 'Vui lòng chọn ' : 'Vui lòng nhập ') + labelOf(el) + '.'
+        : el.validity.rangeUnderflow && el.min ? `Vui lòng chọn ngày từ ${el.min.split('-').reverse().join('/')} trở đi.` : el.validationMessage || 'Thông tin chưa hợp lệ.';
+      el.addEventListener('input', () => { wrap.classList.remove('has-error'); el.removeAttribute('aria-invalid'); p.remove(); }, { once: true });
+    };
     checkout.addEventListener('submit', (e) => {
       if (checkout.dataset.sending) return e.preventDefault();
-      const bad = $$('input[required], select[required], textarea[required]', checkout).find((el) => !el.closest('[hidden]') && !el.checkValidity());
-      if (bad) {
+      const bads = $$('input[required], select[required], textarea[required]', checkout).filter((el) => !el.closest('[hidden]') && !el.checkValidity());
+      if (bads.length) {
         e.preventDefault();
-        bad.reportValidity?.();
+        bads.forEach(flagField);
+        bads[0].scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); // cuộn tới ô lỗi đầu tiên, nằm giữa màn hình (không bị thanh dưới / bàn phím che)
+        bads[0].focus({ preventScroll: true });
         return;
       }
       checkout.dataset.sending = '1';
@@ -461,9 +479,38 @@
     const syncBarClass = () => document.body.classList.toggle('has-checkout-bar', mq.matches);
     mq.addEventListener?.('change', syncBarClass);
     syncBarClass();
+    // Email: thu gọn trên điện thoại, từ 640px trở lên luôn mở (giữ nguyên giao diện máy tính)
+    const emailMore = $('[data-email-more]', checkout);
+    if (emailMore) {
+      const wide = matchMedia('(min-width: 640px)');
+      const openWide = () => { if (wide.matches) emailMore.open = true; };
+      wide.addEventListener?.('change', openWide);
+      openWide();
+    }
+    // Chiều cao thanh dưới → chừa đúng khoảng trống cuối trang
+    const bar = $('[data-checkout-bar]', checkout);
+    if (bar) {
+      const setH = () => document.documentElement.style.setProperty('--checkout-bar-h', `${bar.offsetHeight || 0}px`);
+      setH();
+      if ('ResizeObserver' in window) new ResizeObserver(setH).observe(bar);
+      addEventListener('resize', setH);
+    }
+    // Bàn phím mở: đưa ô đang nhập vào giữa màn hình và ẩn thanh dưới để không che
+    const typing = 'input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea';
+    checkout.addEventListener('focusin', (e) => {
+      if (!e.target.matches(typing) || !mq.matches) return;
+      document.body.classList.add('kb-open');
+      setTimeout(() => { if (document.activeElement === e.target) e.target.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); }, 320);
+    });
+    checkout.addEventListener('focusout', () => setTimeout(() => {
+      if (!document.activeElement || !document.activeElement.matches(typing)) document.body.classList.remove('kb-open');
+    }, 150));
     window.__syncDeposit?.();
   }
   $('[data-focus-on-load]')?.focus();
+  // Máy chủ báo lỗi: cuộn tới ô lỗi đầu tiên (giữa màn hình) thay vì bắt khách tự tìm
+  const firstServerErr = $('[data-checkout] .field.has-error :is(input, select, textarea)');
+  if (firstServerErr) setTimeout(() => { firstServerErr.scrollIntoView({ block: 'center' }); firstServerErr.focus({ preventScroll: true }); }, 150);
 
   /* Trang đơn: tự kiểm tra đã nhận chuyển khoản chưa (SePay báo về) → tải lại để hiện "Đã thanh toán" */
   const poll = $('[data-pay-poll]');
