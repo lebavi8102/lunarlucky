@@ -13,16 +13,16 @@
     </div>
   </div>
 </section>
-<section class="section" id="bao-gia" style="background:var(--cream-100)">
+<section class="section quote-section" id="bao-gia" style="background:var(--cream-50)">
   <div class="container split" style="align-items:start">
     <div>
       <span class="eyebrow">Yêu cầu báo giá</span>
-      <h2 class="h2" style="margin-top:16px">Kể cho Lunar Lucky <em>về món quà</em> bạn hình dung</h2>
-      <p class="lead" style="margin-top:20px">Càng nhiều thông tin, báo giá càng sát nhu cầu. Lunar Lucky phản hồi trong vòng 24 giờ làm việc.</p>
+      <h2 class="h2" style="margin-top:16px">Nhận báo giá <em>quà Tết doanh nghiệp</em></h2>
+      <p class="lead" style="margin-top:20px">Chia sẻ số lượng và ngân sách dự kiến, Lunar Lucky sẽ tư vấn mẫu quà phù hợp và phản hồi trong vòng 24 giờ làm việc.</p>
       <ul class="feature-list" style="margin-top:32px">
-        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>In logo thương hiệu</strong><span>Logo doanh nghiệp trên hộp và nơ lụa</span></div></li>
-        <li><span class="feature-ico"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Hóa đơn VAT đầy đủ</strong><span>Hợp đồng, biên bản giao nhận theo yêu cầu</span></div></li>
-        <li><span class="feature-ico"><svg class="icon"><use href="#i-truck"/></svg></span><div><strong>Giao đến từng đối tác</strong><span>Theo danh sách Excel, toàn quốc</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>Tùy chỉnh logo</strong><span>Tư vấn vị trí in logo theo mẫu quà và số lượng.</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Hóa đơn &amp; chứng từ</strong><span>Hỗ trợ hóa đơn VAT, hợp đồng và biên bản giao nhận theo yêu cầu.</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-truck"/></svg></span><div><strong>Giao nhiều địa chỉ</strong><span>Sắp xếp giao quà theo danh sách người nhận.</span></div></li>
       </ul>
     </div>
     <div class="card">
@@ -35,38 +35,67 @@
           <div class="hero-cta" style="justify-content:center;margin-top:16px"><a class="btn" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Gửi qua Zalo</a><a class="btn btn-quiet" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>">Cần gấp? Gọi <%= s.shop_phone %></a></div>
         </div>
       <% } else { %>
-      <form action="/qua-tang-doanh-nghiep#bao-gia" method="post" novalidate>
+      <% const moreOpen = !!(errors.email || errors.delivery_date || errors.message || values.email || values.delivery_date || values.logo_print || values.message); %>
+      <form action="/qua-tang-doanh-nghiep#bao-gia" method="post" data-quote-form>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
-        <%- include('../partials/field', { name: 'company', label: 'Tên doanh nghiệp', required: true, autocomplete: 'organization' }) %>
-        <div class="grid-2" style="margin-top:16px">
+        <p class="small muted" style="margin:0 0 16px">Chỉ các mục có dấu <span style="color:#c62828;font-weight:700">*</span> là bắt buộc.</p>
+        <div class="grid-2">
           <%- include('../partials/field', { name: 'contact_name', label: 'Người liên hệ', required: true, autocomplete: 'name' }) %>
           <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại', type: 'tel', required: true, autocomplete: 'tel', inputmode: 'tel' }) %>
         </div>
-        <div style="margin-top:16px"><%- include('../partials/field', { name: 'email', label: 'Email công việc', type: 'email', optional: true, autocomplete: 'email' }) %></div>
-        <div class="grid-2" style="margin-top:16px">
-          <%- include('../partials/field', { name: 'quantity', label: 'Số lượng giỏ', type: 'number', required: true, min: 5, inputmode: 'numeric', placeholder: 'VD: 50' }) %>
+        <div class="grid-2" style="margin-top:16px;align-items:end">
+          <%- include('../partials/field', { name: 'quantity', label: 'Số lượng dự kiến', type: 'number', min: 5, inputmode: 'numeric', placeholder: 'VD: 50' }) %>
           <%- include('../partials/field', { name: 'budget', label: 'Ngân sách mỗi giỏ', as: 'select', options: budgets }) %>
         </div>
-        <div style="margin-top:16px"><%- include('../partials/field', { name: 'delivery_date', label: 'Ngày cần giao', type: 'date', optional: true }) %></div>
-        <label class="check"><input type="checkbox" name="logo_print" value="1" <%= values.logo_print ? 'checked' : '' %>> Tôi muốn in logo doanh nghiệp</label>
-        <div style="margin-top:12px"><%- include('../partials/field', { name: 'message', label: 'Mô tả thêm', as: 'textarea', optional: true, maxlength: 2000, placeholder: 'Đối tượng nhận quà, phong cách mong muốn, yêu cầu đặc biệt…' }) %></div>
-        <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px">Gửi yêu cầu báo giá</button>
+        <div style="margin-top:16px"><%- include('../partials/field', { name: 'company', label: 'Tên doanh nghiệp', optional: true, autocomplete: 'organization' }) %></div>
+        <details class="more-note quote-more" <%= moreOpen ? 'open' : '' %> style="margin-top:20px">
+          <summary>Bổ sung yêu cầu chi tiết</summary>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'email', label: 'Email công việc', type: 'email', optional: true, autocomplete: 'email' }) %></div>
+          <div style="margin-top:16px"><%- include('../partials/field', { name: 'delivery_date', label: 'Ngày cần giao', type: 'date', optional: true }) %></div>
+          <label class="check"><input type="checkbox" name="logo_print" value="1" <%= values.logo_print ? 'checked' : '' %>> Tôi muốn in logo doanh nghiệp</label>
+          <div style="margin-top:12px"><%- include('../partials/field', { name: 'message', label: 'Mô tả thêm', as: 'textarea', optional: true, maxlength: 2000, placeholder: 'Đối tượng nhận quà, phong cách mong muốn, yêu cầu đặc biệt…' }) %></div>
+        </details>
+        <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px" data-quote-submit>Gửi yêu cầu báo giá</button>
+        <p class="small muted" style="margin-top:12px;text-align:center">Gửi yêu cầu không đồng nghĩa với đặt hàng hoặc thanh toán.</p>
+        <p class="small" style="margin-top:6px;text-align:center"><a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;text-decoration:underline">Cần trao đổi ngay? Tư vấn qua Zalo</a></p>
       </form>
       <% } %>
     </div>
   </div>
 </section>
 
-<section class="lacquer b2b-hero">
-  <div class="b2b-bg" aria-hidden="true"><img src="/img/b2b-xuong-1600.webp" alt="" width="1600" height="900" loading="lazy"></div>
+<section class="section milestones-section">
+  <div class="ms-bg" aria-hidden="true"><img src="/img/b2b-so-luong-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async"></div>
   <div class="container">
-    <div class="section-head center"><span class="eyebrow center">Theo quy mô đơn hàng</span><h2 class="h2">Từ 5 đến <em>hơn 500 giỏ</em></h2></div>
-    <ul class="tiers">
-      <li><div class="qty-range">5 – 99 giỏ</div><p>Báo giá theo số lượng, in logo doanh nghiệp, giao theo danh sách.</p></li>
-      <li><div class="qty-range">100 – 499 giỏ</div><p>In logo lên hộp và nơ, ưu đãi theo số lượng, chuyên viên riêng.</p></li>
-      <li><div class="qty-range">Từ 500 giỏ</div><p>Thiết kế hộp riêng theo nhận diện thương hiệu, lịch giao linh hoạt.</p></li>
+    <div class="section-head center"><span class="eyebrow center">Theo từng mốc số lượng</span><h2 class="h2">Đặt quà <em>theo số lượng</em></h2><p class="lead" style="margin-top:12px">Tham khảo thời gian chuẩn bị và các lựa chọn tùy chỉnh cho doanh nghiệp.</p></div>
+    <% const tierAt = (n) => bulkTierList().filter((b) => b.tier.qty <= n).pop();
+       const stops = [
+         { n: 10, custom: 'In logo doanh nghiệp.' },
+         { n: 30, custom: 'In logo doanh nghiệp.' },
+         { n: 50, custom: 'In logo doanh nghiệp.' },
+         { n: 100, custom: 'In logo lên hộp và nơ; chuyên viên riêng phụ trách đơn.' },
+       ]; %>
+    <p class="milestone-common">Tư vấn theo ngân sách · Tùy chỉnh logo · Giao nhiều địa chỉ</p>
+    <p class="milestone-label">Các mốc số lượng tham khảo</p>
+    <ul class="milestones">
+      <% stops.forEach((m) => { const t = tierAt(m.n); %>
+      <li>
+        <div class="qty-range"><%= m.n %> giỏ</div>
+        <dl>
+          <dt>Thời gian chuẩn bị</dt><dd><%= t && t.tier.kind === 'review' ? 'Theo lịch thống nhất trong báo giá.' : (t ? 'Dự kiến ' + t.text.replace(/^cần\s+/, '').replace(/\s*chuẩn bị.*$/, '') : '') %></dd>
+          <dt>Tùy chỉnh</dt><dd><%= m.custom %></dd>
+        </dl>
+      </li>
+      <% }) %>
     </ul>
+    <p class="milestone-foot small muted">Thời gian dự kiến tính từ khi duyệt mẫu và hoàn tất đặt cọc; chưa gồm thời gian vận chuyển. Lịch cụ thể được xác nhận trong báo giá. Từ 500 giỏ có thể thiết kế hộp riêng theo nhận diện thương hiệu.</p>
+    <div class="milestone-notes">
+      <div><h3>Chi phí rõ ràng</h3><p>Báo giá tách rõ tiền quà, tùy chỉnh logo, vận chuyển và VAT nếu áp dụng. Hỗ trợ xuất hóa đơn theo thông tin doanh nghiệp cung cấp.</p></div>
+      <div><h3>Duyệt mẫu trước khi làm</h3><p>Thống nhất mẫu giỏ, thiết kế logo và báo giá trước khi triển khai.</p></div>
+      <div><h3>Đặt cọc &amp; thanh toán</h3><p>Mức cọc, thời điểm thanh toán phần còn lại và điều kiện áp dụng được ghi rõ trong báo giá.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:var(--space-6)"><a class="btn btn-lg" href="#bao-gia">Nhận báo giá theo số lượng</a></div>
   </div>
 </section>
 

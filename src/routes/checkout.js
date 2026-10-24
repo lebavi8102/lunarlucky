@@ -280,6 +280,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     user_id: req.session.user && !isStaff(req) ? req.session.user.id : null,
     // Kênh: nhân viên chọn khi đặt hộ; khách tự đặt → kênh khách đến (link ?nguon=, Facebook, Zalo…)
     source: isStaff(req) ? f.oneOf('order_source', Object.keys(SOURCES), 'phone') : req.session.aiPrefill ? (req.session.aiPrefill.source === 'ai_fb' ? 'ai_fb' : 'ai') : req.session.source || 'web',
+    cta: !isStaff(req) && !req.session.aiPrefill && ['buy_now', 'add_to_cart'].includes(req.session.cta) ? req.session.cta : null,
     messenger_psid: !isStaff(req) && req.session.aiPrefill && /^\d{5,40}$/.test(String(req.session.aiPrefill.psid || '')) ? String(req.session.aiPrefill.psid) : null,
     created_by: isStaff(req) ? req.session.user.name : null,
     customer_name, phone, email: email || null, address, province,

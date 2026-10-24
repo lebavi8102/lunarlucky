@@ -232,7 +232,7 @@ function quoteTelegram(q) {
   const e = escapeTg;
   return [
     `🏢 <b>YÊU CẦU BÁO GIÁ DOANH NGHIỆP</b>`,
-    `${e(q.company)}`,
+    e(q.company || 'Chưa nêu tên doanh nghiệp'),
     `👤 ${e(q.contact_name)} · ${e(q.phone)}${q.email ? ' · ' + e(q.email) : ''}`,
     q.quantity ? `Số lượng: ${q.quantity} giỏ` : null,
     q.budget ? `Ngân sách/giỏ: ${e(q.budget)}` : null,

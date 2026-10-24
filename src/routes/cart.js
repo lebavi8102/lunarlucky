@@ -28,6 +28,7 @@ router.post('/gio-hang/them', async (req, res) => {
     return res.redirect(product ? `/san-pham/${product.slug}` : '/bo-suu-tap');
   }
   const c = cart.getCart(req);
+  req.session.cta = req.body.buy_now ? 'buy_now' : 'add_to_cart'; // nút khách bấm → ghi vào đơn để đo đơn giao thành công
   cart.addProduct(c, product.id, req.body.qty);
   const line = c.lines.find((l) => l.type === 'product' && l.productId === product.id);
   if (line.qty > product.stock) line.qty = product.stock;

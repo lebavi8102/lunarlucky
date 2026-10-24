@@ -20,6 +20,9 @@
         <% }) %>
       </ul>
       <% } %>
+      <% if (product.video_url && /^(https?:)?\/\//.test(product.video_url)) { %>
+      <a class="btn btn-quiet btn-block gallery-video" href="<%= product.video_url %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-play"/></svg> Xem video giỏ thực tế</a>
+      <% } %>
     </div>
 
     <div class="pdp-info">
@@ -41,17 +44,23 @@
       <form action="/gio-hang/them" method="post" data-add-to-cart data-keep-on-page id="buy-form" data-track-id="<%= product.id %>" data-track-name="<%= product.name %>" data-track-price="<%= product.price %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="product_id" value="<%= product.id %>">
-        <div class="buy-row">
+        <div class="buy-qty">
+          <span class="buy-qty-label" id="qty-label">Số lượng</span>
           <div class="qty" data-qty>
             <button type="button" aria-label="Giảm số lượng" data-step="-1"><svg class="icon icon-sm"><use href="#i-minus"/></svg></button>
             <label class="sr-only" for="qty">Số lượng</label>
             <input id="qty" name="qty" type="number" inputmode="numeric" min="1" max="<%= Math.min(product.stock, 500) %>" value="1">
             <button type="button" aria-label="Tăng số lượng" data-step="1"><svg class="icon icon-sm"><use href="#i-plus"/></svg></button>
           </div>
-          <button class="btn btn-lg" type="submit"><svg class="icon"><use href="#i-bag"/></svg> Thêm vào giỏ</button>
-          <button class="btn btn-lg btn-ghost" type="submit" name="buy_now" value="1" data-no-ajax>Mua ngay</button>
+        </div>
+        <div class="buy-stack">
+          <button class="btn btn-lg btn-block" type="submit" name="buy_now" value="1" data-no-ajax>Mua ngay</button>
+          <button class="btn btn-lg btn-ghost btn-block" type="submit"><svg class="icon"><use href="#i-bag"/></svg> Thêm vào giỏ</button>
         </div>
       </form>
+      <% const askProduct = `Lunar Lucky ơi, mình đang xem giỏ ${product.name} (${money(product.price)}) và muốn hỏi thêm: ${siteUrl}/san-pham/${product.slug}`; %>
+      <a class="btn btn-quiet btn-block buy-ask" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="<%= askProduct %>"><svg class="icon"><use href="#i-chat"/></svg> Hỏi về giỏ này qua Zalo</a>
+      <p class="buy-ask-note small muted">Bấm nút, tên giỏ và đường dẫn được chép sẵn, bạn chỉ cần dán vào ô chat Zalo<% if (s.messenger_url) { %>. Dùng Facebook? <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent(askProduct) %>" target="_blank" rel="noopener">Nhắn Messenger</a><% } %>.</p>
       <div class="buy-bar" data-buy-bar aria-hidden="true">
         <div class="buy-bar-info"><span><%= product.name %></span><b><%= money(product.price) %></b></div>
         <button class="btn" type="submit" form="buy-form" name="buy_now" value="1" data-no-ajax tabindex="-1">Mua ngay</button>
@@ -80,8 +89,15 @@
         <li><svg class="icon"><use href="#i-truck"/></svg> Phí giao đồng giá <%= money(s.shipping_fee) %>, miễn phí cho đơn từ <%= money(s.free_ship_threshold) %> · kèm ảnh xác nhận khi quà tới tay</li>
         <li><svg class="icon"><use href="#i-shield"/></svg> Hư hỏng khi nhận: đổi mới trong 24 giờ</li>
         <li><svg class="icon"><use href="#i-gift"/></svg> Gửi tặng trực tiếp, không kèm hóa đơn giá tiền</li>
-        <li><svg class="icon"><use href="#i-chat"/></svg> <span>Cần tư vấn? <a href="<%= s.zalo_url %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600" data-ask="Lunar Lucky ơi, mình muốn hỏi về <%= product.name %> (<%= money(product.price) %>): <%= siteUrl %>/san-pham/<%= product.slug %>">Hỏi nhanh qua Zalo</a><% if (s.messenger_url) { %> · <a href="<%= s.messenger_url %>?text=<%= encodeURIComponent('Mình muốn hỏi về ' + product.name + ' ' + siteUrl + '/san-pham/' + product.slug) %>" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600">Messenger</a><% } %></span></li>
       </ul>
+      <div class="pdp-faq" aria-label="Đổi trả và hỗ trợ">
+        <h2>Đổi trả &amp; hỗ trợ</h2>
+        <details><summary>Trường hợp nào được đổi?</summary><p>Giỏ vỡ, móp, hư hỏng khi vận chuyển; giao sai mẫu hoặc thiếu món; sản phẩm hết hạn hoặc có dấu hiệu hư hỏng. Đổi ý khi giỏ còn nguyên vẹn, đúng mẫu thì không áp dụng đổi trả.</p></details>
+        <details><summary>Cần gửi ảnh và liên hệ trong bao lâu?</summary><p>Trong <b>24 giờ</b> kể từ khi nhận. Bạn nên quay video khi mở giỏ, rồi gửi mã đơn kèm ảnh/video qua Zalo, hotline <%= s.shop_phone %> hoặc email. Lunar Lucky phản hồi trong ngày.</p></details>
+        <details><summary>Ai chịu phí khi lỗi do shop hoặc vận chuyển?</summary><p>Lunar Lucky chịu. Bạn được đổi giỏ mới tương đương, giao bổ sung miễn phí, hoặc hoàn tiền phần món bị lỗi qua chuyển khoản trong 3 ngày làm việc.</p></details>
+        <details><summary>Giỏ giao trực tiếp cho người nhận quà thì sao?</summary><p>Người nhận cứ quay video khi mở giỏ và gửi ảnh/video cho bạn (hoặc nhắn thẳng Lunar Lucky). Bạn báo mã đơn trong 24 giờ kể từ lúc quà tới tay. Lunar Lucky xử lý với bạn, người nhận không phải trả khoản nào.</p></details>
+        <p class="small"><a href="/chinh-sach-doi-tra">Xem đầy đủ chính sách đổi trả</a></p>
+      </div>
     </div>
   </div>
 

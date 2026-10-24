@@ -73,6 +73,16 @@
     <p class="tiny muted" style="margin-top:8px">Không tính đơn hủy / chờ tiền. "Website" = khách tự vào web không rõ nguồn.</p>
   </section>
   <section class="panel">
+    <div class="panel-head"><h2>Nút "Mua ngay" và "Thêm vào giỏ" · 32 ngày</h2></div>
+    <% const ctaRows = [['buy_now', 'Mua ngay'], ['add_to_cart', 'Thêm vào giỏ']].filter(([k]) => byCta[k]); %>
+    <% if (!ctaRows.length) { %><p class="muted small">Chưa có đơn nào ghi nhận nút bấm (chỉ tính đơn khách tự đặt từ lúc bật tính năng).</p><% } else { %>
+    <table class="table"><thead><tr><th></th><th class="num">Đơn đã chốt</th><th class="num">Giao thành công</th><th class="num">Tỷ lệ</th></tr></thead><tbody>
+      <% ctaRows.forEach(([k, label]) => { const c = byCta[k]; %><tr><td><%= label %></td><td class="num"><%= c.n %></td><td class="num"><b><%= c.done %></b></td><td class="num"><%= Math.round((c.done / c.n) * 100) %>%</td></tr><% }) %>
+    </tbody></table>
+    <% } %>
+    <p class="tiny muted" style="margin-top:8px">Đơn đặt sau khi khách bấm nút nào gần nhất. "Giao thành công" = đơn đã hoàn tất; đơn mới đặt chưa kịp giao nên tỷ lệ tăng dần theo ngày.</p>
+  </section>
+  <section class="panel">
     <div class="panel-head"><h2>Link đặt hàng cho từng kênh</h2></div>
     <p class="small muted" style="margin-bottom:10px">Gắn link này vào bio Facebook / Instagram / Zalo OA / TikTok. Khách bấm vào rồi tự đặt → đơn ghi đúng kênh.</p>
     <table class="table"><tbody>

@@ -2,10 +2,10 @@
 <h1 style="font-family:'Times New Roman',Times,serif;font-weight:normal;font-size:24px;margin:0 0 12px">Đã nhận yêu cầu báo giá</h1>
 <p style="margin:0 0 16px;line-height:1.7;color:#4a3f38">
   Chào <%= q.contact_name %>,<br>
-  Lunar Lucky đã nhận yêu cầu quà Tết của <b><%= q.company %></b>. Chuyên viên sẽ liên hệ qua số <b><%= q.phone %></b> trong vòng 24 giờ làm việc để tư vấn mẫu và gửi báo giá chi tiết.
+  Lunar Lucky đã nhận yêu cầu quà Tết<% if (q.company) { %> của <b><%= q.company %></b><% } %>. Chuyên viên sẽ liên hệ qua số <b><%= q.phone %></b> trong vòng 24 giờ làm việc để tư vấn mẫu và gửi báo giá chi tiết.
 </p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.8;border-top:1px solid #efe4d2;border-bottom:1px solid #efe4d2">
-<tr><td style="padding:8px 0;color:#75685e">Số lượng</td><td align="right"><%= q.quantity %> giỏ</td></tr>
+<% if (q.quantity) { %><tr><td style="padding:8px 0;color:#75685e">Số lượng</td><td align="right"><%= q.quantity %> giỏ</td></tr><% } %>
 <tr><td style="padding:0 0 8px;color:#75685e">Ngân sách mỗi giỏ</td><td align="right"><%= q.budget %></td></tr>
 <% if (q.delivery_date) { %><tr><td style="padding:0 0 8px;color:#75685e">Ngày cần giao</td><td align="right"><%= ymd(q.delivery_date) %></td></tr><% } %>
 <% if (q.logo_print) { %><tr><td style="padding:0 0 8px;color:#75685e">In logo</td><td align="right">Có</td></tr><% } %>

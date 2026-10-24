@@ -609,6 +609,24 @@ ul, ol { margin: 0; padding: 0; }
 .contents li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: 10px; border-radius: 50%; background: var(--gold-500); }
 .buy-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
 .buy-row .btn { flex: 1 1 180px; }
+/* Trang sản phẩm: số lượng trên, "Mua ngay" nổi nhất, "Thêm vào giỏ" phụ, Zalo ngay dưới */
+.buy-qty { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-5); }
+.buy-qty-label { font-size: 14px; font-weight: 600; color: var(--ink-900); }
+.buy-stack { display: grid; gap: 10px; margin-top: var(--space-3); }
+.buy-ask { margin-top: 10px; }
+.buy-ask-note { margin-top: 8px; line-height: 1.5; }
+.buy-ask-note a { color: var(--primary); font-weight: 600; text-decoration: underline; }
+.gallery-video { margin-top: 12px; }
+.pdp-faq { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--line); }
+.pdp-faq h2 { font-size: 18px; margin: 0 0 8px; }
+.pdp-faq details { border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 14px; color: var(--ink-700); }
+.pdp-faq summary { cursor: pointer; font-weight: 600; color: var(--ink-900); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.pdp-faq summary::-webkit-details-marker { display: none; }
+.pdp-faq summary::after { content: "+"; color: var(--gold-700); font-size: 18px; line-height: 1; }
+.pdp-faq details[open] summary::after { content: "–"; }
+.pdp-faq details p { margin: 8px 0 0; line-height: 1.6; }
+.pdp-faq > p { margin-top: 12px; }
+.pdp-faq > p a { color: var(--primary); text-decoration: underline; }
 .stock-note { margin-top: var(--space-3); font-size: 14px; color: var(--jade-700); display: flex; gap: 8px; align-items: center; }
 .stock-note.low { color: var(--danger); }
 .assure { list-style: none; display: grid; gap: 12px; margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-700); }
@@ -747,6 +765,40 @@ ul, ol { margin: 0; padding: 0; }
   body.has-buy-bar .float-contact { bottom: 88px; }
   body.has-buy-bar .toast { bottom: 88px; }
 }
+/* Form báo giá: chừa lề cho cụm nút liên hệ nổi, không che form */
+.quote-section .container { padding-inline: 88px; }
+.quote-more > summary { padding: 4px 0; display: inline-flex; align-items: center; gap: 8px; }
+.quote-more > summary::after { content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1.5px solid currentColor; border-radius: 50%; font-size: 16px; line-height: 1; font-weight: 600; }
+.quote-more[open] > summary::after { content: "–"; }
+@media (max-width: 767px) { .quote-section { padding-bottom: 96px; } .quote-section .container { padding-inline: 16px; } }
+/* Trang doanh nghiệp: các mốc 10 / 30 / 50 / 100 giỏ */
+.milestones-section { padding-bottom: var(--space-6); position: relative; isolation: isolate; overflow: hidden; background: var(--cream-50); }
+/* Ảnh nền riêng một lớp: kem phủ ~90% + nhòe nhẹ, không đụng chữ / thẻ / nút; điện thoại ẩn hẳn */
+.ms-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.ms-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: blur(2.5px); transform: scale(1.03); }
+.ms-bg::after { content: ""; position: absolute; inset: 0; background: rgb(253 250 245 / 0.9); }
+@media (max-width: 767px) { .ms-bg { display: none; } }
+.milestone-common { text-align: center; margin: var(--space-4) auto 0; font-weight: 500; color: var(--ink-900); }
+.milestone-label { text-align: center; margin: var(--space-4) 0 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.milestones-section .section-head { margin-bottom: 28px; }
+.milestone-foot { text-align: center; max-width: 72ch; margin: var(--space-4) auto 0; padding: 10px 16px; border-radius: var(--radius-lg); background: rgb(253 250 245 / 0.8); }
+.milestones-section .milestone-foot { color: var(--ink-900); font-weight: 500; }
+.milestones { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(4, 1fr); }
+.milestones li { background: rgb(255 255 255 / 0.97); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-5) var(--space-4); }
+.milestones .qty-range { font-family: var(--font-display); font-size: 26px; color: var(--lacquer-700); }
+.milestones dl { display: contents; font-size: 14px; color: var(--ink-700); }
+.milestones dt { font-weight: 700; color: var(--ink-900); margin-top: 12px; }
+.milestones dd { margin: 4px 0 0; line-height: 1.5; }
+/* Máy tính: 4 thẻ cao bằng nhau, các nhãn thẳng hàng ngang (mỗi thẻ gồm 5 hàng chung) */
+@media (min-width: 960px) { .milestones { grid-template-rows: repeat(5, auto); column-gap: var(--space-4); row-gap: 0; } .milestones li { display: grid; grid-row: span 5; grid-template-rows: subgrid; align-content: start; } }
+.milestone-notes { display: grid; gap: var(--space-4); grid-template-columns: repeat(3, 1fr); margin-top: var(--space-6); padding: 16px 20px; border-radius: var(--radius-lg); background: rgb(253 250 245 / 0.8); }
+.milestone-notes h3 { font-family: inherit; font-size: 15px; font-weight: 700; color: var(--ink-900); margin: 0 0 6px; }
+/* Chừa chỗ cho cụm nút Zalo / Messenger / Gọi nổi bên phải và nút "Liên hệ" trên điện thoại */
+.milestones-section .container { padding-inline: 88px; }
+@media (max-width: 767px) { .milestones-section { padding-bottom: 96px; } .milestones-section .container { padding-inline: 16px; } }
+.milestone-notes p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-700); }
+@media (max-width: 959px) { .milestones { grid-template-columns: repeat(2, 1fr); } .milestone-notes { grid-template-columns: 1fr; } }
+@media (max-width: 559px) { .milestones { grid-template-columns: 1fr; } }
 .pay-steps { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 4px; line-height: 1.5; }
 .review-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 960px) { .review-grid { grid-template-columns: repeat(4, 1fr); } }

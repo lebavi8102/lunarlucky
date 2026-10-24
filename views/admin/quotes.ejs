@@ -4,11 +4,11 @@
 <% quotes.forEach(q => { %>
 <article class="quote-card">
   <div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 class="h3"><%= q.company %></h2><span class="status status-<%= q.status %>"><%= QUOTE_STATUS[q.status] %></span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 class="h3"><%= q.company || q.contact_name %></h2><span class="status status-<%= q.status %>"><%= QUOTE_STATUS[q.status] %></span></div>
     <p class="small muted" style="margin-top:4px"><%= fmt.dateTime(q.created_at) %></p>
     <dl class="kv" style="margin-top:12px">
       <dt>Liên hệ</dt><dd><b><%= q.contact_name %></b> · <a href="tel:<%= q.phone %>" style="color:var(--primary)"><%= q.phone %></a><% if (q.email) { %> · <a href="mailto:<%= q.email %>" style="color:var(--primary)"><%= q.email %></a><% } %></dd>
-      <dt>Số lượng</dt><dd><%= q.quantity %> giỏ</dd>
+      <dt>Số lượng</dt><dd><%= q.quantity ? q.quantity + ' giỏ' : 'Chưa nêu' %></dd>
       <dt>Ngân sách/giỏ</dt><dd><%= q.budget %></dd>
       <% if (q.delivery_date) { %><dt>Ngày giao</dt><dd><%= fmt.ymd(q.delivery_date) %></dd><% } %>
       <dt>In logo</dt><dd><%= q.logo_print ? 'Có' : 'Không' %></dd>

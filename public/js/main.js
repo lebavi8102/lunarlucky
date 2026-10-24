@@ -494,4 +494,21 @@
     fcBtn.addEventListener('click', () => setFc(!fc.classList.contains('open')));
     document.addEventListener('click', (e) => { if (!fc.contains(e.target)) setFc(false); });
   }
+
+  // Form báo giá doanh nghiệp: chặn bấm gửi nhiều lần; ô lỗi nằm trong mục thu gọn thì tự mở ra
+  const qf = $('[data-quote-form]');
+  if (qf) {
+    const qb = $('[data-quote-submit]', qf);
+    qf.addEventListener('invalid', (e) => { const d = e.target.closest('details'); if (d) d.open = true; }, true);
+    qf.addEventListener('submit', (e) => {
+      if (qf.dataset.sending) return e.preventDefault();
+      qf.dataset.sending = '1';
+      if (qb) setTimeout(() => { qb.disabled = true; qb.textContent = 'Đang gửi…'; }, 0);
+    });
+    addEventListener('pageshow', (e) => { // quay lại bằng nút Back: cho gửi lại
+      if (!e.persisted) return;
+      delete qf.dataset.sending;
+      if (qb) { qb.disabled = false; qb.textContent = 'Gửi yêu cầu báo giá'; }
+    });
+  }
 })();

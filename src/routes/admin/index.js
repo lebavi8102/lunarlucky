@@ -30,7 +30,7 @@ router.use((req, res, next) => {
 /* ---------- Tổng quan ---------- */
 router.get('/', async (req, res) => {
   const since = new Date(Date.now() - 32 * 86400000); // đủ cả tháng này (tháng 31 ngày)
-  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at', 'payment_method', 'payment_status', 'deposit_amount', 'source');
+  const recentAll = await db('orders').where('created_at', '>=', since).select('total', 'status', 'created_at', 'payment_method', 'payment_status', 'deposit_amount', 'source', 'cta');
   const { awaitingMoney } = require('../../lib/payment');
   const days = [];
   for (let i = 13; i >= 0; i--) days.push({ day: todayVN(-i), total: 0, count: 0 });
@@ -42,6 +42,7 @@ router.get('/', async (req, res) => {
   let ordersToday = 0;
   let waitingToday = 0;
   const byChannel = {}; // 30 ngày gần nhất, đơn đã chốt (không tính hủy / chờ tiền)
+  const byCta = {}; // theo nút khách bấm: đơn đã chốt và đơn giao thành công
   for (const o of recentAll) {
     if (o.status === 'cancelled') continue;
     // Đơn chưa trả tiền/chưa cọc có thể tự hủy → chưa tính là doanh thu
@@ -60,6 +61,11 @@ router.get('/', async (req, res) => {
       ordersToday += 1;
     }
     if (k.startsWith(monthPrefix)) revenueMonth += o.total;
+    if (o.cta) {
+      const t = byCta[o.cta] || (byCta[o.cta] = { n: 0, done: 0 });
+      t.n += 1;
+      if (o.status === 'completed') t.done += 1;
+    }
     const src = o.source || 'web';
     const c = byChannel[src] || (byChannel[src] = { n: 0, total: 0 });
     c.n += 1;
@@ -79,7 +85,7 @@ router.get('/', async (req, res) => {
       revenueToday, revenueMonth, ordersToday, waitingToday,
       newOrders: Number(newOrders.n), unpaidBank: Number(unpaidBank.n), newQuotes: Number(newQuotes.n),
     },
-    days, lowStock, recent, topProducts, byChannel,
+    days, lowStock, recent, topProducts, byChannel, byCta,
   });
 });
 
@@ -430,6 +436,7 @@ router.use(
       { name: 'cost_price', label: 'Giá vốn / giá nhập (₫)', type: 'money', help: 'Chỉ hiện trong admin, dùng để tính lợi nhuận. Khách không thấy.' },
       { name: 'stock', label: 'Tồn kho', type: 'number', required: true, default: 0 },
       { name: 'badge', label: 'Nhãn', type: 'text', max: 40, help: 'VD: Bán chạy, Mới, Giới hạn' },
+      { name: 'video_url', label: 'Link video giỏ thực tế', type: 'text', max: 500, help: 'Dán link YouTube / TikTok / Facebook hoặc file .mp4. Có link thì trang sản phẩm hiện nút "Xem video giỏ thực tế" cạnh ảnh.' },
       { name: 'short_desc', label: 'Mô tả ngắn', type: 'textarea', max: 300 },
       { name: 'contents', label: 'Thành phần giỏ quà', type: 'textarea', help: 'Mỗi dòng một món.' },
       { name: 'description', label: 'Mô tả chi tiết', type: 'markdown' },
