@@ -87,8 +87,8 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       'Đặt xong → Messenger báo mã đơn, số tiền cần chuyển, hạn giữ đơn');
     const qrMsg = sent.find((b) => b.message && b.message.attachment && b.message.attachment.type === 'image');
     ok(qrMsg && /vietqr/.test(qrMsg.message.attachment.payload.url) && /amount=1990000/.test(qrMsg.message.attachment.payload.url), 'Mã QR gửi thẳng vào khung chat (ảnh), đúng số tiền');
-    const bankTx = sent.filter((b) => b.message && b.message.text).pop().message.text;
-    ok(/Số tài khoản: 0123456789/.test(bankTx) && /Nội dung: LN26TESTMSG1/.test(bankTx) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'), 'Gửi cả số tài khoản + nội dung chuyển khoản, không có nút sang web');
+    const allTx = sent.filter((b) => b.message && b.message.text).map((b) => b.message.text).join('\n');
+    ok(/LN26TESTMSG1/.test(allTx) && !/0123456789/.test(allTx) && !/Số tài khoản/.test(allTx) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'), 'Không gửi số tài khoản dạng chữ (tránh khung hướng dẫn chuyển khoản dài của Facebook), không có nút sang web');
     sent.length = 0;
     await m.orderUpdate({ ...fakeOrder, payment_status: 'paid' }, 'paid');
     ok(sent[0] && /đã nhận đủ tiền/.test(sent[0].message.attachment.payload.text), 'Tiền về → Messenger báo đã nhận tiền');
@@ -288,8 +288,8 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
         'Khách đồng ý → bot tạo ĐƠN THẬT (kênh AI Fanpage, giữ kho), chưa nhận tiền');
       const qrI = sent.find((b) => b.message && b.message.attachment && b.message.attachment.type === 'image');
       const texts2 = sent.filter((b) => b.message && b.message.text).map((b) => b.message.text).join('\n');
-      ok(qrI && /vietqr/.test(qrI.message.attachment.payload.url) && new RegExp(`amount=${Math.round(od[0].total)}`).test(qrI.message.attachment.payload.url) && /Số tài khoản:/.test(texts2) && texts2.includes(od[0].code) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'),
-        'Đơn tạo xong → gửi mã QR + số tài khoản + nội dung CK ngay trong chat, không dẫn sang web');
+      ok(qrI && /vietqr/.test(qrI.message.attachment.payload.url) && new RegExp(`amount=${Math.round(od[0].total)}`).test(qrI.message.attachment.payload.url) && !/Số tài khoản/.test(texts2) && texts2.includes(od[0].code) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'),
+        'Đơn tạo xong → gửi mã QR + mã đơn + số tiền ngay trong chat (không gửi số tài khoản chữ), không dẫn sang web');
 
       await say('đồng ý, lên đơn đi'); // gọi lại → không tạo đơn thứ hai
       ok((await ordersOf()).length === 1, 'Khách xác nhận lặp lại → không tạo đơn trùng');

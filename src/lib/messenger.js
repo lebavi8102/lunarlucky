@@ -552,11 +552,9 @@ async function orderUpdate(order, kind, extra = {}) {
       if (payment.awaitingMoney(order) && due) {
         const s = await settings.all();
         const qr = payment.qrForOrder(order, s);
-        const acc = payment.accountForOrder(order, s);
+        // Chỉ gửi ảnh QR (đã chứa sẵn tài khoản, số tiền, nội dung). KHÔNG gửi số tài khoản dạng chữ: Facebook sẽ tự chèn
+        // khung "Chuyển qua [ngân hàng]… cách thanh toán khác…" rất dài (chủ shop không muốn).
         if (qr) await sendPhoto(order.messenger_psid, qr);
-        if (payment.isConfigured(acc)) {
-          await sendText(order.messenger_psid, `Thông tin chuyển khoản:\nNgân hàng: ${acc.bankName || acc.bankId}\nSố tài khoản: ${acc.account}\nChủ tài khoản: ${acc.holder}\nSố tiền: ${money(due)}\nNội dung: ${order.code}`);
-        }
       }
       return true;
     } catch { return false; }
