@@ -250,6 +250,32 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.checkToken();
     nt.telegram = realT;
     ok(ck.warn && /còn (9|10) ngày/.test(errs[0].html) && errs[0].extra.topic === 'error' && !ck2.warn && /đã hết hiệu lực/.test(errs[1].html), 'Mã trang sắp hết hạn (≤14 ngày) hoặc mất hiệu lực → báo chủ đề BÁO LỖI');
+    // ── Ảnh khách gửi: AI xem được ảnh (chỉ ảnh từ máy chủ Facebook), lịch sử chỉ lưu chữ ──
+    {
+      const PI = '6' + String(Date.now());
+      let fetched = 0;
+      m._setImageFetcher(async () => { fetched++; return { media_type: 'image/jpeg', data: 'QUJDREVGRw==' }; });
+      m._resetEchoState();
+      sent.length = 0;
+      let snap = null; // chụp nội dung gửi cho Claude ngay lúc gọi (lịch sử bị sửa lại sau lượt)
+      ai._setClient({ beta: { messages: { create: async (p) => { snap = JSON.parse(JSON.stringify(p.messages)); return { stop_reason: 'end_turn', model: 'fake', usage: {}, content: [{ type: 'text', text: 'Dạ em thấy hai giỏ ạ.' }] }; } } } });
+      const att = (u) => ({ type: 'image', payload: { url: u } });
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PI }, recipient: { id: 'PAGE' }, message: { mid: 'i' + Math.random(), attachments: [att('https://scontent.xx.fbcdn.net/a.jpg'), att('https://scontent.xx.fbcdn.net/b.jpg'), att('https://evil.example.com/c.jpg')] } }] }] });
+      const last = (snap || []).filter((x) => x.role === 'user').pop() || {};
+      const blocks = Array.isArray(last.content) ? last.content : [];
+      ok(blocks.filter((b) => b.type === 'image' && b.source.type === 'base64' && b.source.media_type === 'image/jpeg').length === 2 && /em xem được ảnh/.test((blocks.find((b) => b.type === 'text') || {}).text || '') && fetched === 2,
+        'Khách gửi ảnh → AI nhận ảnh thật (chỉ tải ảnh từ máy chủ Facebook, bỏ link lạ)');
+      const th = await db('messenger_threads').where({ psid: PI }).first();
+      const hist = JSON.parse(th.history);
+      const lastUser = hist.filter((x) => x.role === 'user' && typeof x.content === 'string').pop();
+      ok(lastUser && /Khách gửi kèm 2 ảnh/.test(lastUser.content) && !th.history.includes('QUJDREVGRw'), 'Lịch sử chỉ lưu chữ "khách gửi kèm 2 ảnh", không lưu dữ liệu ảnh');
+      m._setImageFetcher(async () => null);
+      sent.length = 0;
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PI }, recipient: { id: 'PAGE' }, message: { mid: 'i' + Math.random(), attachments: [att('https://scontent.xx.fbcdn.net/d.jpg')] } }] }] });
+      ok(/em không xem được nội dung/.test(JSON.stringify((snap || []).filter((x) => x.role === 'user').pop().content)), 'Không tải được ảnh → dùng ghi chú cũ (AI không giả vờ nhìn thấy)');
+      await db('messenger_threads').where({ psid: PI }).del();
+      await db('conv_log').where({ psid: PI }).del();
+    }
     // ── Mua ngay trong chat: ảnh + giá → tóm tắt → khách đồng ý → đơn THẬT + mã QR trong chat (không dẫn sang web) ──
     {
       const PB = '7' + String(Date.now()); // mã người nhắn thật của Facebook toàn chữ số

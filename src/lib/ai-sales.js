@@ -933,7 +933,11 @@ async function chat(req, text, opts = {}) {
   const budgetNote = amb && amb.clarify === 'per_or_total'
     ? `[Ghi chú hệ thống: chưa rõ ${money(amb.amount)} là tổng hay mỗi giỏ → tin trả lời này PHẢI hỏi đúng câu "Anh/chị dự kiến ${money(amb.amount)} cho cả ${amb.baskets} giỏ hay ${money(amb.amount)} cho mỗi giỏ ạ?" (thay anh/chị bằng cách xưng hô đã biết). Chưa gợi ý giỏ nào, không nói đã tìm được mẫu. Chưa biết xưng hô thì để câu xin tên sang tin sau.]\n`
     : '';
-  history.push({ role: 'user', content: (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + firstNote + budgetNote + String(text).slice(0, 800) });
+  // Ảnh khách gửi (Messenger): chỉ gửi cho Claude trong lượt này; lịch sử lưu lại dạng chữ để các lượt sau không phải mang ảnh
+  const imgs = (Array.isArray(opts.images) ? opts.images : []).slice(0, 3);
+  const userText = (opts.context ? `${String(opts.context).slice(0, 6000)}\n` : '') + firstNote + budgetNote + String(text).slice(0, 800);
+  history.push({ role: 'user', content: imgs.length ? [...imgs.map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.media_type, data: i.data } })), { type: 'text', text: userText }] : userText });
+  const userIdx = history.length - 1;
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
   const knownLine = title ? `Khách đã cho biết cách xưng hô: gọi là ${title}${knownName ? ` ${knownName}` : ''}. Gọi đúng như vậy, không hỏi lại.` : '';
   if (CHANNEL_NOTES[opts.channel] || who || knownLine) {
@@ -1022,6 +1026,7 @@ async function chat(req, text, opts = {}) {
     history.push({ role: 'user', content: results });
   }
   if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
+  if (imgs.length) history[userIdx] = { role: 'user', content: `${userText}\n[Khách gửi kèm ${imgs.length} ảnh]` };
   req.session.aiChat = history;
   return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
