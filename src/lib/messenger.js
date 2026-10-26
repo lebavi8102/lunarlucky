@@ -60,12 +60,30 @@ let send = async (body) => {
     const kind = body && body.message && body.message.attachment ? `đính kèm ${body.message.attachment.type}` : body && body.sender_action ? 'đang soạn' : 'tin chữ';
     console.error(`[messenger] gửi lỗi ${r.status} (${kind}, khách …${String((body && body.recipient && body.recipient.id) || '').slice(-4)}):`, why);
     require('./ai-errors').log({ kind: 'messenger_send', channel: 'messenger', status: r.status, message: t, ref: body && body.recipient && body.recipient.id });
+    onSendRefused(body, t).catch(() => {});
     return false;
   }
   const j = await r.json().catch(() => null);
   rememberSent(body, j);
   return j || true;
 };
+
+/**
+ * Facebook CHẶN bot gửi tin cho khách (vd "tạm thời bị hạn chế gửi tin nhắn", mã 10): AI dừng với khách đó 1 giờ
+ * (khỏi tốn tiền Claude cho tin không gửi được) + báo CHAT VỚI KHÁCH để nhân viên trả lời tay. Mỗi khách báo 1 lần / 30 phút.
+ */
+const refusedAt = new Map();
+async function onSendRefused(body, text) {
+  const psid = body && body.recipient && body.recipient.id;
+  if (!psid || body.sender_action) return;
+  let j = {};
+  try { j = JSON.parse(text).error || {}; } catch { return; }
+  if (j.code !== 10 && j.error_subcode !== 1893063) return;
+  if (Date.now() - (refusedAt.get(psid) || 0) < 30 * 60000) return;
+  refusedAt.set(psid, Date.now());
+  await pause(psid, 1);
+  await alertHuman(psid, null, { title: 'Facebook đang CHẶN bot gửi tin cho khách này — nhân viên trả lời trực tiếp', summary: `Lý do Facebook: ${String(j.error_user_msg || j.message || 'không rõ').slice(0, 200)}. Khách chưa nhận được tin của bot.`, pauseHours: 1 });
+}
 
 /** Facebook ký mỗi lần gọi webhook bằng App Secret → chặn ai đó giả danh Facebook. */
 function verifySignature(rawBody, header) {
@@ -667,6 +685,7 @@ module.exports = {
   resumeAI,
   _setProfile: (fn) => { fetchProfile = fn; },
   _setImageFetcher: (fn) => { fetchImage = fn; },
+  _onSendRefused: onSendRefused,
   _setConversation: (fn) => { fetchConversation = fn; },
   _setPageId: (id) => { pageId = id; },
   _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.lastIncoming.clear(); nameFail.clear(); ours.appId = ''; },

@@ -276,6 +276,22 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       await db('messenger_threads').where({ psid: PI }).del();
       await db('conv_log').where({ psid: PI }).del();
     }
+    // ── Facebook chặn bot gửi tin (hạn chế gửi tin tạm thời) → AI dừng + báo nhân viên trả lời tay, không báo lặp ──
+    {
+      const PR = '5' + String(Date.now());
+      const ntR = require('../src/lib/notify'); const realTR = ntR.telegram; const alerts = [];
+      ntR.telegram = async (html, c, extra = {}) => { alerts.push({ html, extra }); return false; };
+      const fbErr = JSON.stringify({ error: { message: 'Application does not have permission for this action', code: 10, error_subcode: 1893063, error_user_msg: 'Bạn tạm thời bị hạn chế gửi tin nhắn.' } });
+      await m._onSendRefused({ recipient: { id: PR }, message: { text: 'hi' } }, fbErr);
+      await m._onSendRefused({ recipient: { id: PR }, message: { text: 'hi 2' } }, fbErr);
+      await m._onSendRefused({ recipient: { id: PR }, sender_action: 'typing_on' }, fbErr);
+      await m._onSendRefused({ recipient: { id: PR + '1' }, message: { text: 'x' } }, JSON.stringify({ error: { code: 100, message: 'khác' } }));
+      const thr = await db('messenger_threads').where({ psid: PR }).first();
+      ok(alerts.length === 1 && /CHẶN bot gửi tin/.test(alerts[0].html) && /hạn chế gửi tin nhắn/.test(alerts[0].html) && alerts[0].extra.topic === 'chat' && thr && Number(thr.paused_until_ms) > Date.now(),
+        'Facebook chặn bot gửi tin → AI dừng 1 giờ + báo CHAT VỚI KHÁCH 1 lần (không báo lặp, lỗi khác không tính)');
+      ntR.telegram = realTR;
+      await db('messenger_threads').where({ psid: PR }).del();
+    }
     // ── Mua ngay trong chat: ảnh + giá → tóm tắt → khách đồng ý → đơn THẬT + mã QR trong chat (không dẫn sang web) ──
     {
       const PB = '7' + String(Date.now()); // mã người nhắn thật của Facebook toàn chữ số
