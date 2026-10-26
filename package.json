@@ -17,6 +17,9 @@
   "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
+    "@jsquash/jpeg": "^1.6.0",
+    "@jsquash/resize": "^2.1.1",
+    "@jsquash/webp": "^1.5.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.2",
     "dotenv": "^18.0.7",
@@ -30,8 +33,7 @@
     "multer": "^2.4.0",
     "mysql2": "^3.24.5",
     "nodemailer": "^10.1.0",
-    "sanitize-html": "^2.18.0",
-    "sharp": "^0.35.5"
+    "sanitize-html": "^2.18.0"
   },
   "private": true,
   "engines": {
