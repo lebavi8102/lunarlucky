@@ -56,6 +56,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     const texts = sent.filter((b) => b.message && b.message.text);
     ok(texts.length === 1 && texts[0].message.text === 'Dạ em gợi ý Giỏ An Khang ạ.' && texts[0].message.metadata === m.AI_TAG && sent.some((b) => b.sender_action === 'typing_on'), 'Khách nhắn → AI trả lời (chữ thường, có hiện "đang soạn")');
     ok(calls[0].system.length === 2 && /Messenger/.test(calls[0].system[1].text), 'AI biết đang chat qua Messenger');
+    ok(/KHI GIỚI THIỆU MỘT GIỎ/.test(calls[0].system[0].text) && /ĐẦY ĐỦ các món/.test(calls[0].system[0].text), 'Lời dặn: giới thiệu giỏ phải nói rõ trong giỏ gồm những món gì');
 
     sent.length = 0;
     await m.handleWebhook(msg('ok chốt đơn nhé'));
