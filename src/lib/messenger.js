@@ -352,19 +352,20 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
 // Ảnh khách gửi: tải về để AI xem được (chỉ nhận ảnh từ máy chủ ảnh của Facebook, tối đa 3 ảnh, mỗi ảnh ≤ 4MB)
 const IMG_HOST = /^https:\/\/([a-z0-9-]+\.)*(fbcdn\.net|fbsbx\.com|facebook\.com)\//i;
 let fetchImage = async (url) => {
+  const host = (() => { try { return new URL(url).host; } catch { return '?'; } })();
   const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!r.ok) return null;
+  if (!r.ok) { console.log(`[messenger] tải ảnh khách lỗi ${r.status} (${host})`); return null; }
   const type = String(r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(type)) return null;
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(type)) { console.log(`[messenger] ảnh khách không phải ảnh thường: ${type || '?'} (${host})`); return null; }
   const buf = Buffer.from(await r.arrayBuffer());
-  if (!buf.length || buf.length > 4 * 1024 * 1024) return null;
+  if (!buf.length || buf.length > 4 * 1024 * 1024) { console.log(`[messenger] ảnh khách quá lớn/rỗng: ${buf.length} byte`); return null; }
   return { media_type: type, data: buf.toString('base64') };
 };
 async function fetchImages(atts) {
   const out = [];
   for (const a of atts.slice(0, 3)) {
     if (!IMG_HOST.test(String(a.payload.url))) continue;
-    const img = await fetchImage(a.payload.url).catch(() => null);
+    const img = await fetchImage(a.payload.url).catch((err) => { console.log(`[messenger] tải ảnh khách thất bại: ${err.message}`); return null; });
     if (img) out.push(img);
   }
   return out;
@@ -455,6 +456,7 @@ async function handleEvent(ev) {
   } catch { context = ''; }
 
   const images = imageAtts.length ? await fetchImages(imageAtts) : [];
+  if (ev.message && (ev.message.attachments || []).length) console.log(`[messenger] khách gửi đính kèm: ${(ev.message.attachments || []).map((a) => a && a.type).join(',')} → ảnh tải được ${images.length}/${imageAtts.length}`);
   if (images.length && /^\[Ghi chú hệ thống: khách vừa gửi/.test(text)) text = visionNote(images.length);
   typing(psid);
   const known = row && row.title ? { title: row.title, ...(row.name ? { name: row.name } : {}) } : {};
