@@ -59,15 +59,14 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
 
     sent.length = 0;
     await m.handleWebhook(msg('ok chốt đơn nhé'));
-    const btn = sent.find((b) => b.message && b.message.attachment);
-    const url = btn && btn.message.attachment.payload.buttons[0].url;
-    ok(url && /\/tu-van\/don\/[\w-]+$/.test(url), 'Khách chốt → AI gửi nút "Kiểm tra & đặt hàng"');
+    ok(!sent.some((b) => b.message && b.message.attachment), 'Khách chốt → KHÔNG còn nút sang web (chốt ngay trong chat)');
     const th = await db('messenger_threads').where({ psid: PSID }).first();
     ok(th && JSON.parse(th.history).length >= 4, 'Lịch sử trò chuyện lưu theo từng khách');
-    const h = await m.loadHandoff(url.split('/').pop());
-    ok(h && h.cart.lines[0].productId === prod.id && h.prefill.phone === '0912345000' && h.prefill.source === 'ai_fb', 'Link đặt hàng mang theo giỏ + thông tin khách, đánh dấu kênh "AI Fanpage"');
+    const hrow = await db('ai_handoffs').where({ psid: PSID }).orderBy('created_ms', 'desc').first();
+    const h = hrow && JSON.parse(hrow.data);
+    ok(h && h.cart.lines[0].productId === prod.id && h.prefill.phone === '0912345000' && h.prefill.source === 'ai_fb', 'Đơn đã kiểm tra được lưu: giỏ + thông tin khách, đánh dấu kênh "AI Fanpage"');
     ok(!(await m.loadHandoff('khong-ton-tai-123')), 'Link sai → không mở được');
-    ok(h.prefill.psid === PSID, 'Link đặt hàng nhớ người nhắn Messenger');
+    ok(h.prefill.psid === PSID, 'Đơn đã lưu nhớ người nhắn Messenger');
 
     // Khách đã chốt (có link) mà 2 giờ sau chưa đặt → nhắc nhóm gọi lại, mỗi khách 1 lần
     await db('ai_handoffs').whereNot({ psid: PSID }).update({ followed: true }); // dữ liệu thừa của lần chạy thử trước không được tính
@@ -80,11 +79,16 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
 
     // Đơn từ AI Fanpage → báo khách qua Messenger: vừa đặt (kèm QR), nhắc chuyển khoản, đã nhận tiền
     sent.length = 0;
-    const fakeOrder = { code: 'LN26TESTMSG1', total: 1990000, deposit_amount: 0, payment_method: 'bank', payment_status: 'pending', status: 'new', delivery_date: todayVN(3), messenger_psid: PSID };
+    const fakeOrder = { code: 'LN26TESTMSG1', total: 1990000, deposit_amount: 0, payment_method: 'bank', payment_status: 'pending', status: 'new', delivery_date: todayVN(3), messenger_psid: PSID,
+      pay_account: 'personal', pay_bank_id: 'MB', pay_bank_name: 'MB Bank', pay_account_no: '0123456789', pay_holder: 'LE BA VI' };
     await m.orderUpdate(fakeOrder, 'placed', { until: '14:30 17/10' });
-    const pl = sent[0] && sent[0].message.attachment.payload;
-    ok(pl && /LN26TESTMSG1/.test(pl.text) && /chuyển khoản 1\.990\.000/.test(pl.text) && /14:30 17\/10/.test(pl.text) && /\/don-hang\/LN26TESTMSG1\?k=/.test(pl.buttons[0].url) && sent[0].message.metadata === m.AI_TAG,
-      'Đặt xong → Messenger báo mã đơn, số tiền cần chuyển, hạn giữ đơn, nút xem đơn & QR');
+    const tx0 = sent[0] && sent[0].message.text;
+    ok(tx0 && /LN26TESTMSG1/.test(tx0) && /chuyển khoản 1\.990\.000/.test(tx0) && /14:30 17\/10/.test(tx0) && /QR bên dưới/.test(tx0) && sent[0].message.metadata === m.AI_TAG,
+      'Đặt xong → Messenger báo mã đơn, số tiền cần chuyển, hạn giữ đơn');
+    const qrMsg = sent.find((b) => b.message && b.message.attachment && b.message.attachment.type === 'image');
+    ok(qrMsg && /vietqr/.test(qrMsg.message.attachment.payload.url) && /amount=1990000/.test(qrMsg.message.attachment.payload.url), 'Mã QR gửi thẳng vào khung chat (ảnh), đúng số tiền');
+    const bankTx = sent.filter((b) => b.message && b.message.text).pop().message.text;
+    ok(/Số tài khoản: 0123456789/.test(bankTx) && /Nội dung: LN26TESTMSG1/.test(bankTx) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'), 'Gửi cả số tài khoản + nội dung chuyển khoản, không có nút sang web');
     sent.length = 0;
     await m.orderUpdate({ ...fakeOrder, payment_status: 'paid' }, 'paid');
     ok(sent[0] && /đã nhận đủ tiền/.test(sent[0].message.attachment.payload.text), 'Tiền về → Messenger báo đã nhận tiền');
@@ -245,6 +249,60 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.checkToken();
     nt.telegram = realT;
     ok(ck.warn && /còn (9|10) ngày/.test(errs[0].html) && errs[0].extra.topic === 'error' && !ck2.warn && /đã hết hiệu lực/.test(errs[1].html), 'Mã trang sắp hết hạn (≤14 ngày) hoặc mất hiệu lực → báo chủ đề BÁO LỖI');
+    // ── Mua ngay trong chat: ảnh + giá → tóm tắt → khách đồng ý → đơn THẬT + mã QR trong chat (không dẫn sang web) ──
+    {
+      const PB = '7' + String(Date.now()); // mã người nhắn thật của Facebook toàn chữ số
+      m._resetEchoState();
+      m._setProfile(async () => ({ first: 'Hoa', last: 'Nguyễn Thị' }));
+      const pi = await db('products').where({ is_active: true }).whereNotNull('image_id').andWhere('stock', '>=', 5).orderBy('price').first();
+      const info = { items: [{ product_id: pi.id, qty: 1 }], customer_name: 'Chị Hoa', phone: '0988111222', province: 'Hà Nội', address: '5 Tràng Tiền', is_gift: false, delivery_date: todayVN(3), payment_method: 'bank' };
+      const tu = (name, input) => ({ stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tb' + Math.random(), name, input }] });
+      ai._setClient({ beta: { messages: { create: async (p) => {
+        const last = p.messages[p.messages.length - 1];
+        if (typeof last.content === 'string') {
+          if (/xem giỏ/.test(last.content)) return tu('send_product_photo', { product_id: pi.id });
+          if (/lên đơn luôn/.test(last.content) || /đồng ý/.test(last.content)) return tu('confirm_order', info);
+          if (/chốt/.test(last.content)) return tu('prepare_order', info);
+        }
+        return { stop_reason: 'end_turn', model: 'fake', usage: {}, content: [{ type: 'text', text: 'Dạ giỏ này hợp ạ, giá 990k ạ.' }] };
+      } } } });
+      const say = async (text) => { sent.length = 0; await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PB }, recipient: { id: 'PAGE' }, message: { mid: 'b' + Math.random(), text } }] }] }); };
+      const ordersOf = () => db('orders').where({ messenger_psid: PB });
+      await db('orders').where({ messenger_psid: PB }).del();
+
+      await say('cho mình xem giỏ nào hợp');
+      const iImg = sent.findIndex((b) => b.message && b.message.attachment && b.message.attachment.type === 'image');
+      const iTxt = sent.findIndex((b) => b.message && b.message.text && /990k/.test(b.message.text));
+      ok(iImg >= 0 && iTxt > iImg && new RegExp(`/media/${pi.image_id}\\.jpg$`).test(sent[iImg].message.attachment.payload.url), 'Giới thiệu giỏ → gửi ẢNH JPEG của giỏ trước, rồi lời giới thiệu có giá');
+
+      await say('ok lên đơn luôn');
+      ok((await ordersOf()).length === 0 && !sent.some((b) => b.message && b.message.attachment), 'Chưa tóm tắt đơn cho khách mà AI gọi tạo đơn → bị chặn, không có đơn');
+
+      await say('ok chốt giỏ này nhé');
+      ok((await ordersOf()).length === 0 && !sent.some((b) => b.message && b.message.attachment), 'Kiểm tra đơn xong → CHƯA tạo đơn, không có nút/ link sang web');
+
+      await say('đồng ý, lên đơn đi');
+      const od = await ordersOf();
+      const stockNow = (await db('products').where({ id: pi.id }).first()).stock;
+      ok(od.length === 1 && od[0].source === 'ai_fb' && od[0].status === 'new' && od[0].payment_status === 'pending' && od[0].phone === '0988111222' && Number(od[0].total) > 0 && stockNow === pi.stock - 1,
+        'Khách đồng ý → bot tạo ĐƠN THẬT (kênh AI Fanpage, giữ kho), chưa nhận tiền');
+      const qrI = sent.find((b) => b.message && b.message.attachment && b.message.attachment.type === 'image');
+      const texts2 = sent.filter((b) => b.message && b.message.text).map((b) => b.message.text).join('\n');
+      ok(qrI && /vietqr/.test(qrI.message.attachment.payload.url) && new RegExp(`amount=${Math.round(od[0].total)}`).test(qrI.message.attachment.payload.url) && /Số tài khoản:/.test(texts2) && texts2.includes(od[0].code) && !sent.some((b) => b.message && b.message.attachment && b.message.attachment.type === 'template'),
+        'Đơn tạo xong → gửi mã QR + số tài khoản + nội dung CK ngay trong chat, không dẫn sang web');
+
+      await say('đồng ý, lên đơn đi'); // gọi lại → không tạo đơn thứ hai
+      ok((await ordersOf()).length === 1, 'Khách xác nhận lặp lại → không tạo đơn trùng');
+
+      const its = await db('order_items').where({ order_id: od[0].id });
+      await db('order_items').where({ order_id: od[0].id }).del();
+      await db('orders').where({ id: od[0].id }).del();
+      await db('products').where({ id: pi.id }).update({ stock: pi.stock, sold: pi.sold });
+      ok(its.length === 1 && its[0].product_id === pi.id, 'Đơn có đúng 1 dòng hàng');
+      await db('ai_handoffs').where({ psid: PB }).del();
+      await db('messenger_threads').where({ psid: PB }).del();
+      await db('conv_log').where({ psid: PB }).del();
+    }
     await db('messenger_threads').where('psid', 'like', PSID + '%').del();
     await db('conv_log').where('psid', 'like', PSID + '%').del();
   } catch (err) {

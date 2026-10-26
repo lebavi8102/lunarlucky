@@ -98,6 +98,27 @@ app.get('/media/:id', async (req, res, next) => {
   res.send(m.data);
 });
 
+// Bản JPEG của ảnh giỏ cho Messenger (Facebook chỉ chắc chắn nhận JPEG/PNG, ảnh gốc trên web là WebP)
+const jpegCache = new Map();
+app.get('/media/:id.jpg', async (req, res, next) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return next();
+  let buf = jpegCache.get(id);
+  if (!buf) {
+    // Chỉ ảnh sản phẩm đang bán (không phải ảnh khách / ảnh giao hàng chờ duyệt)
+    const used = await db('products').where({ is_active: true }).andWhere((w) => w.where({ image_id: id }).orWhere('gallery', 'like', `%${id}%`)).first('id');
+    if (!used) return res.status(404).end();
+    const m = await db('media').where({ id }).first('data');
+    if (!m) return res.status(404).end();
+    try {
+      buf = await require('sharp')(Buffer.from(m.data)).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).flatten({ background: '#ffffff' }).jpeg({ quality: 84 }).toBuffer();
+    } catch { return res.status(404).end(); }
+    jpegCache.set(id, buf);
+    if (jpegCache.size > 40) jpegCache.delete(jpegCache.keys().next().value);
+  }
+  res.set({ 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' }).send(buf);
+});
+
 app.use(express.urlencoded({ extended: false, limit: '200kb' }));
 app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.url.startsWith('/messenger/')) req.rawBody = buf; } }));
 

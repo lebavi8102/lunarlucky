@@ -499,6 +499,20 @@ function tools(channel) {
         required: ['summary'],
       },
     });
+    // Fanpage: khách mua ngay trong chat — gửi ảnh giỏ, và tạo đơn khi khách đã xác nhận (không dẫn sang web)
+    list.push({
+      name: 'send_product_photo',
+      description: 'Gửi ảnh thật của một giỏ vào khung chat. Gọi cho từng giỏ em giới thiệu (tối đa 2 giỏ mỗi tin). Ảnh được gửi kèm tin trả lời của em; vẫn nêu GIÁ giỏ ngay trong tin.',
+      strict: true,
+      input_schema: { type: 'object', additionalProperties: false, properties: { product_id: { type: 'integer', description: 'Mã giỏ (số trong ngoặc vuông ở danh mục)' } }, required: ['product_id'] },
+    });
+    const prep = list.find((t) => t.name === 'prepare_order');
+    list.push({
+      name: 'confirm_order',
+      description: 'TẠO ĐƠN THẬT ngay trong chat. CHỈ gọi sau khi em đã gọi prepare_order, đã tóm tắt đơn cho khách và khách đã đồng ý rõ ràng ("ok", "chốt", "lên đơn đi"…) ở tin sau đó. Điền ĐÚNG những thông tin đã đưa vào prepare_order. Hệ thống tự gửi mã QR và thông tin thanh toán ngay sau tin của em.',
+      strict: true,
+      input_schema: prep.input_schema,
+    });
   }
   return list;
 }
@@ -561,6 +575,64 @@ function orderFacts(o, items) {
   };
   if (o.payment_method === 'cod' && !paid && o.status !== 'cancelled' && o.status !== 'completed') r.con_phai_thu_khi_giao = money(Math.max(0, Number(o.total) - deposit));
   return Object.fromEntries(Object.entries(r).filter(([, v]) => v != null));
+}
+
+/**
+ * Kiểm tra + tính tiền một đơn AI chuẩn bị (dùng chung cho prepare_order và confirm_order).
+ * Trả { error, notices? } nếu chưa đặt được, hoặc { c: giỏ, priced: đã tính tiền, gift, method }.
+ */
+async function draftOrder(input, s) {
+  if (!Array.isArray(input.items) || !input.items.length) return { error: 'Chưa có giỏ nào trong đơn.' };
+  if (!validPhone(input.phone)) return { error: 'Số điện thoại người đặt chưa đúng — hỏi lại khách.' };
+  if (input.is_gift) { // nói rõ thiếu ô nào để AI không phải đoán và gọi lại nhiều lần
+    const miss = [!String(input.recipient_name || '').trim() && 'recipient_name', !validPhone(input.recipient_phone) && 'recipient_phone (SĐT người nhận hợp lệ)', !String(input.recipient_address || '').trim() && 'recipient_address'].filter(Boolean);
+    if (miss.length) return { error: `Đơn tặng (is_gift=true) còn thiếu: ${miss.join(', ')}. Điền đúng các ô này từ thông tin khách đã gửi rồi gọi lại; khách tự nhận quà thì để is_gift=false.` };
+  }
+  const { tetClosed } = checkoutHelpers();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.delivery_date))) return { error: 'Ngày giao phải dạng YYYY-MM-DD.' };
+  const closed = tetClosed(s);
+  if (closed && input.delivery_date >= closed.from && input.delivery_date <= closed.to) return { error: `Cửa hàng nghỉ Tết từ ${closed.from} đến ${closed.to}.` };
+  // Chỉ nhận đúng mã voucher AI được phép tặng (Cài đặt), không nhận mã khách tự đưa
+  const okCode = String(s.ai_voucher_code || '').trim().toUpperCase();
+  const c = { lines: [], coupon: okCode && String(input.coupon_code || '').trim().toUpperCase() === okCode ? okCode : null };
+  for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
+  let priced = await cart.priceCart(c);
+  if (priced.couponError) { c.coupon = null; priced = await cart.priceCart(c); }
+  if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
+  const fullSet = await require('./capacity').fullDates(s, priced.count);
+  if (fullSet.has(input.delivery_date)) {
+    return { error: `Ngày ${input.delivery_date} đã nhận đủ đơn. Gợi ý khách ngày khác (gọi delivery_options với qty để xem ngày còn nhận).` };
+  }
+  const earliest = checkoutHelpers().dateCtx(s, input.province, priced.count, fullSet).minDate;
+  if (input.delivery_date < earliest) {
+    return { error: `Đơn ${priced.count} giỏ giao ${input.province} sớm nhất từ ${earliest}. Báo khách và hỏi lại ngày giao.` };
+  }
+  const gift = !!input.is_gift;
+  const method = gift ? 'bank' : input.payment_method; // đơn tặng: không thu tiền người nhận
+  return { c, priced, gift, method };
+}
+
+/** Dấu vân tay của đơn (giỏ, SĐT, ngày giao, thanh toán, tặng) — để chắc đơn tạo đúng là đơn đã tóm tắt cho khách. */
+function orderSig(input) {
+  const items = (input.items || []).map((i) => `${Number(i.product_id)}x${Math.max(1, Number(i.qty) || 1)}`).sort().join(',');
+  return [items, digits(input.phone), input.delivery_date, input.is_gift ? 'gift' : 'self', input.is_gift ? 'bank' : input.payment_method].join('|');
+}
+
+/**
+ * Đơn này đã được prepare_order + tóm tắt cho khách TRƯỚC, và khách đã nhắn thêm một tin sau đó chưa?
+ * (tin của khách là chuỗi; kết quả công cụ là mảng) → không tạo đơn trong cùng một tin với lúc tóm tắt.
+ */
+function previewedEarlier(history, input) {
+  const h = Array.isArray(history) ? history : [];
+  const want = orderSig(input);
+  for (let i = h.length - 1; i >= 0; i--) {
+    const m = h[i];
+    if (m.role !== 'assistant' || !Array.isArray(m.content)) continue;
+    const prep = m.content.find((b) => b && b.type === 'tool_use' && b.name === 'prepare_order' && orderSig(b.input || {}) === want);
+    if (!prep) continue;
+    return h.slice(i + 1).some((x) => x.role === 'user' && typeof x.content === 'string');
+  }
+  return false;
 }
 
 async function runTool(name, input, req, out) {
@@ -671,36 +743,14 @@ async function runTool(name, input, req, out) {
   if (name === 'prepare_order') {
     // Cùng một lượt gọi lại y hệt → đã lưu rồi, chặn vòng lặp (từng làm AI hết lượt và trả lời trống)
     const sig = JSON.stringify(input);
-    if (out.lastPrepare === sig && out.action) return { ok: true, note: 'Đơn này ĐÃ được lưu ở lần gọi trước. Không gọi công cụ nữa — trả lời khách ngay.' };
+    if (out.lastPrepare === sig && (out.action || out.prepared)) return { ok: true, note: 'Đơn này ĐÃ được lưu ở lần gọi trước. Không gọi công cụ nữa — trả lời khách ngay.' };
     out.lastPrepare = sig;
-    if (!Array.isArray(input.items) || !input.items.length) return { error: 'Chưa có giỏ nào trong đơn.' };
-    if (!validPhone(input.phone)) return { error: 'Số điện thoại người đặt chưa đúng — hỏi lại khách.' };
-    if (input.is_gift) { // nói rõ thiếu ô nào để AI không phải đoán và gọi lại nhiều lần
-      const miss = [!String(input.recipient_name || '').trim() && 'recipient_name', !validPhone(input.recipient_phone) && 'recipient_phone (SĐT người nhận hợp lệ)', !String(input.recipient_address || '').trim() && 'recipient_address'].filter(Boolean);
-      if (miss.length) return { error: `Đơn tặng (is_gift=true) còn thiếu: ${miss.join(', ')}. Điền đúng các ô này từ thông tin khách đã gửi rồi gọi lại; khách tự nhận quà thì để is_gift=false.` };
-    }
-    const { isHanoi, tetClosed } = checkoutHelpers();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.delivery_date))) return { error: 'Ngày giao phải dạng YYYY-MM-DD.' };
-    const closed = tetClosed(s);
-    if (closed && input.delivery_date >= closed.from && input.delivery_date <= closed.to) return { error: `Cửa hàng nghỉ Tết từ ${closed.from} đến ${closed.to}.` };
-    // Chỉ nhận đúng mã voucher AI được phép tặng (Cài đặt), không nhận mã khách tự đưa
-    const okCode = String(s.ai_voucher_code || '').trim().toUpperCase();
-    const c = { lines: [], coupon: okCode && String(input.coupon_code || '').trim().toUpperCase() === okCode ? okCode : null };
-    for (const it of input.items.slice(0, 20)) cart.addProduct(c, Number(it.product_id), Math.max(1, Number(it.qty) || 1));
-    let priced = await cart.priceCart(c);
-    if (priced.couponError) { c.coupon = null; priced = await cart.priceCart(c); }
-    if (!priced.lines.length) return { error: 'Các giỏ đã chọn không còn hàng hoặc không tồn tại. Gọi search_products để chọn lại.', notices: priced.notices };
-    const fullSet = await require('./capacity').fullDates(s, priced.count);
-    if (fullSet.has(input.delivery_date)) {
-      return { error: `Ngày ${input.delivery_date} đã nhận đủ đơn. Gợi ý khách ngày khác (gọi delivery_options với qty để xem ngày còn nhận).` };
-    }
-    const earliest = checkoutHelpers().dateCtx(s, input.province, priced.count, fullSet).minDate;
-    if (input.delivery_date < earliest) {
-      return { error: `Đơn ${priced.count} giỏ giao ${input.province} sớm nhất từ ${earliest}. Báo khách và hỏi lại ngày giao.` };
-    }
+    const d = await draftOrder(input, s);
+    if (d.error) return d;
+    const { c, priced, gift, method } = d;
+    const { isHanoi } = checkoutHelpers();
+    const inChat = req.aiChannel === 'messenger'; // Fanpage: chốt ngay trong chat (confirm_order), không có nút sang web
     req.session.cart = c;
-    const gift = !!input.is_gift;
-    const method = gift ? 'bank' : input.payment_method; // đơn tặng: không thu tiền người nhận
     req.session.aiPrefill = {
       customer_name: String(input.customer_name).slice(0, 120), phone: digits(input.phone), email: String(input.email || '').slice(0, 160),
       province: input.province, address: String(input.address).slice(0, 300), is_gift: gift,
@@ -710,7 +760,8 @@ async function runTool(name, input, req, out) {
       note: String(input.note || '').slice(0, 500), payment_method: method,
     };
     const deposit = method === 'cod' ? payment.depositFor({ goods: priced.subtotal - priced.discount, qty: priced.count, total: priced.total }, s) : 0;
-    out.action = { label: 'Kiểm tra & đặt hàng', url: '/thanh-toan?tu-van=1' };
+    out.prepared = true;
+    if (!inChat) out.action = { label: 'Kiểm tra & đặt hàng', url: '/thanh-toan?tu-van=1' };
     return {
       ok: true,
       voucher: priced.discount ? `Đã trừ voucher ${c.coupon}: −${money(priced.discount)}` : null,
@@ -726,8 +777,45 @@ async function runTool(name, input, req, out) {
         delivery_date: input.delivery_date, delivery_slot: req.session.aiPrefill.delivery_slot || 'buổi nào cũng được',
         is_gift: gift, recipient: gift ? req.session.aiPrefill.recipient_name : null,
       },
-      next_step: 'Đã xong, không gọi lại prepare_order (trừ khi khách đổi ý). Nút "Kiểm tra & đặt hàng" đã hiện cho khách. Đơn chỉ được tạo khi khách bấm Đặt hàng ở trang đó.',
+      next_step: inChat
+        ? 'Đã kiểm tra đơn, CHƯA tạo đơn. Tóm tắt đơn cho khách bằng 2–3 câu chat ngắn (giỏ × số lượng, tổng tiền gồm phí giao, ngày giao, thanh toán và tiền cọc nếu có) rồi hỏi khách có đồng ý lên đơn không. Không gọi lại prepare_order. Khách đồng ý rõ ràng ở tin sau → gọi confirm_order với đúng thông tin này. Không có nút nào sang web.'
+        : 'Đã xong, không gọi lại prepare_order (trừ khi khách đổi ý). Nút "Kiểm tra & đặt hàng" đã hiện cho khách. Đơn chỉ được tạo khi khách bấm Đặt hàng ở trang đó.',
     };
+  }
+  if (name === 'confirm_order') {
+    if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
+    if (out.order) return { ok: true, order_code: out.order.code, note: 'Đơn này ĐÃ được tạo ở lần gọi trước. Không gọi lại — trả lời khách ngay.' };
+    const d = await draftOrder(input, s);
+    if (d.error) return d;
+    if (!previewedEarlier(req.session.aiChat, input)) {
+      return { error: 'Chưa thể tạo đơn: em phải gọi prepare_order, tóm tắt đơn cho khách và chờ khách đồng ý rõ ràng ở tin sau đó, rồi mới gọi confirm_order với đúng thông tin đã tóm tắt.' };
+    }
+    const isTest = typeof req.get === 'function' && req.get('x-lunar-test') === '1';
+    if (isTest) return { ok: true, test: true, note: 'Chế độ thử: KHÔNG tạo đơn thật. Trả lời khách như thể đơn đã tạo (nói em đã lên đơn, mã QR gửi ngay sau).' };
+    if (!/^\d{5,40}$/.test(String(req.aiPsid || ''))) return { error: 'Không xác định được khách trên Messenger.' };
+    const made = await require('./chat-order').create({ draft: d, input, s, psid: String(req.aiPsid) });
+    if (made.error) return made;
+    out.order = made.order;
+    out.orderUntil = made.until || '';
+    const o = made.order;
+    return {
+      ok: true,
+      order_code: o.code,
+      total_text: money(o.total),
+      awaiting_money: payment.awaitingMoney(o),
+      note: `Đơn ${o.code} ĐÃ TẠO. Hệ thống tự gửi ngay sau tin của em: mã QR + thông tin chuyển khoản (nếu cần thanh toán/cọc) và tóm tắt đơn. Em chỉ trả lời 1–2 câu ngắn (cảm ơn, báo đã lên đơn). KHÔNG chép lại số tài khoản/số tiền, KHÔNG nhắc web hay link.`,
+    };
+  }
+  if (name === 'send_product_photo') {
+    if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
+    const p = await db('products').where({ id: Number(input.product_id), is_active: true }).first('id', 'name', 'image_id');
+    if (!p || !p.image_id) return { error: 'Giỏ này chưa có ảnh trong hệ thống — chỉ nêu giá và mô tả bằng chữ, không hứa gửi ảnh.' };
+    out.photos = out.photos || [];
+    if (!out.photos.some((x) => x.id === p.id)) {
+      if (out.photos.length >= 2) return { error: 'Mỗi tin chỉ gửi tối đa 2 ảnh. Khách muốn xem giỏ khác thì gửi ở tin sau.' };
+      out.photos.push({ id: p.id, name: p.name, image_id: p.image_id });
+    }
+    return { ok: true, note: `Ảnh giỏ ${p.name} sẽ hiện kèm tin của em. Nêu GIÁ giỏ này ngay trong tin; không cần gửi link web.` };
   }
   if (name === 'lookup_order') {
     const code = String(input.order_code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
@@ -790,7 +878,12 @@ async function runTool(name, input, req, out) {
 /** 1 lượt chat: nhận tin khách, chạy vòng công cụ, trả lời. Lịch sử nằm trong session (chỉ nối thêm, không sửa). */
 // Thêm vào lời dặn khi chat qua Messenger (để riêng, sau phần lời dặn chung đã lưu đệm)
 const CHANNEL_NOTES = {
-  messenger: 'Kênh hiện tại: Facebook Messenger (Fanpage). Chỉ chữ thường như tin nhắn, không markdown; muốn tách tin thì để 1 dòng trống giữa các đoạn. Link sản phẩm ghi dạng /san-pham/... (hệ thống tự đổi thành link đầy đủ). Sau prepare_order, hệ thống tự gửi nút "Kiểm tra & đặt hàng" ngay dưới tin của em. Khách ĐANG nhắn trên Fanpage: KHÔNG bảo khách "nhắn Zalo/Fanpage" hay bấm nút trên web để được tư vấn — NGOẠI LỆ duy nhất: đơn xuất hóa đơn VAT thì mời khách nhắn Zalo gửi thông tin xuất hóa đơn (theo mục VAT). Việc cần người thật (đổi món, làm giỏ theo yêu cầu, in logo, đơn doanh nghiệp cần báo giá, khiếu nại, đơn đã đặt mà tra không ra, khách muốn gặp người, câu em không chắc) → gọi transfer_to_human với tóm tắt rõ, rồi trả lời khách bằng câu mẫu CHUYỂN CHO NHÂN VIÊN (không nói "chuyên viên"). Khách muốn được gọi điện thì vẫn dùng request_callback.',
+  messenger: `Kênh hiện tại: Facebook Messenger (Fanpage). Chỉ chữ thường như tin nhắn, không markdown; muốn tách tin thì để 1 dòng trống giữa các đoạn.
+KHÁCH MUA NGAY TRONG CHAT, KHÔNG dẫn sang web (chủ shop chốt 26/10/2026):
+(1) Mỗi khi giới thiệu một giỏ → gọi send_product_photo cho giỏ đó (tối đa 2 giỏ mỗi tin) và NÊU GIÁ ngay trong tin giới thiệu (viết kiểu chat: "1tr890"). Ảnh tự hiện ngay trước lời giới thiệu của em.
+(2) Link web (ghi dạng /san-pham/..., hệ thống đổi thành link đầy đủ) chỉ để khách THAM KHẢO thêm: không gửi link trừ khi khách muốn xem thêm hình/chi tiết, và tuyệt đối không bảo khách vào web để mua hay đặt hàng.
+(3) Chốt đơn ngay trong chat: đủ thông tin → gọi prepare_order (chỉ để kiểm tra và tính tiền, KHÔNG có nút đặt hàng; bỏ qua câu "Sau khi gọi prepare_order: báo khách bấm nút…" ở phần trên). Rồi tóm tắt đơn cho khách bằng 2–3 câu chat (giỏ × số lượng, tổng tiền đã gồm phí giao, ngày giao, cách thanh toán và tiền cọc nếu COD) và hỏi "Em lên đơn cho mình nhé ạ?". Khách đồng ý rõ ràng ở tin sau → gọi confirm_order với ĐÚNG thông tin đã tóm tắt: hệ thống tạo đơn và tự gửi mã QR + số tài khoản ngay sau tin của em, nên em chỉ trả lời 1–2 câu ngắn (cảm ơn, báo đã lên đơn), không chép lại thông tin thanh toán. Khách đổi ý hay sửa thông tin → gọi lại prepare_order rồi tóm tắt lại; chưa được khách đồng ý thì KHÔNG gọi confirm_order.
+Khách ĐANG nhắn trên Fanpage: KHÔNG bảo khách "nhắn Zalo/Fanpage" hay bấm nút trên web để được tư vấn — NGOẠI LỆ duy nhất: đơn xuất hóa đơn VAT thì mời khách nhắn Zalo gửi thông tin xuất hóa đơn (theo mục VAT). Việc cần người thật (đổi món, làm giỏ theo yêu cầu, in logo, đơn doanh nghiệp cần báo giá, khiếu nại, đơn đã đặt mà tra không ra, khách muốn gặp người, câu em không chắc) → gọi transfer_to_human với tóm tắt rõ, rồi trả lời khách bằng câu mẫu CHUYỂN CHO NHÂN VIÊN (không nói "chuyên viên"). Khách muốn được gọi điện thì vẫn dùng request_callback.`,
 };
 
 // AI lỗi (hết tiền Claude, khóa sai, quá tải…) → báo nhóm Telegram, tối đa 1 lần / 30 phút
@@ -845,6 +938,7 @@ async function chat(req, text, opts = {}) {
     system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị"). KHÔNG hỏi tên hay hỏi anh/chị.` : '', knownLine].filter(Boolean).join('\n') });
   }
   req.aiChannel = opts.channel || 'web';
+  req.aiPsid = opts.psid || '';
   const toolDefs = tools(opts.channel);
   const out = { userText: String(text).slice(0, 800) };
   let reply = '';
@@ -882,7 +976,7 @@ async function chat(req, text, opts = {}) {
       alertTeam(err);
       history.length = before; // lượt này lỗi → bỏ cả lượt (tin khách + phần dở dang) để lần sau gửi lại sạch sẽ
       req.session.aiChat = history;
-      return { reply: `Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️ Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, error: true, errorKind: /credit|balance|billing/i.test(String(err && err.message)) ? 'credit' : (err && err.status) || 'network' };
+      return { reply: `Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️ Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, order: out.order || null, orderUntil: out.orderUntil || '', error: true, errorKind: /credit|balance|billing/i.test(String(err && err.message)) ? 'credit' : (err && err.status) || 'network' };
     }
     const dropped = (res.input_transformations || []).filter((t) => t.type === 'thinking_dropped').length;
     if (dropped) console.log(`[AI tư vấn] bỏ ${dropped} khối suy nghĩ cũ không còn khớp (lời dặn/công cụ đã đổi)`);
@@ -927,7 +1021,7 @@ async function chat(req, text, opts = {}) {
   }
   if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
 
 module.exports = {

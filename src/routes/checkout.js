@@ -491,6 +491,7 @@ router.post('/tra-cuu-don', trackLimiter, async (req, res) => {
 module.exports = router;
 module.exports.PROVINCES = PROVINCES;
 module.exports.shareLink = shareLink;
+module.exports.newCode = newCode;
 module.exports.orderKey = orderKey;
 module.exports.dateCtx = dateCtx;
 module.exports.bulkRule = bulkRule;

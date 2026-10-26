@@ -114,17 +114,25 @@ const typing = (psid) => send({ recipient: { id: psid }, sender_action: 'typing_
 let pauseMs = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Câu trả lời của AI: mỗi đoạn (cách nhau dòng trống) là một tin, giữa các tin hiện "đang soạn tin" như người gõ. */
-async function sendChat(psid, text) {
+async function sendChat(psid, text, photos = []) {
   let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
   if (parts.length > 3) parts = [...parts.slice(0, 2), parts.slice(2).join('\n')];
+  // Ảnh giỏ hiện TRƯỚC lời giới thiệu + giá (riêng lời chào mở đầu thì vẫn đứng đầu)
+  const photoAt = photos.length ? (/^Dạ Lunar Lucky xin chào/i.test(parts[0] || '') && parts.length > 1 ? 1 : 0) : -1;
   for (let i = 0; i < parts.length; i++) {
     if (i) {
       await typing(psid);
       await pauseMs(Math.min(2500, 600 + parts[i].length * 25));
     }
+    if (i === photoAt) for (const p of photos) await sendPhoto(psid, p);
     await sendText(psid, parts[i]);
   }
+  if (photoAt === parts.length) for (const p of photos) await sendPhoto(psid, p);
 }
+
+/** Ảnh giỏ gửi thẳng vào khung chat (JPEG công khai từ website — Facebook tự tải về). */
+const photoUrl = (p) => `${config.siteUrl}/media/${p.image_id}.jpg`;
+const sendPhoto = (psid, p) => send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'image', payload: { url: typeof p === 'string' ? p : photoUrl(p), is_reusable: true } } } });
 
 // Tên trên Facebook (first_name/last_name). Facebook không cho biết giới tính → AI tự nhận theo tên.
 let fetchProfile = async (psid) => {
@@ -427,10 +435,10 @@ async function handleEvent(ev) {
   const known = row && row.title ? { title: row.title, ...(row.name ? { name: row.name } : {}) } : {};
   let session = { aiChat: history, aiCustomer: known };
   const name = await customerName(psid, row);
-  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context });
+  let r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context, psid });
   if (r.full) { // cuộc trò chuyện quá dài → bắt đầu lại, giữ trải nghiệm liền mạch trên Messenger (không chào lại)
     session = { aiChat: [], aiCustomer: known };
-    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context, noGreet: true });
+    r = await ai.chat({ session }, text, { channel: 'messenger', customerName: name, customerTitle: row && row.title, context, noGreet: true, psid });
   }
   // Khách cho biết anh/chị + tên → lưu để xưng hô đúng cả lần sau và hiện đúng tên trên Telegram
   if (r.customer) await saveThread(psid, { ...(r.customer.title ? { title: r.customer.title } : {}), ...(r.customer.name ? { name: r.customer.name } : {}) });
@@ -443,6 +451,11 @@ async function handleEvent(ev) {
     await alertHuman(psid, row, { title: 'AI đang tắt/hết lượt — khách Fanpage chờ người trả lời', last: text, pauseHours });
     return 'off';
   }
+  if (r.error && r.order) { // đơn đã tạo xong rồi mới gặp lỗi → vẫn gửi QR/thông tin đơn cho khách
+    await sendText(psid, `Dạ em đã lên đơn ${r.order.code} cho anh/chị rồi ạ.`);
+    await orderUpdate(r.order, 'placed', { until: r.orderUntil });
+    return 'reply';
+  }
   if (r.error) {
     // AI lỗi sau khi đã tự thử lại → nhắn khách tự nhiên + báo nhân viên trả lời thay ngay (mỗi khách tối đa 1 lần / 30 phút)
     await sendText(psid, 'Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️');
@@ -453,8 +466,10 @@ async function handleEvent(ev) {
     }
     return 'error';
   }
-  await sendChat(psid, r.reply);
+  await sendChat(psid, r.reply, r.photos || []);
   await require('./ai-learn').log(psid, 'ai', r.reply);
+  // Khách đã xác nhận trong chat → đơn đã tạo: gửi ngay mã QR + thông tin chuyển khoản (không dẫn sang web)
+  if (r.order) await orderUpdate(r.order, 'placed', { until: r.orderUntil });
   // Tên khách tự giới thiệu (AI ghi lại) / tên trên đơn → các tin báo sau hiện tên
   await rememberName(psid, row, r.humanName || (session.aiPrefill && session.aiPrefill.customer_name));
   if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)
@@ -462,14 +477,11 @@ async function handleEvent(ev) {
     await alertHuman(psid, row, { title: 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
   }
   if (r.human || r.callback) await require('./ai-learn').log(psid, 'event', 'human');
-  if (r.action && session.cart && session.aiPrefill) {
+  // Khách đã chốt giỏ + thông tin (AI đã kiểm tra đơn, chờ khách đồng ý trong chat): lưu lại để sau 2 giờ chưa lên đơn thì báo gọi lại.
+  // Không còn nút sang web — đơn tạo ngay trong chat bằng confirm_order.
+  if (r.prepared && session.cart && session.aiPrefill) {
     await require('./ai-learn').log(psid, 'event', 'order_button');
-    const url = await createHandoff(session, psid);
-    await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
-      template_type: 'button',
-      text: 'Anh/chị bấm nút dưới để xem lại đơn và bấm "Đặt hàng" (đơn chỉ được tạo khi anh/chị bấm):',
-      buttons: [{ type: 'web_url', url, title: 'Kiểm tra & đặt hàng' }],
-    } } } });
+    await createHandoff(session, psid);
   }
   return 'reply';
 }
@@ -521,7 +533,7 @@ async function orderUpdate(order, kind, extra = {}) {
   let text = '';
   if (kind === 'placed') {
     text = `Dạ Lunar Lucky đã nhận đơn ${order.code} — tổng ${money(order.total)}, giao ${deliveryWhen(order)} ạ.`;
-    if (payment.awaitingMoney(order) && due) text += `\nAnh/chị ${isDep ? 'đặt cọc' : 'chuyển khoản'} ${money(due)} theo mã QR trong link dưới (nội dung ${order.code}) để em giữ giỏ${extra.until ? ` đến ${extra.until}` : ''}; tiền vào là hệ thống tự xác nhận.`;
+    if (payment.awaitingMoney(order) && due) text += `\nAnh/chị ${isDep ? 'đặt cọc' : 'chuyển khoản'} ${money(due)} theo mã QR bên dưới (nội dung ${order.code}) để em giữ giỏ${extra.until ? ` đến ${extra.until}` : ''}; tiền vào là hệ thống tự xác nhận.`;
     else if (order.payment_method === 'cod') text += `\nAnh/chị thanh toán ${money(payment.codDue(order))} khi nhận hàng. Em sẽ gọi xác nhận trước khi giao.`;
   } else if (kind === 'reminder') {
     if (!payment.awaitingMoney(order) || !due) return false;
@@ -533,6 +545,22 @@ async function orderUpdate(order, kind, extra = {}) {
   } else if (kind === 'review') {
     text = `Dạ Lunar Lucky cảm ơn anh/chị đã tin chọn giỏ quà (đơn ${order.code}) ạ. Anh/chị dành 1 phút cho em xin cảm nhận${order.is_gift ? ' của người nhận' : ''}, kèm ảnh nếu tiện nhé — góp ý của anh/chị giúp bên em làm tốt hơn!`;
   } else return false;
+  // Đặt cọc / chuyển khoản: gửi thẳng mã QR + số tài khoản trong khung chat (khách không phải mở web)
+  if (kind === 'placed' || kind === 'reminder') {
+    try {
+      await sendText(order.messenger_psid, text);
+      if (payment.awaitingMoney(order) && due) {
+        const s = await settings.all();
+        const qr = payment.qrForOrder(order, s);
+        const acc = payment.accountForOrder(order, s);
+        if (qr) await sendPhoto(order.messenger_psid, qr);
+        if (payment.isConfigured(acc)) {
+          await sendText(order.messenger_psid, `Thông tin chuyển khoản:\nNgân hàng: ${acc.bankName || acc.bankId}\nSố tài khoản: ${acc.account}\nChủ tài khoản: ${acc.holder}\nSố tiền: ${money(due)}\nNội dung: ${order.code}`);
+        }
+      }
+      return true;
+    } catch { return false; }
+  }
   const ok = await send({ recipient: { id: order.messenger_psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
     template_type: 'button', text: text.slice(0, 640), buttons: [kind === 'review' ? { type: 'web_url', url: extra.url, title: 'Gửi cảm nhận' } : { type: 'web_url', url: link, title: kind === 'paid' ? 'Xem đơn' : 'Xem đơn & mã QR' }],
   } } } }).catch(() => false);
