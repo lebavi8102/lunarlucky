@@ -55,7 +55,10 @@ let send = async (body) => {
   });
   if (!r.ok) {
     const t = await r.text().catch(() => '');
-    console.error('[messenger] gửi lỗi', r.status, t.slice(0, 300));
+    let why = t.slice(0, 700);
+    try { const j = JSON.parse(t).error || {}; why = `${j.code}/${j.error_subcode || '-'} ${j.message || ''} | ${j.error_user_title || ''} — ${j.error_user_msg || ''}`.slice(0, 700); } catch { /* giữ nguyên văn */ }
+    const kind = body && body.message && body.message.attachment ? `đính kèm ${body.message.attachment.type}` : body && body.sender_action ? 'đang soạn' : 'tin chữ';
+    console.error(`[messenger] gửi lỗi ${r.status} (${kind}, khách …${String((body && body.recipient && body.recipient.id) || '').slice(-4)}):`, why);
     require('./ai-errors').log({ kind: 'messenger_send', channel: 'messenger', status: r.status, message: t, ref: body && body.recipient && body.recipient.id });
     return false;
   }
