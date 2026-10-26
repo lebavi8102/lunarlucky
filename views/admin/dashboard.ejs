@@ -5,6 +5,10 @@
 <div class="stat-grid">
   <div class="stat hl"><div class="label">Doanh thu hôm nay</div><div class="value"><%= money(stats.revenueToday) %></div><div class="small" style="opacity:.75"><%= stats.ordersToday %> đơn<% if (stats.waitingToday) { %> · chờ tiền <%= money(stats.waitingToday) %><% } %></div></div>
   <div class="stat"><div class="label">Doanh thu tháng này</div><div class="value"><%= money(stats.revenueMonth) %></div></div>
+  <% if (profitMonth) { %>
+  <div class="stat"><div class="label">Lợi nhuận hôm nay</div><a class="value" href="/admin/bao-cao?ky=hom-nay" style="display:block;color:<%= profitToday && profitToday.net < 0 ? 'var(--lacquer-700)' : 'inherit' %>"><%= money(profitToday ? profitToday.net : 0) %></a><div class="small muted">Gộp <%= money(profitToday ? profitToday.gross : 0) %></div></div>
+  <div class="stat"><div class="label">Lợi nhuận tháng này</div><a class="value" href="/admin/bao-cao?ky=thang-nay" style="display:block;color:<%= profitMonth.net < 0 ? 'var(--lacquer-700)' : 'inherit' %>"><%= money(profitMonth.net) %></a><div class="small muted">Gộp <%= money(profitMonth.gross) %> · biên cuối <%= Math.round(profitMonth.netMargin * 1000) / 10 %>%<% if (profitMonth.missingCost) { %> · <a href="/admin/san-pham" style="text-decoration:underline"><b><%= profitMonth.missingCost %> giỏ chưa có giá vốn</b></a><% } %></div></div>
+  <% } %>
   <div class="stat"><div class="label">Đơn mới cần xử lý</div><a class="value" href="/admin/don-hang?can_xu_ly=1" style="display:block"><%= stats.newOrders %></a></div>
   <div class="stat"><div class="label">Chờ chuyển khoản / cọc</div><a class="value" href="/admin/don-hang?chua_tt=1" style="display:block"><%= stats.unpaidBank %></a></div>
   <div class="stat"><div class="label">Báo giá B2B mới</div><a class="value" href="/admin/bao-gia" style="display:block"><%= stats.newQuotes %></a></div>

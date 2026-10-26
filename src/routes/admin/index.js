@@ -79,12 +79,19 @@ router.get('/', async (req, res) => {
     db('orders').orderBy('id', 'desc').limit(8),
     db('products').orderBy('sold', 'desc').limit(5),
   ]);
+  // Lợi nhuận hôm nay / tháng này (cùng cách tính với trang Báo cáo lợi nhuận); lỗi thì chỉ ẩn 2 ô, không làm hỏng trang
+  const prof = require('../../lib/profit');
+  const [profitToday, profitMonth] = await Promise.all([
+    prof.report({ from: today, to: today }).catch(() => null),
+    prof.report(prof.presetRange('thang-nay')).catch(() => null),
+  ]);
   res.render('admin/dashboard', {
     title: 'Tổng quan',
     stats: {
       revenueToday, revenueMonth, ordersToday, waitingToday,
       newOrders: Number(newOrders.n), unpaidBank: Number(unpaidBank.n), newQuotes: Number(newQuotes.n),
     },
+    profitToday, profitMonth,
     days, lowStock, recent, topProducts, byChannel, byCta,
   });
 });
