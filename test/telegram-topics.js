@@ -86,6 +86,11 @@ const lastSend = () => [...sent].reverse().find((x) => x.method === 'sendMessage
   sent.length = 0;
   await tg.sendNewOrder(o, items);
   ok(lastSend()?.body.message_thread_id === 11 && /ĐƠN MỚI/.test(lastSend().body.text), 'Đơn mới gửi vào chủ đề Đơn hàng');
+  // Tin đơn mới có mã sản phẩm + số lượng, và gửi kèm ảnh giỏ (trả lời ngay dưới tin đơn)
+  const photoMsg = sent.find((x) => x.method === 'sendPhoto');
+  const prodRow = await db('products').where({ id: prod0.id }).first();
+  ok(!prodRow.sku || (lastSend().body.text.includes(`<code>${prodRow.sku}</code> · `) && /× 1/.test(lastSend().body.text)), 'Tin đơn mới ghi mã sản phẩm (SKU) và số lượng');
+  ok(!prodRow.image_id || (photoMsg && /\/media\/\d+\.jpg$/.test(photoMsg.body.photo) && photoMsg.body.reply_to_message_id === 1 && /× 1/.test(photoMsg.body.caption) && (!prodRow.sku || photoMsg.body.caption.includes(prodRow.sku))), 'Gửi kèm ảnh giỏ (JPEG) trả lời dưới tin đơn, ghi mã + số lượng');
 
   // 3b. Khách nhờ gọi lại → chủ đề General "TƯ VẤN KHÁCH" (không gắn mã chủ đề), không vào chủ đề Đơn hàng
   sent.length = 0;

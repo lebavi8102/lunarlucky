@@ -202,7 +202,7 @@ async function telegramDiscover() {
 
 function orderTelegram(order, items) {
   const e = escapeTg;
-  const list = items.map((i) => `• ${e(i.name)} × ${i.qty} = ${money(i.line_total)}`).join('\n');
+  const list = items.map((i) => `• ${i.sku ? `<code>${e(i.sku)}</code> · ` : ''}${e(i.name)} × ${i.qty} = ${money(i.line_total)}`).join('\n');
   return [
     `🧧 <b>ĐƠN MỚI ${e(order.code)}</b>`,
     order.is_gift

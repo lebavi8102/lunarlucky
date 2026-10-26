@@ -246,14 +246,36 @@ function keyboard(order, { confirmCancel = false, confirmRestore = false, confir
 async function sendNewOrder(order, items) {
   try {
     const notes = await opsNotes(order).catch(() => null);
+    const full = await loadOrder(order.id).catch(() => null); // dòng hàng kèm mã sản phẩm + ảnh giỏ
+    if (full) items = full.items;
     const msg = await notify.telegram(messageText(order, items, notes).replace('🧧 <b>ĐƠN ', '🧧 <b>ĐƠN MỚI '), null, {
       reply_markup: keyboard(order),
     });
     if (msg && msg.message_id) {
       await db('orders').where({ id: order.id }).update({ tg_chat_id: String(msg.chat.id), tg_message_id: msg.message_id });
+      await sendOrderPhotos(items, msg);
     }
   } catch (err) {
     console.error('[telegram] gửi đơn mới thất bại:', err.message);
+  }
+}
+
+/** Ảnh từng giỏ trong đơn, trả lời ngay dưới tin đơn mới: mã sản phẩm + tên giỏ + số lượng (kho nhìn ảnh soạn đúng giỏ). */
+async function sendOrderPhotos(items, msg) {
+  if (!config.telegram.token || !msg || !msg.chat) return;
+  const seen = new Set();
+  for (const i of items) {
+    if (!i.image_id || seen.has(i.image_id)) continue;
+    seen.add(i.image_id);
+    if (seen.size > 8) break;
+    await notify.tgApi('sendPhoto', {
+      chat_id: msg.chat.id,
+      ...(msg.message_thread_id ? { message_thread_id: msg.message_thread_id } : {}),
+      reply_to_message_id: msg.message_id,
+      photo: `${config.siteUrl}/media/${i.image_id}.jpg`, // bản JPEG công khai của ảnh giỏ
+      caption: `${i.sku ? `<code>${e(i.sku)}</code> · ` : ''}<b>${e(i.name)}</b> × ${i.qty}`,
+      parse_mode: 'HTML',
+    }).catch((err) => console.error('[telegram] gửi ảnh giỏ lỗi:', err.message));
   }
 }
 

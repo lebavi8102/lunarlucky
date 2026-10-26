@@ -16,8 +16,15 @@ const PAYMENT_STATUS = { pending: 'Chưa thanh toán', deposit: 'Đã cọc', pa
 async function loadOrder(id) {
   const order = await db('orders').where({ id: Number(id) }).first();
   if (!order) return null;
-  const items = (await db('order_items').where({ order_id: order.id })).map((i) => ({
+  const rows = await db('order_items').where({ order_id: order.id });
+  // Mã sản phẩm (SKU) + ảnh giỏ: tin báo Telegram hiện mã, số lượng và gửi kèm ảnh
+  const ids = [...new Set(rows.map((i) => Number(i.product_id)).filter(Boolean))];
+  const prods = ids.length ? await db('products').whereIn('id', ids).select('id', 'sku', 'image_id') : [];
+  const byId = Object.fromEntries(prods.map((p) => [p.id, p]));
+  const items = rows.map((i) => ({
     ...i,
+    sku: (byId[i.product_id] && byId[i.product_id].sku) || null,
+    image_id: (byId[i.product_id] && byId[i.product_id].image_id) || null,
     details: parseJson(i.details, null),
   }));
   return { order, items };
