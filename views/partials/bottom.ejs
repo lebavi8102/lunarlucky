@@ -1,46 +1,62 @@
 </main>
 
+<section class="seo-about" aria-labelledby="seo-about-title">
+  <div class="container seo-about-inner">
+    <h2 id="seo-about-title">Quà Tết Lunar Lucky – Gửi trao lời chúc đầu năm</h2>
+    <p>Tặng quà Tết là nét đẹp trong văn hóa người Việt, gửi gắm lời cảm ơn và những lời chúc tốt lành khi năm mới đến. Một giỏ quà biếu cha mẹ, một phần quà gửi người thân hay món quà tri ân đối tác đều mang ý nghĩa riêng, thể hiện sự quan tâm và trân trọng dành cho người nhận.</p>
+    <div class="seo-about-more" id="seo-about-more" data-about-more>
+      <p>Với Lunar Lucky, mỗi món quà được chăm chút từ cách lựa chọn sản phẩm đến cách sắp xếp và gói ghém. Những giỏ quà Tết, hộp quà Tết kết hợp trà, cà phê, bánh kẹo cùng các sản phẩm phù hợp với từng mẫu, mang đến nhiều lựa chọn cho gia đình và doanh nghiệp. Dù chọn món quà giản dị hay trang trọng, Lunar Lucky mong được cùng bạn gửi trao lời chúc an khang, may mắn và một năm mới đủ đầy.</p>
+    </div>
+    <button type="button" class="seo-about-toggle" data-about-toggle aria-expanded="false" aria-controls="seo-about-more">Xem thêm</button>
+  </div>
+</section>
+
 <footer class="site-footer">
   <div class="container footer-top">
-    <div>
+    <div class="footer-brand">
       <a href="/" class="logo"><%- include('logo') %></a>
-      <p style="margin-top:20px;max-width:36ch">Giỏ quà Tết tuyển chọn thủ công, đóng hộp sơn mài, giao toàn quốc, nội thành Hà Nội đúng ngày bạn chọn.</p>
-      <div class="pay-chips" style="margin-top:20px" aria-label="Hình thức thanh toán">
-        <span>COD</span><span>VietQR</span><span>Chuyển khoản</span>
+      <p class="footer-intro">Giỏ quà Tết chỉn chu, gửi trao lời chúc an lành. Lunar Lucky đồng hành cùng bạn chọn quà cho người thân, đối tác và doanh nghiệp.</p>
+      <p class="footer-ship">Giao hàng toàn quốc.</p>
+      <div class="pay-chips" aria-label="Hình thức thanh toán">
+        <span>COD</span><span>Chuyển khoản / VietQR</span>
       </div>
     </div>
-    <div>
-      <h4>Mua sắm</h4>
+    <nav class="footer-col footer-explore" aria-label="Khám phá">
+      <h4>Khám phá</h4>
       <ul>
-        <li><a href="/bo-suu-tap">Tất cả giỏ quà</a></li>
-        <li><a href="/qua-tang-doanh-nghiep">Quà doanh nghiệp</a></li>
-        <li><a href="/tra-cuu-don">Tra cứu đơn hàng</a></li>
+        <li><a href="/bo-suu-tap">Bộ sưu tập quà Tết</a></li>
+        <li><a href="/qua-tang-doanh-nghiep">Quà Tết doanh nghiệp</a></li>
+        <li><a href="/gioi-thieu">Câu chuyện Lunar Lucky</a></li>
         <li><a href="/blog">Cẩm nang quà Tết</a></li>
       </ul>
-    </div>
-    <div>
-      <h4>Hỗ trợ</h4>
+    </nav>
+    <nav class="footer-col footer-support" aria-label="Hỗ trợ khách hàng">
+      <h4>Hỗ trợ khách hàng</h4>
       <ul>
+        <li><a href="/tra-cuu-don">Tra cứu đơn hàng</a></li>
         <li><a href="/cau-hoi-thuong-gap">Câu hỏi thường gặp</a></li>
         <li><a href="/chinh-sach-giao-hang">Chính sách giao hàng</a></li>
         <li><a href="/chinh-sach-doi-tra">Chính sách đổi trả</a></li>
         <li><a href="/chinh-sach-bao-mat">Chính sách bảo mật</a></li>
         <li><a href="/dieu-khoan">Điều khoản sử dụng</a></li>
       </ul>
-    </div>
-    <div>
+    </nav>
+    <div class="footer-col footer-contact">
       <h4>Liên hệ</h4>
       <ul>
-        <li><a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg><%= s.shop_phone %></a></li>
-        <li><a href="mailto:<%= s.shop_email %>"><svg class="icon icon-sm"><use href="#i-mail"/></svg><%= s.shop_email %></a></li>
-        <li><a href="<%= s.fanpage_url %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-facebook"/></svg>Fanpage Lunar Lucky</a></li>
-        <li><span style="display:inline-flex;gap:8px;align-items:center;min-height:32px"><svg class="icon icon-sm"><use href="#i-clock"/></svg><%= s.shop_hours %></span></li>
+        <li><a href="tel:<%= s.shop_phone.replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg><span>Tư vấn chọn quà: <%= s.shop_phone %></span></a></li>
+        <li><a href="mailto:<%= s.shop_email %>"><svg class="icon icon-sm"><use href="#i-mail"/></svg><span>Email: <%= s.shop_email %></span></a></li>
+        <li><a href="<%= s.fanpage_url %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-facebook"/></svg><span>Fanpage: Lunar Lucky</span></a></li>
+        <li><span class="footer-hours"><svg class="icon icon-sm"><use href="#i-clock"/></svg><span>Giờ tư vấn: 8:00–21:00 hằng ngày</span></span></li>
       </ul>
     </div>
   </div>
+  <div class="container footer-legal">
+    <p>Lunar Lucky không bán đồ uống có cồn cho người dưới 18 tuổi.</p>
+  </div>
   <div class="container footer-bottom">
-    <span>© <%= new Date().getFullYear() %> <%= s.shop_name %>. Bán hàng trực tuyến, giao toàn quốc.</span>
-    <span>An Khang · Thịnh Vượng · Vạn Sự Như Ý</span>
+    <span>© <%= new Date().getFullYear() %> Lunar Lucky.</span>
+    <span>Trao quà tinh tế · Gửi lời chúc lành</span>
   </div>
 </footer>
 

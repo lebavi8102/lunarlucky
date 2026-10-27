@@ -603,6 +603,17 @@
     $('[data-support-ai]', sup)?.addEventListener('click', () => { setSup(false); $('.ai-fab')?.click(); }); // dùng đúng chatbot AI hiện có
   }
 
+  // Giới thiệu dài trên chân trang (điện thoại): Xem thêm / Thu gọn
+  const aboutBtn = $('[data-about-toggle]');
+  const aboutMore = $('[data-about-more]');
+  if (aboutBtn && aboutMore) {
+    aboutBtn.addEventListener('click', () => {
+      const open = aboutMore.classList.toggle('is-open');
+      aboutBtn.setAttribute('aria-expanded', String(open));
+      aboutBtn.textContent = open ? 'Thu gọn' : 'Xem thêm';
+    });
+  }
+
   // Điện thoại: bàn phím mở thì ẩn các thanh / nút cố định để không che ô đang nhập
   const kbTyping = 'input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]), select, textarea';
   const mobileMq = matchMedia('(max-width: 959px)');
