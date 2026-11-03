@@ -25,7 +25,7 @@ const DEFAULTS = {
   shop_hours: '8:00 – 21:00, tất cả các ngày',
   fanpage_url: 'https://www.facebook.com/Lunarlucky.vn',
   messenger_url: 'https://m.me/Lunarlucky.vn',
-  zalo_url: 'https://zalo.me/0969000910',
+  zalo_url: 'https://zalo.me/0918000910',
   bank_id: 'VCB',
   bank_name: 'Vietcombank',
   bank_account: '0000000000',
