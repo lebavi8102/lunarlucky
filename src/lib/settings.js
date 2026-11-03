@@ -20,7 +20,7 @@ const DEFAULTS = {
   telegram_chat_thread: '',
   telegram_chat_chat_id: '', // nhóm riêng cho khách Fanpage cần gặp nhân viên (trống = nhóm đơn hàng)
   shop_tagline: 'Luxury Gifts & Hampers',
-  shop_phone: '096 900 09 10',
+  shop_phone: '091 800 09 10',
   shop_email: 'lunarlucky.cskh@gmail.com',
   shop_hours: '8:00 – 21:00, tất cả các ngày',
   fanpage_url: 'https://www.facebook.com/Lunarlucky.vn',
