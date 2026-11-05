@@ -405,4 +405,16 @@ async function exportExcel() {
   ]);
 }
 
-module.exports = { parseRows, syncFromExcel, exportExcel, money, bool };
+/**
+ * Tồn kho hiện tại trên web để tool ghi ngược vào Excel. Đồng thời ghi nhận "Excel đang hiện số này" (excel_stock)
+ * → chủ shop lưu file với đúng số đó thì không bị coi là sửa tồn kho (không ghi đè đơn mới trừ sau đó).
+ */
+async function stockReport() {
+  const rows = await db('products').whereNotNull('sku').select('id', 'sku', 'stock', 'excel_stock');
+  for (const r of rows) {
+    if (r.excel_stock == null || Number(r.excel_stock) !== Number(r.stock)) await db('products').where({ id: r.id }).update({ excel_stock: r.stock });
+  }
+  return rows.map((r) => ({ sku: r.sku, stock: Number(r.stock) || 0 }));
+}
+
+module.exports = { parseRows, syncFromExcel, exportExcel, stockReport, money, bool };
