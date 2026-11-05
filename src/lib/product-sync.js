@@ -23,7 +23,8 @@ const CATEGORY_ALIASES = [
 ];
 const idOf = (r) => (r && typeof r === 'object' ? r.id : r);
 const norm = (s) => slugify(String(s || '')).replace(/-/g, ' ').trim();
-const fileKey = (s) => String(s || '').replace(/"/g, '').trim().split(/[\\/]/).pop().normalize('NFC').toLowerCase();
+// Khóa so ảnh = đủ đường dẫn (nhiều giỏ cùng có "1.jpg" ở thư mục khác nhau), không phân biệt hoa thường
+const fileKey = (s) => String(s || '').replace(/"/g, '').trim().replace(/\//g, '\\').normalize('NFC').toLowerCase();
 
 // Tiêu đề cột (không dấu, chữ thường) → trường. Kiểm tra theo thứ tự, khớp phần đầu tiêu đề.
 const HEADERS = [
@@ -102,8 +103,7 @@ const fileList = (v) =>
     })
     .map((x) => x.replace(/"/g, '').trim())
     .filter(Boolean);
-/** Tên file (bỏ thư mục) — dùng để so với ảnh đang có trên web */
-const baseName = (s) => String(s || '').replace(/"/g, '').trim().split(/[\\/]/).pop();
+
 
 /** Đọc sheet sản phẩm → { rows: [{ line, ...trường }], errors } */
 function parseRows(buffer) {
@@ -235,7 +235,7 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
       const f = uploaded.get(key);
       const mime = sniff(f.buffer);
       if (!mime) throw Object.assign(new Error(`Tệp "${name}" không phải ảnh JPG/PNG/WebP.`), { status: 400 });
-      const id = idOf((await trx('media').insert({ filename: baseName(name).slice(0, 255), mime, size: f.buffer.length, alt: String(alt).slice(0, 255), data: f.buffer }))[0]);
+      const id = idOf((await trx('media').insert({ filename: String(name).replace(/"/g, '').trim().normalize('NFC').slice(0, 255), mime, size: f.buffer.length, alt: String(alt).slice(0, 255), data: f.buffer }))[0]);
       savedMedia.set(key, id);
       return id;
     };
