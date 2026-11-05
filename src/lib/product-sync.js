@@ -2,8 +2,8 @@
  * Đồng bộ sản phẩm từ file Excel của chủ shop (tool trên máy tính tự gửi lên mỗi khi bấm Lưu).
  * - Khớp sản phẩm theo Mã SP, không có mã thì theo đúng tên. Không khớp → thêm sản phẩm mới.
  * - Cập nhật: tên, danh mục, giá bán, giá gốc, giá vốn, nhãn, mô tả, thành phần, ảnh, nổi bật, đang bán, link video.
- * - TỒN KHO: chỉ lấy từ Excel khi THÊM sản phẩm mới. Sản phẩm đã có thì web giữ tồn kho (web tự trừ khi có đơn,
- *   nhập thêm hàng bằng /nhap trên Telegram hoặc trong admin) → Excel không ghi đè làm sai số.
+ * - TỒN KHO: chỉ áp khi ô tồn kho trong Excel ĐỔI so với lần gửi trước (products.excel_stock). Không đổi → web giữ
+ *   số đang có (web tự trừ khi có đơn) → gửi lại file cũ không làm sai tồn kho.
  * - Dòng bị xóa khỏi Excel: không xóa trên web (muốn ngừng bán thì ghi "Không" ở cột Đang bán).
  * - Ảnh: cột ảnh ghi tên file. Trùng tên ảnh đang dùng → giữ nguyên; tên khác → cần gửi kèm file ảnh đó.
  *   Lượt đầu tool chỉ gửi Excel; web trả danh sách ảnh cần (need_images) mà KHÔNG sửa gì; lượt sau gửi kèm ảnh.
@@ -179,7 +179,7 @@ function parseRows(buffer) {
  * files: [{ originalname, buffer }] ảnh gửi kèm. final=false: thiếu ảnh thì chỉ trả need_images, không sửa gì.
  * final=true: ảnh vẫn thiếu thì giữ ảnh cũ + báo lỗi dòng đó.
  */
-async function syncFromExcel(buffer, files = [], { final = false } = {}) {
+async function syncFromExcel(buffer, files = [], { final = false, check = false } = {}) {
   const { rows, errors, skipped } = parseRows(buffer);
   const uploaded = new Map(files.map((f) => [fileKey(f.originalname), f]));
   const cats = Object.fromEntries((await db('categories').select('id', 'name')).map((c) => [norm(c.name), c.id]));
@@ -224,7 +224,9 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
     plan.push({ r, p, catId, missing });
   }
 
-  if (need.size && !final) return { ok: true, applied: false, need_images: [...need], errors, skipped };
+  // check: chỉ hỏi, không sửa — trả cả danh sách ảnh Excel đang ghi để tool gửi lại ảnh đã thay nội dung (cùng tên)
+  const images = [...new Set(plan.flatMap(({ r }) => [r.image, ...r.gallery].filter(Boolean)))];
+  if (check || (need.size && !final)) return { ok: true, applied: false, need_images: [...need], images, errors, skipped };
 
   const result = { ok: true, applied: true, created: [], updated: [], unchanged: 0, skipped, errors, need_images: [] };
   const savedMedia = new Map(); // tên file → media id (một ảnh dùng cho nhiều giỏ chỉ lưu 1 lần)
@@ -239,13 +241,13 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
       savedMedia.set(key, id);
       return id;
     };
-    // ảnh theo tên: ảnh đang dùng (cùng tên) → id cũ; file gửi kèm → lưu mới; thiếu → undefined
+    // ảnh theo tên: file gửi kèm → lưu mới (kể cả cùng tên = ảnh đã thay nội dung); không gửi → ảnh đang dùng cùng tên; thiếu → undefined
     const resolve = async (name, p, alt) => {
+      if (uploaded.has(fileKey(name))) return saveImg(name, alt);
       if (p) {
         const cur = [p.image_id, ...gallery(p)].find((id) => id && mediaName[id] === fileKey(name));
         if (cur) return cur;
       }
-      if (uploaded.has(fileKey(name))) return saveImg(name, alt);
       return undefined;
     };
 
@@ -264,6 +266,11 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
         is_featured: r.is_featured,
         is_active: r.is_active,
       };
+      // Tồn kho: chỉ áp khi chủ shop SỬA ô tồn kho trong Excel (khác lần gửi trước). Không sửa → web giữ số đang có (đã trừ đơn).
+      if (r.stock != null && p && (p.excel_stock == null || Number(p.excel_stock) !== r.stock)) {
+        v.stock = r.stock;
+        v.excel_stock = r.stock;
+      }
       if (r.has.video_url) v.video_url = r.video_url;
       if (r.has.sort) v.sort = r.sort;
       if (r.has.seo_title) v.seo_title = r.seo_title;
@@ -288,7 +295,7 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
         for (let n = 2; await trx('products').where({ slug }).first('id'); n++) slug = `${slugify(r.name) || 'gio-qua'}-${n}`;
         const sku = r.sku || (await nextSku(trx));
         await trx('products').insert({
-          ...v, sku, slug, stock: r.stock || 0, gallery: v.gallery || '[]', sort: v.sort ?? 0, sold: 0,
+          ...v, sku, slug, stock: r.stock || 0, excel_stock: r.stock ?? null, gallery: v.gallery || '[]', sort: v.sort ?? 0, sold: 0,
           created_at: new Date(), updated_at: new Date(),
         });
         result.created.push({ line: r.line, sku, name: r.name });

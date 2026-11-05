@@ -1,7 +1,7 @@
 /**
  * API cho tool đồng bộ Excel trên máy chủ shop (đặt trước session/CSRF vì tool gọi trực tiếp, không đăng nhập).
  *   GET  /api/dong-bo-san-pham/excel   → tải file Excel sản phẩm đang có trên web
- *   POST /api/dong-bo-san-pham          → gửi file Excel (field "excel") + ảnh (field "images"), ?final=1 ở lượt gửi ảnh
+ *   POST /api/dong-bo-san-pham          → gửi file Excel (field "excel") + ảnh (field "images"); ?check=1 chỉ hỏi, ?final=1 áp dụng
  * Bảo vệ bằng mã bí mật của tool (file cauhinh.txt trên máy chủ shop). Code chỉ giữ dạng băm SHA-256 của mã
  * (băm một chiều, xem code cũng không suy ra được mã). Có biến PRODUCT_SYNC_TOKEN trên Render thì dùng mã đó thay thế.
  */
@@ -64,7 +64,7 @@ router.post('/api/dong-bo-san-pham', limiter, guard, upload.fields([{ name: 'exc
     return { ...f, originalname: name };
   });
   try {
-    const r = await sync.syncFromExcel(excel.buffer, images, { final: req.query.final === '1' });
+    const r = await sync.syncFromExcel(excel.buffer, images, { final: req.query.final === '1', check: req.query.check === '1' });
     if (r.applied) console.log(`[dong-bo-excel] thêm ${r.created.length}, sửa ${r.updated.length}, giữ ${r.unchanged}, lỗi ${r.errors.length}`);
     res.json(r);
   } catch (err) {
