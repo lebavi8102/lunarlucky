@@ -2,7 +2,8 @@
  * API cho tool đồng bộ Excel trên máy chủ shop (đặt trước session/CSRF vì tool gọi trực tiếp, không đăng nhập).
  *   GET  /api/dong-bo-san-pham/excel   → tải file Excel sản phẩm đang có trên web
  *   POST /api/dong-bo-san-pham          → gửi file Excel (field "excel") + ảnh (field "images"), ?final=1 ở lượt gửi ảnh
- * Bảo vệ bằng mã bí mật PRODUCT_SYNC_TOKEN (biến môi trường trên Render). Chưa đặt mã → API tắt.
+ * Bảo vệ bằng mã bí mật của tool (file cauhinh.txt trên máy chủ shop). Code chỉ giữ dạng băm SHA-256 của mã
+ * (băm một chiều, xem code cũng không suy ra được mã). Có biến PRODUCT_SYNC_TOKEN trên Render thì dùng mã đó thay thế.
  */
 const crypto = require('crypto');
 const express = require('express');
@@ -20,17 +21,22 @@ const upload = multer({
 
 const limiter = rateLimit({ ...limiterKey, windowMs: 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
+// SHA-256 của mã trong cauhinh.txt (tạo 05/11/2026). Đổi mã: đặt PRODUCT_SYNC_TOKEN trên Render hoặc thay dòng này.
+const TOKEN_HASH = 'a47778a19c1396e5a518e64f8b43563d1e292bc4353f7856197960b76be220d5';
+
+function wantHash() {
+  const env = String(process.env.PRODUCT_SYNC_TOKEN || '').trim();
+  if (env.length >= 24) return crypto.createHash('sha256').update(env).digest();
+  return Buffer.from(TOKEN_HASH, 'hex');
+}
+
 function authorized(req) {
-  const want = String(process.env.PRODUCT_SYNC_TOKEN || '').trim();
   const got = String(req.get('x-sync-token') || '').trim();
-  if (want.length < 24 || !got) return false;
-  const a = crypto.createHash('sha256').update(want).digest();
-  const b = crypto.createHash('sha256').update(got).digest();
-  return crypto.timingSafeEqual(a, b);
+  if (got.length < 24) return false;
+  return crypto.timingSafeEqual(wantHash(), crypto.createHash('sha256').update(got).digest());
 }
 
 function guard(req, res, next) {
-  if (!String(process.env.PRODUCT_SYNC_TOKEN || '').trim()) return res.status(503).json({ ok: false, error: 'Web chưa bật đồng bộ Excel (thiếu PRODUCT_SYNC_TOKEN trên Render).' });
   if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Sai mã đồng bộ.' });
   next();
 }
