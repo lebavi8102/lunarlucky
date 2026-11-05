@@ -161,6 +161,9 @@ app.post('/thanh-toan/sepay-webhook', async (req, res) => {
   }
 });
 
+// Tool đồng bộ Excel sản phẩm trên máy chủ shop. Đặt trước session/CSRF, bảo vệ bằng PRODUCT_SYNC_TOKEN.
+app.use(require('./routes/product-sync'));
+
 app.use(
   session({
     name: 'lunar.sid',
