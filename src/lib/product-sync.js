@@ -15,13 +15,28 @@ const { buildXlsx } = require('./xlsx');
 const { slugify } = require('./format');
 const { sniff } = require('./media');
 
+const CATEGORY_ALIASES = [
+  ['Biếu sếp & đối tác', 'Quà tặng sếp & đối tác'],
+  ['Quà gia đình', 'Quà tặng gia đình'],
+  ['Quà doanh nghiệp', 'Quà tặng doanh nghiệp'],
+  ['Hộp quà nhỏ xinh', 'Quà tặng bạn bè'],
+];
 const idOf = (r) => (r && typeof r === 'object' ? r.id : r);
 const norm = (s) => slugify(String(s || '')).replace(/-/g, ' ').trim();
-const fileKey = (s) => String(s || '').trim().toLowerCase();
+const fileKey = (s) => String(s || '').replace(/"/g, '').trim().split(/[\\/]/).pop().normalize('NFC').toLowerCase();
 
 // Tiêu đề cột (không dấu, chữ thường) → trường. Kiểm tra theo thứ tự, khớp phần đầu tiêu đề.
 const HEADERS = [
   ['ghi chu gia von', null],
+  ['gia nhap si', null], // file chủ shop: giá vốn lấy theo giá nhập LẺ (an toàn khi tính lãi)
+  ['gia nhap le', 'cost_price'],
+  ['giam', null], // cột "% giảm" tự tính
+  ['kiem tra', null],
+  ['anh chinh', 'image'],
+  ['anh phu', 'gallery'],
+  ['thu tu', 'sort'],
+  ['tieu de seo', 'seo_title'],
+  ['mo ta seo', 'seo_desc'],
   ['ma sp', 'sku'],
   ['ten san pham', 'name'],
   ['danh muc', 'category'],
@@ -75,7 +90,20 @@ const text = (v, max) => {
   const s = String(v).replace(/\r\n?/g, '\n').trim();
   return s ? (max ? s.slice(0, max) : s) : null;
 };
-const fileList = (v) => String(v || '').split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+const IMG_EXT = /\.(jpe?g|png|webp|avif)$/i;
+/** Ô ảnh → danh sách tên/đường dẫn ảnh. Tách theo ; hoặc xuống dòng; dấu phẩy chỉ tách khi mọi phần đều là tên ảnh
+ *  (tên ảnh ChatGPT có dấu phẩy: "Ảnh ChatGPT 16_30_56 22 thg 10, 2026.png"). Bỏ dấu ngoặc kép khi copy đường dẫn. */
+const fileList = (v) =>
+  String(v || '')
+    .split(/[;\n]/)
+    .flatMap((piece) => {
+      const parts = piece.split(/,\s*/).map((x) => x.trim()).filter(Boolean);
+      return parts.length > 1 && parts.every((x) => IMG_EXT.test(x.replace(/"/g, ''))) ? parts : [piece];
+    })
+    .map((x) => x.replace(/"/g, '').trim())
+    .filter(Boolean);
+/** Tên file (bỏ thư mục) — dùng để so với ảnh đang có trên web */
+const baseName = (s) => String(s || '').replace(/"/g, '').trim().split(/[\\/]/).pop();
 
 /** Đọc sheet sản phẩm → { rows: [{ line, ...trường }], errors } */
 function parseRows(buffer) {
@@ -88,6 +116,7 @@ function parseRows(buffer) {
 
   const rows = [];
   const errors = [];
+  let skipped = 0;
   for (let i = headerAt + 1; i < sheet.rows.length; i++) {
     const cells = sheet.rows[i] || [];
     const raw = {};
@@ -99,6 +128,7 @@ function parseRows(buffer) {
       continue;
     }
     if (/^\(?\s*v[ií] d[uụ]/i.test(name)) continue; // dòng ví dụ trong file mẫu
+    if (raw.price == null || String(raw.price).trim() === '') { skipped++; continue; } // chưa có giá = giỏ đang soạn, để sau
     const r = {
       line,
       sku: text(raw.sku, 40) ? String(raw.sku).toUpperCase().replace(/[^A-Z0-9_-]/g, '') : null,
@@ -110,11 +140,14 @@ function parseRows(buffer) {
       stock: raw.stock == null || raw.stock === '' ? null : Math.round(Number(raw.stock)),
       badge: text(raw.badge, 40),
       short_desc: text(raw.short_desc, 300),
-      contents: text(raw.contents),
+      contents: text(raw.contents) && text(raw.contents).split('\n').map((x) => x.trim()).filter(Boolean).join('\n'),
       description: text(raw.description),
       image: fileList(raw.image)[0] || null,
       gallery: fileList(raw.gallery),
       video_url: text(raw.video_url, 500),
+      sort: raw.sort == null || raw.sort === '' ? 0 : Math.round(Number(raw.sort)) || 0,
+      seo_title: text(raw.seo_title, 180),
+      seo_desc: text(raw.seo_desc, 300),
       is_featured: bool(raw.is_featured, false),
       is_active: bool(raw.is_active, true),
       has: Object.fromEntries(map.filter(Boolean).map((f) => [f, true])), // cột nào có trong file
@@ -139,7 +172,7 @@ function parseRows(buffer) {
     }
   }
   for (const r of rows.filter((x) => x.dup)) errors.push({ line: r.line, name: r.name, error: 'Trùng mã SP hoặc trùng tên với dòng khác trong file, bỏ qua.' });
-  return { rows: rows.filter((x) => !x.dup), errors };
+  return { rows: rows.filter((x) => !x.dup), errors, skipped };
 }
 
 /**
@@ -147,9 +180,11 @@ function parseRows(buffer) {
  * final=true: ảnh vẫn thiếu thì giữ ảnh cũ + báo lỗi dòng đó.
  */
 async function syncFromExcel(buffer, files = [], { final = false } = {}) {
-  const { rows, errors } = parseRows(buffer);
+  const { rows, errors, skipped } = parseRows(buffer);
   const uploaded = new Map(files.map((f) => [fileKey(f.originalname), f]));
   const cats = Object.fromEntries((await db('categories').select('id', 'name')).map((c) => [norm(c.name), c.id]));
+  // tên danh mục cũ (trước 24/10/2026) trong file chủ shop → tên mới trên web
+  for (const [oldName, newName] of CATEGORY_ALIASES) if (!cats[norm(oldName)] && cats[norm(newName)]) cats[norm(oldName)] = cats[norm(newName)];
   const products = await db('products').select('*');
   const bySku = new Map(products.filter((p) => p.sku).map((p) => [String(p.sku).toUpperCase(), p]));
   const byName = new Map();
@@ -172,8 +207,13 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
     const catId = cats[norm(r.category)];
     if (!catId) { errors.push({ line: r.line, name: r.name, error: `Danh mục "${r.category}" không có trên web.` }); continue; }
     const p = (r.sku && bySku.get(r.sku)) || (!r.sku && byName.get(norm(r.name))) || null;
-    if (r.sku && !p && byName.get(norm(r.name)) && byName.get(norm(r.name)).sku) {
-      errors.push({ line: r.line, name: r.name, error: `Tên trùng sản phẩm mã ${byName.get(norm(r.name)).sku} nhưng mã SP ghi ${r.sku}. Sửa lại mã cho khớp.` });
+    const other = byName.get(norm(r.name));
+    if (p && r.sku && other && other.id !== p.id && other.is_active) {
+      errors.push({ line: r.line, name: r.name, error: `Mã ${r.sku} trên web là "${p.name}", còn "${r.name}" đang là mã ${other.sku}. Sửa mã cho khớp để không ghi đè nhầm.` });
+      continue;
+    }
+    if (r.sku && !p && other && other.is_active && other.sku) {
+      errors.push({ line: r.line, name: r.name, error: `Tên trùng sản phẩm mã ${other.sku} nhưng mã SP ghi ${r.sku}. Sửa lại mã cho khớp.` });
       continue;
     }
     // ảnh: tên trùng ảnh đang dùng → giữ, khác → cần file
@@ -184,9 +224,9 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
     plan.push({ r, p, catId, missing });
   }
 
-  if (need.size && !final) return { ok: true, applied: false, need_images: [...need], errors };
+  if (need.size && !final) return { ok: true, applied: false, need_images: [...need], errors, skipped };
 
-  const result = { ok: true, applied: true, created: [], updated: [], unchanged: 0, errors, need_images: [] };
+  const result = { ok: true, applied: true, created: [], updated: [], unchanged: 0, skipped, errors, need_images: [] };
   const savedMedia = new Map(); // tên file → media id (một ảnh dùng cho nhiều giỏ chỉ lưu 1 lần)
   await db.transaction(async (trx) => {
     const saveImg = async (name, alt) => {
@@ -195,7 +235,7 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
       const f = uploaded.get(key);
       const mime = sniff(f.buffer);
       if (!mime) throw Object.assign(new Error(`Tệp "${name}" không phải ảnh JPG/PNG/WebP.`), { status: 400 });
-      const id = idOf((await trx('media').insert({ filename: String(name).slice(0, 255), mime, size: f.buffer.length, alt: String(alt).slice(0, 255), data: f.buffer }))[0]);
+      const id = idOf((await trx('media').insert({ filename: baseName(name).slice(0, 255), mime, size: f.buffer.length, alt: String(alt).slice(0, 255), data: f.buffer }))[0]);
       savedMedia.set(key, id);
       return id;
     };
@@ -225,6 +265,9 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
         is_active: r.is_active,
       };
       if (r.has.video_url) v.video_url = r.video_url;
+      if (r.has.sort) v.sort = r.sort;
+      if (r.has.seo_title) v.seo_title = r.seo_title;
+      if (r.has.seo_desc) v.seo_desc = r.seo_desc;
       if (r.image && !missing.includes(r.image)) {
         const id = await resolve(r.image, p, r.name);
         if (id) v.image_id = id;
@@ -245,7 +288,7 @@ async function syncFromExcel(buffer, files = [], { final = false } = {}) {
         for (let n = 2; await trx('products').where({ slug }).first('id'); n++) slug = `${slugify(r.name) || 'gio-qua'}-${n}`;
         const sku = r.sku || (await nextSku(trx));
         await trx('products').insert({
-          ...v, sku, slug, stock: r.stock || 0, gallery: v.gallery || '[]', sort: 0, sold: 0,
+          ...v, sku, slug, stock: r.stock || 0, gallery: v.gallery || '[]', sort: v.sort ?? 0, sold: 0,
           created_at: new Date(), updated_at: new Date(),
         });
         result.created.push({ line: r.line, sku, name: r.name });
