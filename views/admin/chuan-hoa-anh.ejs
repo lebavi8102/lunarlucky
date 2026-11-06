@@ -1,0 +1,38 @@
+<%- include('_top') %>
+<% const nhan = { 'da-chuan': ['Đã đúng 1080×1350', 'muted'], 'da-lam': ['Đã chuẩn hóa', 'muted'], 'cat': ['Cắt nhẹ cho vừa 4:5', ''], 'cat-gio': ['Cắt kín khung quanh giỏ', ''], 'nen-mo': ['Ảnh lệch quá nhiều: thêm nền mờ', ''], 'khong-doc': ['Không đọc được ảnh', 'muted'] };
+   const canLam = rows.filter((r) => ['cat', 'cat-gio', 'nen-mo'].includes(r.cach)); const daLam = rows.filter((r) => r.cach === 'da-lam').length; %>
+<div class="admin-head"><h1>Chuẩn hóa ảnh sản phẩm</h1><span class="muted small">Đưa ảnh về cùng khung 1080×1350 (4:5) để trang sản phẩm không lộ viền</span></div>
+
+<div class="panel" style="margin-bottom:16px">
+  <b><%= canLam.length %> ảnh cần chuẩn hóa</b> · <%= daLam %> ảnh đã chuẩn hóa · <%= rows.length %> ảnh đang dùng.
+  <div class="small muted" style="margin-top:4px">Bên trái là ảnh hiện tại, bên phải là ảnh sau khi chuẩn hóa. Áp dụng sẽ tạo ảnh mới, ảnh gốc vẫn giữ nguyên, bấm "Trả về ảnh gốc" bất cứ lúc nào.</div>
+</div>
+
+<form method="post" action="/admin/chuan-hoa-anh/ap-dung">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+  <% rows.forEach((r) => { const [txt, cls] = nhan[r.cach] || [r.cach, '']; const lam = ['cat', 'cat-gio', 'nen-mo'].includes(r.cach); %>
+    <div class="panel" style="padding:12px">
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+        <% if (lam) { %><input type="checkbox" name="anh" value="<%= r.id %>" checked style="margin-top:4px"><% } %>
+        <span><b><%= r.sanPham.join(', ') %></b><br><span class="small muted"><%= r.filename %> · <%= r.w %>×<%= r.h %></span><br><span class="small <%= cls %>"><%= txt %></span></span>
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <figure style="margin:0"><div style="aspect-ratio:4/5;background:#eee;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="/media/<%= r.id %>" alt="" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain"></div><figcaption class="small muted">Hiện tại</figcaption></figure>
+        <figure style="margin:0"><div style="aspect-ratio:4/5;background:#eee;overflow:hidden"><% if (lam) { %><img src="/admin/chuan-hoa-anh/xem/<%= r.id %>.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain"><% } else { %><img src="/media/<%= r.id %>" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain"><% } %></div><figcaption class="small muted"><%= lam ? 'Sau chuẩn hóa' : 'Giữ nguyên' %></figcaption></figure>
+      </div>
+    </div>
+  <% }) %>
+  </div>
+  <% if (!rows.length) { %><p class="muted">Chưa có ảnh sản phẩm nào.</p><% } %>
+  <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+    <% if (canLam.length) { %><button class="btn" type="submit" onclick="return confirm('Thay các ảnh đã chọn bằng bản chuẩn hóa? Ảnh gốc vẫn được giữ.')">Áp dụng cho ảnh đã chọn</button><% } %>
+  </div>
+</form>
+<% if (daLam) { %>
+<form method="post" action="/admin/chuan-hoa-anh/khoi-phuc" style="margin-top:12px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <button class="btn btn-quiet" type="submit" onclick="return confirm('Trả tất cả sản phẩm về ảnh gốc?')">Trả về ảnh gốc</button>
+</form>
+<% } %>
+<%- include('_bottom') %>

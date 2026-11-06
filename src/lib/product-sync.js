@@ -229,6 +229,12 @@ async function syncFromExcel(buffer, files = [], { final = false, check = false 
   if (check || (need.size && !final)) return { ok: true, applied: false, need_images: [...need], images, errors, skipped };
 
   const result = { ok: true, applied: true, created: [], updated: [], unchanged: 0, skipped, errors, need_images: [] };
+  // ảnh gửi kèm → 1080×1350 (4:5) TRƯỚC khi mở giao dịch (mỗi ảnh ~1 giây); giữ tên file để lần đồng bộ sau vẫn khớp theo tên
+  const { chuanHoaAnhSanPham } = require('./media');
+  for (const f of uploaded.values()) {
+    const mime0 = sniff(f.buffer);
+    if (mime0) f.buffer = (await chuanHoaAnhSanPham(f.buffer, mime0)).buffer;
+  }
   const savedMedia = new Map(); // tên file → media id (một ảnh dùng cho nhiều giỏ chỉ lưu 1 lần)
   await db.transaction(async (trx) => {
     const saveImg = async (name, alt) => {

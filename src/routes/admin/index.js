@@ -280,6 +280,9 @@ const SETTING_GROUPS = [
     ['cod_deposit_min_qty', 'Hoặc khi số giỏ TỪ (giỏ trở lên)'],
     ['cod_deposit_bulk_qty', 'Đơn nhiều giỏ: từ bao nhiêu giỏ thì cọc cao hơn'], ['cod_deposit_bulk_percent', 'Tỉ lệ cọc cho đơn nhiều giỏ (%)'],
   ]],
+  ['Ảnh sản phẩm', [
+    ['anh_chuan_hoa', 'Tự đưa ảnh sản phẩm mới tải lên về 1080×1350 (1 = bật, 0 = tắt, giữ nguyên ảnh gốc)'],
+  ]],
   ['Giao hàng', [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],
     ['min_delivery_days', 'Số ngày chuẩn bị tối thiểu trước khi giao'],
@@ -783,6 +786,33 @@ router.post('/goi-lai/:id/xong', async (req, res) => {
   await require('../../lib/callbacks').markDone(req.params.id, req.session.user.name || req.session.user.email);
   flash(req, 'success', 'Đã đánh dấu đã gọi.');
   res.redirect('/admin/goi-lai');
+});
+
+/* ---------- Chuẩn hóa ảnh sản phẩm đang có (xem trước → duyệt → áp dụng; khôi phục được) ---------- */
+router.get('/chuan-hoa-anh', async (req, res) => {
+  const rows = await require('../../lib/chuan-hoa-hang-loat').danhSach();
+  res.render('admin/chuan-hoa-anh', { title: 'Chuẩn hóa ảnh sản phẩm', rows });
+});
+
+router.get('/chuan-hoa-anh/xem/:id.jpg', async (req, res, next) => {
+  const r = await require('../../lib/chuan-hoa-hang-loat').banXemTruoc(Number(req.params.id)).catch(() => null);
+  if (!r) return next();
+  res.set({ 'Content-Type': r.mime, 'Cache-Control': 'private, no-store' });
+  res.send(r.data);
+});
+
+router.post('/chuan-hoa-anh/ap-dung', async (req, res) => {
+  const chon = [].concat(req.body.anh || []);
+  if (!chon.length) { flash(req, 'error', 'Chưa chọn ảnh nào.'); return res.redirect('/admin/chuan-hoa-anh'); }
+  const r = await require('../../lib/chuan-hoa-hang-loat').apDung(chon);
+  flash(req, 'success', `Đã chuẩn hóa ${r.lam} ảnh, cập nhật ${r.sanPham} sản phẩm${r.boQua ? ` (bỏ qua ${r.boQua} ảnh đã chuẩn)` : ''}. Ảnh gốc vẫn được giữ.`);
+  res.redirect('/admin/chuan-hoa-anh');
+});
+
+router.post('/chuan-hoa-anh/khoi-phuc', async (req, res) => {
+  const r = await require('../../lib/chuan-hoa-hang-loat').khoiPhuc();
+  flash(req, 'success', `Đã trả ${r.sanPham} sản phẩm về ảnh gốc.`);
+  res.redirect('/admin/chuan-hoa-anh');
 });
 
 /* ---------- Sao lưu: xuất Excel ---------- */

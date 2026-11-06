@@ -77,7 +77,7 @@ function resource(def) {
           break;
         case 'image': {
           const file = files.find((x) => x.fieldname === f.name);
-          if (file) values[f.name] = await saveFile(file, body.name || body.title);
+          if (file) values[f.name] = await saveFile(file, body.name || body.title, { chuanHoa: def.table === 'products' });
           else if (body[`${f.name}_remove`]) values[f.name] = null;
           else values[f.name] = existing ? existing[f.name] : null;
           break;
@@ -85,7 +85,7 @@ function resource(def) {
         case 'gallery': {
           const remove = new Set([].concat(body[`${f.name}_remove`] || []).map(Number));
           const keep = parseJson(existing && existing[f.name], []).filter((id) => !remove.has(id));
-          for (const file of files.filter((x) => x.fieldname === f.name)) keep.push(await saveFile(file, body.name));
+          for (const file of files.filter((x) => x.fieldname === f.name)) keep.push(await saveFile(file, body.name, { chuanHoa: def.table === 'products' }));
           values[f.name] = JSON.stringify(keep);
           break;
         }

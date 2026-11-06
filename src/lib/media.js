@@ -17,9 +17,22 @@ function sniff(buf) {
   return null;
 }
 
-async function saveFile(file, alt) {
+/** Ảnh sản phẩm → 1080×1350 (4:5) khi bật cài đặt anh_chuan_hoa. Lỗi → giữ ảnh gốc, không chặn việc tải ảnh. */
+async function chuanHoaAnhSanPham(buffer, mime) {
+  try {
+    const s = await require('./settings').all();
+    if (String(s.anh_chuan_hoa) === '0') return { buffer, mime };
+    const r = await require('./chuan-hoa-anh').chuanHoa(buffer);
+    return { buffer: r.data, mime: r.mime };
+  } catch (err) {
+    console.error('[media] không chuẩn hóa được ảnh sản phẩm, giữ ảnh gốc:', err.message);
+    return { buffer, mime };
+  }
+}
+
+async function saveFile(file, alt, opts = {}) {
   if (!file || !file.buffer || !file.size) return null;
-  const mime = sniff(file.buffer);
+  let mime = sniff(file.buffer);
   if (!mime) {
     const heic = file.buffer.toString('ascii', 4, 8) === 'ftyp' && /hei[cfsx]|mif1|msf1/.test(file.buffer.toString('ascii', 8, 12));
     const err = new Error(
@@ -30,12 +43,14 @@ async function saveFile(file, alt) {
     err.status = 400;
     throw err;
   }
+  let data = file.buffer;
+  if (opts.chuanHoa) ({ buffer: data, mime } = await chuanHoaAnhSanPham(data, mime));
   const [id] = await db('media').insert({
     filename: String(file.originalname || '').slice(0, 255),
     mime,
-    size: file.size,
+    size: data.length,
     alt: alt ? String(alt).slice(0, 255) : null,
-    data: file.buffer,
+    data,
   });
   return typeof id === 'object' ? id.id : id;
 }
@@ -45,4 +60,4 @@ async function saveBuffer(buffer, mime, filename, alt) {
   return typeof id === 'object' ? id.id : id;
 }
 
-module.exports = { upload, saveFile, saveBuffer, sniff };
+module.exports = { upload, saveFile, saveBuffer, sniff, chuanHoaAnhSanPham };

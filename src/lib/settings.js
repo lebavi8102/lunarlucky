@@ -44,6 +44,7 @@ const DEFAULTS = {
   cod_deposit_bulk_percent: '50',
   shipping_fee: '50000',
   free_ship_threshold: '1500000',
+  anh_chuan_hoa: '1', // ảnh sản phẩm mới tải lên (quản trị + đồng bộ Excel) → 1080×1350 (4:5)
   min_delivery_days: '1',
   province_min_days: '3',
   // Đơn nhiều giỏ cần thời gian chuẩn bị
