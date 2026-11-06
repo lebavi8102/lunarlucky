@@ -119,20 +119,37 @@ function catGiua45(img) {          // vùng 4:5 lớn nhất: giữa theo chiề
   return cat(img, 0, Math.floor((img.height - h) * CAT_TREN), img.width, h);
 }
 
-// Vùng 4:5 chứa nhiều chi tiết nhất (giỏ quà nhiều chi tiết, tường/nền trơn ít) → giỏ không bị cắt mất.
-// Chỉ dùng cho ảnh lệch nhiều; ảnh lệch nhẹ vẫn cắt lệch trên để giữ logo ở đầu ảnh studio.
+// Ảnh lệch nhiều: dò mép giỏ (vùng nhiều chi tiết; tường/nền trơn ít chi tiết) và chỉ cắt phần trống ngoài giỏ, chừa lề.
+// Không bao giờ cắt vào giỏ; phần còn thiếu để nền mờ bù (dải mỏng).
+const LE_GIO = 0.03;                // chừa lề 3% chiều dài quanh giỏ
 function catTheoGio(img) {
   const w0 = img.width, h0 = img.height, d = img.data;
   const sang = (i, j) => { const a = (j * w0 + i) * 4; return d[a] + d[a + 1] + d[a + 2]; };
-  const chon = (arr, n) => { let s = 0; for (let i = 0; i < n; i++) s += arr[i]; let best = s, at = 0; for (let i = n; i < arr.length; i++) { s += arr[i] - arr[i - n]; if (s > best) { best = s; at = i - n + 1; } } return at; };
-  if (w0 / h0 > TI_LE) {
-    const w = Math.round(h0 * TI_LE), cot = new Float64Array(w0);
-    for (let j = 0; j < h0; j += 2) for (let i = 1; i < w0; i++) cot[i] += Math.abs(sang(i, j) - sang(i - 1, j));
-    return cat(img, chon(cot, w), 0, w, h0);
+  const ngang = w0 / h0 > TI_LE;    // ảnh ngang → cắt hai bên; ảnh dọc → cắt trên/dưới
+  const len = ngang ? w0 : h0;
+  const arr = new Float64Array(len);
+  if (ngang) { for (let j = 0; j < h0; j += 2) for (let i = 1; i < w0; i++) arr[i] += Math.abs(sang(i, j) - sang(i - 1, j)); }
+  else { for (let j = 1; j < h0; j++) for (let i = 0; i < w0; i += 2) arr[j] += Math.abs(sang(i, j) - sang(i, j - 1)); }
+  // làm mịn (đường chỉ tường mảnh không bị tính là giỏ)
+  const r = Math.max(2, Math.round(len * 0.015)), m = new Float64Array(len);
+  let acc = 0;
+  for (let i = 0; i < len + r; i++) {
+    if (i < len) acc += arr[i];
+    if (i - 2 * r - 1 >= 0) acc -= arr[i - 2 * r - 1];
+    const c = i - r; if (c >= 0 && c < len) m[c] = acc;
   }
-  const h = Math.round(w0 / TI_LE), hang = new Float64Array(h0);
-  for (let j = 1; j < h0; j++) for (let i = 0; i < w0; i += 2) hang[j] += Math.abs(sang(i, j) - sang(i, j - 1));
-  return cat(img, 0, chon(hang, h), w0, h);
+  const sorted = Float64Array.from(m).sort();
+  const nguong = sorted[Math.floor(len * 0.75)] * 0.35;
+  let lo = 0, hi = len - 1;
+  while (lo < len - 1 && m[lo] < nguong) lo++;
+  while (hi > 0 && m[hi] < nguong) hi--;
+  const le = Math.round(len * LE_GIO);
+  const choA = Math.max(0, lo - le), choB = Math.max(0, len - 1 - hi - le); // phần được phép cắt ở đầu / cuối
+  const can = Math.max(0, len - Math.round(ngang ? h0 * TI_LE : w0 / TI_LE)); // phần thừa so với 4:5
+  let a = choA + choB > 0 ? Math.min(choA, Math.round(can * choA / (choA + choB))) : 0;
+  const b = Math.min(choB, can - a);
+  a = Math.min(choA, can - b);
+  return ngang ? cat(img, a, 0, w0 - a - b, h0) : cat(img, 0, a, w0, h0 - a - b);
 }
 
 const MEP_MO = 28;                  // px: mép ảnh chính hòa dần vào nền mờ, không để đường ranh sắc
@@ -198,14 +215,15 @@ async function chuanHoa(buf) {
   let out;
   if (cach === 'cat' || cach === 'da-chuan') {
     out = await resize(catGiua45(img), { width: W, height: H });
-  } else if (cach === 'cat-gio') {
-    out = await resize(catTheoGio(img), { width: W, height: H });
   } else {
+    // lệch nhiều: cắt phần tường/nền trống quanh giỏ, phần còn thiếu bù bằng nền mờ → không mất quai, nắp, mép hộp
+    if (cach === 'cat-gio') img = catTheoGio(img);
     // nền: chính ảnh đó lấp kín khung, thu rất nhỏ rồi phóng lại = mờ mịn; làm sáng nhẹ để ảnh chính nổi lên
     const nho = await resize(catGiua45(img), { width: 27, height: 34 });
     const nen = await resize(nho, { width: W, height: H });
     const d = nen.data;
-    for (let i = 0; i < d.length; i += 4) { d[i] = d[i] * 0.82 + 255 * 0.18; d[i + 1] = d[i + 1] * 0.82 + 255 * 0.18; d[i + 2] = d[i + 2] * 0.82 + 255 * 0.18; }
+    const sang = cach === 'cat-gio' ? 0.06 : 0.18; // dải mỏng: gần như cùng màu ảnh để không lộ
+    for (let i = 0; i < d.length; i += 4) { d[i] = d[i] * (1 - sang) + 255 * sang; d[i + 1] = d[i + 1] * (1 - sang) + 255 * sang; d[i + 2] = d[i + 2] * (1 - sang) + 255 * sang; }
     const k = Math.min(W / img.width, H / img.height);
     const fw = Math.max(1, Math.round(img.width * k)), fh = Math.max(1, Math.round(img.height * k));
     const fg = await resize(img, { width: fw, height: fh });
