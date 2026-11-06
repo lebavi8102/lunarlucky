@@ -636,6 +636,7 @@ ul, ol { margin: 0; padding: 0; }
 .gallery-main { aspect-ratio: 4 / 5; border-radius: var(--radius-lg); overflow: hidden; background: var(--cream-200); }
 /* ảnh giỏ nhiều tỉ lệ (3:4, 2:3, 9:16, ngang): lấp kín khung 4:5 để không lộ viền; canh giữa (canh trên làm ảnh 9:16 mất nửa giỏ) */
 .gallery-main img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+.gallery-main.anh-lech img { object-fit: contain; } /* ảnh lệch nhiều: giữ trọn giỏ (hết lệch khi đã chuẩn hóa ảnh về 1080×1350) */
 @media (min-width: 600px) and (max-width: 959px) { .gallery-main { max-width: 520px; margin-inline: auto; } .thumbs { justify-content: center; } }
 .thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; padding-bottom: 4px; list-style: none; }
 .thumbs button { flex: none; width: 76px; height: 95px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--cream-200); opacity: 0.7; transition: opacity 200ms, border-color 200ms; }

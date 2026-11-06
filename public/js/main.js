@@ -151,6 +151,14 @@
   const gallery = $('[data-gallery]');
   if (gallery) {
     const main = $('[data-gallery-main]', gallery);
+    // Ảnh lệch nhiều so với khung 4:5 (vd 2:3, 9:16, ảnh ngang): hiện trọn ảnh, không cắt mất giỏ. Lệch nhẹ: lấp kín khung.
+    const fit = () => {
+      if (!main.naturalWidth) return;
+      const lech = Math.abs(main.naturalWidth / main.naturalHeight / 0.8 - 1);
+      main.parentElement.classList.toggle('anh-lech', lech > 0.1);
+    };
+    main.addEventListener('load', fit);
+    if (main.complete) fit();
     $$('[data-src]', gallery).forEach((b) =>
       b.addEventListener('click', () => {
         main.src = b.dataset.src;
