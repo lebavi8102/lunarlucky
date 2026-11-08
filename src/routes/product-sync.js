@@ -75,6 +75,24 @@ router.post('/api/dong-bo-san-pham', limiter, guard, upload.fields([{ name: 'exc
   }
 });
 
+// Tool gửi ảnh theo đợt nhỏ (vài ảnh/lần) trước lượt đồng bộ cuối — tránh một request 50 ảnh làm máy chủ hết RAM
+const uploadBatch = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 6 } });
+const batchLimiter = rateLimit({ ...limiterKey, windowMs: 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false });
+router.post('/api/dong-bo-san-pham/anh', batchLimiter, guard, uploadBatch.array('images', 6), async (req, res) => {
+  const images = (req.files || []).map((f) => {
+    let name = f.originalname;
+    try { name = decodeURIComponent(name); } catch { /* giữ nguyên */ }
+    return { ...f, originalname: name };
+  });
+  if (!images.length) return res.status(400).json({ ok: false, error: 'Thiếu ảnh.' });
+  try {
+    res.json(await sync.stageImages(images));
+  } catch (err) {
+    console.error('[dong-bo-excel] lỗi nhận ảnh:', err);
+    res.status(500).json({ ok: false, error: 'Lỗi máy chủ khi nhận ảnh, thử lại sau.' });
+  }
+});
+
 // Tool hỏi tồn kho hiện tại (mỗi phút) để ghi ngược vào cột Tồn kho trong Excel của chủ shop
 router.post('/api/dong-bo-san-pham/ton-kho', limiter, guard, async (req, res) => {
   try {

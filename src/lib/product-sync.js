@@ -21,6 +21,8 @@ const CATEGORY_ALIASES = [
   ['Quà doanh nghiệp', 'Quà tặng doanh nghiệp'],
   ['Hộp quà nhỏ xinh', 'Quà tặng bạn bè'],
 ];
+// ảnh tool gửi trước (theo đợt nhỏ) chờ lượt đồng bộ cuối gắn vào giỏ; gắn xong alt đổi thành tên giỏ
+const STAGE_ALT = '__cho_dong_bo__';
 const idOf = (r) => (r && typeof r === 'object' ? r.id : r);
 const norm = (s) => slugify(String(s || '')).replace(/-/g, ' ').trim();
 // Khóa so ảnh = đủ đường dẫn (nhiều giỏ cùng có "1.jpg" ở thư mục khác nhau), không phân biệt hoa thường
@@ -182,6 +184,9 @@ function parseRows(buffer) {
 async function syncFromExcel(buffer, files = [], { final = false, check = false } = {}) {
   const { rows, errors, skipped } = parseRows(buffer);
   const uploaded = new Map(files.map((f) => [fileKey(f.originalname), f]));
+  // ảnh tool đã gửi trước theo đợt (stageImages) → coi như gửi kèm lần này; ảnh gửi kèm trực tiếp vẫn ưu tiên hơn
+  const staged = new Map();
+  for (const m of await db('media').where({ alt: STAGE_ALT }).orderBy('id').select('id', 'filename')) staged.set(fileKey(m.filename), m.id);
   const cats = Object.fromEntries((await db('categories').select('id', 'name')).map((c) => [norm(c.name), c.id]));
   // tên danh mục cũ (trước 24/10/2026) trong file chủ shop → tên mới trên web
   for (const [oldName, newName] of CATEGORY_ALIASES) if (!cats[norm(oldName)] && cats[norm(newName)]) cats[norm(oldName)] = cats[norm(newName)];
@@ -219,7 +224,7 @@ async function syncFromExcel(buffer, files = [], { final = false, check = false 
     // ảnh: tên trùng ảnh đang dùng → giữ, khác → cần file
     const wantImgs = [r.image, ...r.gallery].filter(Boolean);
     const curNames = p ? [mediaName[p.image_id], ...gallery(p).map((g) => mediaName[g])].filter(Boolean) : [];
-    const missing = wantImgs.filter((f) => !curNames.includes(fileKey(f)) && !uploaded.has(fileKey(f)));
+    const missing = wantImgs.filter((f) => !curNames.includes(fileKey(f)) && !uploaded.has(fileKey(f)) && !staged.has(fileKey(f)));
     missing.forEach((f) => need.add(f));
     plan.push({ r, p, catId, missing });
   }
@@ -249,7 +254,13 @@ async function syncFromExcel(buffer, files = [], { final = false, check = false 
     };
     // ảnh theo tên: file gửi kèm → lưu mới (kể cả cùng tên = ảnh đã thay nội dung); không gửi → ảnh đang dùng cùng tên; thiếu → undefined
     const resolve = async (name, p, alt) => {
-      if (uploaded.has(fileKey(name))) return saveImg(name, alt);
+      const key = fileKey(name);
+      if (uploaded.has(key)) return saveImg(name, alt);
+      if (staged.has(key)) {
+        const id = staged.get(key);
+        await trx('media').where({ id, alt: STAGE_ALT }).update({ alt: String(alt).slice(0, 255) }); // hết "chờ" → ảnh của giỏ
+        return id;
+      }
       if (p) {
         const cur = [p.image_id, ...gallery(p)].find((id) => id && mediaName[id] === fileKey(name));
         if (cur) return cur;
@@ -423,4 +434,29 @@ async function stockReport() {
   return rows.map((r) => ({ sku: r.sku, stock: Number(r.stock) || 0 }));
 }
 
-module.exports = { parseRows, syncFromExcel, exportExcel, stockReport, money, bool };
+/**
+ * Nhận ảnh theo đợt nhỏ trước lượt đồng bộ cuối (gửi 50 ảnh một lần làm máy chủ 512 MB hết RAM, sập giữa chừng).
+ * Mỗi ảnh chuẩn hóa 1080×1350 rồi cất ngay vào media với alt = STAGE_ALT; cùng tên gửi lại → thay bản chờ cũ.
+ */
+async function stageImages(files = []) {
+  const { chuanHoaAnhSanPham } = require('./media');
+  // dọn ảnh chờ quá 2 ngày mà không lượt đồng bộ nào dùng
+  await db('media').where({ alt: STAGE_ALT }).andWhere('created_at', '<', new Date(Date.now() - 2 * 864e5)).del();
+  const saved = [];
+  const errors = [];
+  for (const f of files) {
+    const name = String(f.originalname || '').replace(/"/g, '').trim().normalize('NFC').slice(0, 255);
+    let mime = sniff(f.buffer);
+    if (!name || !mime) { errors.push({ name, error: 'Không phải ảnh JPG/PNG/WebP.' }); continue; }
+    let data = f.buffer;
+    ({ buffer: data, mime } = await chuanHoaAnhSanPham(data, mime));
+    f.buffer = null; // nhả RAM ảnh gốc
+    const old = (await db('media').where({ alt: STAGE_ALT }).select('id', 'filename')).filter((m) => fileKey(m.filename) === fileKey(name)).map((m) => m.id);
+    if (old.length) await db('media').whereIn('id', old).del();
+    await db('media').insert({ filename: name, mime, size: data.length, alt: STAGE_ALT, data });
+    saved.push(name);
+  }
+  return { ok: true, saved, errors };
+}
+
+module.exports = { parseRows, syncFromExcel, exportExcel, stockReport, stageImages, money, bool };
