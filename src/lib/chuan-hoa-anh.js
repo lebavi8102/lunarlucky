@@ -122,6 +122,7 @@ function catGiua45(img) {          // vùng 4:5 lớn nhất: giữa theo chiề
 // Ảnh lệch nhiều: dò mép giỏ (vùng nhiều chi tiết; tường/nền trơn ít chi tiết) và chỉ cắt phần trống ngoài giỏ, chừa lề.
 // Không bao giờ cắt vào giỏ; phần còn thiếu để nền mờ bù (dải mỏng).
 const LE_GIO = 0.03;                // chừa lề 3% chiều dài quanh giỏ
+const NGUONG_LOGO = 0.06;           // ngưỡng chi tiết ở đầu ảnh dọc (logo) so với mức chi tiết của giỏ
 function catTheoGio(img) {
   const w0 = img.width, h0 = img.height, d = img.data;
   const sang = (i, j) => { const a = (j * w0 + i) * 4; return d[a] + d[a + 1] + d[a + 2]; };
@@ -141,7 +142,9 @@ function catTheoGio(img) {
   const sorted = Float64Array.from(m).sort();
   const nguong = sorted[Math.floor(len * 0.75)] * 0.35;
   let lo = 0, hi = len - 1;
-  while (lo < len - 1 && m[lo] < nguong) lo++;
+  // ảnh dọc: đầu ảnh thường có logo chữ mảnh (ít chi tiết hơn giỏ) → dò đầu ảnh với ngưỡng thấp hơn nhiều để không cắt mất logo
+  const nguongDau = ngang ? nguong : sorted[Math.floor(len * 0.75)] * NGUONG_LOGO;
+  while (lo < len - 1 && m[lo] < nguongDau) lo++;
   while (hi > 0 && m[hi] < nguong) hi--;
   const le = Math.round(len * LE_GIO);
   const choA = Math.max(0, lo - le), choB = Math.max(0, len - 1 - hi - le); // phần được phép cắt ở đầu / cuối
