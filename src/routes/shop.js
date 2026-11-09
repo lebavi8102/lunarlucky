@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
     testimonials.listActive({ limit: 8 }),
   ]);
   const s = res.locals.s;
-  res.locals.seo.title = `${s.shop_name} · Giỏ quà Tết cao cấp, giao tận nơi`;
+  res.locals.seo.title = `Giỏ quà Tết cao cấp 2027 tại Hà Nội · Giao tận nơi | ${s.shop_name}`;
   res.locals.jsonLd.push({
     '@context': 'https://schema.org',
     '@type': 'Store',
@@ -43,6 +43,9 @@ router.get('/', async (req, res) => {
     url: res.locals.siteUrl,
     telephone: s.shop_phone,
     email: s.shop_email,
+    address: { '@type': 'PostalAddress', addressLocality: 'Hai Bà Trưng', addressRegion: 'Hà Nội', addressCountry: 'VN' },
+    areaServed: [{ '@type': 'City', name: 'Hà Nội' }, { '@type': 'Country', name: 'Việt Nam' }],
+    priceRange: '₫₫',
     logo: `${res.locals.siteUrl}/img/logo-mark.svg`,
     sameAs: [s.fanpage_url].filter(Boolean),
   });
@@ -76,16 +79,68 @@ async function listing(req, res, category) {
 
 router.get('/bo-suu-tap', async (req, res) => {
   const data = await listing(req, res, null);
-  res.locals.seo.title = 'Tất cả giỏ quà Tết · Lunar Lucky';
-  res.locals.seo.description = 'Khám phá toàn bộ bộ sưu tập giỏ quà Tết Lunar Lucky: hộp sơn mài, giỏ mây tre, quà doanh nghiệp, giá từ vài trăm nghìn đến cao cấp.';
+  res.locals.seo.title = 'Giỏ quà Tết 2027 cao cấp · Tất cả mẫu giỏ quà | Lunar Lucky';
+  res.locals.seo.description = 'Tất cả mẫu giỏ quà Tết 2027 của Lunar Lucky: biếu sếp, đối tác, gia đình, tặng nhân viên. Giao đúng ngày tại Hà Nội, toàn quốc 2–4 ngày, xuất hóa đơn VAT.';
   res.render('shop/collection', { ...data, category: null, sorts: Object.keys(SORTS) });
+});
+
+// Trang đích cho tìm kiếm "giỏ quà Tết Hà Nội" (SEO + quảng cáo tìm kiếm). Nội dung chỉ dùng số liệu thật từ Cài đặt.
+router.get('/gio-qua-tet-ha-noi', async (req, res) => {
+  const data = await listing(req, res, null);
+  const s = res.locals.s;
+  const { money } = require('../lib/format');
+  const prices = await activeProducts().select('price');
+  const min = prices.length ? Math.min(...prices.map((p) => Number(p.price))) : 0;
+  const free = money(Number(s.free_ship_threshold) || 0);
+  const fee = money(Number(s.shipping_fee) || 0);
+  const allFaq = require('../lib/faq')(s);
+  const faqs = [allFaq[0], allFaq[1], allFaq[4], allFaq[2], allFaq[6]].filter(Boolean);
+  const landing = {
+    path: '/gio-qua-tet-ha-noi',
+    crumb: 'Giỏ quà Tết Hà Nội',
+    h1: 'Giỏ quà Tết Hà Nội cao cấp 2027',
+    lead: `Giỏ quà Tết cao cấp giao tận nơi trong nội thành Hà Nội, đúng ngày và đúng buổi bạn chọn.${min ? ` Giá từ ${money(min)}.` : ''} Miễn phí giao cho đơn từ ${free}.`,
+    blocks: [
+      {
+        h: 'Đặt giỏ quà Tết ở Hà Nội tại Lunar Lucky',
+        p: [
+          'Lunar Lucky chuẩn bị giỏ quà Tết tại Hà Nội (Hai Bà Trưng) và giao tận tay người nhận ở các quận nội thành. Bạn chọn ngày giao và buổi giao: sáng (8h–12h), chiều (13h–17h) hoặc tối (18h–20h); shipper gọi trước khi giao.',
+          'Mỗi giỏ được tuyển chọn và đóng gói thủ công, phù hợp để biếu sếp, đối tác, khách hàng, gia đình hay tặng nhân viên dịp Tết Nguyên đán 2027.',
+        ],
+      },
+      {
+        h: 'Giao hàng và thanh toán',
+        p: [
+          `Phí giao đồng giá ${fee} mỗi đơn, miễn phí cho đơn từ ${free}. Đơn lẻ trong Hà Nội giao được từ ngày hôm sau; các tỉnh khác giao trong 2–4 ngày.`,
+          'Thanh toán chuyển khoản qua mã VietQR (hệ thống tự xác nhận khi tiền về) hoặc thanh toán khi nhận hàng (COD) có đặt cọc. Muốn gửi tặng thẳng tới người nhận, bạn chọn "Gửi tặng người khác" khi đặt hàng.',
+        ],
+      },
+      {
+        h: 'Quà Tết doanh nghiệp tại Hà Nội',
+        p: [
+          'Doanh nghiệp đặt từ 5 giỏ được tư vấn ngân sách, báo giá riêng theo số lượng, in logo và xuất hóa đơn VAT, giao hàng loạt theo danh sách người nhận.',
+          `Cần tư vấn nhanh, gọi hoặc nhắn Zalo ${s.shop_phone || ''} từ 8:00 đến 21:00 hằng ngày.`,
+        ],
+      },
+    ],
+    faqs,
+  };
+  res.locals.seo.title = 'Giỏ quà Tết Hà Nội cao cấp 2027 · Giao tận nơi | Lunar Lucky';
+  res.locals.seo.description = truncate(`Giỏ quà Tết Hà Nội cao cấp${min ? ` giá từ ${money(min)}` : ''}: biếu sếp, đối tác, gia đình. Giao đúng ngày, đúng buổi trong nội thành, miễn phí giao từ ${free}. Xuất VAT, in logo.`, 160);
+  res.locals.jsonLd.push(breadcrumb(res, [['Giỏ quà Tết Hà Nội', '/gio-qua-tet-ha-noi']]));
+  res.locals.jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  });
+  res.render('shop/collection', { ...data, category: null, landing, sorts: Object.keys(SORTS) });
 });
 
 router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   const category = await db('categories').where({ slug: req.params.slug, is_active: true }).first();
   if (!category) return next();
   const data = await listing(req, res, category);
-  res.locals.seo.title = `${category.name} · Lunar Lucky`;
+  res.locals.seo.title = `${category.name} · Giỏ quà Tết 2027 | Lunar Lucky`;
   res.locals.seo.description = truncate(`${category.name}: ${category.tagline || category.description || 'giỏ quà Tết tuyển chọn'}. Giỏ quà Tết Lunar Lucky đóng hộp sơn mài, giao toàn quốc, miễn phí giao từ 1.500.000₫.`, 160);
   if (category.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${category.image_id}`;
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
@@ -106,7 +161,7 @@ router.get('/san-pham/:slug', async (req, res, next) => {
   const gallery = [product.image_id, ...parseJson(product.gallery, [])].filter(Boolean);
   const url = `${res.locals.siteUrl}/san-pham/${product.slug}`;
 
-  res.locals.seo.title = product.seo_title || `${product.name} · Lunar Lucky`;
+  res.locals.seo.title = product.seo_title || `${product.name} · Giỏ quà Tết cao cấp | Lunar Lucky`;
   res.locals.seo.description = product.seo_desc || product.short_desc || truncate(product.description, 160);
   res.locals.seo.type = 'product';
   if (product.image_id) res.locals.seo.image = `${res.locals.siteUrl}/media/${product.image_id}`;

@@ -2,18 +2,20 @@
 <% const catById = Object.fromEntries(categories.map(c => [c.id, c.name]));
    const sortLabels = { 'noi-bat': 'Nổi bật', 'ban-chay': 'Bán chạy', 'gia-tang': 'Giá tăng dần', 'gia-giam': 'Giá giảm dần', 'moi-nhat': 'Mới nhất' };
    const rangeLabels = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-2-trieu': '1 – 2 triệu', '2-5-trieu': '2 – 5 triệu', 'tren-5-trieu': 'Trên 5 triệu' };
-   const basePath = category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap';
+   const landing = locals.landing || null;
+   const basePath = landing ? landing.path : (category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap');
    const qs = (o) => { const q = new URLSearchParams(Object.entries({ sap_xep: sort !== 'noi-bat' ? sort : '', gia: range, ...o }).filter(([, v]) => v)); const s2 = q.toString(); return s2 ? '?' + s2 : ''; };
 %>
 <section class="page-head collection-head">
   <div class="container">
     <ol class="crumbs" aria-label="Breadcrumb">
       <li><a href="/">Trang chủ</a></li>
-      <% if (category) { %><li><a href="/bo-suu-tap">Bộ sưu tập</a></li><li aria-current="page"><%= category.name %></li>
+      <% if (landing) { %><li aria-current="page"><%= landing.crumb %></li>
+      <% } else if (category) { %><li><a href="/bo-suu-tap">Bộ sưu tập</a></li><li aria-current="page"><%= category.name %></li>
       <% } else { %><li aria-current="page">Bộ sưu tập</li><% } %>
     </ol>
-    <h1><%= category ? category.name : 'Tất cả giỏ quà Tết' %></h1>
-    <p class="lead"><%= category ? (category.description || category.tagline) : 'Hộp quà sơn mài, giỏ mây tre và những set quà nhỏ xinh. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công.' %></p>
+    <h1><%= landing ? landing.h1 : (category ? category.name : 'Tất cả giỏ quà Tết 2027') %></h1>
+    <p class="lead"><%= landing ? landing.lead : (category ? (category.description || category.tagline) : 'Giỏ quà Tết cao cấp biếu sếp, đối tác, gia đình và tặng nhân viên. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công, giao đúng ngày hẹn tại Hà Nội và toàn quốc.') %></p>
   </div>
 </section>
 
@@ -69,4 +71,25 @@
     <% } %>
   </div>
 </section>
+<% if (landing) { %>
+<section class="section-tight">
+  <div class="container prose" style="max-width:760px">
+    <% landing.blocks.forEach(b => { %>
+      <h2 class="h3"><%= b.h %></h2>
+      <% b.p.forEach(t => { %><p><%= t %></p><% }) %>
+    <% }) %>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container faq" style="max-width:760px">
+    <h2 class="h3" style="margin-bottom:16px">Câu hỏi thường gặp khi đặt giỏ quà Tết ở Hà Nội</h2>
+    <% landing.faqs.forEach((f, i) => { %>
+    <details <%= i === 0 ? 'open' : '' %>>
+      <summary><%= f.q %><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+      <p><%= f.a %></p>
+    </details>
+    <% }) %>
+  </div>
+</section>
+<% } %>
 <%- include('../partials/bottom') %>
