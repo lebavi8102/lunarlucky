@@ -52,4 +52,15 @@
     }
     if (f.matches && f.matches('[data-callback-form]')) send({ name: 'generate_lead', value: 0 });
   }, true);
+
+  // Liên hệ: bấm gọi điện hoặc Zalo → sự kiện Contact (khách doanh nghiệp chủ yếu chốt qua Zalo/điện thoại)
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    const kind = href.startsWith('tel:') ? 'phone' : /zalo\.me|zalo:\/\//i.test(href) ? 'zalo' : '';
+    if (!kind) return;
+    if (cfg.pixel && window.fbq) window.fbq('track', 'Contact', { content_name: kind });
+    if (cfg.ga4 && window.gtag) window.gtag('event', 'contact', { method: kind });
+  }, true);
 })();
