@@ -447,9 +447,10 @@ async function handleEvent(ev) {
   if (HUMAN.test(text)) {
     await pause(psid, pauseHours);
     // Câu mẫu chủ shop: gọi đúng khách (đã biết anh/chị + tên), tin đầu thì chào ngắn trước
-    const given = row && row.name ? String(row.name).trim().split(/\s+/).pop() : '';
-    const who = row && row.title ? `${row.title}${given ? ` ${given}` : ''}` : 'anh/chị';
-    const you = row && row.title ? row.title : 'anh/chị';
+    const xh = require('./xung-ho');
+    const g = row && row.title ? null : xh.guess(row && row.name);
+    const who = row && row.title ? xh.callWith(row.title, row.name) : g.call;
+    const you = row && row.title ? row.title : (g.title || 'anh/chị');
     const hello = history.length ? '' : `Dạ Lunar Lucky xin chào ${who} ạ. `;
     // Ngoài giờ trực Pancake (mặc định 8h–24h): hẹn sáng mai, không hứa "ngay đây"
     await sendText(psid, ai.staffOnline(s)

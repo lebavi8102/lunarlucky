@@ -35,7 +35,8 @@ const engage = (path, body) => (noEngage ? Promise.resolve(null) : graph(path, b
 // Link mở bình luận trên Facebook (post_id dạng "IDtrang_IDbài")
 const commentUrl = (v) => `https://www.facebook.com/${String(v.post_id || '').replace(/[^\d_]/g, '') || ''}?comment_id=${encodeURIComponent(String(v.comment_id).split('_').pop())}`;
 
-const salute = (name) => (name ? `anh/chị ${String(name).trim().split(/\s+/).pop()}` : 'anh/chị');
+// Đoán anh/chị + tên gọi từ tên Facebook (Lê Đức Anh → "anh Đức Anh"); không chắc → "anh/chị", không kèm tên
+const salute = (name) => require('./xung-ho').guess(name).call;
 
 async function priceRange() {
   const r = await db('products').where({ is_active: true }).min({ lo: 'price' }).max({ hi: 'price' }).first();

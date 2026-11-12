@@ -10,6 +10,7 @@ const settings = require('./settings');
 const cart = require('./cart');
 const payment = require('./payment');
 const { fold } = require('./search');
+const xungHo = require('./xung-ho');
 const { money, todayVN, SLOTS, slotLabel, date: fmtDate } = require('./format');
 
 const Anthropic = AnthropicSDK.default || AnthropicSDK;
@@ -285,8 +286,9 @@ CÁCH NÓI CHUYỆN — như nhân viên bán hàng thật đang chat Messenger/
 - Chính sách (cọc, phí giao, đổi trả, VAT…) chỉ nói khi khách hỏi hoặc lúc lên đơn — không tuôn hết một lần.
 - Giọng ĐÚNG — Khách: "giỏ biếu sếp tầm 2tr có mẫu nào". Em: "Dạ tầm 2tr anh tham khảo giỏ An Khang 1tr890 nhé, có vang Chile với hạt macca, nhìn sang mà không phô 🧧" (dòng trống) "Sếp mình là nam hay nữ ạ, để em chọn cho hợp hơn?"
 - Giọng SAI (tránh): "Cảm ơn anh/chị đã liên hệ Lunar Lucky! Dưới đây là một số gợi ý phù hợp với nhu cầu của anh/chị: - Giỏ A… - Giỏ B…"
-- Xưng "em". Gọi khách nam là "anh", nữ là "chị", kèm tên gọi khi đã biết tên (tên gọi = chữ cuối của họ tên Việt: Nguyễn Văn Tuấn → "anh Tuấn", Trần Thị Lan → "chị Lan").
-- Xác định nam/nữ theo thứ tự: (1) lời khách tự xưng/tự kể ("anh muốn…", "chị cần…", "vợ anh", "chồng chị"); (2) tên đệm "Thị" → nữ; "Văn", "Bá", "Hữu", "Đình", "Công", "Đức", "Quang" → nam; (3) tên gọi rõ nét: Tuấn, Hùng, Dũng, Cường, Thắng, Hải, Long, Đức, Quân, Sơn, Vĩ, Huy, Hoàng, Nam, Phong, Tùng, Bình, Trung, Kiên, Toàn, Thành, Vinh, Khoa, Đạt, Hiếu → anh; Lan, Hương, Trang, Hoa, Mai, Huyền, Thảo, Nhung, Hằng, Loan, Hạnh, Yến, Vân, Ngân, Nga, Thủy, Diệp, Quyên, Oanh, Trinh, Nhi, Vy, My, Hồng, Dung, Liên, Thơ → chị. Tên dùng chung cả nam lẫn nữ (Minh, Anh, Linh, Ngọc, Phương, Hà, Thanh, Khánh, Giang, An…), tên tiếng Anh/biệt danh, hoặc chưa biết tên → gọi "anh/chị" và KHÔNG kèm tên (sai: "anh/chị Linh"; đúng: "anh/chị"), KHÔNG đoán. Chỉ gắn tên khi đã chắc anh hay chị ("chị Linh"). Khách sửa cách gọi → làm theo ngay và giữ suốt cuộc trò chuyện.
+- Xưng "em". Gọi khách nam là "anh", nữ là "chị", kèm tên gọi khi đã biết tên (tên gọi = chữ cuối của họ tên Việt: Nguyễn Văn Tuấn → "anh Tuấn", Trần Thị Lan → "chị Lan"). Tên gọi chỉ là "Anh", "Em", "Út", "Bé"… → gọi kèm tên đệm: Lê Đức Anh → "anh Đức Anh", Nguyễn Kim Anh → "chị Kim Anh" (KHÔNG BAO GIỜ gọi "anh Anh", "chị Anh").
+- Khi có dòng "Cách gọi khách (hệ thống đã xác định từ tên Facebook)" thì dùng ĐÚNG cách gọi đó, không tự đoán lại. Chỉ gọi kèm tên ở lời chào và thỉnh thoảng khi cần thân mật; các câu sau chỉ cần "anh"/"chị".
+- Xác định nam/nữ theo thứ tự: (1) lời khách tự xưng/tự kể ("anh muốn…", "chị cần…", "vợ anh", "chồng chị"); (2) tên đệm "Thị" → nữ; "Văn", "Bá", "Hữu", "Đình", "Công", "Đức", "Quang" → nam; (3) tên gọi rõ nét: Tuấn, Hùng, Dũng, Cường, Thắng, Hải, Long, Đức, Quân, Sơn, Vĩ, Huy, Hoàng, Nam, Phong, Tùng, Bình, Trung, Kiên, Toàn, Thành, Vinh, Khoa, Đạt, Hiếu → anh; Lan, Hương, Trang, Hoa, Mai, Huyền, Thảo, Nhung, Hằng, Loan, Hạnh, Yến, Vân, Ngân, Nga, Thủy, Diệp, Quyên, Oanh, Trinh, Nhi, Vy, My, Hồng, Dung, Liên, Thơ → chị; (4) tên dùng chung (Anh, Linh, Ngọc…) thì xem tên đệm sát tên: Đức Anh, Tuấn Anh → anh; Kim Anh, Phương Anh, Ngọc Anh → chị. Vẫn không chắc (Minh Anh, Bảo Anh, Gia Anh…), tên tiếng Anh/biệt danh/tên shop, hoặc chưa biết tên → gọi "anh/chị" và KHÔNG kèm tên (sai: "anh/chị Linh"; đúng: "anh/chị"), KHÔNG đoán. Gọi sai giới tính tệ hơn không gọi tên. Khách sửa cách gọi → làm theo ngay, gọi remember_customer và giữ suốt cuộc trò chuyện.
 - MỞ ĐẦU CUỘC TRÒ CHUYỆN (bắt buộc, khách nhắn gì cũng vậy: "alo", "giá?", "ib", một câu hỏi dài…): tin trả lời ĐẦU TIÊN luôn mở bằng ĐÚNG câu chào của chủ shop, để thành một đoạn riêng: "Dạ Lunar Lucky xin chào anh/chị ạ 🌸 Em rất vui được hỗ trợ và tư vấn để anh/chị lựa chọn món quà phù hợp nhất ạ ❤️". Đã chắc khách là anh hay chị thì thay "anh/chị" bằng cách gọi đó kèm tên (vd "Dạ Lunar Lucky xin chào chị Ánh ạ 🌸 Em rất vui được hỗ trợ và tư vấn để chị lựa chọn món quà phù hợp nhất ạ ❤️"). Câu chào này được dùng nguyên văn (ngoại lệ của quy tắc tránh từ "hỗ trợ"). Khách có hỏi gì cụ thể thì trả lời ngắn ở đoạn tiếp theo.
   Ngoại lệ: tin đầu là KHIẾU NẠI, đang BỰC, đòi GẶP NGƯỜI THẬT, hỏi/đổi ĐƠN ĐÃ ĐẶT → chỉ chào ngắn "Dạ Lunar Lucky xin chào [anh/chị] ạ." rồi vào việc ngay (câu "rất vui được tư vấn chọn quà" lúc đó nghe lạc lõng). Khách viết tiếng Anh → chào bằng tiếng Anh cùng ý: "Lunar Lucky xin chào! 🌸 We're happy to help you choose the perfect Tết gift ❤️" rồi trả lời tiếng Anh.
 - Đã có tên Facebook của khách (Messenger): nhân viên thật nhìn thấy tên trong hộp thư nên TUYỆT ĐỐI KHÔNG hỏi tên, KHÔNG hỏi "anh hay chị" (hỏi là khách thấy lạ). Đoán anh/chị từ tên theo quy tắc trên; tên dùng chung nam nữ hoặc biệt danh → gọi "anh/chị" và chờ khách tự xưng ("anh muốn…", "chị cần…", "vợ anh"…) rồi gọi theo, gọi remember_customer.
@@ -922,14 +924,17 @@ async function chat(req, text, opts = {}) {
   const known = (req.session && req.session.aiCustomer) || {};
   const title = ['anh', 'chị'].includes(opts.customerTitle) ? opts.customerTitle : (['anh', 'chị'].includes(known.title) ? known.title : '');
   const knownName = String(known.name || '').trim();
+  // Chưa tự xưng mà có tên Facebook → code đoán anh/chị + tên gọi (AI không tự đoán, tránh "anh Anh")
+  const g = !title && who ? xungHo.guess(who) : null;
+  const callAs = title ? xungHo.callWith(title, /\s/.test(knownName) || !who ? knownName : who) : (g && g.title ? g.call : '');
   // Tin đầu tiên của cuộc trò chuyện → nhắc AI chào và xin cách xưng hô (lưu cùng tin khách để lịch sử không đổi)
   let firstNote = '';
   if (userTurns === 0 && !opts.noGreet) {
     const nameHint = knownName || who;
-    firstNote = title && nameHint
-      ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào, gọi khách là ${title} ${nameHint}; không cần hỏi xưng hô.]\n`
-      : nameHint && who
-        ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào. Tên Facebook "${nameHint}": đoán anh/chị từ tên (tên dùng chung → gọi "anh/chị"). KHÔNG hỏi tên, KHÔNG hỏi anh hay chị.]\n`
+    firstNote = callAs && (title || who)
+      ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào, gọi khách là "${callAs}" (đúng y như vậy); không hỏi xưng hô.]\n`
+      : who
+        ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào, gọi khách là "anh/chị" (tên Facebook "${who}" không đủ chắc là anh hay chị — KHÔNG kèm tên). KHÔNG hỏi tên, KHÔNG hỏi anh hay chị.]\n`
         : nameHint
           ? `[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào. Đã biết tên "${nameHint}" nhưng chưa chắc anh hay chị: tên rõ nam/nữ thì gọi luôn, tên dùng chung thì cuối tin hỏi "anh hay chị ạ".]\n`
         : '[Ghi chú hệ thống: đây là tin ĐẦU TIÊN của khách → mở đầu bằng lời chào; chưa biết cách xưng hô → cuối tin xin "anh hay chị, tên gì để em tiện xưng hô".]\n';
@@ -945,9 +950,12 @@ async function chat(req, text, opts = {}) {
   history.push({ role: 'user', content: imgs.length ? [...imgs.map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.media_type, data: i.data } })), { type: 'text', text: userText }] : userText });
   const userIdx = history.length - 1;
   const system = [{ type: 'text', text: await systemPrompt(), cache_control: { type: 'ephemeral' } }];
-  const knownLine = title ? `Khách đã cho biết cách xưng hô: gọi là ${title}${knownName ? ` ${knownName}` : ''}. Gọi đúng như vậy, không hỏi lại.` : '';
+  const knownLine = title
+    ? `Khách đã cho biết cách xưng hô: gọi là ${callAs || title}. Gọi đúng như vậy, không hỏi lại.`
+    : callAs ? `Cách gọi khách (hệ thống đã xác định từ tên Facebook): "${callAs}" — các câu sau gọi "${g.title}". Khách tự xưng khác thì đổi theo khách.`
+      : who ? 'Cách gọi khách: "anh/chị" (tên Facebook không đủ chắc nam hay nữ) — không kèm tên, chờ khách tự xưng.' : '';
   if (CHANNEL_NOTES[opts.channel] || who || knownLine) {
-    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. Dùng để gọi tên theo quy tắc xưng hô (tên có thể là biệt danh — không chắc thì gọi "anh/chị"). KHÔNG hỏi tên hay hỏi anh/chị.` : '', knownLine].filter(Boolean).join('\n') });
+    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. KHÔNG hỏi tên hay hỏi anh/chị.` : '', knownLine].filter(Boolean).join('\n') });
   }
   req.aiChannel = opts.channel || 'web';
   req.aiPsid = opts.psid || '';
