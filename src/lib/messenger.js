@@ -185,6 +185,7 @@ let fetchProfile = async (psid) => {
 
 /** Họ tên khách theo thứ tự tiếng Việt (họ trước, tên sau). '' nếu không lấy được. */
 const nameFail = new Map();
+const junkReplied = new Set(); // nick đã nhận 1 câu chào vì tin rác → lần sau im lặng
 const errAlerted = new Map(); // khách đã được báo "AI lỗi" lúc nào (tránh báo dồn dập) // lấy tên lỗi → 6 giờ sau mới thử lại (không gọi Facebook mỗi tin)
 async function customerName(psid, row) {
   if (row && row.name) return row.name;
@@ -445,6 +446,17 @@ async function handleEvent(ev) {
     return 'paused';
   }
   if (!enabled(s)) return 'off';
+
+  // Lọc tin rác/nick ảo trước khi gọi AI (không tốn tiền Claude)
+  const junk = require('./spam').classify(text, { first: !history.length });
+  if (junk) {
+    console.log(`[messenger] tin rác (${junk}) từ …${String(psid).slice(-4)}: ${text.slice(0, 60)}`);
+    if (junk === 'junk' && !junkReplied.has(psid)) {
+      junkReplied.add(psid);
+      await sendText(psid, 'Dạ Lunar Lucky xin chào anh/chị ạ. Anh/chị đang tìm giỏ quà Tết để biếu hay đặt số lượng cho doanh nghiệp ạ?');
+    }
+    return 'spam';
+  }
 
   const imageAtts = ((ev.message && ev.message.attachments) || []).filter((a) => a && a.type === 'image' && a.payload && a.payload.url);
   if (!text) {
