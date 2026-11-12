@@ -74,7 +74,7 @@ module.exports = async function locals(req, res, next) {
   res.locals.seo = {
     title: `${s.shop_name} · ${s.shop_tagline}`,
     description: s.hero_subtitle,
-    image: `${config.siteUrl}/img/og-default.png`,
+    image: `${config.siteUrl}/img/og-tet-2027.jpg`,
     canonical: config.siteUrl + req.path,
     type: 'website',
     noindex: false,
