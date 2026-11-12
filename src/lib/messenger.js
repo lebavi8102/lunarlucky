@@ -674,7 +674,7 @@ async function setupProfile() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env().token}` },
     body: JSON.stringify({
-      greeting: [{ locale: 'default', text: 'Lunar Lucky — giỏ quà Tết cao cấp, giao toàn quốc. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.' }],
+      greeting: [{ locale: 'default', text: 'Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.' }],
       ice_breakers: [{ locale: 'default', call_to_actions: [
         { question: 'Tư vấn giỏ quà biếu sếp, đối tác', payload: 'IB_BIEU' },
         { question: 'Quà Tết cho nhân viên (số lượng nhiều)', payload: 'IB_NHANVIEN' },
