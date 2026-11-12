@@ -126,7 +126,10 @@ function parseBudget(query) {
     // "2 triệu cho cả 3 giỏ" = tổng (cũng là câu khách trả lời khi được hỏi lại "cho cả N giỏ hay mỗi giỏ")
     if (TOTAL_BEFORE.test(before) || (qa && qa[2])) conds.push({ total: h.v, i: h.i, end: h.end });
     else if ((qa || qb) && !PER_BASKET.test(before) && !PER_BASKET.test(after)) {
-      conds.push({ ambiguous: h.v, qty: Number((qa && qa[3]) || (qb && qb[1])), i: h.i, end: h.end });
+      const qty = Number((qa && qa[3]) || (qb && qb[1]));
+      // "50 giỏ tầm 1tr": chia ra mỗi giỏ < 300k (rẻ hơn mọi giỏ) → chắc chắn là giá mỗi giỏ, không hỏi lại
+      if (qty > 1 && h.v / qty < 300000) conds.push({ max: h.v, i: h.i, end: h.end });
+      else conds.push({ ambiguous: h.v, qty, i: h.i, end: h.end });
     }
     else if (MAX_WORDS.test(before)) conds.push({ max: h.v, i: h.i, end: h.end });
     else if (MIN_WORDS.test(before) || /^\s*(tro len|tro di|do len)/.test(after)) conds.push({ min: h.v, i: h.i, end: h.end });
