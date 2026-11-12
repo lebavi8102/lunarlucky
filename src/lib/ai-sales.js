@@ -68,6 +68,7 @@ function productCard(p, catName) {
     contents,
     in_stock: p.stock > 0 ? (p.stock < 10 ? `còn ${p.stock} giỏ` : 'còn hàng') : 'hết hàng',
     url: `/san-pham/${p.slug}`,
+    has_video: /^https?:\/\//.test(String(p.video_url || '')),
   };
 }
 
@@ -348,6 +349,7 @@ Tình huống khó (tham khảo cách xử lý, nói bằng lời tự nhiên c�
 - Nhiều người nhận / nhiều địa chỉ / nhiều ngày giao trong cùng một lần mua: Messenger → transfer_to_human NGAY ở tin đó (tóm tắt từng người nhận, giỏ, ngày nếu đã biết); website → xin số điện thoại rồi request_callback. Không tự tách đơn.
 - Khách hỏi cửa hàng / showroom ở đâu, muốn qua xem: "Dạ hiện tại bên em đang triển khai mô hình bán hàng online kết hợp giao hàng tận nơi để phục vụ anh/chị thuận tiện nhất ạ. Trong tương lai, bên em sẽ phát triển showroom chỉn chu để có thể đón tiếp anh/chị ghé thăm và trải nghiệm sản phẩm trực tiếp ạ ❤️" Không đưa địa chỉ, không hẹn qua xem. Khách muốn xem giỏ thật thì làm như mục "xem ảnh/video thực tế" bên dưới.
 - Khách sợ chuyển khoản bị lừa / hỏi uy tín: "Dạ em hiểu tâm lý của anh/chị ạ ❤️ Mua hàng online thì sự uy tín và an tâm khi thanh toán luôn là điều quan trọng nhất. Bên em luôn sẵn sàng cung cấp hình ảnh, video thực tế của giỏ quà và thông tin đơn hàng để anh/chị kiểm tra trước khi đặt. Trong quá trình chuẩn bị và giao hàng, bên em cũng sẽ cập nhật đầy đủ để anh/chị yên tâm ạ." (ý "mong mang lại trải nghiệm mua hàng an tâm" có thể thêm một câu). Sau đó nói thêm 1 ý thật: có thể thanh toán khi nhận (COD; đơn lớn cọc theo quy định), có ảnh xác nhận lúc giao. 
+- Khách xin VIDEO / CLIP giỏ trên FANPAGE (Messenger): giỏ có has_video = true → gọi send_product_video NGAY, không chuyển nhân viên. Giỏ chưa có clip, hoặc khách muốn xem thêm ảnh/clip ngoài cái đã gửi → làm như dòng dưới.
 - Khách muốn XEM GIỎ THẬT / xin ảnh, video thực tế trên FANPAGE (Messenger): KHÔNG xin số Zalo — gọi transfer_to_human NGAY (summary ghi rõ: gửi ảnh/video thực tế giỏ nào, số lượng, tặng ai) và trả lời bằng câu chuyển tiếp ở phần CHUYỂN CHO NHÂN VIÊN.
 - Khách muốn XEM GIỎ THẬT / xin ảnh, video thực tế trên WEBSITE: xin số Zalo của khách — "Anh/chị cho em xin số Zalo, chuyên viên bên em gửi ảnh và video thực tế giỏ [tên giỏ] cho mình xem ngay ạ". Khách đưa số → gọi request_callback NGAY với phone = số Zalo, note = "Gửi ảnh/video thực tế giỏ [tên giỏ] qua Zalo số …" (kèm nhu cầu: tặng ai, số lượng, ngày giao nếu đã biết), rồi báo khách chuyên viên sẽ gửi qua Zalo sớm. Không tự hứa gửi ảnh trong khung chat.
 - KHÁCH DOANH NGHIỆP trên Messenger (quà nhân viên/đối tác số lượng nhiều, đơn từ ${Number(s.ai_escalate_qty) || 5} giỏ, xin báo giá, hỏi in logo, hỏi chiết khấu): HỎI TRƯỚC, CHUYỂN SAU (chủ shop chốt 12/11/2026) — để nhân viên nhận khách đã rõ nhu cầu:
@@ -512,6 +514,12 @@ function tools(channel) {
     list.push({
       name: 'send_product_photo',
       description: 'Gửi ảnh thật của một giỏ vào khung chat. Gọi cho từng giỏ em giới thiệu (tối đa 2 giỏ mỗi tin). Ảnh được gửi kèm tin trả lời của em; vẫn nêu GIÁ giỏ ngay trong tin.',
+      strict: true,
+      input_schema: { type: 'object', additionalProperties: false, properties: { product_id: { type: 'integer', description: 'Mã giỏ (số trong ngoặc vuông ở danh mục)' } }, required: ['product_id'] },
+    });
+    list.push({
+      name: 'send_product_video',
+      description: 'Gửi clip thực tế của một giỏ vào khung chat (chỉ giỏ có has_video = true). Gọi khi khách xin xem video / clip / giỏ thật. Mỗi tin tối đa 1 clip.',
       strict: true,
       input_schema: { type: 'object', additionalProperties: false, properties: { product_id: { type: 'integer', description: 'Mã giỏ (số trong ngoặc vuông ở danh mục)' } }, required: ['product_id'] },
     });
@@ -826,6 +834,15 @@ async function runTool(name, input, req, out) {
     }
     return { ok: true, note: `Ảnh giỏ ${p.name} sẽ hiện kèm tin của em. Nêu GIÁ giỏ này ngay trong tin; không cần gửi link web.` };
   }
+  if (name === 'send_product_video') {
+    if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
+    const p = await db('products').where({ id: Number(input.product_id), is_active: true }).first('id', 'name', 'video_url');
+    const url = p && String(p.video_url || '').trim();
+    if (!p || !/^https?:\/\//.test(url)) return { error: 'Giỏ này chưa có clip trong hệ thống → gọi transfer_to_human để nhân viên quay/gửi clip (summary ghi rõ giỏ nào), KHÔNG hứa tự gửi.' };
+    if (out.video && out.video.id !== p.id) return { error: 'Mỗi tin chỉ gửi 1 clip. Giỏ khác gửi ở tin sau.' };
+    out.video = { id: p.id, name: p.name, url };
+    return { ok: true, note: `Clip giỏ ${p.name} sẽ gửi ngay sau tin của em. Chỉ nói ngắn 1 câu (vd "Dạ em gửi anh/chị clip thực tế giỏ ${p.name} ạ"), không dán link.` };
+  }
   if (name === 'lookup_order') {
     const code = String(input.order_code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
     if (!/^LN\d{6}[A-Z0-9]{4}$/.test(code)) return { error: 'Mã đơn chưa đúng dạng (LN + 6 số + 4 ký tự, vd LN2610205HML). Nhờ khách đọc lại mã trong tin xác nhận đặt hàng.' };
@@ -1042,7 +1059,7 @@ async function chat(req, text, opts = {}) {
   if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
   if (imgs.length) history[userIdx] = { role: 'user', content: `${userText}\n[Khách gửi kèm ${imgs.length} ảnh]` };
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], video: out.video || null, order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
 
 module.exports = {

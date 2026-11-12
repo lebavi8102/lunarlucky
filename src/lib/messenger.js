@@ -135,6 +135,19 @@ const typing = (psid) => send({ recipient: { id: psid }, sender_action: 'typing_
 let pauseMs = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Câu trả lời của AI: mỗi đoạn (cách nhau dòng trống) là một tin, giữa các tin hiện "đang soạn tin" như người gõ. */
+/** Clip giỏ: file .mp4 gửi thẳng vào chat; link YouTube/TikTok/Facebook/Drive → nút bấm mở clip. */
+async function sendVideo(psid, v) {
+  if (/\.mp4(\?|#|$)/i.test(v.url)) {
+    // File quá nặng (>25 MB) / link không tải được → Facebook từ chối, gửi nút link thay thế
+    const ok = await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'video', payload: { url: v.url, is_reusable: true } } } }).catch(() => false);
+    if (ok) return ok;
+    console.error('[messenger] không gửi được clip dạng file, gửi nút link thay thế');
+  }
+  return send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
+    template_type: 'button', text: `🎬 Clip thực tế giỏ ${v.name}`.slice(0, 640), buttons: [{ type: 'web_url', url: v.url, title: 'Xem clip' }],
+  } } } });
+}
+
 async function sendChat(psid, text, photos = []) {
   let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
   if (parts.length > 3) parts = [...parts.slice(0, 2), parts.slice(2).join('\n')];
@@ -516,6 +529,7 @@ async function handleEvent(ev) {
     return 'error';
   }
   await sendChat(psid, r.reply, r.photos || []);
+  if (r.video) await sendVideo(psid, r.video).catch((err) => console.error('[messenger] gửi clip lỗi:', err.message));
   await require('./ai-learn').log(psid, 'ai', r.reply);
   // Khách đã xác nhận trong chat → đơn đã tạo: gửi ngay mã QR + thông tin chuyển khoản (không dẫn sang web)
   if (r.order) await orderUpdate(r.order, 'placed', { until: r.orderUntil });
