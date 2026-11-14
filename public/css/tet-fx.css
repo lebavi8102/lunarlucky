@@ -29,6 +29,29 @@
 @keyframes tet-spin { to { transform: rotate(360deg); } }
 .tet-peacock { right: max(0px, calc((100vw - 1240px) / 2 - 250px)); bottom: 0; width: 240px; transform: translateY(24px); }
 .tet-peacock.is-in { opacity: 1; transform: none; }
+.tet-peacock.tet-left { right: auto; left: 2%; width: 170px; }
+
+/* Khối doanh nghiệp, khối cuối trang: mây vàng mờ */
+.tet-cloud-r { right: max(0px, calc((100vw - 1240px) / 2 - 220px)); top: 10px; width: 300px; transform: translateX(30px); }
+.tet-cloud-r.is-in { opacity: .45; transform: none; animation: tet-drift 16s ease-in-out infinite alternate; }
+.tet-cloud-l { left: max(0px, calc((100vw - 1240px) / 2 - 220px)); bottom: 10px; width: 280px; transform: translateX(-30px); }
+.tet-cloud-l.is-in { opacity: .4; transform: none; animation: tet-drift 18s ease-in-out infinite alternate-reverse; }
+@keyframes tet-drift { from { translate: 0 0; } to { translate: 36px 0; } }
+
+/* ---------- Đèn lồng treo đầu trang (đung đưa) ---------- */
+.tet-lanterns { position: absolute; top: 0; z-index: 3; display: flex; gap: 14px; pointer-events: none; }
+.tet-lanterns img { display: block; width: 46px; height: auto; transform-origin: 50% 0; animation: tet-sway 3.6s ease-in-out infinite alternate; }
+.tet-lanterns img:nth-child(2) { width: 38px; margin-top: -26px; animation-duration: 4.4s; animation-delay: -1.2s; }
+@keyframes tet-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.hero .tet-lanterns { right: 14px; }
+@media (min-width: 760px) { .tet-lanterns img { width: 62px; } .tet-lanterns img:nth-child(2) { width: 50px; } }
+@media (min-width: 1600px) { .hero .tet-lanterns { right: auto; left: calc((100vw - 1240px) / 2 - 110px); } }
+@media (min-width: 1360px) and (max-width: 1599px) { .hero .tet-lanterns { right: 150px; } }
+@media (max-width: 759px) { .hero .tet-lanterns { right: 2px; gap: 8px; } .tet-lanterns img { width: 34px; } .tet-lanterns img:nth-child(2) { width: 28px; margin-top: -40px; } }
+.page-head .tet-lanterns { right: max(16px, calc((100vw - 1240px) / 2 + 16px)); }
+
+/* ---------- Hoa mai, đào rơi + pháo hoa vàng ---------- */
+.tet-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25; }
 
 /* ---------- Dê Mùi Lộc trong ảnh hero ---------- */
 .tet-hero-goat { position: absolute; right: 14px; bottom: 10px; width: 100px; height: auto; z-index: 2; pointer-events: none; filter: drop-shadow(0 8px 14px rgb(59 10 16 / .25)); animation: tet-bob 3s ease-in-out infinite; transform-origin: 50% 100%; }
@@ -63,6 +86,9 @@
 .tet-count { display: flex; gap: 10px; margin-top: 24px; }
 .tet-count span { display: grid; place-items: center; min-width: 72px; padding: 10px 8px 8px; border-radius: 10px; background: rgb(255 248 236 / .96); color: var(--lacquer-700); font-size: 12px; font-weight: 600; line-height: 1.1; box-shadow: 0 6px 16px rgb(40 4 8 / .25); }
 .tet-count b { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.tet-perks { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 8px 22px; font-size: 14.5px; color: #fff3e6; }
+.tet-perks li { display: flex; align-items: center; gap: 8px; }
+.tet-perks li::before { content: '✦'; color: var(--gold-300); font-size: 11px; }
 .tet-band-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .tet-btn-line { --btn-bg: transparent; --btn-fg: #fff; --btn-bd: rgb(255 255 255 / .7); }
 .tet-btn-line:hover { --btn-bg: #fff; --btn-fg: var(--lacquer-800); --btn-bd: #fff; }
@@ -71,6 +97,7 @@
   .tet-band-art img { max-width: 220px; }
   .tet-band-lead { margin-inline: auto; }
   .tet-count, .tet-band-cta { justify-content: center; }
+  .tet-perks { grid-template-columns: 1fr 1fr; text-align: left; font-size: 13.5px; max-width: 340px; margin-inline: auto; }
   .tet-count span { min-width: 62px; }
   .tet-count b { font-size: 24px; }
   .tet-band-cloud.c2 { display: none; }
@@ -88,7 +115,7 @@ body[data-tet] .site-footer { position: relative; overflow: hidden; isolation: i
 body[data-tet] .site-footer::before { content: ''; position: absolute; z-index: -1; right: -160px; top: -120px; width: 520px; height: 520px; background: url('/img/tet/drum.webp') center / contain no-repeat; opacity: .07; pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .tet-deco, .tet-hero-goat, .tet-band-art img { animation: none !important; transition: none !important; }
+  .tet-deco, .tet-hero-goat, .tet-band-art img, .tet-lanterns img { animation: none !important; transition: none !important; }
   .tet-deco { opacity: .7; transform: none; }
 }
-@media print { .tet-deco, .tet-hero-goat, .tet-band { display: none !important; } }
+@media print { .tet-deco, .tet-hero-goat, .tet-band, .tet-lanterns, .tet-canvas { display: none !important; } }

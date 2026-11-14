@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 300">
+  <defs>
+    <linearGradient id="l" x1="0" x2="1">
+      <stop offset="0" stop-color="#6e0c14"/><stop offset=".35" stop-color="#c41e2a"/><stop offset=".55" stop-color="#d9333b"/><stop offset="1" stop-color="#6e0c14"/>
+    </linearGradient>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#9a7232"/><stop offset=".5" stop-color="#f1d88f"/><stop offset="1" stop-color="#9a7232"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffcf6b" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></radialGradient>
+  </defs>
+  <line x1="60" y1="0" x2="60" y2="96" stroke="#c9a15a" stroke-width="1.6"/>
+  <circle cx="60" cy="168" r="70" fill="url(#glow)"/>
+  <rect x="38" y="96" width="44" height="12" rx="3" fill="url(#g)"/>
+  <ellipse cx="60" cy="168" rx="50" ry="60" fill="url(#l)"/>
+  <g fill="none" stroke="#e6c46f" stroke-opacity=".75" stroke-width="1.4">
+    <path d="M60 108v120"/><path d="M60 108c-22 14-30 36-30 60s8 46 30 60"/><path d="M60 108c22 14 30 36 30 60s-8 46-30 60"/>
+    <path d="M60 108c-38 12-48 38-48 60s10 48 48 60" stroke-opacity=".45"/><path d="M60 108c38 12 48 38 48 60s-10 48-48 60" stroke-opacity=".45"/>
+  </g>
+  <circle cx="60" cy="168" r="17" fill="#f6e3b0" stroke="#b8862e" stroke-width="2"/>
+  <rect x="54" y="162" width="12" height="12" fill="#9a1b25" stroke="#b8862e" stroke-width="1.5"/>
+  <rect x="38" y="228" width="44" height="12" rx="3" fill="url(#g)"/>
+  <path d="M60 240v10" stroke="#c9a15a" stroke-width="2"/>
+  <circle cx="60" cy="254" r="5" fill="url(#g)"/>
+  <g stroke="#d9333b" stroke-width="2.2" stroke-linecap="round"><path d="M52 259v36M56 259v40M60 259v42M64 259v40M68 259v36"/></g>
+  <path d="M50 259h20" stroke="url(#g)" stroke-width="4"/>
+</svg>
