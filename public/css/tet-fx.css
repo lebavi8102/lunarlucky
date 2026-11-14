@@ -113,3 +113,53 @@ body[data-tet] .site-footer::before { content: ''; position: absolute; z-index: 
   .tet-deco { opacity: .7; transform: none; }
 }
 @media print { .tet-deco, .tet-band, .tet-lanterns, .tet-canvas { display: none !important; } }
+
+/* =========================================================
+   Hoa văn Tết: mây cát tường chìm, hồi văn, góc khung vàng, gạch trang trí tiêu đề
+   ========================================================= */
+/* Nền mây cát tường rất mờ trên toàn trang nền kem */
+body[data-tet] main { background-image: url('/img/tet/cloud-tile.svg'); background-size: 160px 96px; background-repeat: repeat; background-blend-mode: normal; }
+body[data-tet] main { --tet-cloud-op: .07; }
+body[data-tet] main::before { content: none; }
+body[data-tet] main { background-color: transparent; }
+body[data-tet] main { background-image: linear-gradient(rgb(250 244 236 / .93), rgb(250 244 236 / .93)), url('/img/tet/cloud-tile.svg'); }
+
+/* Dải hồi văn vàng: dưới dải cam kết, trên/dưới dải đỏ Tết, đầu chân trang */
+body[data-tet] .usp, .tet-band, body[data-tet] .site-footer { position: relative; }
+body[data-tet] .usp::after, .tet-band .tet-key, body[data-tet] .site-footer::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 12px; pointer-events: none;
+  background: url('/img/tet/key-band.svg') repeat-x center / 24px 12px; opacity: .55;
+}
+body[data-tet] .usp::after { bottom: 0; }
+body[data-tet] .site-footer::after { top: 0; opacity: .45; }
+.tet-band { border-top: 0; }
+.tet-band .tet-key.t { top: 0; } .tet-band .tet-key.b { bottom: 0; }
+
+/* Gạch hoa văn dưới tiêu đề căn giữa */
+body[data-tet] .section-head.center .h2::after {
+  content: ''; display: block; width: 220px; height: 24px; margin: 14px auto 0;
+  background: url('/img/tet/divider.svg') center / contain no-repeat;
+}
+/* Tiêu đề trái: hoa văn nhỏ trước dòng chữ nhỏ */
+body[data-tet] .section-head:not(.center) .eyebrow::before { width: 34px; height: 12px; background: url('/img/tet/key-band.svg') repeat-x left center / 24px 12px; opacity: .9; }
+
+/* Góc khung vàng cho ảnh sản phẩm */
+body[data-tet] .p-media::before, body[data-tet] .p-media::after {
+  content: ''; position: absolute; z-index: 2; width: 38px; height: 38px; pointer-events: none;
+  background: url('/img/tet/corner.svg') center / contain no-repeat; opacity: .9; transition: opacity .3s;
+}
+body[data-tet] .p-media::before { top: 8px; left: 8px; }
+body[data-tet] .p-media::after { right: 8px; bottom: 8px; transform: rotate(180deg); }
+
+/* Khung hoa văn cho khối doanh nghiệp và khối liên hệ */
+body[data-tet] .b2b-card, body[data-tet] .social-cta { position: relative; border-color: rgb(201 161 90 / .45); }
+body[data-tet] .b2b-card::before, body[data-tet] .b2b-card::after,
+body[data-tet] .social-cta::before, body[data-tet] .social-cta::after {
+  content: ''; position: absolute; width: 56px; height: 56px; pointer-events: none;
+  background: url('/img/tet/corner.svg') center / contain no-repeat; z-index: 1;
+}
+body[data-tet] .b2b-card::before, body[data-tet] .social-cta::before { top: 12px; left: 12px; }
+body[data-tet] .b2b-card::after, body[data-tet] .social-cta::after { right: 12px; bottom: 12px; transform: rotate(180deg); }
+body[data-tet] .social-cta { background: var(--cream-100) url('/img/tet/cloud-tile.svg') repeat center / 160px 96px; }
+body[data-tet] .social-cta { background-image: linear-gradient(rgb(245 236 222 / .9), rgb(245 236 222 / .9)), url('/img/tet/cloud-tile.svg'); }
+@media (max-width: 759px) { body[data-tet] .p-media::before, body[data-tet] .p-media::after { width: 28px; height: 28px; } }
