@@ -326,6 +326,7 @@ const SETTING_GROUPS = [
     ['telegram_admin_only', 'Chỉ QUẢN TRỊ VIÊN nhóm Telegram được hủy đơn / xác nhận đã nhận tiền (1 = bật, 0 = ai trong nhóm cũng bấm được)'],
   ]],
   ['Trang chủ', [
+    ['tet_effects', 'Hiệu ứng Tết trên web (linh vật Dê, chim hạc/công, hoa mai đào rơi, đèn lồng) — 1 = bật, 0 = tắt'],
     ['announcement', 'Dòng thông báo trên cùng'], ['hero_eyebrow', 'Dòng nhỏ trên tiêu đề'],
     ['hero_title', 'Tiêu đề lớn (dấu / để xuống dòng, vd: Trao quà tinh tế / Gửi trọn thịnh vượng)'], ['hero_subtitle', 'Mô tả dưới tiêu đề', 'textarea'],
   ]],

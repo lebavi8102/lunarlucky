@@ -96,6 +96,8 @@ const DEFAULTS = {
   ops_evening_hour: '21',
   ops_morning_last: '',
   ops_evening_last: '',
+  // Hiệu ứng Tết (linh vật Dê, chim hạc/công, hoa mai đào rơi, đèn lồng): 1 = bật, 0 = tắt
+  tet_effects: '1',
   announcement: 'Miễn phí giao hàng cho đơn từ 1.500.000₫ · Đặt trước Tết để chọn ngày giao',
   hero_eyebrow: 'LUNAR LUCKY · QUÀ TẾT 2027',
   hero_title: 'Trao quà tinh tế / Gửi trọn thịnh vượng',

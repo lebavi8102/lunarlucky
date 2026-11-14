@@ -81,6 +81,8 @@
 
 <div class="toast" role="status" aria-live="polite" data-toast><span data-toast-text></span><a href="/thanh-toan">Đặt hàng →</a></div>
 
+<% if (s.tet_effects !== '0') { %><%- include('tet-fx') %>
+<script src="<%= asset('/js/tet-fx.js') %>" defer></script><% } %>
 <script src="<%= asset('/js/main.js') %>" defer></script>
 <% if (typeof pageScript !== 'undefined') { %><script src="<%= pageScript %>" defer></script><% } %>
 </body>

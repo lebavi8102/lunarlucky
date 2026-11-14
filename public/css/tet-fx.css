@@ -1,0 +1,106 @@
+/* =========================================================
+   Hiệu ứng Tết 2027 — chỉ tải khi bật "Hiệu ứng Tết" trong Cài đặt.
+   Mọi trang trí nằm DƯỚI nội dung (z-index 0), không bắt chuột.
+   ========================================================= */
+.tet-host { isolation: isolate; }
+.tet-host > .container, .tet-host > .hero-grid { position: relative; z-index: 1; }
+.tet-deco { position: absolute; z-index: 0; pointer-events: none; user-select: none; }
+.tet-deco img { display: block; width: 100%; height: auto; }
+
+/* Hiện dần khi cuộn tới */
+.tet-deco { opacity: 0; transition: opacity 1.2s var(--ease, ease), transform 1.6s var(--ease, ease); }
+.tet-deco.is-in { opacity: 1; }
+
+/* ---------- Đèn lồng treo đầu trang (đung đưa) ---------- */
+.tet-lanterns { top: -4px; left: max(12px, calc((100vw - var(--container, 1240px)) / 2 - 150px)); width: 110px; z-index: 2; transform-origin: 50% 0; }
+@media (max-width: 1599px) { .tet-lanterns { left: auto; right: 3%; width: 90px; } }
+.tet-lanterns.is-in { animation: tet-sway 4.2s ease-in-out infinite alternate; }
+@media (max-width: 759px) { .tet-lanterns { display: none; } }
+@keyframes tet-sway { from { transform: rotate(-3.5deg); } to { transform: rotate(3.5deg); } }
+
+/* ---------- Mây cát tường trôi ---------- */
+.tet-cloud-hero { left: 2%; bottom: 18px; width: 300px; opacity: 0; z-index: 2; }
+.tet-cloud-hero.is-in { opacity: .55; animation: tet-drift 18s ease-in-out infinite alternate; }
+.tet-cloud-r { right: -40px; top: 24px; width: 260px; }
+.tet-cloud-r.is-in { opacity: .45; animation: tet-drift 22s ease-in-out infinite alternate-reverse; }
+.tet-cloud-l { left: -30px; top: 30px; width: 300px; }
+.tet-cloud-l.is-in { opacity: .5; animation: tet-drift 20s ease-in-out infinite alternate; }
+@keyframes tet-drift { from { transform: translateX(0); } to { transform: translateX(40px); } }
+
+/* ---------- Cành mai (trái) & đào (phải) ---------- */
+.tet-mai { left: 0; top: 0; width: clamp(240px, 22vw, 400px); transform: translateX(-30px); }
+.tet-dao { right: 0; top: 0; width: clamp(240px, 22vw, 400px); transform: translateX(30px); }
+.tet-mai.is-in { transform: none; animation: tet-breeze 6s ease-in-out infinite alternate; transform-origin: 0 0; }
+.tet-dao.is-in { transform: none; animation: tet-breeze-r 7s ease-in-out infinite alternate; transform-origin: 100% 0; }
+@keyframes tet-breeze { from { transform: rotate(0); } to { transform: rotate(1.6deg); } }
+@keyframes tet-breeze-r { from { transform: rotate(0); } to { transform: rotate(-1.6deg); } }
+
+/* ---------- Hạc bay vào từ phải ---------- */
+.tet-crane { right: 1%; top: 8%; width: clamp(150px, 13vw, 230px); transform: translate(120px, 60px) rotate(8deg); }
+.tet-crane.is-in { transform: none; animation: tet-glide 5.5s ease-in-out 1.6s infinite alternate; }
+@keyframes tet-glide { from { transform: translateY(0) rotate(0); } to { transform: translateY(-14px) rotate(-2deg); } }
+
+/* ---------- Lân múa (nhún nhảy) ---------- */
+.tet-lan { left: 1%; bottom: 10px; width: min(220px, calc((100vw - 1240px) / 2 - 20px)); transform: translateX(-80px); }
+.tet-lan.is-in { transform: none; }
+.tet-lan.is-in img { animation: tet-hop 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes tet-hop { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-10px) rotate(-3deg); } 50% { transform: translateY(0) rotate(0); } 75% { transform: translateY(-6px) rotate(3deg); } }
+
+/* ---------- Khối giới thiệu cuối trang: nền giấy kem hoa văn mây ---------- */
+body[data-tet] .seo-about { background: #fbf6ec url('/img/tet/bg-cream.webp') center / cover no-repeat; }
+
+/* ---------- Section sơn mài: nền lụa đỏ + chim công ---------- */
+.lacquer.tet-silk { background: linear-gradient(90deg, rgb(42 7 12 / .82) 0%, rgb(59 10 16 / .62) 50%, rgb(59 10 16 / .35) 100%), url('/img/tet/bg-red.webp') center / cover no-repeat, var(--lacquer-900); }
+.tet-peacock { right: 1%; bottom: 0; width: min(260px, calc((100vw - 1240px) / 2 - 10px)); transform: translateY(30px); filter: drop-shadow(0 10px 24px rgb(0 0 0 / .35)); }
+.tet-peacock.is-in { transform: none; }
+
+/* ---------- Chân trang ---------- */
+.tet-ornament { left: 12px; top: 12px; width: 110px; }
+.tet-ornament.is-in { opacity: .35; }
+.tet-lixi { right: 18px; top: -46px; width: 120px; transform: rotate(-8deg) translateY(20px); }
+.tet-lixi.is-in { transform: rotate(-8deg); }
+
+/* ---------- Hoa rơi + pháo hoa ---------- */
+.tet-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25; }
+
+/* ---------- Linh vật Dê Mùi Lộc ---------- */
+.tet-mascot {
+  position: fixed; left: 18px; bottom: 76px; z-index: 32; width: 96px;
+  transform: translateY(140%); transition: transform .7s cubic-bezier(.34, 1.56, .64, 1);
+}
+.tet-mascot.show { transform: none; }
+.tet-mascot-btn { display: block; padding: 0; border: 0; background: none; cursor: pointer; width: 100%; }
+.tet-mascot-btn img { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 14px rgb(59 10 16 / .28)); animation: tet-bob 2.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.tet-mascot-btn:hover img { animation: tet-wiggle .6s ease-in-out 2; }
+.tet-mascot-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: 12px; }
+@keyframes tet-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes tet-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+.tet-bubble {
+  position: absolute; left: 86px; bottom: 70px; width: max-content; max-width: 230px;
+  padding: 10px 14px; border-radius: 14px 14px 14px 4px;
+  background: #fff; color: var(--lacquer-800); border: 1px solid var(--gold-400);
+  font-size: 13.5px; font-weight: 600; line-height: 1.4; box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(6px) scale(.96); transform-origin: 0 100%;
+  transition: opacity .3s, transform .3s; pointer-events: none;
+}
+.tet-bubble.on { opacity: 1; transform: none; }
+.tet-close {
+  position: absolute; top: -4px; right: -4px; width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-500); font-size: 15px; line-height: 1;
+  display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .2s;
+}
+.tet-mascot:hover .tet-close, .tet-mascot:focus-within .tet-close { opacity: 1; }
+body.ai-open .tet-mascot, body.has-checkout-bar .tet-mascot, body.fab-over-media .tet-mascot { display: none; }
+
+/* Điện thoại: linh vật nhỏ, ngồi trên nút "Hỗ trợ" góc phải */
+@media (max-width: 759px) {
+  .tet-mascot { left: auto; right: 14px; bottom: calc(68px + env(safe-area-inset-bottom)); width: 70px; }
+  .tet-bubble { left: auto; right: 58px; bottom: 46px; max-width: 190px; font-size: 12.5px; border-radius: 14px 14px 4px 14px; transform-origin: 100% 100%; }
+  .tet-close { opacity: 1; width: 22px; height: 22px; }
+  body.has-buy-bar .tet-mascot, body.has-cart-bar .tet-mascot, body.kb-open .tet-mascot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tet-deco, .tet-deco img, .tet-mascot, .tet-mascot-btn img { animation: none !important; transition: none !important; }
+}
+@media print { .tet-deco, .tet-canvas, .tet-mascot { display: none !important; } }
