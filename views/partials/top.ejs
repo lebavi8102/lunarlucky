@@ -3,9 +3,15 @@
 <%- include('icons') %>
 <a class="skip-link" href="#main">Bỏ qua, đến nội dung chính</a>
 
-<% if (s.announcement) { %>
-<div class="announce"><%= s.announcement %></div>
-<% } %>
+<div class="topbar">
+  <div class="container topbar-inner">
+    <p class="topbar-note"><% if (s.announcement) { %><%= s.announcement %><% } else { %>Giỏ quà Tết cao cấp · Cá nhân &amp; doanh nghiệp<% } %></p>
+    <div class="topbar-actions">
+      <a class="topbar-phone" href="tel:<%= String(s.shop_phone || '').replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg><span><%= s.shop_phone %></span></a>
+      <a class="topbar-quote" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia"><svg class="icon icon-sm"><use href="#i-file"/></svg>Báo giá doanh nghiệp</a>
+    </div>
+  </div>
+</div>
 
 <header class="site-header" data-header>
   <div class="container header-inner">

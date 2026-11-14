@@ -79,7 +79,8 @@
     </div>
   </div>
 
-  <section class="pdp-details" aria-label="Thông tin chi tiết giỏ quà">
+  <section class="pdp-details has-motif" aria-label="Thông tin chi tiết giỏ quà">
+    <img class="motif motif-ink motif-may-tr" src="/img/motif/may-vang.webp" alt="" aria-hidden="true" width="600" height="600" loading="lazy" decoding="async">
     <details class="pdp-acc" open>
       <summary>Thành phần giỏ quà</summary>
       <div class="pdp-acc-body">
@@ -125,7 +126,8 @@
   <% } %>
 
   <% if (related.length) { %>
-  <section class="section" style="border-top:1px solid var(--line)">
+  <section class="section has-motif" style="border-top:1px solid var(--line)">
+    <img class="motif motif-mul motif-mai-tr" src="/img/motif/mai.webp" alt="" aria-hidden="true" width="600" height="600" loading="lazy" decoding="async">
     <div class="section-head"><div class="stack"><span class="eyebrow">Có thể bạn thích</span><h2 class="h2">Giỏ quà <em>tương tự</em></h2></div></div>
     <div class="product-grid cols-4">
       <% related.forEach((p, i) => { %><%- include('../partials/product-card', { p, i }) %><% }) %>
