@@ -1462,20 +1462,32 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
   .product-grid.m-scroll > .p-card { flex: 0 0 66%; scroll-snap-align: start; }
 }
 
-/* Ô chọn theo ngân sách */
-.budget-sec { padding-block: 44px 8px; }
-.budget-head { text-align: center; margin-bottom: 22px; }
-.budget-head .h3 { margin-top: 10px; }
-.budget-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-@media (min-width: 900px) { .budget-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; } }
-.budget-tiles a { display: flex; align-items: center; gap: 14px; height: 100%; padding: 16px 18px; background: #fff; border: 1px solid var(--gold-300); border-radius: 16px; transition: border-color 200ms, box-shadow 200ms, background-color 200ms; }
-.budget-tiles a:hover { border-color: var(--gold-500); background: var(--cream-50); box-shadow: 0 14px 30px rgb(60 10 18 / .1); }
-.budget-ico { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--lacquer-100); color: var(--lacquer-700); }
-.budget-txt { flex: 1; min-width: 0; }
-.budget-txt strong { display: block; font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--lacquer-800); }
-.budget-txt small { display: block; margin-top: 2px; font-size: 13px; color: var(--text-muted); }
-.budget-go { flex: none; color: var(--gold-600); }
-@media (max-width: 479px) { .budget-tiles a { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .budget-go { display: none; } .budget-txt strong { font-size: 20px; } }
+/* Chọn theo ngân sách: ảnh giỏ thật cho từng mức giá */
+.budget-sec { padding-block: 64px 8px; }
+.budget-sec .section-head { margin-bottom: 28px; }
+.budget-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 900px) { .budget-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; } .budget-grid.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .budget-grid.n2 { grid-template-columns: repeat(2, minmax(0, 400px)); justify-content: center; } }
+.budget-card { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; background: var(--cream-200); color: #fff; isolation: isolate; }
+.budget-card img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; transition: transform 900ms var(--ease); }
+.budget-card:hover img { transform: scale(1.05); }
+.budget-card::before { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgb(42 6 11 / 0) 42%, rgb(42 6 11 / .55) 68%, rgb(42 6 11 / .92) 100%); }
+.budget-card::after { content: ''; position: absolute; inset: 9px; z-index: 2; border: 1px solid rgb(240 217 164 / .55); border-radius: 8px; pointer-events: none; transition: inset 300ms var(--ease), border-color 300ms; }
+.budget-card:hover::after { inset: 6px; border-color: var(--gold-300); }
+.budget-no { position: absolute; z-index: 3; top: 22px; left: 24px; font-family: var(--font-display); font-size: 15px; font-style: italic; letter-spacing: .06em; color: #fff; text-shadow: 0 1px 8px rgb(30 4 8 / .6); }
+.budget-info { position: absolute; z-index: 3; left: 24px; right: 64px; bottom: 24px; display: block; }
+.budget-label { display: block; font-family: var(--font-display); font-size: clamp(24px, 2.3vw, 32px); font-weight: 600; line-height: 1.1; color: #fff; }
+.budget-meta { display: block; margin-top: 6px; font-size: 13.5px; color: var(--gold-300); font-variant-numeric: tabular-nums; }
+.budget-arrow { position: absolute; z-index: 3; right: 22px; bottom: 24px; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgb(240 217 164 / .7); color: var(--gold-300); transition: background-color 250ms, color 250ms, transform 250ms var(--ease); }
+.budget-card:hover .budget-arrow { background: var(--gold-300); color: var(--lacquer-950); transform: translateX(3px); }
+@media (max-width: 767px) {
+  .budget-sec { padding-block: 44px 0; }
+  .budget-no { top: 16px; left: 18px; font-size: 13px; }
+  .budget-info { left: 18px; right: 18px; bottom: 18px; }
+  .budget-label { font-size: 21px; }
+  .budget-meta { font-size: 12px; }
+  .budget-arrow { display: none; }
+  .budget-card::after { inset: 7px; }
+}
 
 /* Trang sản phẩm: cam kết + ô báo giá số lượng + viền ảnh */
 .gallery-main { outline: 1px solid var(--gold-400); outline-offset: 5px; }

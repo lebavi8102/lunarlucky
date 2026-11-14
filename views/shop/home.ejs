@@ -42,17 +42,34 @@
   </div>
 </section>
 
-<section class="section-tight budget-sec" aria-labelledby="budget-title">
+<% if (locals.budgets && budgets.length) { %>
+<section class="budget-sec" aria-labelledby="budget-title">
   <div class="container">
-    <div class="budget-head"><span class="eyebrow center">Chọn nhanh</span><h2 id="budget-title" class="h3">Quà Tết theo ngân sách</h2></div>
-    <ul class="budget-tiles">
-      <li><a href="/bo-suu-tap?gia=duoi-1-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-gift"/></svg></span><span class="budget-txt"><strong>Dưới 1 triệu</strong><small>Tặng nhân viên, bạn bè</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
-      <li><a href="/bo-suu-tap?gia=1-2-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-home"/></svg></span><span class="budget-txt"><strong>1 – 2 triệu</strong><small>Biếu gia đình, đối tác</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
-      <li><a href="/bo-suu-tap?gia=2-5-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-users"/></svg></span><span class="budget-txt"><strong>2 – 5 triệu</strong><small>Biếu sếp, khách quý</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
-      <li><a href="/bo-suu-tap?gia=tren-5-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><span class="budget-txt"><strong>Trên 5 triệu</strong><small>Quà cao cấp đặc biệt</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
+    <div class="section-head reveal">
+      <div class="stack">
+        <span class="eyebrow">Theo ngân sách</span>
+        <h2 id="budget-title" class="h2">Chọn quà theo <em>mức giá</em></h2>
+      </div>
+      <a class="link-arrow" href="/bo-suu-tap">Xem tất cả <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
+    </div>
+    <ul class="budget-grid n<%= budgets.length %>">
+      <% budgets.forEach((b, i) => { %>
+      <li class="reveal" style="--d: <%= i * 80 %>ms">
+        <a class="budget-card" href="/bo-suu-tap?gia=<%= b.key %>" aria-label="Giỏ quà <%= b.label.toLowerCase() %>, <%= b.count %> mẫu">
+          <img src="<%= img(b.image_id) %>" alt="<%= b.name %>" loading="lazy" decoding="async" width="800" height="1000">
+          <span class="budget-no">0<%= i + 1 %></span>
+          <span class="budget-info">
+            <span class="budget-label"><%= b.label %></span>
+            <span class="budget-meta"><%= b.count %> mẫu · từ <%= money(b.min) %></span>
+          </span>
+          <span class="budget-arrow" aria-hidden="true"><svg class="icon icon-sm"><use href="#i-arrow"/></svg></span>
+        </a>
+      </li>
+      <% }) %>
     </ul>
   </div>
 </section>
+<% } %>
 
 <% if (featured.length) { %>
 <section class="section featured-first has-motif">
