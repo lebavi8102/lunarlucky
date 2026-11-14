@@ -33,19 +33,6 @@ router.get('/', async (req, res) => {
     db('posts').where({ is_published: true }).orderBy('published_at', 'desc').limit(3),
     testimonials.listActive({ limit: 8 }),
   ]);
-  // Chọn theo ngân sách: mỗi mức giá lấy ảnh giỏ thật bán chạy nhất, số mẫu và giá thấp nhất (mức không có giỏ thì ẩn)
-  const allForBudget = await activeProducts().select('id', 'name', 'price', 'image_id', 'sold', 'stock', 'is_featured');
-  const BUDGET_LABELS = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-2-trieu': '1 – 2 triệu', '2-5-trieu': '2 – 5 triệu', 'tren-5-trieu': 'Trên 5 triệu' };
-  const usedImg = new Set();
-  const budgets = Object.keys(PRICE_RANGES).map((key) => {
-    const [min, max] = PRICE_RANGES[key];
-    const list = allForBudget.filter((p) => p.price >= min && (!max || p.price <= max));
-    if (!list.length) return null;
-    const ranked = [...list].sort((x, y) => (Number(y.stock > 0) - Number(x.stock > 0)) || (Number(y.is_featured) - Number(x.is_featured)) || ((y.sold || 0) - (x.sold || 0)));
-    const pick = ranked.find((p) => p.image_id && !usedImg.has(p.image_id)) || ranked[0];
-    if (pick.image_id) usedImg.add(pick.image_id);
-    return { key, label: BUDGET_LABELS[key] || key, count: list.length, min: Math.min(...list.map((p) => p.price)), image_id: pick.image_id, name: pick.name };
-  }).filter(Boolean);
   const s = res.locals.s;
   res.locals.seo.title = `Giỏ quà Tết cao cấp 2027 tại Hà Nội · Giao tận nơi | ${s.shop_name}`;
   res.locals.jsonLd.push({
@@ -62,7 +49,7 @@ router.get('/', async (req, res) => {
     logo: `${res.locals.siteUrl}/img/logo-mark.svg`,
     sameAs: [s.fanpage_url].filter(Boolean),
   });
-  res.render('shop/home', { reviews, featured, categories, bestsellers, posts, budgets });
+  res.render('shop/home', { reviews, featured, categories, bestsellers, posts });
 });
 
 async function listing(req, res, category) {
