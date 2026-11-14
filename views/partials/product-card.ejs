@@ -20,10 +20,13 @@
     <% if (typeof catName !== 'undefined' && catName) { %><span class="p-cat"><%= catName %></span><% } %>
     <h3 class="p-title"><a href="/san-pham/<%= p.slug %>"><%= p.name %></a></h3>
     <% if (p.short_desc) { %><p class="p-desc"><%= p.short_desc %></p><% } %>
+    <% const retailNote = typeof b2bNote !== 'undefined' && b2bNote; %>
+    <% if (retailNote) { %><span class="p-retail-label">Giá lẻ / 1 giỏ</span><% } %>
     <div class="price">
       <span><%= money(p.price) %></span>
       <% if (p.compare_price && p.compare_price > p.price) { %><del><%= money(p.compare_price) %></del><% } %>
     </div>
+    <% if (retailNote) { %><a class="p-bulk-note" href="#nhan-bao-gia">Từ <%= retailNote %> giỏ: báo giá riêng →</a><% } %>
     <% if (p.stock > 0) { %>
     <%# Điện thoại / cảm ứng: nút nằm DƯỚI giá, không đè lên ảnh (máy tính vẫn dùng nút hiện khi rê chuột lên ảnh ở trên) %>
     <form class="p-add" action="/gio-hang/them" method="post" data-add-to-cart data-track-id="<%= p.id %>" data-track-name="<%= p.name %>" data-track-price="<%= p.price %>">

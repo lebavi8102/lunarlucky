@@ -38,6 +38,8 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
     logo_print: f.bool('logo_print'),
     message: f.text('message', { max: 2000 }) || null,
   };
+  const fromCollection = req.body.nguon === 'bo-suu-tap';
+  if (req.body.catalogue === '1') q.message = ['📘 Khách xin CATALOGUE + báo giá số lượng (gửi qua Zalo theo số điện thoại)', q.message].filter(Boolean).join('\n');
   if (!f.ok) {
     res.status(422);
     return render(res, { values: f.values, errors: f.errors, sent: false });
@@ -49,7 +51,7 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
       .catch((err) => console.error('[mail] báo giá lỗi:', err.message));
   }
   // Chuyển hướng sau khi gửi: tải lại trang không gửi trùng yêu cầu
-  res.redirect(303, '/qua-tang-doanh-nghiep?da-gui=1#bao-gia');
+  res.redirect(303, fromCollection ? '/bo-suu-tap/qua-doanh-nghiep?da-gui=1#nhan-bao-gia' : '/qua-tang-doanh-nghiep?da-gui=1#bao-gia');
 });
 
 module.exports = router;

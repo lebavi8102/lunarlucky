@@ -3,6 +3,8 @@
    const sortLabels = { 'noi-bat': 'Nổi bật', 'ban-chay': 'Bán chạy', 'gia-tang': 'Giá tăng dần', 'gia-giam': 'Giá giảm dần', 'moi-nhat': 'Mới nhất' };
    const rangeLabels = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-2-trieu': '1 – 2 triệu', '2-5-trieu': '2 – 5 triệu', 'tren-5-trieu': 'Trên 5 triệu' };
    const landing = locals.landing || null;
+   const isB2b = !!(category && category.slug === 'qua-doanh-nghiep' && !landing);
+   const bulkFrom = Number(s.ai_escalate_qty) || 5;
    const basePath = landing ? landing.path : (category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap');
    const qs = (o) => { const q = new URLSearchParams(Object.entries({ sap_xep: sort !== 'noi-bat' ? sort : '', gia: range, ...o }).filter(([, v]) => v)); const s2 = q.toString(); return s2 ? '?' + s2 : ''; };
 %>
@@ -18,6 +20,20 @@
     <p class="lead"><%= landing ? landing.lead : (category ? (category.description || category.tagline) : 'Giỏ quà Tết cao cấp biếu sếp, đối tác, gia đình và tặng nhân viên. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công, giao đúng ngày hẹn tại Hà Nội và toàn quốc.') %></p>
   </div>
 </section>
+<% if (isB2b) { %>
+<div class="container">
+  <aside class="b2b-price-note" aria-label="Giá doanh nghiệp">
+    <div class="b2b-price-note-text">
+      <span class="eyebrow">Giá doanh nghiệp</span>
+      <p><strong>Giá trên mỗi giỏ là giá lẻ (mua 1 giỏ).</strong> Đặt từ <%= bulkFrom %> giỏ trở lên, Lunar Lucky gửi <strong>báo giá số lượng riêng</strong> kèm <strong>catalogue quà Tết doanh nghiệp 2027</strong>.</p>
+    </div>
+    <div class="b2b-price-note-cta">
+      <a class="btn" href="#nhan-bao-gia">Nhận báo giá &amp; catalogue</a>
+      <a class="btn btn-quiet" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo</a>
+    </div>
+  </aside>
+</div>
+<% } %>
 
 <section class="section-tight collection-section">
   <div class="container">
@@ -58,7 +74,7 @@
 
     <% if (products.length) { %>
       <div class="product-grid cols-4">
-        <% products.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: category ? null : catById[p.category_id] }) %><% }) %>
+        <% products.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: category ? null : catById[p.category_id], b2bNote: isB2b ? bulkFrom : 0 }) %><% }) %>
       </div>
       <%- include('../partials/pagination', { baseQuery: { sap_xep: sort !== 'noi-bat' ? sort : '', gia: range } }) %>
     <% } else { %>
@@ -71,6 +87,50 @@
     <% } %>
   </div>
 </section>
+<% if (isB2b) { const budgets = ['Cần tư vấn', 'Dưới 500.000₫', '500.000₫ – 1.000.000₫', '1.000.000₫ – 2.000.000₫', '2.000.000₫ – 5.000.000₫', 'Trên 5.000.000₫']; %>
+<section class="section quote-section b2b-catalogue" id="nhan-bao-gia">
+  <div class="container split" style="align-items:start">
+    <div>
+      <span class="eyebrow">Báo giá số lượng</span>
+      <h2 class="h2" style="margin-top:16px">Nhận <em>báo giá &amp; catalogue</em> quà Tết doanh nghiệp</h2>
+      <p class="lead" style="margin-top:20px">Để lại số giỏ và ngân sách, Lunar Lucky gửi qua Zalo bảng giá theo số lượng cùng catalogue đầy đủ các mẫu, thường trong ngày làm việc.</p>
+      <ul class="feature-list" style="margin-top:32px">
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Báo giá theo số lượng</strong><span>Đặt càng nhiều giá càng tốt. Giá hiển thị trên trang là giá lẻ 1 giỏ.</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-gift"/></svg></span><div><strong>Catalogue đầy đủ mẫu</strong><span>Ảnh thật và thành phần từng giỏ, tiện chọn và trình duyệt nội bộ.</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>In logo doanh nghiệp</strong><span>Tư vấn cách in logo theo mẫu và số lượng.</span></div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <% if (locals.sent) { %>
+        <div style="text-align:center;padding:24px 0" role="status">
+          <div class="order-hero" style="padding:0"><div class="seal"><svg class="icon"><use href="#i-check"/></svg></div></div>
+          <h3 class="h3">Lunar Lucky đã nhận yêu cầu</h3>
+          <p class="muted" style="margin-top:8px">Bên em sẽ gửi báo giá số lượng và catalogue qua Zalo theo số điện thoại anh/chị để lại. Cảm ơn anh/chị đã tin chọn Lunar Lucky.</p>
+          <div class="hero-cta" style="justify-content:center;margin-top:16px"><a class="btn" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo ngay</a><a class="btn btn-quiet" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>">Gọi <%= s.shop_phone %></a></div>
+        </div>
+      <% } else { %>
+      <form action="/qua-tang-doanh-nghiep" method="post" data-quote-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="nguon" value="bo-suu-tap">
+        <input type="hidden" name="catalogue" value="1">
+        <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="grid-2">
+          <%- include('../partials/field', { name: 'contact_name', label: 'Người liên hệ', required: true, autocomplete: 'name' }) %>
+          <%- include('../partials/field', { name: 'phone', label: 'Số điện thoại / Zalo', type: 'tel', required: true, autocomplete: 'tel', inputmode: 'tel' }) %>
+        </div>
+        <div class="grid-2" style="margin-top:16px;align-items:end">
+          <%- include('../partials/field', { name: 'quantity', label: 'Số lượng dự kiến', type: 'number', min: 5, inputmode: 'numeric', placeholder: 'VD: 50' }) %>
+          <%- include('../partials/field', { name: 'budget', label: 'Ngân sách mỗi giỏ', as: 'select', options: budgets }) %>
+        </div>
+        <div style="margin-top:16px"><%- include('../partials/field', { name: 'company', label: 'Tên doanh nghiệp', optional: true, autocomplete: 'organization' }) %></div>
+        <button class="btn btn-lg btn-block" type="submit" style="margin-top:24px" data-quote-submit>Nhận báo giá &amp; catalogue</button>
+        <p class="small muted" style="margin-top:12px;text-align:center">Gửi yêu cầu không đồng nghĩa với đặt hàng hoặc thanh toán.</p>
+      </form>
+      <% } %>
+    </div>
+  </div>
+</section>
+<% } %>
 <% if (landing) { %>
 <section class="section-tight">
   <div class="container prose" style="max-width:760px">

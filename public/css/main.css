@@ -1154,3 +1154,22 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .star-pick label { font-size: 34px; line-height: 1; color: var(--line, #e6ddd0); cursor: pointer; padding: 2px; }
 .star-pick input:checked ~ label, .star-pick label:hover, .star-pick label:hover ~ label { color: var(--gold-600, #b8862f); }
 .star-pick input:focus-visible + label { outline: 2px solid var(--primary, #7a1622); outline-offset: 2px; border-radius: 4px; }
+
+/* Trang Quà tặng doanh nghiệp: giá trên thẻ là giá lẻ, số lượng có báo giá riêng */
+.b2b-price-note { display: flex; align-items: center; justify-content: space-between; gap: 20px 32px; flex-wrap: wrap; margin-top: 24px; padding: 20px 24px; background: var(--lacquer-100); border: 1px solid var(--gold-300); border-left: 4px solid var(--lacquer-700); border-radius: 12px; }
+.b2b-price-note-text { flex: 1 1 420px; }
+.b2b-price-note-text p { margin-top: 8px; color: var(--ink-700); font-size: 15px; line-height: 1.6; }
+.b2b-price-note-text strong { color: var(--lacquer-800); }
+.b2b-price-note-cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.p-retail-label { margin-top: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.p-body .p-retail-label + .price { margin-top: 0; }
+.p-bulk-note { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.p-bulk-note:hover { color: var(--lacquer-700); }
+.b2b-catalogue { background: var(--cream-100); scroll-margin-top: 80px; }
+@media (max-width: 639px) {
+  .b2b-price-note { margin-top: 16px; padding: 16px; }
+  .b2b-price-note-cta, .b2b-price-note-cta .btn { width: 100%; }
+  .b2b-price-note-cta .btn { justify-content: center; }
+  .p-retail-label { font-size: 10px; letter-spacing: 0.04em; }
+  .p-bulk-note { font-size: 12px; }
+}
