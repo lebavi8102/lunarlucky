@@ -1,7 +1,9 @@
 <%- include('../partials/top') %>
 <% const catById = Object.fromEntries(categories.map(c => [c.id, c.name])); const star = featured[0] || bestsellers[0]; %>
 
-<section class="hero hero-home">
+<section class="hero hero-home tet-hero">
+  <div class="tet-hero-bg" aria-hidden="true"><picture><source media="(max-width: 767px)" srcset="/img/tet-den-long-1280.webp"><img src="/img/tet-den-long-2560.webp" alt="" width="2560" height="1080" decoding="async"></picture></div>
+  <%- include('../partials/tet-petals') %>
   <div class="container hero-grid">
     <div class="hero-copy">
       <span class="eyebrow"><%= s.hero_eyebrow %></span>
@@ -10,8 +12,8 @@
       <h1 class="display hero-title" style="margin-top:20px"><% heroLines.forEach((t) => { %><span class="line"><%- t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/(thịnh vượng|trọn vẹn)/i, '<em>$1</em>') %></span> <% }) %></h1>
       <p class="lead"><%= s.hero_subtitle %></p>
       <div class="hero-cta">
-        <a class="btn btn-lg" href="/bo-suu-tap">Chọn giỏ để gửi tặng <svg class="icon"><use href="#i-arrow"/></svg></a>
-        <a class="btn btn-lg btn-ghost" href="/qua-tang-doanh-nghiep">Quà doanh nghiệp</a>
+        <a class="btn btn-lg btn-gold" href="/bo-suu-tap">Chọn giỏ để gửi tặng <svg class="icon"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-lg b2b-btn-light" href="/bo-suu-tap/qua-doanh-nghiep">Quà doanh nghiệp</a>
       </div>
       <ul class="hero-trust">
         <li><svg class="icon"><use href="#i-calendar"/></svg> Hà Nội giao đúng ngày hẹn</li>
@@ -20,7 +22,7 @@
       </ul>
     </div>
     <div class="hero-visual hero-photo">
-      <div class="photo"><picture><source media="(min-width: 1360px)" srcset="/img/hero-wide-1935.webp" width="1935" height="813"><img src="/img/hero-crop-1220.webp" alt="Hai giỏ quà Tết Lunar Lucky: Giỏ Đại Cát đỏ vàng và Giỏ Thịnh Vượng kem xanh, đặt trên bệ đá cạnh cành hoa đào" width="1100" height="733" fetchpriority="high"></picture></div>
+      <div class="photo"><picture><img src="/img/hero-crop-1220.webp" alt="Hai giỏ quà Tết Lunar Lucky: Giỏ Đại Cát đỏ vàng và Giỏ Thịnh Vượng kem xanh, đặt trên bệ đá cạnh cành hoa đào" width="1100" height="733" fetchpriority="high"></picture></div>
       <div class="hero-seal" aria-hidden="true"><span>Tết<b>2027</b>Đinh Mùi</span></div>
       <% if (star) { %>
       <a class="hero-float" href="/san-pham/<%= star.slug %>">
@@ -68,6 +70,32 @@
   </div>
 </section>
 <% } %>
+
+<%# Dải Tết: đếm ngày đến mùng 1 Tết Đinh Mùi (06/02/2027, giờ VN) — không hứa ưu đãi nào %>
+<% const tetDays = Math.ceil((Date.UTC(2027, 1, 5, 17, 0, 0) - Date.now()) / 86400000); %>
+<section class="tet-band" aria-label="Tết Đinh Mùi 2027">
+  <div class="tet-band-bg" aria-hidden="true"><img src="/img/tet-den-long-2560.webp" alt="" width="2560" height="1080" loading="lazy" decoding="async"></div>
+  <%- include('../partials/tet-petals') %>
+  <div class="container tet-band-inner">
+    <% if (tetDays > 0) { %>
+    <div class="tet-count reveal" aria-hidden="true"><b><%= tetDays %></b><span>ngày nữa<br>là Tết</span></div>
+    <% } %>
+    <div class="tet-band-copy reveal">
+      <span class="eyebrow">Tết Đinh Mùi 2027</span>
+      <h2 class="h2"><%= tetDays > 0 ? 'Đặt sớm,' : 'Chúc mừng năm mới,' %> <em><%= tetDays > 0 ? 'chọn ngày giao đẹp' : 'an khang thịnh vượng' %></em></h2>
+      <p class="lead">Giỏ quà chuẩn bị chỉn chu, giao đúng ngày anh chị hẹn<% if (tetDays > 0 && s.order_deadline_label) { %>. Lunar Lucky nhận đơn đến hết <strong><%= s.order_deadline_label %></strong><% } %>.</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg btn-gold" href="/bo-suu-tap">Chọn giỏ quà Tết <svg class="icon"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-lg b2b-btn-light" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia">Báo giá doanh nghiệp</a>
+      </div>
+    </div>
+    <ul class="tet-band-points reveal">
+      <li><span><svg class="icon"><use href="#i-calendar"/></svg></span><div><strong>Chọn ngày giao</strong>Hà Nội giao đúng ngày hẹn</div></li>
+      <li><span><svg class="icon"><use href="#i-gift"/></svg></span><div><strong>Gửi tặng thay bạn</strong>Không kèm hóa đơn giá</div></li>
+      <li><span><svg class="icon"><use href="#i-building"/></svg></span><div><strong>Quà doanh nghiệp</strong>Báo giá riêng theo số lượng</div></li>
+    </ul>
+  </div>
+</section>
 
 
 
