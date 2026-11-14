@@ -21,15 +21,12 @@
 .tet-crane.is-in { opacity: 1; transform: none; animation: tet-glide 6s ease-in-out 1.8s infinite alternate; }
 @keyframes tet-glide { to { transform: translateY(-12px) rotate(-2deg); } }
 
-/* Khối "Trao tận tay" đổi sang nền xanh ngọc: trống đồng chìm + chim công đứng góc phải */
+/* Khối "Trao tận tay" đổi sang nền xanh ngọc + trống đồng chìm */
 .lacquer.tet-jade { background: radial-gradient(80% 90% at 50% 0%, #136650 0%, #0c4f40 55%, #083a2f 100%); }
 .lacquer.tet-jade::before { background: radial-gradient(700px 360px at 85% 0%, rgb(201 161 90 / .14), transparent 60%); opacity: 1; }
 .tet-drum { left: -180px; top: 50%; width: 560px; margin-top: -280px; }
 .tet-drum.is-in { opacity: .16; animation: tet-spin 120s linear infinite; }
 @keyframes tet-spin { to { transform: rotate(360deg); } }
-.tet-peacock { right: max(0px, calc((100vw - 1240px) / 2 - 250px)); bottom: 0; width: 240px; transform: translateY(24px); }
-.tet-peacock.is-in { opacity: 1; transform: none; }
-.tet-peacock.tet-left { right: auto; left: 2%; width: 170px; }
 
 /* Khối doanh nghiệp, khối cuối trang: mây vàng mờ */
 .tet-cloud-r { right: max(0px, calc((100vw - 1240px) / 2 - 220px)); top: 10px; width: 300px; transform: translateX(30px); }
@@ -54,9 +51,10 @@
 .tet-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25; }
 
 /* ---------- Banner Tết đầu trang ---------- */
-.hero-photo .photo.tet-hero-photo img { object-position: 30% center; }
-@media (min-width: 1360px) { .hero-home .hero-photo .photo.tet-hero-photo img { object-position: right 92%; } }
+.hero-photo .photo.tet-hero-photo img { object-position: center; }
+@media (min-width: 1360px) { .hero-home .hero-photo .photo.tet-hero-photo img { object-position: right center; } }
 @media (min-width: 1360px) { .hero-home .tet-hero-photo::after { background: linear-gradient(90deg, rgba(250,244,236,.92) 0%, rgba(250,244,236,.7) 26%, rgba(250,244,236,0) 44%); } }
+@media (min-width: 1360px) and (max-width: 1699px) { .hero-home .tet-hero-photo::after { background: linear-gradient(90deg, rgba(250,244,236,.97) 0%, rgba(250,244,236,.94) 34%, rgba(250,244,236,.6) 46%, rgba(250,244,236,0) 58%); } }
 
 /* ---------- Dải Tết: lân múa + đếm ngược ---------- */
 .tet-band {

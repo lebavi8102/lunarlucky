@@ -1,5 +1,5 @@
 /* =========================================================
-   Trang trí Tết 2027 — gắn cành mai/đào, hạc, chim công vào đúng section
+   Trang trí Tết 2027 — gắn cành mai/đào, hạc, trống đồng vào đúng section
    và chạy đồng hồ đếm ngược. Bật/tắt: Cài đặt → "Hiệu ứng Tết".
    ========================================================= */
 (function () {
@@ -9,7 +9,6 @@
   var mq = function (q) { return window.matchMedia && matchMedia(q).matches; };
   var reduce = mq('(prefers-reduced-motion: reduce)');
   var wide = mq('(min-width: 1180px)');   // đủ chỗ cho cành hoa, hạc
-  var roomy = mq('(min-width: 1540px)');  // đủ lề hai bên cho chim công
 
   function deco(host, kind, file) {
     if (!host) return;
@@ -54,13 +53,11 @@
     var center = main.querySelector('.section .section-head.center');
     if (center) deco(center.closest('.section'), 'crane', 'crane.webp');
   }
-  // Khối sơn mài "Trao tận tay" → nền xanh ngọc (xen kẽ đỏ / xanh / kem như tranh Tết)
+  // Khối sơn mài "Trao tận tay" → nền xanh ngọc + trống đồng chìm
   var lacquer = main.querySelector('.section.lacquer');
   if (lacquer) {
     lacquer.classList.add('tet-jade');
     if (mq('(min-width: 760px)')) deco(lacquer, 'drum', 'drum.webp');
-    if (roomy) deco(lacquer, 'peacock', 'peacock.webp');
-    else if (wide) { deco(lacquer, 'peacock', 'peacock.webp'); lacquer.lastChild.classList.add('tet-left'); }
   }
   if (wide) {
     var b2b = main.querySelector('.b2b-card');
