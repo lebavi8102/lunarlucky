@@ -1,8 +1,7 @@
 <%- include('../partials/top') %>
 <% const catById = Object.fromEntries(categories.map(c => [c.id, c.name])); const star = featured[0] || bestsellers[0]; %>
 
-<section class="hero hero-home tet-hero">
-  <div class="tet-hero-bg" aria-hidden="true"><picture><source media="(max-width: 767px)" srcset="/img/tet-den-long-1280.webp"><img src="/img/tet-den-long-2560.webp" alt="" width="2560" height="1080" decoding="async"></picture></div>
+<section class="hero hero-home tet-hero stage-hero">
   <%- include('../partials/tet-petals') %>
   <div class="container hero-grid">
     <div class="hero-copy">
@@ -21,16 +20,7 @@
         <li><svg class="icon"><use href="#i-box"/></svg> Hộp sơn mài thủ công</li>
       </ul>
     </div>
-    <div class="hero-visual hero-photo">
-      <div class="photo"><picture><img src="/img/hero-crop-1220.webp" alt="Hai giỏ quà Tết Lunar Lucky: Giỏ Đại Cát đỏ vàng và Giỏ Thịnh Vượng kem xanh, đặt trên bệ đá cạnh cành hoa đào" width="1100" height="733" fetchpriority="high"></picture></div>
-      <div class="hero-seal" aria-hidden="true"><span>Tết<b>2027</b>Đinh Mùi</span></div>
-      <% if (star) { %>
-      <a class="hero-float" href="/san-pham/<%= star.slug %>">
-        <img src="<%= img(star.image_id) %>" alt="" width="56" height="56">
-        <span><span class="tiny muted">Gợi ý từ Lunar Lucky</span><strong><%= star.name %></strong><span class="price small"><%= money(star.price) %></span></span>
-      </a>
-      <% } %>
-    </div>
+    <div class="hero-stage" role="img" aria-label="Ba giỏ quà Tết Lunar Lucky trên bục trưng bày, trang trí cành mai, bao lì xì, đèn lồng và quạt giấy"></div>
   </div>
 </section>
 
@@ -76,7 +66,8 @@
 <%# Dải Tết: đếm ngày đến mùng 1 Tết Đinh Mùi (06/02/2027, giờ VN) — không hứa ưu đãi nào %>
 <% const tetDays = Math.ceil((Date.UTC(2027, 1, 5, 17, 0, 0) - Date.now()) / 86400000); %>
 <section class="tet-band" aria-label="Tết Đinh Mùi 2027">
-  <div class="tet-band-bg" aria-hidden="true"><img src="/img/tet-den-long-2560.webp" alt="" width="2560" height="1080" loading="lazy" decoding="async"></div>
+  <img class="motif motif-scr tet-m-tr" src="/img/motif/may-vang.webp" alt="" aria-hidden="true" width="900" height="900" decoding="async">
+  <img class="motif motif-scr tet-m-hac-r" src="/img/motif/hac-vang.webp" alt="" aria-hidden="true" width="900" height="900" decoding="async">
   <%- include('../partials/tet-petals') %>
   <img class="motif tet-lan" src="/img/motif/lan.webp" alt="" aria-hidden="true" width="700" height="700" loading="lazy" decoding="async">
   <div class="container tet-band-inner">

@@ -1483,3 +1483,46 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .post-cta { display: flex; align-items: center; gap: 48px; max-width: 880px; margin-inline: auto; padding: 36px 40px; background: var(--cream-100); border: 1px solid var(--gold-300); border-radius: 24px; }
 .post-cta-art { width: 170px; }
 @media (max-width: 767px) { .post-cta { flex-direction: column; text-align: center; gap: 24px; padding: 28px 20px; } .post-cta-art { width: 140px; } .post-cta .hero-cta { justify-content: center; } .post-cta .eyebrow { justify-content: center; } }
+
+/* ============ BỎ DẢI ĐÈN LỒNG: nền đỏ sơn mài trơn + họa tiết vàng (chủ shop chốt 14/11) ============ */
+.hero.tet-hero, .tet-band, .tet-greeting { background: radial-gradient(120% 90% at 28% 0%, #6a111b 0%, #4b0c14 46%, #2e070c 100%); }
+.tet-hero::after, .tet-band::before, .tet-greeting::before { background: none !important; }
+.hero.tet-hero { padding-top: 72px; }
+.tet-m-tl { top: -70px; left: -90px; width: clamp(240px, 30vw, 480px); }
+.tet-m-br { bottom: -80px; right: -90px; width: clamp(240px, 30vw, 480px); transform: rotate(180deg); }
+.tet-m-tr { top: -70px; right: -90px; width: clamp(240px, 30vw, 480px); transform: scaleX(-1); }
+.tet-m-hac { top: 4%; left: 34%; width: clamp(200px, 22vw, 360px); opacity: .32; }
+.tet-m-hac-r { bottom: -30px; right: 2%; width: clamp(200px, 22vw, 340px); opacity: .28; }
+.tet-hero .motif, .tet-band .motif, .tet-greeting .motif { z-index: 0; }
+.tet-band { padding-block: 88px 84px; }
+.tet-greeting { min-height: 150px; padding: 44px 16px 40px; }
+.tet-greeting p { position: relative; z-index: 1; }
+.tet-greeting .tet-m-tl, .tet-greeting .tet-m-br { width: clamp(200px, 22vw, 340px); opacity: .5; }
+@media (min-width: 1360px) { .hero.tet-hero { padding-block: 96px 110px; } }
+@media (min-width: 768px) and (max-width: 1359px) { .hero.tet-hero { padding-top: 64px; } }
+@media (max-width: 767px) {
+  .hero.tet-hero { padding-top: 36px; }
+  .tet-band { padding-block: 56px 56px; }
+  .tet-greeting { min-height: 120px; padding-top: 36px; }
+  .tet-m-tl, .tet-m-br, .tet-m-tr { width: 210px; }
+  .tet-m-hac { left: auto; right: -30px; top: 2%; width: 190px; opacity: .22; }
+  .tet-m-hac-r { width: 180px; opacity: .2; }
+}
+
+/* ============ BANNER TRANG CHỦ: poster Tết — nền Kling + 3 giỏ thật của chủ shop ghép thành một ảnh liền ============ */
+.hero.tet-hero.stage-hero { background: #4a0a12; padding: 0; overflow: hidden; }
+.stage-hero .hero-grid { display: block; position: static; }
+.stage-hero .hero-copy { position: relative; z-index: 5; padding-block: 44px 28px; }
+.stage-hero .hero-trust { display: none; }
+.stage-hero::after { display: none; }
+.hero-stage { position: relative; z-index: 1; width: 100vw; margin-left: calc(50% - 50vw); aspect-ratio: 1000 / 765; background: url(/img/hero-poster-gio-m.webp) center / cover no-repeat; }
+@media (min-width: 1100px) {
+  .hero.tet-hero.stage-hero { position: relative; aspect-ratio: 2560 / 1097; display: flex; align-items: center; padding: 0; min-height: 0; }
+  .stage-hero .hero-grid { position: static; z-index: 3; width: 100%; }
+  .stage-hero .hero-copy { max-width: 46%; padding-block: 0; }
+  .stage-hero .hero-copy .lead { max-width: 40ch; }
+  .hero-stage { position: absolute; inset: 0; width: auto; margin: 0; aspect-ratio: auto; background: url(/img/hero-poster-gio-1600.webp) center / 100% 100% no-repeat; }
+  .hero-stage::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: linear-gradient(90deg, rgb(42 6 11 / .6) 0%, rgb(42 6 11 / .34) 30%, rgb(42 6 11 / 0) 50%); }
+}
+@media (min-width: 1700px) { .hero-stage { background-image: url(/img/hero-poster-gio-2560.webp); } }
+@media (min-width: 1500px) { .stage-hero .hero-trust { display: flex; } }
