@@ -31,9 +31,11 @@
     var center = main.querySelector('.section .section-head.center');
     if (center) deco(center.closest('.section'), 'crane', 'crane.webp');
   }
+  // Khối sơn mài "Trao tận tay" → nền xanh ngọc (xen kẽ đỏ / xanh / kem như tranh Tết)
   var lacquer = main.querySelector('.section.lacquer');
-  if (lacquer && wide) {
-    deco(lacquer, 'cloud-wm', 'clouds.webp');
+  if (lacquer) {
+    lacquer.classList.add('tet-jade');
+    if (mq('(min-width: 760px)')) deco(lacquer, 'drum', 'drum.webp');
     if (roomy) deco(lacquer, 'peacock', 'peacock.webp');
   }
 
