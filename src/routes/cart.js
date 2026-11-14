@@ -16,7 +16,9 @@ router.get('/gio-hang', async (req, res) => {
   res.locals.cartCount = priced.count;
   res.locals.seo.title = 'Giỏ hàng · Lunar Lucky';
   res.locals.seo.noindex = true;
-  res.render('shop/cart', { cart: priced });
+  // Giỏ trống: gợi ý vài giỏ bán chạy còn hàng để khách có lối đi tiếp
+  const suggest = priced.lines.length ? [] : await db('products').where({ is_active: true }).where('stock', '>', 0).orderBy([{ column: 'sold', order: 'desc' }, { column: 'is_featured', order: 'desc' }]).limit(4);
+  res.render('shop/cart', { cart: priced, suggest });
 });
 
 router.post('/gio-hang/them', async (req, res) => {

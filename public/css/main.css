@@ -1429,3 +1429,72 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
   .b2b-card-art .feature-list.two { grid-template-columns: 1fr; gap: 18px; }
   .b2b-arch { display: block; width: 200px; margin-right: 8px; }
 }
+
+/* ============ ĐỢT SỬA 14/11 (nhóm 1 + 2) ============ */
+/* Đầu trang Quà doanh nghiệp / Giới thiệu: tông đỏ sơn mài, giữ ảnh thật */
+.hero.hero-about.tet-about { position: relative; background: var(--lacquer-900); color: #fff; }
+.hero-about.tet-about::before { display: none; }
+.hero-about.tet-about::after { content: ''; position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold-500) 20%, var(--gold-300) 50%, var(--gold-500) 80%, transparent); }
+.hero-about.tet-about .hero-copy .eyebrow { color: var(--gold-300); }
+.hero-about.tet-about .hero-title { color: #fff; text-shadow: 0 2px 24px rgb(30 4 8 / .55); }
+.hero-about.tet-about .hero-title em { color: var(--gold-300); }
+.hero-about.tet-about .hero-copy .lead { color: rgb(255 255 255 / .9); font-weight: 400; }
+.hero-about.tet-about .hero-photo .photo { box-shadow: 0 0 0 1px var(--gold-400), 0 0 0 7px rgb(42 6 11 / .55), 0 0 0 8px rgb(216 184 120 / .5), 0 30px 70px rgb(15 2 4 / .55); }
+@media (min-width: 1360px) {
+  .hero-about.tet-about .hero-photo .photo { box-shadow: none; }
+  .hero-about.tet-about .photo::after { background: linear-gradient(90deg, rgb(42 6 11 / .97) 0%, rgb(42 6 11 / .9) 26%, rgb(42 6 11 / .55) 40%, rgb(42 6 11 / 0) 56%); }
+}
+.b2b-hero-more { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 14px; font-weight: 600; color: var(--gold-300); text-decoration: underline; text-underline-offset: 4px; }
+.b2b-hero-more:hover { color: #fff; }
+
+/* Thẻ giỏ quà: một kiểu khung cho mọi nơi */
+.p-card { background: #fff; border: 1px solid var(--cream-300); border-radius: 16px; padding: 10px 10px 16px; transition: border-color 250ms var(--ease), box-shadow 250ms var(--ease); }
+.p-card:hover { border-color: var(--gold-400); box-shadow: 0 18px 40px rgb(60 10 18 / .1); }
+.p-card .p-media { border-radius: 10px; }
+.p-card .p-body { padding-inline: 6px; }
+.jade-sec .p-card { background: var(--cream-50); }
+@media (max-width: 767px) { .p-card { padding: 8px 8px 12px; border-radius: 14px; } .p-card .p-body { padding-inline: 4px; } }
+
+/* Điện thoại: hàng giỏ quà vuốt ngang (trang chủ, giỏ hàng trống) */
+@media (max-width: 767px) {
+  .product-grid.m-scroll { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-padding-inline: 16px; margin-inline: -16px; padding: 4px 16px 14px; scrollbar-width: none; }
+  .product-grid.m-scroll::-webkit-scrollbar { display: none; }
+  .product-grid.m-scroll > .p-card { flex: 0 0 66%; scroll-snap-align: start; }
+}
+
+/* Ô chọn theo ngân sách */
+.budget-sec { padding-block: 44px 8px; }
+.budget-head { text-align: center; margin-bottom: 22px; }
+.budget-head .h3 { margin-top: 10px; }
+.budget-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 900px) { .budget-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; } }
+.budget-tiles a { display: flex; align-items: center; gap: 14px; height: 100%; padding: 16px 18px; background: #fff; border: 1px solid var(--gold-300); border-radius: 16px; transition: border-color 200ms, box-shadow 200ms, background-color 200ms; }
+.budget-tiles a:hover { border-color: var(--gold-500); background: var(--cream-50); box-shadow: 0 14px 30px rgb(60 10 18 / .1); }
+.budget-ico { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--lacquer-100); color: var(--lacquer-700); }
+.budget-txt { flex: 1; min-width: 0; }
+.budget-txt strong { display: block; font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--lacquer-800); }
+.budget-txt small { display: block; margin-top: 2px; font-size: 13px; color: var(--text-muted); }
+.budget-go { flex: none; color: var(--gold-600); }
+@media (max-width: 479px) { .budget-tiles a { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .budget-go { display: none; } .budget-txt strong { font-size: 20px; } }
+
+/* Trang sản phẩm: cam kết + ô báo giá số lượng + viền ảnh */
+.gallery-main { outline: 1px solid var(--gold-400); outline-offset: 5px; }
+.pdp-gallery { padding: 6px; }
+.pdp-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 20px 0 0; padding: 16px 0 0; list-style: none; border-top: 1px solid var(--line); }
+.pdp-trust li { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.4; color: var(--text-muted); }
+.pdp-trust .icon { color: var(--gold-700); }
+.pdp-trust strong { display: block; font-size: 13.5px; color: var(--ink-900); }
+.pdp-b2b { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px; border: 1px solid var(--gold-300); border-left: 4px solid var(--lacquer-700); border-radius: 12px; background: var(--lacquer-100); font-size: 13.5px; line-height: 1.45; color: var(--ink-700); transition: border-color 200ms, box-shadow 200ms; }
+.pdp-b2b:hover { border-color: var(--gold-500); box-shadow: 0 10px 24px rgb(60 10 18 / .1); }
+.pdp-b2b > span:nth-child(2) { flex: 1; }
+.pdp-b2b strong { display: block; font-size: 15px; color: var(--lacquer-800); }
+.pdp-b2b-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: var(--lacquer-700); }
+.pdp-b2b > .icon { flex: none; color: var(--lacquer-700); }
+
+/* Giỏ hàng trống: gợi ý */
+.cart-suggest { margin-top: 8px; padding-top: 40px; border-top: 1px solid var(--line); text-align: left; }
+
+/* Cuối bài Cẩm nang */
+.post-cta { display: flex; align-items: center; gap: 48px; max-width: 880px; margin-inline: auto; padding: 36px 40px; background: var(--cream-100); border: 1px solid var(--gold-300); border-radius: 24px; }
+.post-cta-art { width: 170px; }
+@media (max-width: 767px) { .post-cta { flex-direction: column; text-align: center; gap: 24px; padding: 28px 20px; } .post-cta-art { width: 140px; } .post-cta .hero-cta { justify-content: center; } .post-cta .eyebrow { justify-content: center; } }

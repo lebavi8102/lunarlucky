@@ -42,14 +42,14 @@
   </div>
 </section>
 
-<section class="section-tight" aria-labelledby="budget-title" style="padding-bottom:0;padding-top:28px">
-  <div class="container" style="text-align:center">
-    <h2 id="budget-title" class="h3" style="margin-bottom:14px">Chọn nhanh theo ngân sách</h2>
-    <ul class="chips" style="justify-content:center">
-      <li><a class="chip" href="/bo-suu-tap?gia=duoi-1-trieu">Dưới 1 triệu</a></li>
-      <li><a class="chip" href="/bo-suu-tap?gia=1-2-trieu">1 – 2 triệu</a></li>
-      <li><a class="chip" href="/bo-suu-tap?gia=2-5-trieu">2 – 5 triệu</a></li>
-      <li><a class="chip" href="/bo-suu-tap?gia=tren-5-trieu">Trên 5 triệu</a></li>
+<section class="section-tight budget-sec" aria-labelledby="budget-title">
+  <div class="container">
+    <div class="budget-head"><span class="eyebrow center">Chọn nhanh</span><h2 id="budget-title" class="h3">Quà Tết theo ngân sách</h2></div>
+    <ul class="budget-tiles">
+      <li><a href="/bo-suu-tap?gia=duoi-1-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-gift"/></svg></span><span class="budget-txt"><strong>Dưới 1 triệu</strong><small>Tặng nhân viên, bạn bè</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="/bo-suu-tap?gia=1-2-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-home"/></svg></span><span class="budget-txt"><strong>1 – 2 triệu</strong><small>Biếu gia đình, đối tác</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="/bo-suu-tap?gia=2-5-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-users"/></svg></span><span class="budget-txt"><strong>2 – 5 triệu</strong><small>Biếu sếp, khách quý</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="/bo-suu-tap?gia=tren-5-trieu"><span class="budget-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><span class="budget-txt"><strong>Trên 5 triệu</strong><small>Quà cao cấp đặc biệt</small></span><svg class="icon icon-sm budget-go"><use href="#i-arrow"/></svg></a></li>
     </ul>
   </div>
 </section>
@@ -66,7 +66,7 @@
       </div>
       <a class="link-arrow" href="/bo-suu-tap">Xem tất cả <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
     </div>
-    <div class="product-grid cols-4">
+    <div class="product-grid cols-4 m-scroll">
       <% featured.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: catById[p.category_id] }) %><% }) %>
     </div>
   </div>
@@ -160,7 +160,7 @@
       </div>
       <a class="link-arrow" href="/bo-suu-tap?sap_xep=ban-chay">Xem thêm <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
     </div>
-    <div class="product-grid cols-4">
+    <div class="product-grid cols-4 m-scroll">
       <% bestsellers.forEach((p, i) => { %><%- include('../partials/product-card', { p, i, catName: catById[p.category_id] }) %><% }) %>
     </div>
   </div>
@@ -189,12 +189,12 @@
         <h2 class="h2" style="margin-top:16px"><span style="display:block">Tri ân đối tác,</span> <em style="white-space:nowrap">chỉn chu từng chi tiết</em></h2>
         <p class="lead" style="margin-top:20px">Lunar Lucky cùng doanh nghiệp lựa chọn quà Tết phù hợp ngân sách, chăm chút dấu ấn thương hiệu và sắp xếp giao nhận theo nhu cầu.</p>
         <div class="hero-cta corp-cta">
-          <a class="btn btn-lg" href="/qua-tang-doanh-nghiep#bao-gia">Nhận báo giá doanh nghiệp</a>
+          <a class="btn btn-lg" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia">Nhận báo giá doanh nghiệp</a>
           <a class="btn btn-lg btn-quiet" href="/bo-suu-tap/qua-doanh-nghiep">Xem quà doanh nghiệp</a>
         </div>
       </div>
       <ul class="feature-list two corp-features">
-        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>Dấu ấn thương hiệu</strong><span>Tùy chỉnh logo và thiệp chúc theo yêu cầu.</span></div></li>
+        <li><span class="feature-ico"><svg class="icon"><use href="#i-sparkle"/></svg></span><div><strong>Dấu ấn thương hiệu</strong><span>Tùy chỉnh logo doanh nghiệp theo yêu cầu.</span></div></li>
         <li><span class="feature-ico"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Hóa đơn VAT</strong><span>Hỗ trợ xuất hóa đơn cho doanh nghiệp.</span></div></li>
         <li><span class="feature-ico"><svg class="icon"><use href="#i-truck"/></svg></span><div><strong>Giao nhiều địa chỉ</strong><span>Sắp xếp giao quà theo danh sách người nhận.</span></div></li>
         <li><span class="feature-ico"><svg class="icon"><use href="#i-tag"/></svg></span><div><strong>Ưu đãi số lượng</strong><span>Báo giá theo số lượng và ngân sách.</span></div></li>

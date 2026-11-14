@@ -76,6 +76,16 @@
         <div class="buy-row"><a class="btn btn-lg" href="<%= s.zalo_url %>" target="_blank" rel="noopener" data-ask="Lunar Lucky ơi, mình muốn hỏi giỏ <%= product.name %> khi nào có hàng lại? <%= siteUrl %>/san-pham/<%= product.slug %>">Nhắn Zalo tư vấn</a></div>
         <%- include('../partials/callback', { source: 'san-pham', productId: product.id, title: 'Muốn được báo khi có hàng?' }) %>
       <% } %>
+      <ul class="pdp-trust">
+        <li><svg class="icon"><use href="#i-calendar"/></svg><span><strong>Giao đúng ngày hẹn</strong>Hà Nội chọn ngày, chọn buổi</span></li>
+        <li><svg class="icon"><use href="#i-gift"/></svg><span><strong>Gửi tặng thay bạn</strong>Không kèm hóa đơn giá</span></li>
+        <li><svg class="icon"><use href="#i-shield"/></svg><span><strong>Đổi mới nếu hư hỏng</strong>Hỗ trợ trong 24 giờ</span></li>
+      </ul>
+      <a class="pdp-b2b" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia">
+        <span class="pdp-b2b-ico"><svg class="icon"><use href="#i-building"/></svg></span>
+        <span><strong>Mua từ <%= Number(s.ai_escalate_qty) || 5 %> giỏ cho doanh nghiệp?</strong>Giá trên là giá lẻ. Nhận báo giá số lượng kèm catalogue.</span>
+        <svg class="icon icon-sm"><use href="#i-arrow"/></svg>
+      </a>
     </div>
   </div>
 

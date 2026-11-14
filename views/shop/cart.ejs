@@ -18,6 +18,12 @@
       <p class="muted" style="margin-top:8px">Khám phá bộ sưu tập Tết hoặc nhắn Lunar Lucky để được gợi ý giỏ quà phù hợp.</p>
       <div class="hero-cta" style="justify-content:center"><a class="btn btn-lg" href="/bo-suu-tap">Xem bộ sưu tập</a><a class="btn btn-lg btn-quiet" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a></div>
     </div>
+    <% if (locals.suggest && suggest.length) { %>
+    <div class="cart-suggest">
+      <div class="section-head"><div class="stack"><span class="eyebrow">Gợi ý từ Lunar Lucky</span><h2 class="h2">Giỏ quà <em>bán chạy</em></h2></div><a class="link-arrow" href="/bo-suu-tap">Xem tất cả <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a></div>
+      <div class="product-grid cols-4 m-scroll"><% suggest.forEach((p, i) => { %><%- include('../partials/product-card', { p, i }) %><% }) %></div>
+    </div>
+    <% } %>
   <% } else { %>
   <div class="cart-layout">
     <div>
