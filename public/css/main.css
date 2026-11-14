@@ -1155,21 +1155,69 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .star-pick input:checked ~ label, .star-pick label:hover, .star-pick label:hover ~ label { color: var(--gold-600, #b8862f); }
 .star-pick input:focus-visible + label { outline: 2px solid var(--primary, #7a1622); outline-offset: 2px; border-radius: 4px; }
 
-/* Trang Quà tặng doanh nghiệp: giá trên thẻ là giá lẻ, số lượng có báo giá riêng */
-.b2b-price-note { display: flex; align-items: center; justify-content: space-between; gap: 20px 32px; flex-wrap: wrap; margin-top: 24px; padding: 20px 24px; background: var(--lacquer-100); border: 1px solid var(--gold-300); border-left: 4px solid var(--lacquer-700); border-radius: 12px; }
-.b2b-price-note-text { flex: 1 1 420px; }
-.b2b-price-note-text p { margin-top: 8px; color: var(--ink-700); font-size: 15px; line-height: 1.6; }
-.b2b-price-note-text strong { color: var(--lacquer-800); }
-.b2b-price-note-cta { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Trang Quà tặng doanh nghiệp: hero không khí Tết + giá lẻ / báo giá số lượng */
+.b2b-hero { position: relative; isolation: isolate; overflow: hidden; background: var(--lacquer-900); color: #fff; }
+.b2b-hero-bg { position: absolute; inset: 0; z-index: -2; }
+.b2b-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 100% 30%; animation: b2bHeroZoom 24s ease-in-out infinite alternate; transform-origin: 85% 30%; }
+.b2b-hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(42 6 11 / .88) 0%, rgb(42 6 11 / .62) 42%, rgb(42 6 11 / .08) 72%, transparent 100%); }
+.b2b-hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold-500) 20%, var(--gold-300) 50%, var(--gold-500) 80%, transparent); }
+@keyframes b2bHeroZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .b2b-hero-bg img { animation: none; } }
+.b2b-hero-inner { padding-block: 32px 68px; }
+.b2b-hero .crumbs, .b2b-hero .crumbs a { color: rgb(255 255 255 / .72); }
+.b2b-hero .crumbs [aria-current] { color: var(--gold-300); }
+.b2b-hero .eyebrow { margin-top: 32px; color: var(--gold-300); }
+.b2b-hero h1 { margin-top: 16px; max-width: 14em; font-size: clamp(38px, 5.2vw, 68px); color: #fff; text-shadow: 0 2px 24px rgb(30 4 8 / .5); }
+.b2b-hero h1 em { font-style: italic; font-weight: 500; color: var(--gold-300); }
+.b2b-hero .lead { margin-top: 20px; max-width: 46ch; color: rgb(255 255 255 / .88); }
+.b2b-hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.b2b-btn-light { --btn-bg: rgb(255 255 255 / .06); --btn-fg: #fff; --btn-bd: rgb(255 255 255 / .55); backdrop-filter: blur(4px); }
+.b2b-btn-light:hover { --btn-bg: #fff; --btn-fg: var(--lacquer-900); --btn-bd: #fff; }
+.b2b-hero-points { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 32px 0 0; padding: 20px 0 0; list-style: none; border-top: 1px solid rgb(230 207 159 / .32); max-width: 760px; }
+.b2b-hero-points li { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: rgb(255 255 255 / .86); }
+.b2b-hero-points .icon { color: var(--gold-400); }
+.b2b-hero-points strong { color: #fff; font-weight: 600; }
+
+.b2b-price-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; margin-top: -28px; padding: 16px 24px; background: #fff; border: 1px solid var(--gold-300); border-radius: 14px; box-shadow: 0 14px 40px rgb(60 10 18 / .12); }
+.b2b-price-note-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--lacquer-100); color: var(--lacquer-700); }
+.b2b-price-note p { flex: 1; margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-700); }
+.b2b-price-note strong { color: var(--lacquer-800); }
+.b2b-price-note-link { flex: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--lacquer-700); white-space: nowrap; }
+.b2b-price-note-link:hover { color: var(--lacquer-900); text-decoration: underline; text-underline-offset: 4px; }
+
 .p-retail-label { margin-top: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
 .p-body .p-retail-label + .price { margin-top: 0; }
 .p-bulk-note { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .p-bulk-note:hover { color: var(--lacquer-700); }
-.b2b-catalogue { background: var(--cream-100); scroll-margin-top: 80px; }
-@media (max-width: 639px) {
-  .b2b-price-note { margin-top: 16px; padding: 16px; }
-  .b2b-price-note-cta, .b2b-price-note-cta .btn { width: 100%; }
-  .b2b-price-note-cta .btn { justify-content: center; }
+
+.b2b-catalogue { position: relative; isolation: isolate; overflow: hidden; background: var(--lacquer-900); scroll-margin-top: 80px; }
+.b2b-catalogue-bg { position: absolute; inset: 0; z-index: -2; }
+.b2b-catalogue-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 100% 30%; }
+.b2b-catalogue::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(42 6 11 / .94) 0%, rgb(42 6 11 / .8) 45%, rgb(42 6 11 / .3) 100%); }
+.b2b-catalogue .eyebrow { color: var(--gold-300); }
+.b2b-catalogue .h2 { color: #fff; }
+.b2b-catalogue .h2 em { color: var(--gold-300); }
+.b2b-catalogue .lead { color: rgb(255 255 255 / .86); }
+.b2b-catalogue .feature-list strong { color: #fff; }
+.b2b-catalogue .feature-list span { color: rgb(255 255 255 / .74); }
+.b2b-catalogue .feature-ico { background: rgb(255 255 255 / .08); color: var(--gold-300); border-color: rgb(230 207 159 / .35); }
+.b2b-catalogue .card { border: 1px solid var(--gold-300); box-shadow: 0 24px 60px rgb(20 2 5 / .45); }
+
+@media (max-width: 767px) {
+  .b2b-hero-bg { inset: 0 0 auto 0; height: 270px; }
+  .b2b-hero-bg img { object-position: 92% 0%; animation: none; }
+  .b2b-hero::before { background: linear-gradient(180deg, rgb(42 6 11 / .78) 0, rgb(42 6 11 / .3) 64px, rgb(42 6 11 / .05) 110px, rgb(42 6 11 / .2) 170px, var(--lacquer-900) 256px, var(--lacquer-900) 100%); }
+  .b2b-hero-inner { padding-block: 16px 56px; }
+  .b2b-hero .eyebrow { margin-top: 236px; }
+  .b2b-hero .crumbs { display: none; }
+  .b2b-hero h1 { font-size: clamp(34px, 9.4vw, 44px); }
+  .b2b-hero-cta .btn { width: 100%; justify-content: center; }
+  .b2b-hero-points { gap: 10px 16px; margin-top: 28px; }
+  .b2b-hero-points li { flex: 1 1 45%; font-size: 13px; }
+  .b2b-price-note { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .b2b-price-note-ico { display: none; }
+  .b2b-price-note p { flex: 1 1 100%; font-size: 14px; }
   .p-retail-label { font-size: 10px; letter-spacing: 0.04em; }
   .p-bulk-note { font-size: 12px; }
+  .b2b-catalogue::before { background: rgb(42 6 11 / .86); }
 }

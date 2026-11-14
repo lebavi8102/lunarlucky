@@ -8,6 +8,32 @@
    const basePath = landing ? landing.path : (category ? '/bo-suu-tap/' + category.slug : '/bo-suu-tap');
    const qs = (o) => { const q = new URLSearchParams(Object.entries({ sap_xep: sort !== 'noi-bat' ? sort : '', gia: range, ...o }).filter(([, v]) => v)); const s2 = q.toString(); return s2 ? '?' + s2 : ''; };
 %>
+<% if (isB2b) { %>
+<section class="b2b-hero">
+  <picture class="b2b-hero-bg" aria-hidden="true">
+    <source media="(max-width: 767px)" srcset="/img/b2b-tet-1280.webp">
+    <img src="/img/b2b-tet-2560.webp" alt="" width="2560" height="1080" fetchpriority="high" decoding="async">
+  </picture>
+  <div class="container b2b-hero-inner">
+    <ol class="crumbs" aria-label="Breadcrumb">
+      <li><a href="/">Trang chủ</a></li><li><a href="/bo-suu-tap">Bộ sưu tập</a></li><li aria-current="page"><%= category.name %></li>
+    </ol>
+    <span class="eyebrow">Quà Tết doanh nghiệp 2027</span>
+    <h1>Quà tặng doanh nghiệp<br><em>trao lời chúc thịnh vượng</em></h1>
+    <p class="lead">Giỏ quà Tết cho nhân viên, đối tác và khách hàng. Báo giá riêng theo số lượng, in logo doanh nghiệp, giao theo danh sách người nhận.</p>
+    <div class="b2b-hero-cta">
+      <a class="btn btn-gold btn-lg" href="#nhan-bao-gia">Nhận báo giá &amp; catalogue</a>
+      <a class="btn btn-lg b2b-btn-light" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a>
+    </div>
+    <ul class="b2b-hero-points">
+      <li><svg class="icon icon-sm"><use href="#i-tag"/></svg><span>Từ <%= bulkFrom %> giỏ: <strong>báo giá riêng</strong></span></li>
+      <li><svg class="icon icon-sm"><use href="#i-sparkle"/></svg><span><strong>In logo</strong> doanh nghiệp</span></li>
+      <li><svg class="icon icon-sm"><use href="#i-truck"/></svg><span>Giao theo <strong>danh sách</strong> người nhận</span></li>
+      <li><svg class="icon icon-sm"><use href="#i-clock"/></svg><span>Phản hồi trong <strong>24 giờ</strong></span></li>
+    </ul>
+  </div>
+</section>
+<% } else { %>
 <section class="page-head collection-head">
   <div class="container">
     <ol class="crumbs" aria-label="Breadcrumb">
@@ -20,17 +46,13 @@
     <p class="lead"><%= landing ? landing.lead : (category ? (category.description || category.tagline) : 'Giỏ quà Tết cao cấp biếu sếp, đối tác, gia đình và tặng nhân viên. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công, giao đúng ngày hẹn tại Hà Nội và toàn quốc.') %></p>
   </div>
 </section>
+<% } %>
 <% if (isB2b) { %>
 <div class="container">
   <aside class="b2b-price-note" aria-label="Giá doanh nghiệp">
-    <div class="b2b-price-note-text">
-      <span class="eyebrow">Giá doanh nghiệp</span>
-      <p><strong>Giá trên mỗi giỏ là giá lẻ (mua 1 giỏ).</strong> Đặt từ <%= bulkFrom %> giỏ trở lên, Lunar Lucky gửi <strong>báo giá số lượng riêng</strong> kèm <strong>catalogue quà Tết doanh nghiệp 2027</strong>.</p>
-    </div>
-    <div class="b2b-price-note-cta">
-      <a class="btn" href="#nhan-bao-gia">Nhận báo giá &amp; catalogue</a>
-      <a class="btn btn-quiet" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo</a>
-    </div>
+    <span class="b2b-price-note-ico" aria-hidden="true"><svg class="icon"><use href="#i-info"/></svg></span>
+    <p><strong>Giá hiển thị bên dưới là giá lẻ (mua 1 giỏ).</strong> Đặt từ <%= bulkFrom %> giỏ trở lên có <strong>báo giá số lượng riêng</strong>, gửi kèm catalogue quà Tết doanh nghiệp 2027.</p>
+    <a class="b2b-price-note-link" href="#nhan-bao-gia">Nhận báo giá <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
   </aside>
 </div>
 <% } %>
@@ -89,6 +111,7 @@
 </section>
 <% if (isB2b) { const budgets = ['Cần tư vấn', 'Dưới 500.000₫', '500.000₫ – 1.000.000₫', '1.000.000₫ – 2.000.000₫', '2.000.000₫ – 5.000.000₫', 'Trên 5.000.000₫']; %>
 <section class="section quote-section b2b-catalogue" id="nhan-bao-gia">
+  <div class="b2b-catalogue-bg" aria-hidden="true"><img src="/img/b2b-tet-1280.webp" alt="" width="1280" height="540" loading="lazy" decoding="async"></div>
   <div class="container split" style="align-items:start">
     <div>
       <span class="eyebrow">Báo giá số lượng</span>
