@@ -62,6 +62,7 @@ const DEFAULTS = {
   ai_learn_mark: '',
   ai_learn_last: '',
   ai_escalate_qty: '5',
+  ai_b2b_bao_ngay: '1', // mùa đơn doanh nghiệp: biết số giỏ + ngân sách là báo người ngay
   staff_from_hour: '8', // giờ có người trực Pancake (giờ VN)
   staff_to_hour: '24',
   ai_escalate_value: '20000000',

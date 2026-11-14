@@ -549,7 +549,7 @@ async function handleEvent(ev) {
   await rememberName(psid, row, r.humanName || (session.aiPrefill && session.aiPrefill.customer_name));
   if (r.human) { // AI chuyển cho người thật (đổi món, in logo, khiếu nại…)
     await pause(psid, pauseHours);
-    await alertHuman(psid, row, { title: 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
+    await alertHuman(psid, row, { title: r.humanB2b ? '🔥 KHÁCH DOANH NGHIỆP — đã có số lượng + ngân sách, vào tư vấn NGAY' : 'AI chuyển khách Fanpage cho chuyên viên', summary: r.human, last: text, pauseHours });
   }
   if (r.human || r.callback) await require('./ai-learn').log(psid, 'event', 'human');
   // Khách đã chốt giỏ + thông tin (AI đã kiểm tra đơn, chờ khách đồng ý trong chat): lưu lại để sau 2 giờ chưa lên đơn thì báo gọi lại.

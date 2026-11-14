@@ -307,6 +307,7 @@ const SETTING_GROUPS = [
     ['messenger_pause_hours', 'Khi người thật trả lời khách trong hộp thư Fanpage, AI im với khách đó bao nhiêu giờ'],
     ['ai_voucher_code', 'Voucher AI được tặng khi khách mặc cả nhiều lần / so sánh giá (nhập MÃ đã tạo ở mục Mã giảm giá; để trống = AI không tặng voucher)'],
     ['ai_escalate_qty', 'AI chuyển nhân viên chốt giá khi đơn từ bao nhiêu giỏ'],
+    ['ai_b2b_bao_ngay', 'Khách doanh nghiệp trên Fanpage: 1 = vừa biết số giỏ + ngân sách là gửi 2 mẫu và báo người tư vấn NGAY (mùa đơn DN) · 0 = cho khách xem mẫu xong mới báo'],
     ['staff_from_hour', 'Giờ bắt đầu có người trực Pancake (0–23)'],
     ['staff_to_hour', 'Giờ kết thúc trực (24 = nửa đêm); ngoài giờ AI hẹn khách sáng hôm sau'],
     ['ai_escalate_value', 'AI chuyển chủ shop khi tổng tiền từ (₫)'],

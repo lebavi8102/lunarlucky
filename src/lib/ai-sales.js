@@ -362,7 +362,7 @@ Tình huống khó (tham khảo cách xử lý, nói bằng lời tự nhiên c�
 - KHÁCH DOANH NGHIỆP trên Messenger (quà nhân viên/đối tác số lượng nhiều, đơn từ ${Number(s.ai_escalate_qty) || 5} giỏ, xin báo giá, hỏi in logo, hỏi chiết khấu): HỎI TRƯỚC, CHUYỂN SAU (chủ shop chốt 12/11/2026) — để nhân viên nhận khách đã rõ nhu cầu:
   (1) Hỏi gọn trong MỘT tin những gì khách chưa nói: bao nhiêu giỏ, ngân sách khoảng bao nhiêu mỗi giỏ, cần nhận ngày nào (có in logo không thì hỏi luôn trong câu đó). Viết như người nhắn tin, 1–2 câu, không liệt kê kiểu tờ khai. Khách đã nói đủ thì bỏ qua bước này.
   (2) Biết ngân sách mỗi giỏ → gọi search_products (max_price = ngân sách) rồi send_product_photo 2–3 giỏ hợp nhất, mỗi giỏ 1 câu giới thiệu (giá lẻ niêm yết, điểm nổi bật). Nói rõ đơn số lượng sẽ có báo giá riêng, KHÔNG nói mức giảm.
-  (3) Gọi transfer_to_human khi: đã biết số lượng + ngân sách (+ ngày nếu khách nói) và khách đã xem mẫu; HOẶC khách hỏi giá sỉ/chiết khấu/báo giá chính thức, in logo, VAT, giao nhiều địa chỉ; HOẶC khách không muốn trả lời, muốn gặp người; HOẶC đã hỏi 2 lượt mà chưa đủ. summary ghi đủ: số lượng, ngân sách/giỏ, ngày cần, nơi giao, logo, VAT, giỏ khách thích.
+  (3) ${String(s.ai_b2b_bao_ngay) !== '0' ? `BÁO NGƯỜI NGAY (chủ shop chốt 14/11/2026, mùa đơn doanh nghiệp — không để lọt đơn): VỪA biết đủ SỐ LƯỢNG + NGÂN SÁCH mỗi giỏ thì NGAY TRONG LƯỢT ĐÓ: gọi search_products (max_price = ngân sách) + send_product_photo 2 giỏ hợp nhất, VÀ gọi transfer_to_human (doanh_nghiep = true) — không chờ khách xem mẫu xong, không hỏi thêm ngày/logo trước khi báo. Tin trả lời: mỗi giỏ 1 câu ngắn (tên + giá lẻ niêm yết) rồi câu chuyển tiếp "em lên báo giá số lượng cho [anh/chị] ngay đây ạ ❤️". Khách đã nói số lượng nhưng né ngân sách sau 1 lần hỏi → vẫn báo ngay (summary ghi "chưa rõ ngân sách"). Ngoài ra cũng gọi transfer_to_human khi:` : 'Gọi transfer_to_human khi: đã biết số lượng + ngân sách (+ ngày nếu khách nói) và khách đã xem mẫu; HOẶC'} khách hỏi giá sỉ/chiết khấu/báo giá chính thức, in logo, VAT, giao nhiều địa chỉ; HOẶC khách không muốn trả lời, muốn gặp người; HOẶC đã hỏi 2 lượt mà chưa đủ. summary ghi đủ: số lượng, ngân sách/giỏ, ngày cần, nơi giao, logo, VAT, giỏ khách thích.
   KHÔNG tự báo giá sỉ, không hứa mức giảm, không hứa ngày giao/thời gian chuẩn bị cho đơn lớn, không tự lên đơn (prepare_order/confirm_order) cho đơn từ ${Number(s.ai_escalate_qty) || 5} giỏ.
 - Mua sỉ để BÁN LẠI, hoặc nhiều người nhận / nhiều ngày giao lẻ tẻ (không phải đơn công ty): Messenger → transfer_to_human NGAY ở tin đó (tóm tắt số lượng, ngân sách, nơi giao); website: xin số điện thoại rồi request_callback hoặc mời gửi yêu cầu báo giá.
 - KHÔNG hứa việc em không tự làm được rồi bỏ lửng ("em kiểm tra xem đổi món được không", "em gửi ảnh thực tế", "em xem làm theo yêu cầu được không"). Trên Messenger: hoặc gọi transfer_to_human ngay trong lượt đó và dùng câu chuyển tiếp, hoặc đừng hứa. Không tự gợi ý đổi món/làm giỏ riêng khi khách chưa hỏi.
@@ -513,6 +513,7 @@ function tools(channel) {
         properties: {
           summary: { type: 'string', description: 'Tóm tắt cho chuyên viên: khách là ai, cần gì, đã gợi ý gì (giỏ, số lượng, ngày giao, ngân sách)' },
           customer_name: { type: 'string', description: 'Cách gọi khách nếu đã biết, vd "anh Tuấn", "chị Lan" (không biết thì bỏ trống)' },
+          doanh_nghiep: { type: 'boolean', description: 'true nếu là khách doanh nghiệp / mua số lượng (đã biết số giỏ, ngân sách) — nhân viên được báo ưu tiên' },
         },
         required: ['summary'],
       },
@@ -900,10 +901,11 @@ async function runTool(name, input, req, out) {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
     out.human = String(input.summary || '').slice(0, 800);
     out.humanName = String(input.customer_name || '').slice(0, 80);
+    out.humanB2b = input.doanh_nghiep === true;
     if (!staffOnline(s)) {
       return { ok: true, message: `Đã báo nhân viên, nhưng bây giờ NGOÀI GIỜ trực (${staffHoursText(s)}). Trả lời khách đúng một tin: "Dạ vâng [anh/chị + tên], em ghi nhận rồi ạ. Sáng mai từ ${Number(s.staff_from_hour) || 8}h em sẽ [việc cụ thể] cho [anh/chị] ngay ạ ❤️". KHÔNG hứa "ngay đây". Không nói "chuyên viên", không hỏi thêm. Nếu đây là tin trả lời ĐẦU TIÊN của cuộc trò chuyện (có ghi chú hệ thống "tin ĐẦU TIÊN"): vẫn mở bằng đúng câu chào bắt buộc thành một đoạn riêng (hoặc câu chào ngắn nếu khách khiếu nại/bực/đòi gặp người), rồi mới đến câu chuyển tiếp — vẫn trong cùng một tin.` };
     }
-    return { ok: true, message: 'Đã báo nhân viên. Trả lời khách đúng một tin theo mẫu CHUYỂN CHO NHÂN VIÊN: "Dạ vâng [anh/chị + tên], [anh/chị] vui lòng đợi em một chút, em sẽ [việc cụ thể] cho [anh/chị] ngay đây ạ ❤️". Không nói "chuyên viên", không hỏi thêm. Nếu đây là tin trả lời ĐẦU TIÊN của cuộc trò chuyện (có ghi chú hệ thống "tin ĐẦU TIÊN"): vẫn mở bằng đúng câu chào bắt buộc thành một đoạn riêng (hoặc câu chào ngắn nếu khách khiếu nại/bực/đòi gặp người), rồi mới đến câu chuyển tiếp — vẫn trong cùng một tin.' };
+    return { ok: true, message: 'Đã báo nhân viên. Trả lời khách đúng một tin theo mẫu CHUYỂN CHO NHÂN VIÊN: "Dạ vâng [anh/chị + tên], [anh/chị] vui lòng đợi em một chút, em sẽ [việc cụ thể] cho [anh/chị] ngay đây ạ ❤️". Không nói "chuyên viên", không hỏi thêm. Nếu trong lượt này em đã gửi ảnh giỏ (khách doanh nghiệp) thì trước câu đó được giới thiệu mỗi giỏ đúng 1 câu ngắn (tên + giá lẻ niêm yết), vẫn trong cùng tin. Nếu đây là tin trả lời ĐẦU TIÊN của cuộc trò chuyện (có ghi chú hệ thống "tin ĐẦU TIÊN"): vẫn mở bằng đúng câu chào bắt buộc thành một đoạn riêng (hoặc câu chào ngắn nếu khách khiếu nại/bực/đòi gặp người), rồi mới đến câu chuyển tiếp — vẫn trong cùng một tin.' };
   }
   return { error: `Không có công cụ ${name}` };
 }
@@ -1066,7 +1068,7 @@ async function chat(req, text, opts = {}) {
   if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
   if (imgs.length) history[userIdx] = { role: 'user', content: `${userText}\n[Khách gửi kèm ${imgs.length} ảnh]` };
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], video: out.video || null, order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], video: out.video || null, order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', humanB2b: !!out.humanB2b, customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
 
 module.exports = {
