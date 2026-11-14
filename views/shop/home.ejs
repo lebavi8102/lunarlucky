@@ -20,9 +20,9 @@
       </ul>
     </div>
     <div class="hero-visual hero-photo">
-      <div class="photo"><picture><source media="(min-width: 1360px)" srcset="/img/hero-wide-1935.webp" width="1935" height="813"><img src="/img/hero-crop-1220.webp" alt="Hai giỏ quà Tết Lunar Lucky: Giỏ Đại Cát đỏ vàng và Giỏ Thịnh Vượng kem xanh, đặt trên bệ đá cạnh cành hoa đào" width="1100" height="733" fetchpriority="high"></picture></div>
+      <% if (s.tet_effects !== '0') { %><div class="photo tet-hero-photo"><picture><source media="(min-width: 1360px)" srcset="/img/hero-tet-wide-1935.webp" width="1935" height="818"><img src="/img/hero-tet-crop-1220.webp" alt="Ba giỏ quà Tết Lunar Lucky đặt trên bệ đá cẩm thạch trước cổng vòm sơn mài đỏ, cành mai vàng và đèn lồng" width="1220" height="813" fetchpriority="high"></picture></div>
+      <% } else { %><div class="photo"><picture><source media="(min-width: 1360px)" srcset="/img/hero-wide-1935.webp" width="1935" height="813"><img src="/img/hero-crop-1220.webp" alt="Hai giỏ quà Tết Lunar Lucky: Giỏ Đại Cát đỏ vàng và Giỏ Thịnh Vượng kem xanh, đặt trên bệ đá cạnh cành hoa đào" width="1100" height="733" fetchpriority="high"></picture></div><% } %>
       <div class="hero-seal" aria-hidden="true"><span>Tết<b>2027</b>Đinh Mùi</span></div>
-      <% if (s.tet_effects !== '0') { %><img class="tet-hero-goat" src="/img/tet/goat.webp" alt="" width="360" height="438" aria-hidden="true"><% } %>
       <% if (star) { %>
       <a class="hero-float" href="/san-pham/<%= star.slug %>">
         <img src="<%= img(star.image_id) %>" alt="" width="56" height="56">

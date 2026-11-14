@@ -30,7 +30,8 @@
   var isCollection = /^\/(bo-suu-tap|gio-qua-tet)/.test(path);
 
   /* ---------- Đèn lồng đầu trang (trang chủ, bộ sưu tập, quà doanh nghiệp) ---------- */
-  var top = document.querySelector('.hero') || (isCollection && document.querySelector('.page-head'));
+  // Trang chủ: ảnh banner Tết đã có đèn lồng nên không treo thêm
+  var top = (!isHome && document.querySelector('.hero')) || (isCollection && document.querySelector('.page-head'));
   if (top) {
     var lan = document.createElement('div');
     lan.className = 'tet-lanterns';
