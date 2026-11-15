@@ -1555,3 +1555,20 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 }
 .tet-slim .btn { --btn-bg: var(--gold-500); --btn-fg: var(--lacquer-950); --btn-bd: var(--gold-500); }
 .tet-slim .btn:hover { --btn-bg: var(--gold-400); --btn-bd: var(--gold-400); }
+
+/* ============ HOA VĂN NÉT VÀNG (15/11) ============ */
+/* C1: dải hồi văn trên chân trang (chủ shop bỏ dải dưới menu 15/11) */
+.tet-greeting { border-top: 0; }
+.tet-greeting::after { content: ''; position: absolute; z-index: 1; top: 0; left: 0; right: 0; height: 9px; background: #2a060b url(/img/motif/hoi-van.svg) 0 50% / 18px 9px repeat-x; }
+/* C5: viền hồi văn trên và dưới dải cam kết */
+.usp { position: relative; padding-block: 9px; }
+.usp::before, .usp::after { content: ''; position: absolute; z-index: 1; left: 0; right: 0; height: 9px; background: #2a060b url(/img/motif/hoi-van.svg) 0 50% / 18px 9px repeat-x; }
+.usp::before { top: 0; } .usp::after { bottom: 0; }
+/* C2: góc khung vàng ở các thẻ lớn */
+.b2b-card, .post-cta, .b2b-catalogue .card, .quote-section .card { background-image: url(/img/motif/goc-tl.svg), url(/img/motif/goc-tr.svg), url(/img/motif/goc-bl.svg), url(/img/motif/goc-br.svg); background-position: 12px 12px, right 12px top 12px, left 12px bottom 12px, right 12px bottom 12px; background-repeat: no-repeat; background-size: 30px 30px; }
+/* C3: nền sóng nước rất nhạt sau lưới giỏ quà */
+.collection-section.has-motif, .featured-first.has-motif, .cart-suggest { background-image: url(/img/motif/song-nuoc.svg); background-size: 56px 28px; }
+/* C4: hoa sen tròn sau tiêu đề giữa trang */
+.section-head.center { position: relative; isolation: isolate; }
+.section-head.center::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; width: 240px; height: 240px; transform: translate(-50%, -58%); background: url(/img/motif/hoa-sen.svg) center / contain no-repeat; opacity: .55; pointer-events: none; }
+@media (max-width: 767px) { .section-head.center::before { width: 190px; height: 190px; } .b2b-card, .post-cta, .b2b-catalogue .card, .quote-section .card { background-size: 24px 24px; background-position: 8px 8px, right 8px top 8px, left 8px bottom 8px, right 8px bottom 8px; } }
