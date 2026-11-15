@@ -148,20 +148,28 @@ async function sendVideo(psid, v) {
   } } } });
 }
 
+// Nhịp gửi như người thật gõ: mỗi tin cách nhau 3–6 giây (tin dài chờ lâu hơn), luôn hiện "đang soạn tin" trước
+const gapMs = (text = '') => 3000 + Math.min(2000, String(text).length * 15) + Math.floor(Math.random() * 1000);
+
 async function sendChat(psid, text, photos = []) {
   let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
-  if (parts.length > 3) parts = [...parts.slice(0, 2), parts.slice(2).join('\n')];
+  // Tối đa 2 tin chữ mỗi lượt (khách thấy dồn dập nếu bot bắn 3–4 tin liền)
+  if (parts.length > 2) parts = [parts[0], parts.slice(1).join('\n')];
   // Ảnh giỏ hiện TRƯỚC lời giới thiệu + giá (riêng lời chào mở đầu thì vẫn đứng đầu)
   const photoAt = photos.length ? (/^Dạ Lunar Lucky xin chào/i.test(parts[0] || '') && parts.length > 1 ? 1 : 0) : -1;
+  let sent = 0; // số tin đã gửi trong lượt này → từ tin thứ 2 trở đi mới chờ
+  const wait = async (t) => {
+    if (sent++) { await typing(psid); await pauseMs(gapMs(t)); }
+  };
+  const photosOut = async () => {
+    for (const p of photos) { await wait(''); await sendPhoto(psid, p); }
+  };
   for (let i = 0; i < parts.length; i++) {
-    if (i) {
-      await typing(psid);
-      await pauseMs(Math.min(2500, 600 + parts[i].length * 25));
-    }
-    if (i === photoAt) for (const p of photos) await sendPhoto(psid, p);
+    if (i === photoAt) await photosOut();
+    await wait(parts[i]);
     await sendText(psid, parts[i]);
   }
-  if (photoAt === parts.length) for (const p of photos) await sendPhoto(psid, p);
+  if (photoAt === parts.length) await photosOut();
 }
 
 /** Ảnh giỏ gửi thẳng vào khung chat (JPEG công khai từ website — Facebook tự tải về). */
@@ -574,6 +582,37 @@ function enqueue(psid, job) {
   return next;
 }
 
+/**
+ * Khách hay gõ nhiều tin liền nhau ("alo" / "shop ơi" / "giỏ 1tr có không"). Chờ khách ngừng gõ vài giây
+ * (Cài đặt messenger_gather_seconds, mặc định 8) rồi gộp thành MỘT câu hỏi cho AI → trả lời 1 lượt, không trả lời từng tin.
+ * Chỉ gộp tin chữ thường; ảnh, nút bấm, trả lời nhanh, tin của Fanpage vẫn xử lý ngay như cũ.
+ */
+const gathering = new Map();
+const gatherable = (ev) => ev && ev.sender && ev.sender.id && ev.message && !ev.message.is_echo && ev.message.text
+  && !ev.message.quick_reply && !(ev.message.attachments || []).length && !ev.postback;
+function gather(psid, ev) {
+  const g = gathering.get(psid);
+  if (g) { g.texts.push(String(ev.message.text).trim()); g.ev = ev; return g.done; }
+  const fresh = { texts: [String(ev.message.text).trim()], ev };
+  gathering.set(psid, fresh);
+  fresh.done = (async () => {
+    const s = await settings.all().catch(() => ({}));
+    const sec = Number(s.messenger_gather_seconds ?? 8);
+    const ms = Math.min(30, Math.max(0, Number.isFinite(sec) ? sec : 8)) * 1000;
+    // Khách còn gõ thêm trong lúc chờ → chờ tiếp (tối đa 4 lần để không bắt khách đợi quá lâu)
+    for (let n = 0, seen = 0; ms && n < 4 && fresh.texts.length > seen; n++) {
+      seen = fresh.texts.length;
+      await pauseMs(ms);
+    }
+    gathering.delete(psid);
+    const text = fresh.texts.filter(Boolean).join('\n');
+    const merged = { ...fresh.ev, message: { ...fresh.ev.message, text } };
+    if (fresh.texts.length > 1) console.log(`[messenger] gộp ${fresh.texts.length} tin liền nhau của khách …${String(psid).slice(-4)} thành 1 lượt trả lời`);
+    return enqueue(psid, () => handleEvent(merged));
+  })();
+  return fresh.done;
+}
+
 /** Facebook gửi gộp nhiều sự kiện trong 1 lần gọi. Trả về Promise xong hết (dùng cho kiểm thử). */
 function handleWebhook(body) {
   if (!body || body.object !== 'page') return Promise.resolve([]);
@@ -588,7 +627,7 @@ function handleWebhook(body) {
     }
     for (const ev of entry.messaging || []) {
       const key = (ev.message && ev.message.is_echo ? ev.recipient && ev.recipient.id : ev.sender && ev.sender.id) || 'x';
-      jobs.push(enqueue(key, () => handleEvent(ev)));
+      jobs.push(gatherable(ev) ? gather(key, ev) : enqueue(key, () => handleEvent(ev)));
     }
   }
   return Promise.all(jobs);
@@ -704,6 +743,7 @@ module.exports = {
   checkToken,
   _setDebugToken: (fn) => { debugToken = fn; },
   _setPause: (fn) => { pauseMs = fn; },
+  _sendChat: (psid, text, photos) => sendChat(psid, text, photos),
   configured, enabled, verifySignature, verifyChallenge, handleWebhook, handleEvent, loadHandoff, plain, AI_TAG,
   _setSend: (fn) => { send = async (b) => { const r = await fn(b); rememberSent(b, r && typeof r === 'object' ? r : null); return r; }; },
   sendRaw: (b) => send(b),

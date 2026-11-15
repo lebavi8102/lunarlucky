@@ -26,7 +26,7 @@ async function approved(limit = 60) {
 let ask = async (system, user) => {
   const s = await settings.all();
   const res = await require('./ai-sales').getClient().beta.messages.create({
-    model: s.ai_model || 'claude-opus-5-5',
+    model: s.ai_model || 'claude-haiku-5-5',
     max_tokens: 4000,
     output_config: { effort: 'medium' },
     system,

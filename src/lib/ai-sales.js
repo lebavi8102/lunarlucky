@@ -26,6 +26,7 @@ const enabled = (s) => !!process.env.ANTHROPIC_API_KEY && String(s.ai_chat_enabl
 const day = { key: '', count: 0 };
 const OPUS = 'claude-opus-5-5';
 const SONNET = 'claude-sonnet-5-5';
+const HAIKU = 'claude-haiku-5-5';
 /**
  * Chọn mô hình theo Cài đặt (ai_model): ghi rõ tên mô hình → dùng đúng mô hình đó;
  * "auto" → ngày ít khách dùng Sonnet (rẻ hơn ~40%), số tin trong ngày vượt ai_busy_from → Opus (chốt đơn tốt hơn).
@@ -34,7 +35,7 @@ function pickModel(s) {
   const m = String(s.ai_model || '').trim();
   const busy = String(s.ai_busy_from ?? '').trim() !== '' && Number.isFinite(Number(s.ai_busy_from)) ? Number(s.ai_busy_from) : 150;
   if (m === 'auto') return day.count > busy ? OPUS : SONNET;
-  return m || OPUS;
+  return m || HAIKU;
 }
 function underDailyLimit(s) {
   const today = todayVN();
@@ -913,7 +914,7 @@ async function runTool(name, input, req, out) {
 /** 1 lượt chat: nhận tin khách, chạy vòng công cụ, trả lời. Lịch sử nằm trong session (chỉ nối thêm, không sửa). */
 // Thêm vào lời dặn khi chat qua Messenger (để riêng, sau phần lời dặn chung đã lưu đệm)
 const CHANNEL_NOTES = {
-  messenger: `Kênh hiện tại: Facebook Messenger (Fanpage). Chỉ chữ thường như tin nhắn, không markdown; muốn tách tin thì để 1 dòng trống giữa các đoạn.
+  messenger: `Kênh hiện tại: Facebook Messenger (Fanpage). Chỉ chữ thường như tin nhắn, không markdown; muốn tách tin thì để 1 dòng trống giữa các đoạn. Mỗi lượt TỐI ĐA 2 đoạn ngắn (lời chào mở đầu tính là 1 đoạn), mỗi đoạn 1–3 câu; khách gõ nhiều tin liền nhau thì hệ thống gộp lại → trả lời gộp một lần, đừng trả lời từng ý thành nhiều tin.
 KHÁCH MUA NGAY TRONG CHAT, KHÔNG dẫn sang web (chủ shop chốt 26/10/2026):
 (1) Mỗi khi giới thiệu một giỏ → gọi send_product_photo cho giỏ đó (tối đa 2 giỏ mỗi tin) và NÊU GIÁ ngay trong tin giới thiệu (viết kiểu chat: "1tr890"). Ảnh tự hiện ngay trước lời giới thiệu của em.
 Khách xin xem ảnh giỏ, hoặc nói "không thấy ảnh", "đâu ảnh" → gọi send_product_photo cho giỏ đang bàn NGAY (gửi lại cũng được) rồi nói ngắn một câu; KHÔNG chuyển cho người thật, KHÔNG nói "đợi em gửi ảnh". Mục "xem giỏ thật / ảnh, video thực tế → transfer_to_human NGAY" ở trên chỉ dành cho khách xin VIDEO hoặc ảnh chụp thêm ngoài ảnh giỏ em đã gửi (hàng thật đang có, nhiều góc); khách chỉ muốn xem ảnh giỏ thì tự gửi ảnh.
@@ -1009,11 +1010,12 @@ async function chat(req, text, opts = {}) {
       try {
         res = await getClient().beta.messages.create(params);
       } catch (e1) {
-        // Mô hình phụ (Sonnet…) lỗi yêu cầu → thử lại ngay bằng Opus, khách không bị gián đoạn
+        // Mô hình lỗi yêu cầu → thử lại ngay bằng mô hình mạnh hơn một bậc (Haiku → Sonnet, Sonnet → Opus), khách không bị gián đoạn
         if (e1.status !== 400 || params.model === OPUS) throw e1;
-        console.error(`[AI tư vấn] ${params.model} lỗi 400, chuyển sang ${OPUS}:`, String(e1.message).slice(0, 200));
+        const backup = params.model === HAIKU ? SONNET : OPUS;
+        console.error(`[AI tư vấn] ${params.model} lỗi 400, chuyển sang ${backup}:`, String(e1.message).slice(0, 200));
         require('./ai-errors').log({ kind: 'model_fallback', channel: req.aiChannel, model: params.model, status: 400, message: e1.message });
-        res = await getClient().beta.messages.create({ ...params, model: OPUS });
+        res = await getClient().beta.messages.create({ ...params, model: backup });
       }
     } catch (err) {
       console.error('[AI tư vấn] lỗi gọi Claude:', err.status || '', err.message);
