@@ -527,13 +527,40 @@ async function stockList(query) {
   return `📦 <b>TỒN KHO</b> · ${time}\n${lines.join('\n')}${more}\n\n⚠️ = còn ≤ ${limit} giỏ · ⛔ = hết hàng`;
 }
 
+// Công tắc bật/tắt AI tư vấn Fanpage (messenger_ai_enabled) + chọn mô hình AI (ai_model)
+const AI_MODELS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5', opus: 'claude-opus-5-5', auto: 'auto' };
+const AI_MODEL_LABEL = { haiku: 'Haiku (rẻ nhất)', sonnet: 'Sonnet (cân bằng)', opus: 'Opus (đắt nhất)', auto: 'Tự động' };
+const aiIsOn = async () => String((await settings.all()).messenger_ai_enabled) !== '0';
+const aiModelKey = async () => {
+  const m = String((await settings.all()).ai_model || '').trim();
+  return Object.keys(AI_MODELS).find((k) => AI_MODELS[k] === m) || 'other';
+};
+async function aiSwitchText() {
+  const on = await aiIsOn();
+  const k = await aiModelKey();
+  const name = k === 'other' ? e(String((await settings.all()).ai_model || '')) : AI_MODEL_LABEL[k];
+  return `${on
+    ? '🟢 AI tư vấn Fanpage đang <b>BẬT</b> — khách nhắn Page sẽ được AI trả lời.'
+    : '🔴 AI tư vấn Fanpage đang <b>TẮT</b> — AI không trả lời, nhân viên tự trả lời khách trong Pancake.'}
+🧠 Mô hình AI: <b>${name}</b>
+<i>Haiku rẻ nhất · Sonnet cân bằng · Opus chốt đơn tốt nhất nhưng đắt nhất · Tự động: ngày ít khách dùng Sonnet, đông khách chuyển Opus. Đổi xong áp dụng cho tin nhắn kế tiếp.</i>`;
+}
+async function aiSwitchMarkup() {
+  const on = await aiIsOn();
+  const cur = await aiModelKey();
+  const row = ['haiku', 'sonnet', 'opus', 'auto'].map((k) => ({ text: `${cur === k ? '✅ ' : ''}${k === 'auto' ? 'Tự động' : k[0].toUpperCase() + k.slice(1)}`, callback_data: `ai:m:${k}` }));
+  return { reply_markup: { inline_keyboard: [[on
+    ? { text: '🔴 Tắt AI Fanpage', callback_data: 'ai:set:0' }
+    : { text: '🟢 Bật AI Fanpage', callback_data: 'ai:set:1' }], row] } };
+}
+
 async function handleCommand(msg) {
   const text = String(msg.text || '').trim();
   const m = /^\/([a-z_]+)(?:@\w+)?(?:\s+([\s\S]*))?$/i.exec(text);
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ai', 'ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -552,13 +579,19 @@ async function handleCommand(msg) {
   if (String(msg.chat.id) !== String(allowed)) return;
 
   // Lệnh sửa tồn kho / đổi chủ đề nhận tin: chỉ quản trị viên nhóm (shipper, người ngoài không đụng được)
-  const ADMIN_CMDS = ['nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat'];
+  const ADMIN_CMDS = ['ai', 'nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat'];
   if (ADMIN_CMDS.includes(cmd) && String((await settings.all()).telegram_admin_only) !== '0'
       && msg.chat.type !== 'private' && !(await isGroupAdmin(msg.chat.id, msg.from && msg.from.id))) {
     return reply(msg, 'Lệnh này chỉ dành cho quản trị viên nhóm (sửa tồn kho, đổi chủ đề nhận tin).');
   }
 
   if (cmd === 'kho' || cmd === 'help' || cmd === 'start') return reply(msg, KHO_HELP);
+  if (cmd === 'ai') { // /ai → hiện nút; /ai tat | /ai bat → đổi luôn
+    const a = args.toLowerCase();
+    if (/^(tat|tắt|off|0)$/.test(a)) await settings.save({ messenger_ai_enabled: '0' });
+    else if (/^(bat|bật|on|1)$/.test(a)) await settings.save({ messenger_ai_enabled: '1' });
+    return reply(msg, await aiSwitchText(), await aiSwitchMarkup());
+  }
   if (cmd === 'chonchat') {
     if (!msg.is_topic_message || !msg.message_thread_id) return reply(msg, 'Gõ lệnh này <b>bên trong</b> chủ đề Chat với khách.');
     await settings.save({ telegram_chat_chat_id: '', telegram_chat_thread: String(msg.message_thread_id) });
@@ -676,6 +709,19 @@ async function handleUpdate(update) {
 
   // Nút "▶️ Bật lại AI" dưới tin khách Fanpage cần gặp nhân viên (nhóm đơn hàng hoặc nhóm CHAT VỚI KHÁCH)
   if (cb.data === 'ai:done') return answer(cb, 'AI đã được bật lại cho khách này.');
+  const sw = /^ai:(?:set:([01])|m:(haiku|sonnet|opus|auto))$/.exec(cb.data);
+  if (sw) { // nút công tắc / chọn mô hình từ lệnh /ai
+    const st0 = await settings.all();
+    const okC = [String(await notify.telegramChatId()), String(st0.telegram_chat_chat_id || '')].filter((x) => x && x !== 'undefined');
+    if (!okC.includes(String(cb.message.chat.id))) return answer(cb, 'Cuộc trò chuyện này không có quyền xử lý.', true);
+    if (String(st0.telegram_admin_only) !== '0' && cb.message.chat.type !== 'private' && !(await isGroupAdmin(cb.message.chat.id, cb.from && cb.from.id))) {
+      return answer(cb, 'Chỉ quản trị viên nhóm mới đổi được AI.', true);
+    }
+    if (sw[1] !== undefined) await settings.save({ messenger_ai_enabled: sw[1] });
+    else await settings.save({ ai_model: AI_MODELS[sw[2]] });
+    await notify.tgApi('editMessageText', { chat_id: cb.message.chat.id, message_id: cb.message.message_id, text: await aiSwitchText(), parse_mode: 'HTML', ...(await aiSwitchMarkup()) }).catch(() => {});
+    return answer(cb, sw[1] !== undefined ? (sw[1] === '1' ? 'Đã BẬT AI Fanpage.' : 'Đã TẮT AI Fanpage.') : `Đã đổi sang ${AI_MODEL_LABEL[sw[2]]}.`);
+  }
   const ai = /^ai:on:(.{1,58})$/.exec(cb.data);
   if (ai) {
     const st = await settings.all();
@@ -804,6 +850,7 @@ async function ensureWebhook() {
   // Menu lệnh hiện khi gõ "/" trong Telegram
   await notify.tgApi('setMyCommands', {
     commands: [
+      { command: 'ai', description: 'Bật / tắt AI tư vấn Fanpage (hiện nút bấm)' },
       { command: 'giao', description: 'Danh sách giao hôm nay (gõ: /giao mai, /giao 25/1)' },
       { command: 'thu', description: 'Tiền COD shipper đã thu hôm nay + đơn chưa thu' },
       { command: 'doingay', description: 'Đổi ngày giao: /doingay MÃĐƠN 25/1 chieu' },
