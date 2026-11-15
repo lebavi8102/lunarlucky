@@ -1310,7 +1310,7 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 @media (min-width: 1024px) { .tet-band-inner { grid-template-columns: max-content minmax(0, 1fr) minmax(280px, 340px); } }
 
 /* Đầu trang các trang nội dung / bộ sưu tập */
-.page-head.tet-head { position: relative; isolation: isolate; overflow: hidden; border-bottom: 0; color: #fff; background: var(--lacquer-900) url(/img/b2b-tet-1280.webp) 100% 28% / cover no-repeat; padding-block: 56px 52px; }
+.page-head.tet-head { position: relative; isolation: isolate; overflow: hidden; border-bottom: 0; color: #fff; background: var(--lacquer-900) url(/img/tet-mai-lien-1000.webp) 100% 0 / cover no-repeat; padding-block: 56px 52px; }
 .page-head.tet-head::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(42 6 11 / .9) 0%, rgb(42 6 11 / .68) 45%, rgb(42 6 11 / .12) 78%, transparent 100%); }
 .page-head.tet-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold-500) 20%, var(--gold-300) 50%, var(--gold-500) 80%, transparent); }
 .tet-head .crumbs, .tet-head .crumbs a { color: rgb(255 255 255 / .72); }
@@ -1319,7 +1319,7 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .tet-head h1 { color: #fff; text-shadow: 0 2px 20px rgb(30 4 8 / .5); max-width: 18em; }
 .tet-head .lead, .tet-head p { color: rgb(255 255 255 / .86); max-width: 54ch; }
 .tet-head p a { color: var(--gold-300) !important; }
-@media (min-width: 1100px) { .page-head.tet-head { background-image: url(/img/b2b-tet-2560.webp); } }
+@media (min-width: 1100px) { .page-head.tet-head { background-image: url(/img/tet-mai-lien-1800.webp); } }
 @media (max-width: 767px) {
   .page-head.tet-head { padding-block: 36px 34px; background-position: 82% 20%; }
   .page-head.tet-head::before { background: linear-gradient(90deg, rgb(42 6 11 / .92) 0%, rgb(42 6 11 / .78) 60%, rgb(42 6 11 / .45) 100%); }
@@ -1526,3 +1526,32 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 }
 @media (min-width: 1700px) { .hero-stage { background-image: url(/img/hero-poster-gio-2560.webp); } }
 @media (min-width: 1500px) { .stage-hero .hero-trust { display: flex; } }
+
+/* ============ ĐỢT SOÁT 15/11: sửa lỗi + liền mạch ============ */
+/* A1: lân không đè chữ trên điện thoại / máy tính bảng — đứng cạnh ô đếm ngày */
+@media (max-width: 1023px) { .tet-lan { top: 18px; bottom: auto; right: -14px; left: auto; width: 150px; opacity: 1; } .tet-band .tet-count { position: relative; z-index: 2; } }
+@media (min-width: 768px) and (max-width: 1023px) { .tet-lan { width: 200px; top: 30px; right: 6%; } }
+/* A3: cành mai không đè "Xem tất cả" trên điện thoại */
+@media (max-width: 767px) { .motif-mai-tr { top: -96px; right: -52px; width: 150px; opacity: .75; } }
+/* A4: thẻ liên hệ không tràn chữ */
+.feature-list > .card > div { min-width: 0; }
+/* B5: nền cành mai + liễn thay ảnh đèn lồng */
+.b2b-hero-bg img { object-position: 100% 0; transform-origin: 80% 0; }
+.b2b-catalogue-bg img { object-position: 100% 0; }
+.page-head.tet-head::before { background: linear-gradient(90deg, rgb(42 6 11 / .97) 0%, rgb(42 6 11 / .93) 44%, rgb(42 6 11 / .3) 68%, rgb(42 6 11 / .06) 100%); }
+@media (max-width: 767px) { .page-head.tet-head { background-position: 70% 0; } .b2b-hero-bg img { object-position: 78% 0; } }
+/* B6: đầu trang chức năng (giỏ hàng, tìm kiếm): dải đỏ mảnh, hoa văn mây vàng, không ảnh */
+.page-head.tet-slim { position: relative; isolation: isolate; overflow: hidden; border-bottom: 0; padding-block: 40px 36px; color: #fff; background: radial-gradient(120% 140% at 20% 0%, #6a111b 0%, #4b0c14 50%, #2e070c 100%); }
+.page-head.tet-slim::before { content: ''; position: absolute; z-index: -1; top: -90px; right: -70px; width: 380px; height: 380px; background: url(/img/motif/may-vang.webp) center / contain no-repeat; mix-blend-mode: screen; opacity: .5; filter: contrast(1.9) brightness(.8); transform: scaleX(-1); -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, transparent 72%); mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, transparent 72%); }
+.page-head.tet-slim::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold-500) 20%, var(--gold-300) 50%, var(--gold-500) 80%, transparent); }
+.tet-slim .eyebrow { color: var(--gold-300); }
+.tet-slim h1 { color: #fff; font-size: clamp(30px, 4vw, 46px); }
+.tet-slim p, .tet-slim .lead { color: rgb(255 255 255 / .86); }
+/* Banner trang doanh nghiệp: ảnh cành mai + liễn giữ đúng tỉ lệ ở phía trên, mờ dần xuống nền đỏ */
+@media (min-width: 768px) {
+  .b2b-hero-bg { inset: 0 0 auto 0; }
+  .b2b-hero-bg img { height: auto; aspect-ratio: 1800 / 762; animation: none; }
+  .b2b-hero::before { background: linear-gradient(180deg, rgb(59 10 16 / 0) 0, rgb(59 10 16 / 0) 24vw, var(--lacquer-900) 41.5vw), linear-gradient(90deg, rgb(42 6 11 / .97) 0%, rgb(42 6 11 / .92) 40%, rgb(42 6 11 / .3) 64%, rgb(42 6 11 / 0) 100%); }
+}
+.tet-slim .btn { --btn-bg: var(--gold-500); --btn-fg: var(--lacquer-950); --btn-bd: var(--gold-500); }
+.tet-slim .btn:hover { --btn-bg: var(--gold-400); --btn-bd: var(--gold-400); }

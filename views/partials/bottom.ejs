@@ -1,5 +1,6 @@
 </main>
 
+<% if (!(locals.seo && seo.noindex) && !locals.hideSeoAbout) { %>
 <section class="seo-about has-motif" aria-labelledby="seo-about-title">
   <img class="motif motif-ink motif-may-tl" src="/img/motif/may-vang.webp" alt="" aria-hidden="true" width="600" height="600" loading="lazy" decoding="async">
   <div class="container seo-about-inner">
@@ -14,6 +15,7 @@
     <figure class="tet-arch seo-arch" aria-hidden="true"><img src="/img/motif/tranh-cong.webp" alt="" width="900" height="1200" loading="lazy" decoding="async"></figure>
   </div>
 </section>
+<% } %>
 
 <div class="tet-greeting" aria-hidden="true">
   <img class="motif motif-scr tet-m-tl" src="/img/motif/may-vang.webp" alt="" aria-hidden="true" width="900" height="900" decoding="async">
