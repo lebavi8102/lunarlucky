@@ -13,6 +13,7 @@ const settings = require('../src/lib/settings');
 const { todayVN } = require('../src/lib/format');
 
 let fails = 0;
+let fbStart;
 const ok = (c, msg) => { console.log(`${c ? '✔' : '✘'} ${msg}`); if (!c) fails++; };
 const PSID = 'test-psid-' + Date.now();
 const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sender: { id: PSID }, recipient: { id: 'PAGE' }, message: { mid: 'm' + Math.random(), text, ...extra } }] }] });
@@ -20,6 +21,8 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
 (async () => {
   try {
     await db.migrate.latest();
+    { const s0 = await settings.all(); fbStart = { messenger_ai_enabled: s0.messenger_ai_enabled, ai_chat_enabled: s0.ai_chat_enabled }; } // database local có thể đang tắt AI (migration 056, 058)
+    await settings.save({ messenger_ai_enabled: '1', ai_chat_enabled: '1' });
     const prod = await db('products').where({ is_active: true }).andWhere('stock', '>=', 5).orderBy('price').first();
 
     // Chữ ký & bước xác minh webhook
@@ -196,6 +199,27 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok((() => { const t = sent.find((b) => b.message && b.message.text); return t && /chuyên viên/.test(t.message.text) && !/Zalo/.test(t.message.text); })(), 'AI tắt → báo chuyên viên trả lời tại Fanpage, không đẩy sang Zalo');
     await settings.save({ ai_chat_enabled: aiOn || '1' });
 
+    // Công tắc AI Fanpage TẮT (messenger_ai_enabled = 0) → 1 câu soạn sẵn + báo Telegram, không gọi AI, tin sau im
+    {
+      const fbOn = (await settings.all()).messenger_ai_enabled;
+      await settings.save({ messenger_ai_enabled: '0' });
+      const ntO = require('../src/lib/notify'); const realO = ntO.telegram; const tgO = [];
+      ntO.telegram = async (html, c, extra = {}) => { tgO.push({ html, extra }); return false; };
+      const P7 = PSID + 'fboff';
+      sent.length = 0; const n0 = calls.length;
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P7 }, recipient: { id: 'PAGE' }, postback: { title: 'Gặp nhân viên tư vấn', payload: 'IB_NGUOI' } }] }] });
+      const t7 = sent.find((b) => b.message && b.message.text);
+      ok(t7 && /đã nhận tin/.test(t7.message.text) && calls.length === n0, 'AI Fanpage tắt + khách bấm nút gợi ý → câu soạn sẵn "đã nhận tin", không gọi AI');
+      ok(tgO.length === 1 && /AI đang tắt/.test(tgO[0].html) && /Gặp nhân viên/.test(tgO[0].html), 'AI Fanpage tắt → báo Telegram kèm tin của khách');
+      sent.length = 0;
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P7 }, recipient: { id: 'PAGE' }, message: { text: 'giỏ 1 triệu có không' } }] }] });
+      ok(!sent.length && tgO.length === 1, 'Tin tiếp theo của cùng khách → không gửi lại, không báo lại');
+      await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P7 + 's' }, recipient: { id: 'PAGE' }, message: { sticker_id: 369239263222822, attachments: [{ type: 'image' }] } }] }] });
+      ok(!sent.length, 'AI Fanpage tắt + sticker "like" → không trả lời');
+      ntO.telegram = realO;
+      await settings.save({ messenger_ai_enabled: fbOn || '1' });
+    }
+
     // Khách đòi gặp người thật
     const P2 = PSID + 'h';
     sent.length = 0;
@@ -352,6 +376,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     console.error(err);
     fails++;
   } finally {
+    if (fbStart !== undefined) await settings.save(fbStart).catch(() => {});
     await db.destroy();
   }
   console.log(fails ? `\n${fails} kiểm thử lỗi` : '\nTất cả kiểm thử đều đạt');

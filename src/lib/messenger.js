@@ -392,6 +392,27 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
   ].filter(Boolean).join('\n'), null, { topic: 'chat', reply_markup: { inline_keyboard: [...links.map((l) => [l]), [{ text: '▶️ Bật lại AI (chat xong)', callback_data: `ai:on:${psid}`.slice(0, 64) }]] } }).catch(() => {});
 }
 
+// AI Fanpage đang TẮT (20/11): khách nhắn (kể cả bấm nút câu hỏi gợi ý, trả lời tin bot bình luận) không bị bỏ im.
+// Gửi MỘT câu soạn sẵn (không gọi AI) + báo Telegram cho người thật, rồi im với khách này trong pauseHours giờ
+// (tin tiếp theo chỉ ghi lại; nhân viên trả lời trong hộp thư cũng tự kéo dài thời gian im).
+async function offReply(ev, psid, row, text, s, pauseHours) {
+  if (!configured()) return 'off';
+  const atts = ((ev.message && ev.message.attachments) || []).filter((a) => a && ['image', 'video', 'audio', 'file'].includes(a.type));
+  if (!text && (!atts.length || (ev.message && ev.message.sticker_id))) return 'off'; // sticker "like", xem trước link… → bỏ qua
+  if (text && require('./spam').classify(text, { first: !row }) === 'promo') return 'spam'; // tin quảng cáo/lừa đảo
+  await pause(psid, pauseHours);
+  const xh = require('./xung-ho');
+  const g = row && row.title ? null : xh.guess(row && row.name);
+  const who = row && row.title ? xh.callWith(row.title, row.name) : g.call;
+  const call = s.shop_phone ? ` Cần gấp ${who} gọi ${s.shop_phone} nhé!` : '';
+  await sendText(psid, ai.staffOnline(s)
+    ? `Dạ Lunar Lucky đã nhận tin của ${who} ạ. Nhân viên tư vấn sẽ trả lời ${who} ngay tại đây trong ít phút ạ ❤️${call}`
+    : `Dạ Lunar Lucky đã nhận tin của ${who} ạ. Sáng mai từ ${Number(s.staff_from_hour ?? 8)}h nhân viên sẽ trả lời ${who} ngay tại đây ạ ❤️${call}`);
+  const last = text || `[khách gửi ${atts.length} ${({ image: 'ảnh', video: 'video', audio: 'tin nhắn thoại', file: 'tệp' })[atts[0].type]}]`;
+  await alertHuman(psid, row, { title: 'Khách mới nhắn Fanpage — cần người trả lời (AI đang tắt)', last, pauseHours });
+  return 'off';
+}
+
 // Ảnh khách gửi: tải về để AI xem được (chỉ nhận ảnh từ máy chủ ảnh của Facebook, tối đa 3 ảnh, mỗi ảnh ≤ 4MB)
 const IMG_HOST = /^https:\/\/([a-z0-9-]+\.)*(fbcdn\.net|fbsbx\.com|facebook\.com)\//i;
 let fetchImage = async (url) => {
@@ -453,7 +474,7 @@ async function handleEvent(ev) {
     if (text) await addNote(psid, `Khách: ${text}`);
     return 'paused';
   }
-  if (!enabled(s)) return 'off';
+  if (!enabled(s)) return offReply(ev, psid, row, text, s, pauseHours);
 
   // Lọc tin rác/nick ảo trước khi gọi AI (không tốn tiền Claude)
   const junk = require('./spam').classify(text, { first: !history.length });
@@ -709,11 +730,16 @@ async function checkToken(now = Date.now()) {
 // Lời chào + nút câu hỏi gợi ý khi khách mở Messenger lần đầu (gọi khi khởi động; Facebook bỏ qua nếu không đổi)
 async function setupProfile() {
   if (!configured()) return false;
+  const s = await settings.all();
+  // AI bật → trả lời ngay cả ngoài giờ; AI tắt (người thật trả lời) → nói đúng giờ trực, không hứa "ngoài giờ"
+  const greet = enabled(s)
+    ? 'Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.'
+    : `Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà và báo giá. Nhân viên trả lời từ ${Number(s.staff_from_hour ?? 8)}h đến ${Number(s.staff_to_hour ?? 24)}h hằng ngày.`;
   const r = await fetch(`${GRAPH}/me/messenger_profile`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env().token}` },
     body: JSON.stringify({
-      greeting: [{ locale: 'default', text: 'Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.' }],
+      greeting: [{ locale: 'default', text: greet }],
       ice_breakers: [{ locale: 'default', call_to_actions: [
         { question: 'Tư vấn giỏ quà biếu sếp, đối tác', payload: 'IB_BIEU' },
         { question: 'Quà Tết cho nhân viên (số lượng nhiều)', payload: 'IB_NHANVIEN' },

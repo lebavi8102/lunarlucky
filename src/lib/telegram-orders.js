@@ -590,6 +590,7 @@ async function handleCommand(msg) {
     const a = args.toLowerCase();
     if (/^(tat|tắt|off|0)$/.test(a)) await settings.save({ messenger_ai_enabled: '0' });
     else if (/^(bat|bật|on|1)$/.test(a)) await settings.save({ messenger_ai_enabled: '1' });
+    if (a) require('./messenger').setupProfile().catch(() => {}); // lời chào Messenger đổi theo AI bật/tắt
     return reply(msg, await aiSwitchText(), await aiSwitchMarkup());
   }
   if (cmd === 'chonchat') {
@@ -717,7 +718,7 @@ async function handleUpdate(update) {
     if (String(st0.telegram_admin_only) !== '0' && cb.message.chat.type !== 'private' && !(await isGroupAdmin(cb.message.chat.id, cb.from && cb.from.id))) {
       return answer(cb, 'Chỉ quản trị viên nhóm mới đổi được AI.', true);
     }
-    if (sw[1] !== undefined) await settings.save({ messenger_ai_enabled: sw[1] });
+    if (sw[1] !== undefined) { await settings.save({ messenger_ai_enabled: sw[1] }); require('./messenger').setupProfile().catch(() => {}); }
     else await settings.save({ ai_model: AI_MODELS[sw[2]] });
     await notify.tgApi('editMessageText', { chat_id: cb.message.chat.id, message_id: cb.message.message_id, text: await aiSwitchText(), parse_mode: 'HTML', ...(await aiSwitchMarkup()) }).catch(() => {});
     return answer(cb, sw[1] !== undefined ? (sw[1] === '1' ? 'Đã BẬT AI Fanpage.' : 'Đã TẮT AI Fanpage.') : `Đã đổi sang ${AI_MODEL_LABEL[sw[2]]}.`);
