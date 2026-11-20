@@ -731,10 +731,10 @@ async function checkToken(now = Date.now()) {
 async function setupProfile() {
   if (!configured()) return false;
   const s = await settings.all();
-  // AI bật → trả lời ngay cả ngoài giờ; AI tắt (người thật trả lời) → nói đúng giờ trực, không hứa "ngoài giờ"
+  // AI bật → trả lời ngay cả ngoài giờ; AI tắt (người thật trả lời) → không hứa "ngoài giờ" (chủ shop bỏ dòng giờ trực 20/11)
   const greet = enabled(s)
     ? 'Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà, báo giá và lịch giao ngay, cả ngoài giờ.'
-    : `Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà và báo giá. Nhân viên trả lời từ ${Number(s.staff_from_hour ?? 8)}h đến ${Number(s.staff_to_hour ?? 24)}h hằng ngày.`;
+    : 'Lunar Lucky — giỏ quà Tết cao cấp, giao tận nơi Hà Nội. Nhắn để được tư vấn chọn quà và báo giá.';
   const r = await fetch(`${GRAPH}/me/messenger_profile`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env().token}` },
