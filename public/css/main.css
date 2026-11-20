@@ -1572,3 +1572,16 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 .section-head.center { position: relative; isolation: isolate; }
 .section-head.center::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; width: 320px; height: 195px; transform: translate(-50%, -55%); background: url(/img/motif/hoa-sen-vang.webp) center / contain no-repeat; opacity: .4; pointer-events: none; }
 @media (max-width: 767px) { .section-head.center::before { width: 240px; height: 146px; } .b2b-card, .post-cta, .b2b-catalogue .card, .quote-section .card { background-size: 24px 24px; background-position: 8px 8px, right 8px top 8px, left 8px bottom 8px, right 8px bottom 8px; } }
+
+/* Đầu trang (bộ sưu tập, cẩm nang, liên hệ, hỏi đáp, chính sách): ảnh cành mai + 2 tấm liễn đặt gọn bên phải,
+   chiều cao cố định → không bị chữ che, không cắt chân liễn (chủ shop báo 20/11) */
+@media (min-width: 900px) {
+  .page-head.tet-head { --th-h: 210px; --th-w: calc(var(--th-h) * 2.77); min-height: var(--th-h); padding-block: 26px; display: flex; align-items: center;
+    background: url(/img/tet-dau-trang-620.webp) right center / auto var(--th-h) no-repeat, var(--lacquer-900); }
+  .page-head.tet-head::before { background: linear-gradient(180deg, #3b0a10 calc(50% - var(--th-h) / 2), rgb(59 10 16 / 0) calc(50% - var(--th-h) / 2 + 34px), rgb(59 10 16 / 0) calc(50% + var(--th-h) / 2 - 34px), #3b0a10 calc(50% + var(--th-h) / 2)), linear-gradient(90deg, #3b0a10 0, #3b0a10 calc(100% - var(--th-w)), rgb(59 10 16 / 0) calc(100% - var(--th-w) + 46px)); }
+  .page-head.tet-head > .container { position: relative; z-index: 1; width: 100%; }
+  .tet-head h1, .tet-head .lead, .tet-head p { max-width: min(54ch, calc(100vw - var(--th-w) - 48px - max(16px, (100vw - var(--container)) / 2 + 16px))); }
+}
+@media (min-width: 900px) and (max-width: 1299px) { .tet-head h1 { font-size: clamp(32px, 3.6vw, 44px); } }
+@media (min-width: 1300px) { .page-head.tet-head { --th-h: 250px; } }
+@media (min-width: 1700px) { .page-head.tet-head { --th-h: 280px; } }
