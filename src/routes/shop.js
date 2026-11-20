@@ -98,7 +98,7 @@ router.get('/gio-qua-tet-ha-noi', async (req, res) => {
   const landing = {
     path: '/gio-qua-tet-ha-noi',
     crumb: 'Giỏ quà Tết Hà Nội',
-    h1: 'Giỏ quà Tết Hà Nội cao cấp 2027',
+    h1: 'Giỏ quà Tết Hà Nội cao cấp 2027', // dấu cách không ngắt: không tách "Hà / Nội"
     lead: `Giỏ quà Tết cao cấp giao tận nơi trong nội thành Hà Nội, đúng ngày và đúng buổi bạn chọn.${min ? ` Giá từ ${money(min)}.` : ''} Miễn phí giao cho đơn từ ${free}.`,
     blocks: [
       {
