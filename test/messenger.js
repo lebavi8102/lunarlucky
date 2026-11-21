@@ -33,6 +33,13 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       && m.verifyChallenge({ 'hub.mode': 'subscribe', 'hub.verify_token': 'sai', 'hub.challenge': '42' }) === null, 'Bước xác minh webhook: đúng mã mới trả lời');
     ok(m.plain('Em gợi ý **Giỏ An Khang** /san-pham/an-khang').includes('Giỏ An Khang http') && !m.plain('**x**').includes('*'), 'Bỏ in đậm, đổi link thành link đầy đủ');
 
+    // Claude từ chối cả yêu cầu (lỗi 400) nếu tổng tham số tùy chọn trong các công cụ > 24 (sự cố 21/11/2026)
+    for (const ch of ['messenger', 'web']) {
+      let opt = 0;
+      const walk = (sc) => { if (!sc || typeof sc !== 'object') return; if (sc.properties) { const req = new Set(sc.required || []); for (const [k, v] of Object.entries(sc.properties)) { if (!req.has(k)) opt++; walk(v); } } if (sc.items) walk(sc.items); };
+      ai.tools(ch).forEach((t) => walk(t.input_schema));
+      ok(opt <= 24, `Công cụ kênh ${ch}: ${opt} tham số tùy chọn (Claude chỉ nhận tối đa 24)`);
+    }
     const sent = [];
     m._setSend(async (b) => { sent.push(b); return true; });
     const pauses = []; m._setPause(async (ms) => { pauses.push(ms); }); // không chờ thật khi kiểm thử
