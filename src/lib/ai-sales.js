@@ -190,7 +190,7 @@ const STOPWORDS = new Set(['gio', 'qua', 'tet', 'hop', 'mua', 'can', 'tim', 'xin
 // (khóa = tên bỏ dấu; giá trị viết đúng dấu tiếng Việt)
 const SYNONYMS = { 'ruou vang': ['vang'], 'nhan sam': ['sâm'], 'ca phe': ['cafe', 'coffee'], cafe: ['cà phê'], socola: ['chocolate', 'sô cô la'], chocolate: ['socola'] };
 // "không cồn", "không có rượu", "kiêng đường"… (bỏ qua "không biết/cần/rõ…")
-const NEGATION = /(?<![a-z])(khong|ko|kieng|tranh)\s+(co\s+)?(?!(biet|can|ro|sao|nhi|a|nhe|duoc|phai|lam|nhieu|qua|hon)(?![a-z]))([a-z]+(?:\s+[a-z]+)?)/;
+const NEGATION = /(?<![a-z])(khong|ko|k|kieng|tranh)\s+(co\s+)?(?!(biet|can|ro|sao|nhi|a|nhe|duoc|phai|lam|nhieu|qua|hon)(?![a-z]))([a-z]+(?:\s+[a-z]+)?)/;
 const hasAccent = (w) => fold(w) !== w.toLowerCase();
 const wordsOf = (text) => String(text || '').toLowerCase().normalize('NFC').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 const containsPhrase = (words, phrase) => {
@@ -665,7 +665,7 @@ async function runTool(name, input, req, out) {
   const s = await settings.all();
   out.tools = [...(out.tools || []), name];
   if (name === 'search_products') {
-    const { products, catName } = await catalog();
+    let { products, catName } = await catalog();
     const empty = (note, budget) => ({ results: [], total_found: 0, ...(budget ? { budget } : {}), note });
     // max_price 0 / âm / không phải số nguyên → không bỏ qua thành "không giới hạn": từ chối, nhờ AI hỏi lại
     if (input.max_price != null && !posInt(input.max_price)) {
@@ -701,6 +701,14 @@ async function runTool(name, input, req, out) {
     const ask = (what) => empty(`Không có giỏ nào ${what}. Chưa gợi ý giỏ khác: báo khách thật là chưa có giỏ đúng yêu cầu đó, hỏi khách có muốn xem các giỏ khác${hasBudget ? ' trong ngân sách' : ''} không; khách đồng ý thì mới gọi lại search_products KHÔNG kèm từ khóa thành phần (giữ nguyên ngân sách).`, hasBudget ? budget : null);
     const want = classifyQuery(cleanQ);
     // "không cồn", "không có rượu"…: dữ liệu sản phẩm không ghi được điều này → không tự khẳng định giỏ nào đáp ứng
+    // Riêng "không rượu / không cồn / không bia": lọc được theo thành phần ghi trong giỏ (chủ shop chốt 21/11: gửi mẫu luôn, không chuyển người)
+    const KHONG_CON = /(ruou|con|bia|vang|alcohol)/.test(fold(String(want.negated || '')));
+    // chỉ xét THÀNH PHẦN (mô tả hay có chữ "ánh vàng" — bỏ dấu thành "vang", dễ nhầm)
+    const CO_CON = /(ruou|(^|[^a-z])vang ([a-z]+ )?(uc|chile|phap|y|do|trang|rose|my)|(^|[^a-z])bia([^a-z]|$)|chivas|whisky|whiskey|sauvignon|cabernet|chardonnay|merlot|moravia|tamorin|soju|sake|champagne|steiger)/;
+    if (want.negated && KHONG_CON) {
+      products = products.filter((p) => !CO_CON.test(fold(String(p.contents || ''))));
+      want.negated = '';
+    }
     if (want.negated) {
       return empty(`Khách yêu cầu "${want.negated}". Dữ liệu sản phẩm không xác nhận được điều này nên chưa gợi ý giỏ nào và KHÔNG nói giỏ nào đáp ứng. Messenger: gọi transfer_to_human (ghi rõ yêu cầu "${want.negated}"${hasBudget ? ' và ngân sách' : ''}); website: xin số điện thoại rồi request_callback để nhân viên xác nhận.`, hasBudget ? budget : null);
     }
