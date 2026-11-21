@@ -59,7 +59,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(/Tên Facebook của khách: Trần Thị Lan/.test(calls[0].system[1].text) && (await db('messenger_threads').where({ psid: PSID }).first()).name === 'Trần Thị Lan', 'Lấy tên Facebook của khách (họ trước tên sau) → AI gọi đúng tên');
     const texts = sent.filter((b) => b.message && b.message.text);
     ok(texts.length === 1 && texts[0].message.text === 'Dạ em gợi ý Giỏ An Khang ạ.' && texts[0].message.metadata === m.AI_TAG && sent.some((b) => b.sender_action === 'typing_on'), 'Khách nhắn → AI trả lời (chữ thường, có hiện "đang soạn")');
-    ok(pauses.some((ms) => ms >= 3000 && ms <= 11500), 'Tin đầu của bot chờ vài giây như người gõ (4–10 giây tính từ lúc khách nhắn)');
+    ok(pauses.some((ms) => ms >= 9000 && ms <= 15000), 'Tin đầu của bot chờ 10–15 giây như người thật (tính từ lúc khách nhắn)');
     ok(calls[0].system.length === 2 && /Messenger/.test(calls[0].system[1].text), 'AI biết đang chat qua Messenger');
     ok(/ĐƯA MẪU TRƯỚC, HỎI SAU/.test(calls[0].system[0].text) && /MỖI TIN TỐI ĐA 2 CÂU/.test(calls[0].system[0].text) && /khách hỏi "trong giỏ có gì".*ĐẦY ĐỦ các món/.test(calls[0].system[0].text) && !/rất vui được hỗ trợ và tư vấn/.test(calls[0].system[0].text.replace(/KHÔNG dùng các câu.*/, '')),'Lời dặn 21/11: đưa mẫu trước, tin ngắn, chỉ liệt kê món khi khách hỏi, bỏ câu chào dài');
 

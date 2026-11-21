@@ -152,8 +152,8 @@ async function sendVideo(psid, v) {
 const gapMs = (text = '') => 3000 + Math.min(2000, String(text).length * 15) + Math.floor(Math.random() * 1000);
 
 // Chờ như người đang gõ trước tin ĐẦU TIÊN (chủ shop 21/11: bot trả lời nhanh quá, nhìn là biết máy):
-// tính từ lúc khách nhắn tin cuối — 4 giây + ~40ms mỗi chữ (tối đa 10 giây) + ngẫu nhiên 0–1,5 giây; AI nghĩ lâu hơn thì không chờ thêm.
-const firstDelayMs = (text = '') => Math.min(10000, 4000 + String(text).length * 40) + Math.floor(Math.random() * 1500);
+// tính từ lúc khách nhắn tin cuối — 10–15 giây tùy độ dài câu (chủ shop chốt 21/11: "như người thật"); AI nghĩ lâu hơn thì không chờ thêm.
+const firstDelayMs = (text = '') => Math.min(15000, 10000 + String(text).length * 25 + Math.floor(Math.random() * 1500));
 
 async function sendChat(psid, text, photos = [], since = 0) {
   let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
