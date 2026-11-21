@@ -209,7 +209,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       sent.length = 0; const n0 = calls.length;
       await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P7 }, recipient: { id: 'PAGE' }, postback: { title: 'Gặp nhân viên tư vấn', payload: 'IB_NGUOI' } }] }] });
       const t7 = sent.find((b) => b.message && b.message.text);
-      ok(t7 && /đã nhận tin/.test(t7.message.text) && calls.length === n0, 'AI Fanpage tắt + khách bấm nút gợi ý → câu soạn sẵn "đã nhận tin", không gọi AI');
+      ok(!t7 && calls.length === n0, 'AI Fanpage tắt + khách bấm nút gợi ý → không nhắn gì cho khách, không gọi AI');
       ok(tgO.length === 1 && /AI đang tắt/.test(tgO[0].html) && /Gặp nhân viên/.test(tgO[0].html), 'AI Fanpage tắt → báo Telegram kèm tin của khách');
       sent.length = 0;
       await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P7 }, recipient: { id: 'PAGE' }, message: { text: 'giỏ 1 triệu có không' } }] }] });

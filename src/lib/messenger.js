@@ -393,7 +393,7 @@ async function alertHuman(psid, row, { title, summary, last, pauseHours }) {
 }
 
 // AI Fanpage đang TẮT (20/11): khách nhắn (kể cả bấm nút câu hỏi gợi ý, trả lời tin bot bình luận) không bị bỏ im.
-// Gửi MỘT câu soạn sẵn (không gọi AI) + báo Telegram cho người thật, rồi im với khách này trong pauseHours giờ
+// KHÔNG nhắn gì cho khách (chủ shop tắt 21/11); chỉ báo Telegram cho người thật, rồi im với khách này trong pauseHours giờ
 // (tin tiếp theo chỉ ghi lại; nhân viên trả lời trong hộp thư cũng tự kéo dài thời gian im).
 async function offReply(ev, psid, row, text, s, pauseHours) {
   if (!configured()) return 'off';
@@ -401,13 +401,7 @@ async function offReply(ev, psid, row, text, s, pauseHours) {
   if (!text && (!atts.length || (ev.message && ev.message.sticker_id))) return 'off'; // sticker "like", xem trước link… → bỏ qua
   if (text && require('./spam').classify(text, { first: !row }) === 'promo') return 'spam'; // tin quảng cáo/lừa đảo
   await pause(psid, pauseHours);
-  const xh = require('./xung-ho');
-  const g = row && row.title ? null : xh.guess(row && row.name);
-  const who = row && row.title ? xh.callWith(row.title, row.name) : g.call;
-  const call = s.shop_phone ? ` Cần gấp ${who} gọi ${s.shop_phone} nhé!` : '';
-  await sendText(psid, ai.staffOnline(s)
-    ? `Dạ Lunar Lucky đã nhận tin của ${who} ạ. Nhân viên tư vấn sẽ trả lời ${who} ngay tại đây trong ít phút ạ ❤️${call}`
-    : `Dạ Lunar Lucky đã nhận tin của ${who} ạ. Sáng mai từ ${Number(s.staff_from_hour ?? 8)}h nhân viên sẽ trả lời ${who} ngay tại đây ạ ❤️${call}`);
+  // 21/11 chủ shop yêu cầu TẮT câu tự trả lời khách — không gửi gì cho khách, chỉ báo Telegram cho người thật
   const last = text || `[khách gửi ${atts.length} ${({ image: 'ảnh', video: 'video', audio: 'tin nhắn thoại', file: 'tệp' })[atts[0].type]}]`;
   await alertHuman(psid, row, { title: 'Khách mới nhắn Fanpage — cần người trả lời (AI đang tắt)', last, pauseHours });
   return 'off';
