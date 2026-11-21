@@ -23,6 +23,8 @@ const FEMALE_GIVEN = new Set(['lan', 'hương', 'trang', 'hoa', 'mai', 'huyền'
 const MALE_MIDDLE = new Set(['văn', 'bá', 'hữu', 'đình', 'công', 'đức', 'quang', 'trọng', 'quốc', 'mạnh', 'tiến', 'tuấn', 'việt', 'hùng', 'trung', 'thế', 'chí', 'đăng', 'huy', 'duy', 'thành', 'hoàng', 'nam', 'sơn', 'hải']);
 const FEMALE_MIDDLE = new Set(['thị', 'kim', 'thu', 'thùy', 'thuỳ', 'thúy', 'thuý', 'diệu', 'mỹ', 'bích', 'ngọc', 'phương', 'quỳnh', 'tuyết', 'hồng', 'lan', 'hương', 'mai', 'trà', 'vân', 'nguyệt', 'diễm', 'cẩm', 'yến', 'hoài', 'tố', 'lệ', 'nhã', 'uyên', 'thảo']);
 
+// Tên đệm dùng cho cả nam lẫn nữ → khi trái với tên gọi thì tên gọi quyết định
+const WEAK_MIDDLE = new Set(['hải', 'hoàng', 'nam', 'sơn', 'thành', 'huy', 'ngọc', 'phương', 'hồng', 'mai', 'lan', 'hương', 'trà', 'vân', 'yến', 'thảo', 'quỳnh', 'tuyết', 'nguyệt', 'hoài', 'nhã', 'uyên', 'diễm']);
 // Chữ Việt (có dấu hoặc không): chỉ chữ cái, không số/ký hiệu
 const WORD = /^[a-zA-ZÀ-ỹĐđ]+$/u;
 const cap = (w) => w.charAt(0).toLocaleUpperCase('vi') + w.slice(1).toLocaleLowerCase('vi');
@@ -53,8 +55,11 @@ function gender(p) {
   // Tên ghép rõ nghĩa ("Thanh Hương", "Tâm Anh") tra cả cụm trước
   const pair = lastMid ? `${lastMid} ${g}` : '';
   if (pair && FEMALE_GIVEN.has(pair)) return 'chị';
-  if (MALE_GIVEN.has(g) && !FEMALE_MIDDLE.has(lastMid)) return 'anh';
-  if (FEMALE_GIVEN.has(g) && !MALE_MIDDLE.has(lastMid)) return 'chị';
+  // Tên gọi và tên đệm trái nhau: tên đệm "dùng chung" (Hải, Ngọc, Hồng…) thì tin tên gọi (Hải Yến là nữ, Ngọc Sơn là nam);
+  // tên đệm rõ nam/nữ (Mạnh, Đức, Kim, Thu…) thì tin tên đệm (Mạnh Hà là nam). Sửa 21/11/2026.
+  const weakMid = WEAK_MIDDLE.has(lastMid);
+  if (MALE_GIVEN.has(g) && (!FEMALE_MIDDLE.has(lastMid) || weakMid)) return 'anh';
+  if (FEMALE_GIVEN.has(g) && (!MALE_MIDDLE.has(lastMid) || weakMid)) return 'chị';
   // Tên gọi dùng chung (Anh, Linh, Ngọc, Minh…) → nhờ tên đệm sát nhất
   if (MALE_MIDDLE.has(lastMid)) return 'anh';
   if (FEMALE_MIDDLE.has(lastMid)) return 'chị';
