@@ -22,7 +22,7 @@ const configured = () => !!(env().token && env().secret);
 const enabled = (s) => configured() && String(s.messenger_ai_enabled) !== '0';
 
 // Nhận ra tin do chính AI gửi khi Facebook gửi bản sao (echo) về: theo mã tin, mã ứng dụng, thời điểm vừa gửi
-const ours = { mids: new Set(), appId: '', lastSend: new Map(), lastIncoming: new Map() };
+const ours = { mids: new Set(), appId: '', lastSend: new Map(), lastIncoming: new Map(), lastSeen: new Map() };
 function rememberSent(body, res) {
   const psid = (body && body.recipient && body.recipient.id) || (res && res.recipient_id);
   if (psid && body.message) ours.lastSend.set(psid, Date.now());
@@ -146,6 +146,51 @@ async function sendVideo(psid, v) {
   return send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
     template_type: 'button', text: `🎬 Clip thực tế giỏ ${v.name}`.slice(0, 640), buttons: [{ type: 'web_url', url: v.url, title: 'Xem clip' }],
   } } } });
+}
+
+/** Catalogue Quà Tết doanh nghiệp (PDF): gửi thẳng file vào chat; Facebook không tải được file → gửi nút mở link. */
+async function sendCatalogue(psid, url) {
+  const ok = await send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'file', payload: { url, is_reusable: true } } } }).catch(() => false);
+  if (ok) return ok;
+  console.error('[messenger] không gửi được catalogue dạng file, gửi nút link thay thế');
+  return send({ recipient: { id: psid }, messaging_type: 'RESPONSE', message: { metadata: AI_TAG, attachment: { type: 'template', payload: {
+    template_type: 'button', text: '📘 Catalogue Quà Tết doanh nghiệp 2027 — 33 mẫu, giá theo số lượng', buttons: [{ type: 'web_url', url, title: 'Xem catalogue' }],
+  } } } });
+}
+
+// Gửi catalogue xong vài phút (Cài đặt catalogue_nhac_phut, mặc định 4) mà khách chưa nhắn gì → hỏi khách đã ưng mẫu nào (chủ shop 21/11/2026).
+// Hẹn giờ nằm trong bộ nhớ: máy chủ khởi động lại trong lúc chờ thì lần nhắc đó bỏ qua.
+const catTimers = new Map();
+function nhacCatalogue(psid, s) {
+  const phut = Number(s.catalogue_nhac_phut);
+  if (!(phut > 0)) return;
+  clearTimeout(catTimers.get(psid));
+  const sentAt = Date.now();
+  const t = setTimeout(() => {
+    catTimers.delete(psid);
+    enqueue(psid, async () => {
+      // khách đã nhắn tiếp (kể cả tin còn đang chờ gom) → bot đang tư vấn rồi, không nhắc
+      if (Math.max(ours.lastIncoming.get(psid) || 0, ours.lastSeen.get(psid) || 0) > sentAt) return;
+      const { row, history: h } = await thread(psid);
+      if (row && Number(row.paused_until_ms) > Date.now()) return; // người thật đang tư vấn
+      const goi = row && row.title ? `${row.title}${row.name ? ` ${row.name}` : ''}` : 'anh/chị';
+      const Goi = goi.charAt(0).toUpperCase() + goi.slice(1);
+      const text = `Dạ ${goi} xem catalogue thấy mẫu nào ưng chưa ạ? ${Goi} nhắn em tên hoặc mã mẫu (vd LL-016), em tư vấn kỹ và tính giá đúng số lượng cho mình nhé ❤️`;
+      await sendText(psid, text);
+      // ghi vào lịch sử để AI biết em vừa hỏi câu này (nối vào tin cuối của em, giữ đúng lượt người–máy)
+      try {
+        const last = h[h.length - 1];
+        if (last && last.role === 'assistant') {
+          if (typeof last.content === 'string') last.content += `\n\n${text}`;
+          else if (Array.isArray(last.content)) last.content.push({ type: 'text', text });
+          await saveThread(psid, { history: JSON.stringify(h) });
+        }
+      } catch (_) { /* lịch sử hỏng thì thôi, tin đã gửi */ }
+      await require('./ai-learn').log(psid, 'ai', text);
+    });
+  }, phut * 60000);
+  if (t.unref) t.unref();
+  catTimers.set(psid, t);
 }
 
 // Nhịp gửi như người thật gõ: mỗi tin cách nhau 3–6 giây (tin dài chờ lâu hơn), luôn hiện "đang soạn tin" trước
@@ -573,6 +618,11 @@ async function handleEvent(ev) {
   }
   await sendChat(psid, r.reply, r.photos || [], ours.lastIncoming.get(psid) || 0);
   if (r.video) await sendVideo(psid, r.video).catch((err) => console.error('[messenger] gửi clip lỗi:', err.message));
+  if (r.catalogue) {
+    await sendCatalogue(psid, r.catalogue.url).catch((err) => console.error('[messenger] gửi catalogue lỗi:', err.message));
+    await require('./ai-learn').log(psid, 'event', 'catalogue');
+    nhacCatalogue(psid, s);
+  }
   await require('./ai-learn').log(psid, 'ai', r.reply);
   // Khách đã xác nhận trong chat → đơn đã tạo: gửi ngay mã QR + thông tin chuyển khoản (không dẫn sang web)
   if (r.order) await orderUpdate(r.order, 'placed', { until: r.orderUntil });
@@ -650,6 +700,7 @@ function handleWebhook(body) {
     }
     for (const ev of entry.messaging || []) {
       const key = (ev.message && ev.message.is_echo ? ev.recipient && ev.recipient.id : ev.sender && ev.sender.id) || 'x';
+      if (!(ev.message && ev.message.is_echo) && (ev.message || ev.postback)) ours.lastSeen.set(key, Date.now());
       jobs.push(gatherable(ev) ? gather(key, ev) : enqueue(key, () => handleEvent(ev)));
     }
   }
@@ -783,5 +834,5 @@ module.exports = {
   _onSendRefused: onSendRefused,
   _setConversation: (fn) => { fetchConversation = fn; },
   _setPageId: (id) => { pageId = id; },
-  _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.lastIncoming.clear(); nameFail.clear(); ours.appId = ''; },
+  _resetEchoState: () => { ours.mids.clear(); ours.lastSend.clear(); ours.lastIncoming.clear(); ours.lastSeen.clear(); nameFail.clear(); ours.appId = ''; },
 };

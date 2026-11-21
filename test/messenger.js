@@ -48,6 +48,9 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       if (typeof last.content === 'string' && /chị Lan đây/.test(last.content)) {
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'remember_customer', input: { title: 'chị', name: 'Lan' } }] };
       }
+      if (typeof last.content === 'string' && /gửi em catalogue/.test(last.content)) {
+        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'send_catalogue', input: { so_luong: '50 giỏ', tam_gia: '700k' } }] };
+      }
       if (typeof last.content === 'string' && /đổi món/.test(last.content)) {
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ', customer_name: 'chị Hoa' } }] };
       }
@@ -62,6 +65,29 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(pauses.some((ms) => ms >= 9000 && ms <= 15000), 'Tin đầu của bot chờ 10–15 giây như người thật (tính từ lúc khách nhắn)');
     ok(calls[0].system.length === 2 && /Messenger/.test(calls[0].system[1].text), 'AI biết đang chat qua Messenger');
     ok(/ĐƯA MẪU TRƯỚC, HỎI SAU/.test(calls[0].system[0].text) && /MỖI TIN TỐI ĐA 2 CÂU/.test(calls[0].system[0].text) && /khách hỏi "trong giỏ có gì".*ĐẦY ĐỦ các món/.test(calls[0].system[0].text) && !/rất vui được hỗ trợ và tư vấn/.test(calls[0].system[0].text.replace(/KHÔNG dùng các câu.*/, '')),'Lời dặn 21/11: đưa mẫu trước, tin ngắn, chỉ liệt kê món khi khách hỏi, bỏ câu chào dài');
+
+    // Khách xin catalogue (chủ shop 21/11): hỏi số lượng + tầm giá rồi gửi file PDF; vài phút sau tự hỏi khách ưng mẫu nào
+    ok(/KHÁCH XIN CATALOG/.test(calls[0].system[0].text) && /gọi send_catalogue NGAY/.test(calls[0].system[0].text) && /ĐÀM PHÁN/.test(calls[0].system[0].text) && !/em gửi catalog và báo giá cho \[anh\/chị\] ngay đây/.test(calls[0].system[0].text),
+      'Lời dặn mới: xin catalogue → hỏi số lượng + tầm giá → gửi catalogue; đàm phán giá mới chuyển người (bỏ quy tắc cũ chuyển ngay)');
+    ok(/BẢNG GIÁ CATALOGUE/.test(calls[0].system[1].text) && /LL-016 Giỏ Hồng Phúc .*550\.000₫ · 470\.000₫ · 455\.000₫/.test(calls[0].system[1].text), 'Bot Fanpage biết giá theo số lượng của từng mẫu trong catalogue');
+    const sCat = await settings.all();
+    await settings.save({ catalogue_nhac_phut: '0.0005' }); // ~30 ms thay vì 4 phút
+    sent.length = 0;
+    await m.handleWebhook(msg('50 giỏ tầm 700k, gửi em catalogue nhé'));
+    const fileMsg = sent.find((b) => b.message && b.message.attachment && b.message.attachment.type === 'file');
+    ok(fileMsg && fileMsg.message.attachment.payload.url === sCat.catalogue_url && /lunar-lucky-catalogue-qua-tet-2027\.pdf$/.test(sCat.catalogue_url), 'Gọi send_catalogue → gửi thẳng file PDF catalogue vào chat');
+    await new Promise((r) => setTimeout(r, 400));
+    const nhac = sent.filter((b) => b.message && /xem catalogue thấy mẫu nào ưng chưa/.test(b.message.text || ''));
+    const thCat = await db('messenger_threads').where({ psid: PSID }).first();
+    const lastA = JSON.parse(thCat.history).slice(-1)[0];
+    ok(nhac.length === 1 && lastA.role === 'assistant' && /mẫu nào ưng chưa/.test(JSON.stringify(lastA.content)), 'Gửi catalogue xong vài phút khách chưa nhắn → tự hỏi khách ưng mẫu nào (ghi vào lịch sử để AI nói tiếp)');
+    sent.length = 0;
+    await m.handleWebhook(msg('50 giỏ tầm 700k, gửi em catalogue nhé'));
+    await new Promise((r) => setTimeout(r, 20));
+    await m.handleWebhook(msg('để mình xem đã'));
+    await new Promise((r) => setTimeout(r, 400));
+    ok(!sent.some((b) => b.message && /xem catalogue thấy mẫu nào ưng chưa/.test(b.message.text || '')), 'Khách đã nhắn tiếp sau khi nhận catalogue → không nhắc nữa');
+    await settings.save({ catalogue_nhac_phut: sCat.catalogue_nhac_phut || '4' });
 
     sent.length = 0;
     await m.handleWebhook(msg('ok chốt đơn nhé'));

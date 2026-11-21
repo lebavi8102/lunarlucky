@@ -360,7 +360,11 @@ Tình huống khó (tham khảo cách xử lý, nói bằng lời tự nhiên c�
 - Khách muốn XEM GIỎ THẬT / xin ảnh, video thực tế trên FANPAGE (Messenger): KHÔNG xin số Zalo — gọi transfer_to_human NGAY (summary ghi rõ: gửi ảnh/video thực tế giỏ nào, số lượng, tặng ai) và trả lời bằng câu chuyển tiếp ở phần CHUYỂN CHO NHÂN VIÊN.
 - Khách muốn XEM GIỎ THẬT / xin ảnh, video thực tế trên WEBSITE: xin số Zalo của khách — "Anh/chị cho em xin số Zalo, chuyên viên bên em gửi ảnh và video thực tế giỏ [tên giỏ] cho mình xem ngay ạ". Khách đưa số → gọi request_callback NGAY với phone = số Zalo, note = "Gửi ảnh/video thực tế giỏ [tên giỏ] qua Zalo số …" (kèm nhu cầu: tặng ai, số lượng, ngày giao nếu đã biết), rồi báo khách chuyên viên sẽ gửi qua Zalo sớm. Không tự hứa gửi ảnh trong khung chat.
 - KHÁCH DOANH NGHIỆP trên Messenger (quà nhân viên/đối tác số lượng nhiều, đơn từ ${Number(s.ai_escalate_qty) || 5} giỏ, xin báo giá, hỏi in logo, hỏi chiết khấu): HỎI GỌN, CHUYỂN NGAY. SỰ THẬT (chủ shop chốt 21/11/2026): bên em LÊN SET THEO NGÂN SÁCH cho doanh nghiệp ở mọi tầm giá (có cả set từ 2xx–500k), thay món theo yêu cầu, từ 100 set in logo miễn phí — nên KHÔNG BAO GIỜ nói không có mẫu hợp ngân sách; ngân sách thấp hơn giỏ niêm yết thì nói "dạ tầm đó bên em lên set riêng cho mình được ạ" rồi chuyển người ngay:
-  (0) KHÁCH ĐÃ BÁO SỐ LƯỢNG mà xin CATALOG / thông tin / bảng giá / báo giá / "gửi mẫu qua" (chủ shop chốt 21/11/2026): gọi transfer_to_human (doanh_nghiep = true) NGAY trong lượt đó, KHÔNG đòi thêm ngân sách hay thông tin gì nữa; summary ghi số lượng + khách xin catalog. Trả lời đúng 1 câu chuyển tiếp: "Dạ vâng, [anh/chị] đợi em một chút, em gửi catalog và báo giá cho [anh/chị] ngay đây ạ ❤️".
+  (0) KHÁCH XIN CATALOG / catalogue / bảng giá / "gửi mẫu qua" (kể cả bấm nút "Gửi cho tôi Catalogue quà Tết 2027") — chủ shop chốt 21/11/2026, quy tắc này ĐỨNG TRÊN (1)(2)(3):
+     a. CHƯA biết số lượng và tầm giá → hỏi ĐÚNG 1 câu ngắn gộp, chưa gửi mẫu/ảnh nào: "Dạ [anh/chị] dự định đặt khoảng bao nhiêu giỏ, tầm giá mỗi giỏ khoảng bao nhiêu để em gửi catalogue và gợi ý mẫu sát nhất cho mình ạ?". Không giới thiệu giỏ, không gọi send_product_photo, không chuyển người ở bước này.
+     b. Khách trả lời (dù chỉ số lượng hoặc chỉ tầm giá), hoặc đã biết từ trước, hoặc khách né / không muốn nói / xin catalog lần nữa → gọi send_catalogue NGAY trong lượt đó. Tin trả lời ngắn: "Dạ em gửi [anh/chị] catalogue quà Tết doanh nghiệp 2027, giá đã chia theo số lượng ạ" + nếu biết tầm giá thì chỉ đúng phân khúc trong catalogue (vd "tầm 600–900k anh xem phân khúc 600.000₫ – 900.000₫ từ trang 6 nhé"). KHÔNG gửi ảnh giỏ kèm, KHÔNG gọi transfer_to_human ở bước này (kể cả khi đã đủ số lượng + ngân sách — quy tắc (3) không áp dụng khi khách đang xin catalogue).
+     c. Sau khi đã gửi catalogue: hệ thống tự nhắn hỏi khách đã ưng mẫu nào sau vài phút. Khách nêu mẫu / mã LL ưng → tư vấn đúng mẫu đó theo BẢNG GIÁ CATALOGUE (giá đúng mức số lượng khách nói, thành phần nổi bật), có thể gợi thêm 1 mẫu cùng tầm. Khách muốn ĐÀM PHÁN / mặc cả / xin giảm thêm / xin chiết khấu / xin báo giá chính thức cho mẫu đã ưng, hoặc hỏi in logo, VAT, giao nhiều nơi → gọi transfer_to_human (doanh_nghiep = true) NGAY, summary ghi: mẫu ưng (mã + tên), số lượng, tầm giá, khách muốn gì.
+     Giá trong catalogue là GIÁ THEO SỐ LƯỢNG (bảng BẢNG GIÁ CATALOGUE bên dưới) — khi khách đã xem catalogue thì báo theo bảng này, KHÔNG báo giá lẻ niêm yết trên web cho đơn từ 10 giỏ. Đơn dưới 10 giỏ thì vẫn theo giá lẻ niêm yết.
   (1) Chưa biết thì hỏi ĐÚNG 1 câu ngắn gộp SỐ LƯỢNG + NGÂN SÁCH mỗi giỏ (vd "Dạ mình cần khoảng bao nhiêu set, tầm bao nhiêu một set ạ?"). Không hỏi ngày, logo, VAT ở bước này; không kể chính sách. Khách đã nói thì bỏ qua.
   (2) Biết ngân sách mỗi giỏ → gọi search_products (max_price = ngân sách) rồi send_product_photo 2–3 giỏ hợp nhất, mỗi giỏ 1 câu giới thiệu (giá lẻ niêm yết, điểm nổi bật). Nói rõ đơn số lượng sẽ có báo giá riêng, KHÔNG nói mức giảm.
   (3) ${String(s.ai_b2b_bao_ngay) !== '0' ? `BÁO NGƯỜI NGAY (chủ shop chốt 14/11/2026, mùa đơn doanh nghiệp — không để lọt đơn): VỪA biết đủ SỐ LƯỢNG + NGÂN SÁCH mỗi giỏ thì NGAY TRONG LƯỢT ĐÓ: gọi search_products (max_price = ngân sách) + send_product_photo 2 giỏ hợp nhất, VÀ gọi transfer_to_human (doanh_nghiep = true) — không chờ khách xem mẫu xong, không hỏi thêm ngày/logo trước khi báo. Tin trả lời: mỗi giỏ 1 câu ngắn (tên + giá lẻ niêm yết) rồi câu chuyển tiếp "em lên báo giá số lượng cho [anh/chị] ngay đây ạ ❤️". Khách đã nói số lượng nhưng né ngân sách sau 1 lần hỏi → vẫn báo ngay (summary ghi "chưa rõ ngân sách"). Ngoài ra cũng gọi transfer_to_human khi:` : 'Gọi transfer_to_human khi: đã biết số lượng + ngân sách (+ ngày nếu khách nói) và khách đã xem mẫu; HOẶC'} khách hỏi giá sỉ/chiết khấu/báo giá chính thức, in logo, VAT, giao nhiều địa chỉ; HOẶC khách không muốn trả lời, muốn gặp người; HOẶC đã hỏi 2 lượt mà chưa đủ. summary ghi đủ: số lượng, ngân sách/giỏ, ngày cần, nơi giao, logo, VAT, giỏ khách thích.
@@ -526,6 +530,12 @@ function tools(channel) {
       description: 'Gửi ảnh thật của một giỏ vào khung chat. Gọi cho từng giỏ em giới thiệu (tối đa 2 giỏ mỗi tin). Ảnh được gửi kèm tin trả lời của em; vẫn nêu GIÁ giỏ ngay trong tin.',
       strict: true,
       input_schema: { type: 'object', additionalProperties: false, properties: { product_id: { type: 'integer', description: 'Mã giỏ (số trong ngoặc vuông ở danh mục)' } }, required: ['product_id'] },
+    });
+    list.push({
+      name: 'send_catalogue',
+      description: 'Gửi file catalogue Quà Tết doanh nghiệp 2027 (PDF, 33 mẫu, giá theo số lượng) vào khung chat. Gọi theo quy tắc (0): khi khách xin catalog/bảng giá và đã trả lời (hoặc né) câu hỏi số lượng + tầm giá. Hệ thống tự gửi file ngay sau tin của em và vài phút sau tự hỏi lại khách đã ưng mẫu nào.',
+      strict: true,
+      input_schema: { type: 'object', additionalProperties: false, properties: { so_luong: { type: 'string', description: 'Số lượng khách nói (bỏ trống nếu chưa rõ)' }, tam_gia: { type: 'string', description: 'Tầm giá mỗi giỏ khách nói (bỏ trống nếu chưa rõ)' } }, required: [] },
     });
     list.push({
       name: 'send_product_video',
@@ -911,6 +921,13 @@ async function runTool(name, input, req, out) {
     if (req.session) req.session.aiCustomer = { ...(req.session.aiCustomer || {}), ...out.customer };
     return { ok: true, note: `Từ giờ gọi khách là ${title || 'anh/chị'}${nm ? ` ${nm}` : ''}.` };
   }
+  if (name === 'send_catalogue') {
+    if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
+    const url = String(s.catalogue_url || '').trim();
+    if (!/^https?:\/\//.test(url)) return { error: 'Chưa có file catalogue trong hệ thống → gọi transfer_to_human để nhân viên gửi catalogue (summary ghi số lượng + tầm giá khách nói).' };
+    out.catalogue = { url, so_luong: String(input.so_luong || '').slice(0, 60), tam_gia: String(input.tam_gia || '').slice(0, 60) };
+    return { ok: true, message: 'Hệ thống sẽ gửi file catalogue ngay sau tin của em. Trả lời khách 1–2 câu ngắn: báo em gửi catalogue quà Tết doanh nghiệp 2027 (giá đã chia theo số lượng) và nếu biết tầm giá thì chỉ phân khúc/trang phù hợp. KHÔNG gửi ảnh giỏ, KHÔNG chuyển người, không hỏi thêm câu nào khác.' };
+  }
   if (name === 'transfer_to_human') {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
     out.human = String(input.summary || '').slice(0, 800);
@@ -926,6 +943,15 @@ async function runTool(name, input, req, out) {
 
 /** 1 lượt chat: nhận tin khách, chạy vòng công cụ, trả lời. Lịch sử nằm trong session (chỉ nối thêm, không sửa). */
 // Thêm vào lời dặn khi chat qua Messenger (để riêng, sau phần lời dặn chung đã lưu đệm)
+// Bảng giá theo số lượng trong catalogue Quà Tết doanh nghiệp 2027 (src/lib/bang-gia-catalogue-2027.json, lấy từ Excel)
+function bangCatalogue() {
+  let d;
+  try { d = require('./bang-gia-catalogue-2027.json'); } catch (_) { return ''; }
+  const vnd = (v) => (v ? `${Number(v).toLocaleString('vi-VN')}₫` : 'liên hệ');
+  return `BẢNG GIÁ CATALOGUE (giá 1 giỏ/hộp theo số lượng đặt: 10–49 · 50–99 · 100–499; từ 500 liên hệ). Dùng khi khách đã xem catalogue hoặc hỏi giá cho đơn từ 10 giỏ:\n`
+    + d.mau.map((m) => `${m.ma} ${m.ten} [${m.phan_khuc}]: ${vnd(m.gia_10_49)} · ${vnd(m.gia_50_99)} · ${vnd(m.gia_100_499)}`).join('\n');
+}
+
 const CHANNEL_NOTES = {
   messenger: `Kênh hiện tại: Facebook Messenger (Fanpage). Chỉ chữ thường như tin nhắn, không markdown; muốn tách tin thì để 1 dòng trống giữa các đoạn. Mỗi lượt TỐI ĐA 2 đoạn ngắn, mỗi đoạn 1–2 câu; khách gõ nhiều tin liền nhau thì hệ thống gộp lại → trả lời gộp một lần, đừng trả lời từng ý thành nhiều tin.
 KHÁCH MUA NGAY TRONG CHAT, KHÔNG dẫn sang web (chủ shop chốt 26/10/2026):
@@ -998,7 +1024,7 @@ async function chat(req, text, opts = {}) {
     : callAs ? `Cách gọi khách (hệ thống đã xác định từ tên Facebook): "${callAs}" — các câu sau gọi "${g.title}". Khách tự xưng khác thì đổi theo khách.`
       : who ? 'Cách gọi khách: "anh/chị" (tên Facebook không đủ chắc nam hay nữ) — không kèm tên, chờ khách tự xưng.' : '';
   if (CHANNEL_NOTES[opts.channel] || who || knownLine) {
-    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], who ? `Tên Facebook của khách: ${who}. KHÔNG hỏi tên hay hỏi anh/chị.` : '', knownLine].filter(Boolean).join('\n') });
+    system.push({ type: 'text', text: [CHANNEL_NOTES[opts.channel], opts.channel === 'messenger' ? bangCatalogue() : '', who ? `Tên Facebook của khách: ${who}. KHÔNG hỏi tên hay hỏi anh/chị.` : '', knownLine].filter(Boolean).join('\n') });
   }
   req.aiChannel = opts.channel || 'web';
   req.aiPsid = opts.psid || '';
@@ -1086,7 +1112,7 @@ async function chat(req, text, opts = {}) {
   if (!reply) require('./ai-errors').log({ kind: 'empty_reply', channel: req.aiChannel, message: `AI không có câu trả lời sau ${MAX_TOOL_ROUNDS} lượt gọi công cụ — khách nhận câu hỏi thêm thông tin` });
   if (imgs.length) history[userIdx] = { role: 'user', content: `${userText}\n[Khách gửi kèm ${imgs.length} ảnh]` };
   req.session.aiChat = history;
-  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], video: out.video || null, order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', humanB2b: !!out.humanB2b, customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
+  return { reply: reply || 'Anh/chị cho em biết thêm một chút để em tư vấn nhé!', action: out.action || null, prepared: !!out.prepared, photos: out.photos || [], video: out.video || null, catalogue: out.catalogue || null, order: out.order || null, orderUntil: out.orderUntil || '', callback: !!out.callback, human: out.human || null, humanName: out.humanName || '', humanB2b: !!out.humanB2b, customer: out.customer || null, tools: out.tools || [], usage: out.usage || null, debug: out.debug || null };
 }
 
 module.exports = {
