@@ -75,9 +75,24 @@ function guess(full) {
   const p = parse(full);
   if (!p) return none;
   const title = gender(p);
-  if (!title) return none;
+  if (!title) {
+    // Tên Facebook không chuẩn ("Trần Dung Love", "Tiên Cát", "Hương Bông"): chữ cuối không nói được nam/nữ
+    // → dò các chữ còn lại (phải sang trái) tìm tên gọi rõ nam/nữ; tìm được đúng 1 loại thì gọi theo chữ đó.
+    const words = [...p.middle, p.given].reverse();
+    const hits = words.map((w) => ({ w, t: MALE_GIVEN.has(low(w)) && !MALE_MIDDLE.has(low(w)) ? 'anh' : FEMALE_GIVEN.has(low(w)) && !FEMALE_MIDDLE.has(low(w)) ? 'chị' : '' })).filter((h) => h.t);
+    if (hits.length && hits.every((h) => h.t === hits[0].t) && !p.middle.map(low).includes('thị') && !p.middle.map(low).includes('văn')) {
+      return { title: hits[0].t, name: hits[0].w, call: `${hits[0].t} ${hits[0].w}` };
+    }
+    return none;
+  }
   const lastMid = p.middle[p.middle.length - 1];
-  const name = WITH_MIDDLE.has(low(p.given)) && lastMid ? `${lastMid} ${p.given}` : p.given;
+  let name = WITH_MIDDLE.has(low(p.given)) && lastMid ? `${lastMid} ${p.given}` : p.given;
+  // Chữ cuối là biệt danh ("Tuấn Kute", "Hương Bông") → gọi bằng tên thật nằm trước đó ("anh Tuấn", "chị Hương")
+  const known = (w) => MALE_GIVEN.has(low(w)) || FEMALE_GIVEN.has(low(w));
+  if (!known(p.given) && !WITH_MIDDLE.has(low(p.given))) {
+    const real = [...p.middle].reverse().find((w) => (title === 'anh' ? MALE_GIVEN : FEMALE_GIVEN).has(low(w)) && low(w) !== 'thị' && low(w) !== 'văn');
+    if (real) name = real;
+  }
   return { title, name, call: `${title} ${name}` };
 }
 

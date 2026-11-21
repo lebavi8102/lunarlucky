@@ -5,7 +5,7 @@ const eq = (got, want, msg) => { const ok = got === want; console.log(`${ok ? '�
 const cases = [
   ['Lê Đức Anh', 'anh Đức Anh'], ['Nguyễn Kim Anh', 'chị Kim Anh'], ['Nguyễn Tuấn Anh', 'anh Tuấn Anh'],
   ['Vũ Phương Anh', 'chị Phương Anh'], ['Phạm Minh Anh', 'anh/chị'], ['Lê Anh', 'anh/chị'],
-  ['Trần Văn Tuấn', 'anh Tuấn'], ['Trần Thị Lan', 'chị Lan'], ['Nguyễn Thị Hà', 'chị Hà'], ['Trần Mạnh Hà', 'anh Hà'], ['Đặng Hải Yến', 'chị Yến'], ['Nguyễn Ngọc Sơn', 'anh Sơn'],
+  ['Trần Văn Tuấn', 'anh Tuấn'], ['Trần Thị Lan', 'chị Lan'], ['Nguyễn Thị Hà', 'chị Hà'], ['Trần Mạnh Hà', 'anh Hà'], ['Đặng Hải Yến', 'chị Yến'], ['Nguyễn Ngọc Sơn', 'anh Sơn'], ['Trần Dung Love', 'chị Dung'], ['Tiên Cát', 'chị Tiên'], ['Tuấn Kute', 'anh Tuấn'], ['Hương Bông', 'chị Hương'],
   ['Đức Anh Lê', 'anh Đức Anh'], ['Anh Lê Đức', 'anh Đức Anh'], ['Kim Anh', 'chị Kim Anh'],
   ['Nguyen Van Anh', 'anh/chị'], ['Shop Quà Tặng 99', 'anh/chị'], ['', 'anh/chị'], [null, 'anh/chị'],
 ];

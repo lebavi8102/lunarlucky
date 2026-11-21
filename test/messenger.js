@@ -210,7 +210,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: PN }, recipient: { id: 'PAGE' }, message: { mid: 'n1', text: 'cần tư vấn' } }] }] });
     const cn = calls[calls.length - 1];
     const firstN = cn.messages[0].content;
-    ok((await db('messenger_threads').where({ psid: PN }).first()).name === 'Lê Bá Vĩ' && cn.system.some((b) => /Tên Facebook của khách: Lê Bá Vĩ/.test(b.text)) && /KHÔNG hỏi tên, KHÔNG hỏi anh hay chị/.test(firstN),
+    ok((await db('messenger_threads').where({ psid: PN }).first()).name === 'Lê Bá Vĩ' && cn.system.some((b) => /Tên Facebook của khách: Lê Bá Vĩ/.test(b.text)) && /KHÔNG hỏi tên, KHÔNG hỏi anh hay chị|không hỏi xưng hô/.test(firstN),
       'Không đọc được hồ sơ → lấy tên từ danh sách hội thoại; AI chào theo tên, không hỏi tên/anh chị');
     await db('messenger_threads').where({ psid: PN }).del();
     await db('conv_log').where({ psid: PN }).del();
