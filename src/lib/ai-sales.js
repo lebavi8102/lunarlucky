@@ -535,7 +535,8 @@ function tools(channel) {
       name: 'send_catalogue',
       description: 'Gửi file catalogue Quà Tết doanh nghiệp 2027 (PDF, 33 mẫu, giá theo số lượng) vào khung chat. Gọi theo quy tắc (0): khi khách xin catalog/bảng giá và đã trả lời (hoặc né) câu hỏi số lượng + tầm giá. Hệ thống tự gửi file ngay sau tin của em và vài phút sau tự hỏi lại khách đã ưng mẫu nào.',
       strict: true,
-      input_schema: { type: 'object', additionalProperties: false, properties: { so_luong: { type: 'string', description: 'Số lượng khách nói (bỏ trống nếu chưa rõ)' }, tam_gia: { type: 'string', description: 'Tầm giá mỗi giỏ khách nói (bỏ trống nếu chưa rõ)' } }, required: [] },
+      // không tham số: Claude giới hạn tổng số tham số tùy chọn trong mọi công cụ là 24 (đã vượt → lỗi 400, 21/11/2026)
+      input_schema: { type: 'object', additionalProperties: false, properties: {}, required: [] },
     });
     list.push({
       name: 'send_product_video',
@@ -925,7 +926,7 @@ async function runTool(name, input, req, out) {
     if (req.aiChannel !== 'messenger') return { error: 'Chỉ dùng trên Messenger.' };
     const url = String(s.catalogue_url || '').trim();
     if (!/^https?:\/\//.test(url)) return { error: 'Chưa có file catalogue trong hệ thống → gọi transfer_to_human để nhân viên gửi catalogue (summary ghi số lượng + tầm giá khách nói).' };
-    out.catalogue = { url, so_luong: String(input.so_luong || '').slice(0, 60), tam_gia: String(input.tam_gia || '').slice(0, 60) };
+    out.catalogue = { url };
     return { ok: true, message: 'Hệ thống sẽ gửi file catalogue ngay sau tin của em. Trả lời khách 1–2 câu ngắn: báo em gửi catalogue quà Tết doanh nghiệp 2027 (giá đã chia theo số lượng) và nếu biết tầm giá thì chỉ phân khúc/trang phù hợp. KHÔNG gửi ảnh giỏ, KHÔNG chuyển người, không hỏi thêm câu nào khác.' };
   }
   if (name === 'transfer_to_human') {

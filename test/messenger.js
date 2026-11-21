@@ -49,7 +49,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'remember_customer', input: { title: 'chị', name: 'Lan' } }] };
       }
       if (typeof last.content === 'string' && /gửi em catalogue/.test(last.content)) {
-        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'send_catalogue', input: { so_luong: '50 giỏ', tam_gia: '700k' } }] };
+        return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'send_catalogue', input: {} }] };
       }
       if (typeof last.content === 'string' && /đổi món/.test(last.content)) {
         return { stop_reason: 'tool_use', model: 'fake', usage: {}, content: [{ type: 'tool_use', id: 'tu' + calls.length, name: 'transfer_to_human', input: { summary: 'Chị Hoa muốn đổi vang sang trà trong giỏ Cát Tường, 3 giỏ', customer_name: 'chị Hoa' } }] };
