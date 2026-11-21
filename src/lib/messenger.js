@@ -151,8 +151,16 @@ async function sendVideo(psid, v) {
 // Nhịp gửi như người thật gõ: mỗi tin cách nhau 3–6 giây (tin dài chờ lâu hơn), luôn hiện "đang soạn tin" trước
 const gapMs = (text = '') => 3000 + Math.min(2000, String(text).length * 15) + Math.floor(Math.random() * 1000);
 
-async function sendChat(psid, text, photos = []) {
+// Chờ như người đang gõ trước tin ĐẦU TIÊN (chủ shop 21/11: bot trả lời nhanh quá, nhìn là biết máy):
+// tính từ lúc khách nhắn tin cuối — 4 giây + ~40ms mỗi chữ (tối đa 10 giây) + ngẫu nhiên 0–1,5 giây; AI nghĩ lâu hơn thì không chờ thêm.
+const firstDelayMs = (text = '') => Math.min(10000, 4000 + String(text).length * 40) + Math.floor(Math.random() * 1500);
+
+async function sendChat(psid, text, photos = [], since = 0) {
   let parts = plain(text).split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+  if (since) {
+    const left = firstDelayMs(parts[0] || '') - (Date.now() - since);
+    if (left > 300) { await typing(psid); await pauseMs(left); }
+  }
   // Tối đa 2 tin chữ mỗi lượt (khách thấy dồn dập nếu bot bắn 3–4 tin liền)
   if (parts.length > 2) parts = [parts[0], parts.slice(1).join('\n')];
   // Ảnh giỏ hiện TRƯỚC lời giới thiệu + giá (riêng lời chào mở đầu thì vẫn đứng đầu)
@@ -563,7 +571,7 @@ async function handleEvent(ev) {
     }
     return 'error';
   }
-  await sendChat(psid, r.reply, r.photos || []);
+  await sendChat(psid, r.reply, r.photos || [], ours.lastIncoming.get(psid) || 0);
   if (r.video) await sendVideo(psid, r.video).catch((err) => console.error('[messenger] gửi clip lỗi:', err.message));
   await require('./ai-learn').log(psid, 'ai', r.reply);
   // Khách đã xác nhận trong chat → đơn đã tạo: gửi ngay mã QR + thông tin chuyển khoản (không dẫn sang web)

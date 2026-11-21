@@ -18,7 +18,13 @@ router.post('/tu-van/chat', chatLimiter, async (req, res) => {
   let fbName = '';
   try { fbName = decodeURIComponent(String(req.get('x-lunar-name') || '')).slice(0, 80); } catch { fbName = ''; }
   const opts = test && req.get('x-lunar-channel') === 'messenger' ? { channel: 'messenger', customerName: fbName } : {};
+  const t0 = Date.now();
   const r = await ai.chat(req, text, opts);
+  // Không trả lời tức thì (chủ shop 21/11): khung chat hiện "đang soạn" ít nhất 2,5–6 giây tùy độ dài câu (chế độ thử thì bỏ qua)
+  if (!test && r && r.reply && !r.off) {
+    const left = Math.min(6000, 2500 + String(r.reply).length * 15) - (Date.now() - t0);
+    if (left > 200) await new Promise((ok) => setTimeout(ok, left));
+  }
   const learn = require('../lib/ai-learn');
   const id = `web:${String(req.sessionID || '').slice(0, 40)}`;
   // Lượt chat thử của chủ shop / kiểm thử (header x-lunar-test) không tính vào số liệu tỉ lệ chốt
