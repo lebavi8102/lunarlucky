@@ -200,8 +200,14 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
     const sCafe = await ai.runTool('search_products', { query: 'cafe' }, req, out);
     ok(sCafe.results.length && sCafe.results.every((p) => hasWord(p, 'cà') && hasWord(p, 'phê')), '"cafe" → giỏ ghi "cà phê" (tên gọi tương đương)');
 
-    // Phủ định: không khẳng định giỏ nào đáp ứng, nhờ nhân viên xác nhận
-    for (const q of ['không cồn', 'giỏ không có rượu tầm 2tr', 'kiêng đường']) {
+    // Không rượu / không cồn (21/11): tự lọc theo thành phần — kết quả không được có giỏ chứa rượu/bia
+    const CO_CON = /(rượu|vang (úc|chile|pháp)|bia |chivas|moravia|tamorin|steiger)/i;
+    for (const q of ['không cồn', 'giỏ không có rượu tầm 2tr', 'k rượu']) {
+      const r = await ai.runTool('search_products', { query: q }, req, out);
+      ok(!/transfer_to_human/.test(r.note || '') && r.results.every((p) => !CO_CON.test(String(p.contents || ''))), `"${q}" → tự lọc giỏ không có rượu, không chuyển người`);
+    }
+    // Phủ định khác (kiêng đường…): không khẳng định giỏ nào đáp ứng, nhờ nhân viên xác nhận
+    for (const q of ['kiêng đường']) {
       const r = await ai.runTool('search_products', { query: q }, req, out);
       ok(r.results.length === 0 && /không xác nhận được/.test(r.note || '') && /transfer_to_human/.test(r.note) && /request_callback/.test(r.note), `"${q}" → rỗng, không giới thiệu giỏ (kể cả giỏ có rượu), nhờ nhân viên xác nhận`);
     }
