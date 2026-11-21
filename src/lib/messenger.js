@@ -173,9 +173,10 @@ function nhacCatalogue(psid, s) {
       if (Math.max(ours.lastIncoming.get(psid) || 0, ours.lastSeen.get(psid) || 0) > sentAt) return;
       const { row, history: h } = await thread(psid);
       if (row && Number(row.paused_until_ms) > Date.now()) return; // người thật đang tư vấn
-      const goi = row && row.title ? `${row.title}${row.name ? ` ${row.name}` : ''}` : 'anh/chị';
+      const g = row && row.title ? null : require('./xung-ho').guess(row && row.name);
+      const goi = row && row.title ? `${row.title}${row.name ? ` ${row.name}` : ''}` : (g && g.title ? g.call : 'mình');
       const Goi = goi.charAt(0).toUpperCase() + goi.slice(1);
-      const text = `Dạ ${goi} xem catalogue thấy mẫu nào ưng chưa ạ? ${Goi} nhắn em tên hoặc mã mẫu (vd LL-016), em tư vấn kỹ và tính giá đúng số lượng cho mình nhé ❤️`;
+      const text = `Dạ ${goi} xem catalogue thấy mẫu nào ưng chưa ạ? ${Goi} nhắn em tên hoặc mã mẫu (vd LL-016), em tư vấn kỹ và tính giá đúng số lượng nhé ❤️`;
       await sendText(psid, text);
       // ghi vào lịch sử để AI biết em vừa hỏi câu này (nối vào tin cuối của em, giữ đúng lượt người–máy)
       try {
@@ -529,7 +530,7 @@ async function handleEvent(ev) {
     console.log(`[messenger] tin rác (${junk}) từ …${String(psid).slice(-4)}: ${text.slice(0, 60)}`);
     if (junk === 'junk' && !junkReplied.has(psid)) {
       junkReplied.add(psid);
-      await sendText(psid, 'Dạ Lunar Lucky xin chào anh/chị ạ. Anh/chị đang tìm giỏ quà Tết để biếu hay đặt số lượng cho doanh nghiệp ạ?');
+      await sendText(psid, 'Dạ Lunar Lucky xin chào ạ. Mình đang tìm giỏ quà Tết để biếu hay đặt số lượng cho doanh nghiệp ạ?');
     }
     return 'spam';
   }
@@ -597,7 +598,7 @@ async function handleEvent(ev) {
   // AI tắt / quá giới hạn ngày / lỗi: không đẩy khách sang Zalo — báo người thật trả lời tại Fanpage
   if (r.off) {
     await pause(psid, pauseHours);
-    await sendText(psid, `Dạ em đã nhận tin, chuyên viên Lunar Lucky sẽ trả lời anh/chị ngay tại đây sớm nhất ạ. Cần gấp anh/chị gọi ${s.shop_phone || 'hotline'} nhé!`);
+    await sendText(psid, `Dạ em đã nhận tin, chuyên viên Lunar Lucky sẽ trả lời mình ngay tại đây sớm nhất ạ. Cần gấp mình gọi ${s.shop_phone || 'hotline'} nhé!`);
     await alertHuman(psid, row, { title: 'AI đang tắt/hết lượt — khách Fanpage chờ người trả lời', last: text, pauseHours });
     return 'off';
   }
@@ -608,7 +609,7 @@ async function handleEvent(ev) {
   }
   if (r.error) {
     // AI lỗi sau khi đã tự thử lại → nhắn khách tự nhiên + báo nhân viên trả lời thay ngay (mỗi khách tối đa 1 lần / 30 phút)
-    await sendText(psid, 'Dạ anh/chị đợi em một chút nhé, em kiểm tra lại rồi trả lời mình ngay ạ ❤️');
+    await sendText(psid, 'Dạ mình đợi em một chút nhé, em kiểm tra lại rồi trả lời ngay ạ ❤️');
     if (Date.now() - (errAlerted.get(psid) || 0) > 30 * 60000) {
       errAlerted.set(psid, Date.now());
       const why = r.errorKind === 'credit' ? 'hết tiền Claude — cần nạp ngay' : 'Claude lỗi/quá tải';

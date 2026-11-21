@@ -179,7 +179,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     const lastSys = calls[calls.length - 1].system;
     const firstMsg = calls[calls.length - 1].messages[0].content;
     ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /MỞ ĐẦU CUỘC TRÒ CHUYỆN/.test(lastSys[0].text) && /tin ĐẦU TIÊN/.test(firstMsg) && /KHÔNG hỏi tên, KHÔNG hỏi anh hay chị/.test(firstMsg),
-      'Tin đầu tiên, chưa biết tên → AI chào ngắn, gọi "anh/chị", không hỏi tên');
+      'Tin đầu tiên, chưa biết tên → AI chào ngắn, gọi "mình", không hỏi tên');
 
     // AI tự chuyển cho người thật (đổi món…) — khách đang ở Fanpage, không bị bảo nhắn Zalo
     ok(ai.tools('messenger').some((t) => t.name === 'transfer_to_human') && !ai.tools().some((t) => t.name === 'transfer_to_human'), 'Công cụ chuyển người thật chỉ có trên Messenger');
