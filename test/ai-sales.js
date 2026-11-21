@@ -135,7 +135,8 @@ const ok = (c, m) => { console.log(`${c ? '✔' : '✘'} ${m}`); if (!c) fails++
       }
     }
     const sNone = await ai.runTool('search_products', { max_price: 100000 }, req, out);
-    ok(sNone.results.length === 0 && /KHÔNG tự gợi ý giỏ vượt ngân sách/.test(sNone.note || ''), 'Không giỏ nào trong ngân sách → rỗng + dặn AI hỏi khách điều chỉnh');
+    ok(sNone.nearest_above_budget && sNone.results.length > 0 && sNone.results.length <= 2 && sNone.results.every((p) => p.price > 100000)
+      && /KHÔNG nói "không có mẫu/.test(sNone.note || ''), 'Không giỏ nào trong ngân sách → đưa 2 giỏ gần nhất, dặn AI không nói "không có mẫu"');
     const sAll = await ai.runTool('search_products', { query: 'ruou vang' }, req, out);
     ok(sAll.results.length && sAll.results.every((p) => p.in_stock !== 'hết hàng') && !sAll.note && !sAll.budget, 'Không nêu ngân sách → không lọc giá, không có giỏ hết hàng');
     // Khoảng giá: không giỏ nào dưới min / trên max

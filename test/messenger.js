@@ -59,7 +59,7 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     const texts = sent.filter((b) => b.message && b.message.text);
     ok(texts.length === 1 && texts[0].message.text === 'Dạ em gợi ý Giỏ An Khang ạ.' && texts[0].message.metadata === m.AI_TAG && sent.some((b) => b.sender_action === 'typing_on'), 'Khách nhắn → AI trả lời (chữ thường, có hiện "đang soạn")');
     ok(calls[0].system.length === 2 && /Messenger/.test(calls[0].system[1].text), 'AI biết đang chat qua Messenger');
-    ok(/KHI GIỚI THIỆU MỘT GIỎ/.test(calls[0].system[0].text) && /ĐẦY ĐỦ các món/.test(calls[0].system[0].text), 'Lời dặn: giới thiệu giỏ phải nói rõ trong giỏ gồm những món gì');
+    ok(/ĐƯA MẪU TRƯỚC, HỎI SAU/.test(calls[0].system[0].text) && /MỖI TIN TỐI ĐA 2 CÂU/.test(calls[0].system[0].text) && /khách hỏi "trong giỏ có gì".*ĐẦY ĐỦ các món/.test(calls[0].system[0].text) && !/rất vui được hỗ trợ và tư vấn/.test(calls[0].system[0].text.replace(/KHÔNG dùng các câu.*/, '')),'Lời dặn 21/11: đưa mẫu trước, tin ngắn, chỉ liệt kê món khi khách hỏi, bỏ câu chào dài');
 
     sent.length = 0;
     await m.handleWebhook(msg('ok chốt đơn nhé'));
@@ -143,8 +143,8 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
     ok(t4 && Number(t4.paused_until_ms) < Date.now(), 'Tin tự động của Fanpage ngay sau tin khách → AI không bị dừng');
     const lastSys = calls[calls.length - 1].system;
     const firstMsg = calls[calls.length - 1].messages[0].content;
-    ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /MỞ ĐẦU CUỘC TRÒ CHUYỆN/.test(lastSys[0].text) && /tin ĐẦU TIÊN/.test(firstMsg) && /anh hay chị, tên gì/.test(firstMsg),
-      'Tin đầu tiên, chưa biết tên → AI chào và xin "anh hay chị, tên gì"');
+    ok(!lastSys.some((b) => /Tên Facebook/.test(b.text)) && /MỞ ĐẦU CUỘC TRÒ CHUYỆN/.test(lastSys[0].text) && /tin ĐẦU TIÊN/.test(firstMsg) && /KHÔNG hỏi tên, KHÔNG hỏi anh hay chị/.test(firstMsg),
+      'Tin đầu tiên, chưa biết tên → AI chào ngắn, gọi "anh/chị", không hỏi tên');
 
     // AI tự chuyển cho người thật (đổi món…) — khách đang ở Fanpage, không bị bảo nhắn Zalo
     ok(ai.tools('messenger').some((t) => t.name === 'transfer_to_human') && !ai.tools().some((t) => t.name === 'transfer_to_human'), 'Công cụ chuyển người thật chỉ có trên Messenger');
