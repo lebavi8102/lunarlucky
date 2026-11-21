@@ -779,6 +779,40 @@ router.get('/ai-loi', async (req, res) => {
   res.render('admin/ai-errors', { title: 'Lỗi chatbot AI', rows: await q, sum: await errs.summary(), kinds: errs.KINDS, serious: errs.SERIOUS, kind });
 });
 
+/* ---------- Hội thoại bot: đọc lại chat Fanpage/website (khách · AI · nhân viên) để sửa cách tư vấn ---------- */
+async function hoiThoai(days, kenh) {
+  const since = Date.now() - days * 86400000;
+  const q = db('conv_log').where('created_ms', '>', since).whereIn('role', ['customer', 'ai', 'staff', 'event']).orderBy('psid').orderBy('created_ms').limit(20000);
+  if (kenh === 'fb') q.where('psid', 'not like', 'web:%');
+  if (kenh === 'web') q.where('psid', 'like', 'web:%');
+  const rows = await q.select('psid', 'role', 'text', 'created_ms');
+  const names = Object.fromEntries((await db('messenger_threads').whereIn('psid', [...new Set(rows.map((r) => r.psid))]).select('psid', 'name', 'title'))
+    .map((t) => [t.psid, [t.title, t.name].filter(Boolean).join(' ')]));
+  const map = new Map();
+  for (const r of rows) {
+    if (!map.has(r.psid)) map.set(r.psid, { psid: r.psid, name: names[r.psid] || '', msgs: [] });
+    map.get(r.psid).msgs.push(r);
+  }
+  return [...map.values()].filter((t) => t.msgs.some((m) => m.role === 'ai'))
+    .sort((a, b) => b.msgs[b.msgs.length - 1].created_ms - a.msgs[a.msgs.length - 1].created_ms);
+}
+router.get('/hoi-thoai', async (req, res) => {
+  const days = Math.min(90, Math.max(1, Number(req.query.ngay) || 14));
+  const kenh = ['fb', 'web'].includes(req.query.kenh) ? req.query.kenh : '';
+  const threads = await hoiThoai(days, kenh);
+  res.render('admin/conversations', { title: 'Hội thoại bot', threads, days, kenh });
+});
+// Bản chữ thuần (để đọc/tải về phân tích): /admin/hoi-thoai.txt?ngay=14
+router.get('/hoi-thoai.txt', async (req, res) => {
+  const days = Math.min(90, Math.max(1, Number(req.query.ngay) || 14));
+  const threads = await hoiThoai(days, ['fb', 'web'].includes(req.query.kenh) ? req.query.kenh : '');
+  const ROLE = { customer: 'KHÁCH', ai: 'BOT', staff: 'NHÂN VIÊN', event: '•' };
+  const t = (ms) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date(Number(ms)));
+  const out = threads.map((th, i) => [`=== #${i + 1} ${th.psid.startsWith('web:') ? 'Website' : 'Fanpage'} · ${th.name || 'khách'} · ${th.msgs.length} tin`,
+    ...th.msgs.map((m) => `[${t(m.created_ms)}] ${ROLE[m.role] || m.role}: ${String(m.text).replace(/\s+/g, ' ')}`)].join('\n'));
+  res.type('text/plain; charset=utf-8').send(`Hội thoại bot ${days} ngày gần nhất — ${threads.length} cuộc\n\n` + out.join('\n\n'));
+});
+
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
   res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });

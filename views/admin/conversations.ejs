@@ -1,0 +1,32 @@
+<%- include('_top') %>
+<% const t = (ms) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date(Number(ms)));
+   const ROLE = { customer: 'Khách', ai: 'Bot', staff: 'Nhân viên', event: '•' }; %>
+<div class="admin-head"><h1>Hội thoại bot</h1><span class="muted small"><%= threads.length %> cuộc có bot trả lời · <%= days %> ngày gần nhất</span></div>
+
+<form method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+  <select name="ngay" class="input" style="width:auto"><% [3, 7, 14, 30, 60].forEach((d) => { %><option value="<%= d %>" <%= d === days ? 'selected' : '' %>><%= d %> ngày</option><% }) %></select>
+  <select name="kenh" class="input" style="width:auto">
+    <option value="">Tất cả kênh</option><option value="fb" <%= kenh === 'fb' ? 'selected' : '' %>>Fanpage</option><option value="web" <%= kenh === 'web' ? 'selected' : '' %>>Website</option>
+  </select>
+  <button class="btn btn-sm">Xem</button>
+  <a class="btn btn-sm btn-quiet" href="/admin/hoi-thoai.txt?ngay=<%= days %>&kenh=<%= kenh %>" target="_blank">Bản chữ (tải về)</a>
+</form>
+
+<% if (!threads.length) { %><div class="panel muted">Chưa có cuộc trò chuyện nào có bot trả lời trong khoảng này.</div><% } %>
+<% threads.forEach((th) => { const last = th.msgs[th.msgs.length - 1]; const staff = th.msgs.some((m) => m.role === 'staff'); %>
+<details class="panel" style="margin-bottom:10px">
+  <summary style="cursor:pointer;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline">
+    <b><%= th.name || (th.psid.startsWith('web:') ? 'Khách website' : 'Khách Fanpage') %></b>
+    <span class="small muted"><%= th.psid.startsWith('web:') ? 'Website' : 'Fanpage' %> · <%= th.msgs.length %> tin · cuối lúc <%= t(last.created_ms) %><%= staff ? ' · có nhân viên vào' : '' %></span>
+    <span class="small" style="flex-basis:100%;color:#555">“<%= String((th.msgs.find((m) => m.role === 'customer') || {}).text || '').slice(0, 120) %>”</span>
+  </summary>
+  <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+  <% th.msgs.forEach((m) => { %>
+    <div style="max-width:78%;<%= m.role === 'customer' ? 'align-self:flex-start;background:#f1f1f1' : m.role === 'event' ? 'align-self:center;background:none;color:#888;font-size:12px' : m.role === 'staff' ? 'align-self:flex-end;background:#e7f3e9' : 'align-self:flex-end;background:#fdf1e6' %>;padding:8px 12px;border-radius:12px;white-space:pre-wrap;font-size:14px">
+      <span class="small muted"><%= ROLE[m.role] || m.role %> · <%= t(m.created_ms) %></span><br><%= m.text %>
+    </div>
+  <% }) %>
+  </div>
+</details>
+<% }) %>
+<%- include('_bottom') %>
