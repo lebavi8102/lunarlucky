@@ -813,6 +813,23 @@ router.get('/hoi-thoai.txt', async (req, res) => {
   res.type('text/plain; charset=utf-8').send(`Hội thoại bot ${days} ngày gần nhất — ${threads.length} cuộc\n\n` + out.join('\n\n'));
 });
 
+// Chạy thử bot bằng AI thật (chỉ quản trị): không gửi gì cho khách, không tạo đơn / yêu cầu gọi lại thật.
+// POST JSON { turns: ["tin 1", "tin 2", …], name: "Tên Facebook", channel: "messenger" | "web" } → hội thoại
+router.post('/thu-bot', express.json(), async (req, res) => {
+  const turns = (Array.isArray(req.body && req.body.turns) ? req.body.turns : []).map((x) => String(x || '').slice(0, 500)).filter(Boolean).slice(0, 8);
+  if (!turns.length) return res.status(400).json({ error: 'Thiếu tin nhắn thử' });
+  const channel = req.body.channel === 'web' ? 'web' : 'messenger';
+  const fake = { session: {}, sessionID: 'thu-bot', aiChannel: channel, get: (h) => (String(h).toLowerCase() === 'x-lunar-test' ? '1' : undefined), ip: req.ip };
+  const ai = require('../../lib/ai-sales');
+  const out = [];
+  for (const text of turns) {
+    const r = await ai.chat(fake, text, { channel: channel === 'messenger' ? 'messenger' : undefined, customerName: String(req.body.name || '').slice(0, 80), adminTest: true });
+    out.push({ khach: text, bot: r.reply, anh: (r.photos || []).map((p) => p.name || p.product_name || p.id || p), cong_cu: r.tools || [], chuyen_nguoi: !!(r.human || r.callback), tom_tat: r.human || null, loi: r.error || null, off: !!r.off });
+    if (r.off) break;
+  }
+  res.set('Cache-Control', 'no-store').json({ channel, out });
+});
+
 router.get('/goi-lai', async (req, res) => {
   const rows = await db('callback_requests').orderByRaw("CASE WHEN status = 'new' THEN 0 ELSE 1 END").orderBy('id', 'desc').limit(200);
   res.render('admin/callbacks', { title: 'Yêu cầu gọi lại', rows });
