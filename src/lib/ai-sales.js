@@ -952,7 +952,9 @@ async function chat(req, text, opts = {}) {
   const who = String(opts.customerName || '').trim().slice(0, 80);
   const s = await settings.all();
   // opts.adminTest: chủ shop chạy thử trong quản trị (/admin/thu-bot) — được chạy cả khi bot đang tắt với khách
-  if (!enabled(s) && !(opts.adminTest && process.env.ANTHROPIC_API_KEY)) return { reply: 'Tư vấn tự động đang tạm nghỉ. Anh/chị nhắn Zalo giúp em nhé!', off: true };
+  // Fanpage có công tắc riêng (messenger_ai_enabled, đã kiểm ở messenger.js) → không phụ thuộc công tắc bot web (ai_chat_enabled)
+  const on = opts.channel === 'messenger' ? !!process.env.ANTHROPIC_API_KEY : enabled(s);
+  if (!on && !(opts.adminTest && process.env.ANTHROPIC_API_KEY)) return { reply: 'Tư vấn tự động đang tạm nghỉ. Anh/chị nhắn Zalo giúp em nhé!', off: true };
   if (!underDailyLimit(s)) return { reply: `Hôm nay em nhận nhiều tin quá, anh/chị nhắn Zalo hoặc gọi ${s.shop_phone || 'hotline'} giúp em nhé!`, off: true };
   const history = Array.isArray(req.session.aiChat) ? req.session.aiChat : [];
   const userTurns = history.filter((m) => m.role === 'user' && typeof m.content === 'string').length;

@@ -192,13 +192,19 @@ const msg = (text, extra = {}) => ({ object: 'page', entry: [{ messaging: [{ sen
       'Tin Telegram có tên khách + nút Pancake (điện thoại) và Business Suite (máy tính)');
     ok(t5 && Number(t5.paused_until_ms) > Date.now(), 'AI gọi transfer_to_human → tạm dừng, chờ chuyên viên trả lời tại Fanpage');
     notifyMod.telegram = realTg;
-    // AI tắt → khách Fanpage không bị bảo nhắn Zalo, người thật trả lời
-    const aiOn = (await settings.all()).ai_chat_enabled;
-    await settings.save({ ai_chat_enabled: '0' });
+    // AI không chạy được (vd thiếu khóa) → khách Fanpage không bị bảo nhắn Zalo, người thật trả lời
+    const keyBak = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
     const P6 = PSID + 'off';
     sent.length = 0;
     await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P6 }, recipient: { id: 'PAGE' }, message: { text: 'shop ơi' } }] }] });
-    ok((() => { const t = sent.find((b) => b.message && b.message.text); return t && /chuyên viên/.test(t.message.text) && !/Zalo/.test(t.message.text); })(), 'AI tắt → báo chuyên viên trả lời tại Fanpage, không đẩy sang Zalo');
+    ok((() => { const t = sent.find((b) => b.message && b.message.text); return t && /chuyên viên/.test(t.message.text) && !/Zalo/.test(t.message.text); })(), 'AI không chạy được → báo chuyên viên trả lời tại Fanpage, không đẩy sang Zalo');
+    process.env.ANTHROPIC_API_KEY = keyBak;
+    // Tắt bot WEB (ai_chat_enabled = 0) không làm tắt bot Fanpage (công tắc riêng messenger_ai_enabled)
+    const aiOn = (await settings.all()).ai_chat_enabled;
+    await settings.save({ ai_chat_enabled: '0' });
+    const P6b = PSID + 'weboff'; const nC = calls.length; sent.length = 0;
+    await m.handleWebhook({ object: 'page', entry: [{ messaging: [{ sender: { id: P6b }, recipient: { id: 'PAGE' }, message: { text: 'shop ơi' } }] }] });
+    ok(calls.length > nC, 'Bot web tắt nhưng bot Fanpage bật → Fanpage vẫn được AI trả lời');
     await settings.save({ ai_chat_enabled: aiOn || '1' });
 
     // Công tắc AI Fanpage TẮT (messenger_ai_enabled = 0) → 1 câu soạn sẵn + báo Telegram, không gọi AI, tin sau im
