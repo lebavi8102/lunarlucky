@@ -49,13 +49,6 @@
 </section>
 <% } %>
 <% if (isB2b && page === 1) { %>
-<div class="container">
-  <aside class="b2b-price-note" aria-label="Giá doanh nghiệp">
-    <span class="b2b-price-note-ico" aria-hidden="true"><svg class="icon"><use href="#i-info"/></svg></span>
-    <p><strong>Giá theo số lượng của cả <%= locals.bang ? bang.soMau : '' %> mẫu: bấm từng mức giá bên dưới để xem.</strong> Giá trên thẻ sản phẩm phía sau là giá lẻ (mua 1 giỏ).</p>
-    <a class="b2b-price-note-link" href="<%= s.catalogue_url %>" target="_blank" rel="noopener">Tải catalogue PDF <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
-  </aside>
-</div>
 <% if (locals.bang && page === 1) { const vnd = (n) => Number(n).toLocaleString('vi-VN') + '₫'; %>
 <section class="section-tight bang-gia" id="bang-gia" aria-labelledby="bang-gia-title">
   <div class="container">
