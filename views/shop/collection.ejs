@@ -22,7 +22,7 @@
     <h1>Quà tặng doanh nghiệp<br><em>trao lời chúc thịnh vượng</em></h1>
     <p class="lead">Giỏ quà Tết cho nhân viên, đối tác và khách hàng. Báo giá riêng theo số lượng, in logo doanh nghiệp, giao theo danh sách người nhận.</p>
     <div class="b2b-hero-cta">
-      <a class="btn btn-gold btn-lg" href="#bang-gia">Xem bảng giá số lượng</a>
+      <a class="btn btn-gold btn-lg" href="/bo-suu-tap/qua-doanh-nghiep#bang-gia">Xem bảng giá số lượng</a>
       <a class="btn btn-lg b2b-btn-light" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a>
     </div>
     <ul class="b2b-hero-points">
@@ -48,15 +48,15 @@
   </div>
 </section>
 <% } %>
-<% if (isB2b) { %>
+<% if (isB2b && page === 1) { %>
 <div class="container">
   <aside class="b2b-price-note" aria-label="Giá doanh nghiệp">
     <span class="b2b-price-note-ico" aria-hidden="true"><svg class="icon"><use href="#i-info"/></svg></span>
-    <p><strong>Giá theo số lượng của cả <%= locals.bang ? bang.soMau : '' %> mẫu ở bảng ngay dưới.</strong> Giá trên thẻ sản phẩm phía sau là giá lẻ (mua 1 giỏ).</p>
+    <p><strong>Giá theo số lượng của cả <%= locals.bang ? bang.soMau : '' %> mẫu: bấm từng mức giá bên dưới để xem.</strong> Giá trên thẻ sản phẩm phía sau là giá lẻ (mua 1 giỏ).</p>
     <a class="b2b-price-note-link" href="<%= s.catalogue_url %>" target="_blank" rel="noopener">Tải catalogue PDF <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
   </aside>
 </div>
-<% if (locals.bang) { const vnd = (n) => Number(n).toLocaleString('vi-VN') + '₫'; %>
+<% if (locals.bang && page === 1) { const vnd = (n) => Number(n).toLocaleString('vi-VN') + '₫'; %>
 <section class="section-tight bang-gia" id="bang-gia" aria-labelledby="bang-gia-title">
   <div class="container">
     <div class="bang-gia-head">
@@ -67,7 +67,7 @@
       <a class="btn btn-gold" href="<%= s.catalogue_url %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-file"/></svg> Tải catalogue PDF</a>
     </div>
     <% bang.nhom.forEach((g) => { %>
-    <details class="bang-gia-nhom" open>
+    <details class="bang-gia-nhom">
       <summary><span><%= g.ten %></span><small><%= g.mau.length %> mẫu</small><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
       <table>
         <thead><tr><th scope="col">Mẫu</th><th scope="col">10–49<span class="dv"> giỏ</span></th><th scope="col">50–99<span class="dv"> giỏ</span></th><th scope="col">100–499<span class="dv"> giỏ</span></th></tr></thead>
