@@ -48,6 +48,7 @@ function chuanTenMon(c) {
   s = s.replace(/\s*:\s*/g, ' ');
   s = s.replace(/\bCapella\b/g, 'Capela').replace(/\bCashews\b/g, 'Cashew');
   s = s.replace(/^Vang Úc/, 'Rượu vang Úc').replace(/^Bánh lưng (\d)/, 'Bánh lưng Capela $1');
+  s = s.replace(/\s*[x×]\s*1$/i, ''); // "Trà Lamour x1" → "Trà Lamour" (1 món thì không ghi số lượng)
   s = s.replace(/(\d+)v\b/g, '$1 viên').replace(/\bBánh Rocky\b/g, 'Bánh Pocky');
   return s.charAt(0).toUpperCase() + s.slice(1);
 }

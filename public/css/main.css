@@ -1637,3 +1637,7 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
   .p-card .p-desc { display: none; }
   .p-card .p-cat { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .06em; font-size: 10.5px; }
 }
+
+/* Vùng bấm tối thiểu ~32px cho nút gọi hotline và link Messenger trên điện thoại (soát 23/11/2026) */
+.topbar-phone { padding: 6px 0; margin: -6px 0; }
+.buy-ask-note a { display: inline-block; padding: 7px 0; margin: -7px 0; }

@@ -121,7 +121,7 @@ router.get('/gio-qua-tet-ha-noi', async (req, res) => {
       {
         h: 'Quà Tết doanh nghiệp tại Hà Nội',
         p: [
-          'Doanh nghiệp đặt từ 5 giỏ được tư vấn ngân sách, báo giá riêng theo số lượng, in logo và xuất hóa đơn VAT, giao hàng loạt theo danh sách người nhận.',
+          'Doanh nghiệp đặt từ 10 giỏ có giá theo số lượng (bảng giá công khai trên trang Quà tặng doanh nghiệp), được tư vấn ngân sách, in logo và xuất hóa đơn VAT, giao hàng loạt theo danh sách người nhận.',
           `Cần tư vấn nhanh, gọi hoặc nhắn Zalo ${s.shop_phone || ''} từ 8:00 đến 21:00 hằng ngày.`,
         ],
       },
