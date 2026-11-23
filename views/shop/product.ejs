@@ -34,7 +34,13 @@
       </div>
       <% const freeShip = Number(s.free_ship_threshold) || 0;
          const twoSentences = (t) => { const m = String(t || '').match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, 2).join('').trim() : String(t || '').trim(); }; %>
-      <% if (product.short_desc) { %><p class="short"><%= twoSentences(product.short_desc) %></p><% } %>
+      <%# Chủ shop 23/11/2026: khách cần "giá + trong giỏ có gì" → thành phần đặt ngay dưới giá, mô tả dài để phần dưới %>
+      <% if (contents.length) { %>
+      <div class="pdp-in">
+        <p class="pdp-in-title">Trong giỏ gồm <span><%= contents.length %> món</span></p>
+        <ul class="pdp-in-list"><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
+      </div>
+      <% } else if (product.short_desc) { %><p class="short"><%= twoSentences(product.short_desc) %></p><% } %>
       <p class="ship-promise">
         <svg class="icon icon-sm"><use href="#i-truck"/></svg>
         <span>Giao từ <b><%= earliest.slice(8) %>/<%= earliest.slice(5, 7) %></b> tại Hà Nội · tỉnh khác 2–4 ngày<br>
@@ -81,9 +87,13 @@
         <li><svg class="icon"><use href="#i-gift"/></svg><span><strong>Gửi tặng thay bạn</strong>Không kèm hóa đơn giá</span></li>
         <li><svg class="icon"><use href="#i-shield"/></svg><span><strong>Đổi mới nếu hư hỏng</strong>Hỗ trợ trong 24 giờ</span></li>
       </ul>
-      <a class="pdp-b2b" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia">
+      <a class="pdp-b2b" href="/bo-suu-tap/qua-doanh-nghiep#bang-gia">
         <span class="pdp-b2b-ico"><svg class="icon"><use href="#i-building"/></svg></span>
-        <span><strong>Mua từ <%= Number(s.ai_escalate_qty) || 5 %> giỏ cho doanh nghiệp?</strong>Giá trên là giá lẻ. Nhận báo giá số lượng kèm catalogue.</span>
+        <% if (giaSi) { %>
+        <span><strong>Mua từ 10 giỏ: <%= money(giaSi.gia_10_49) %>/giỏ</strong>Từ 50 giỏ <%= money(giaSi.gia_50_99) %> · từ 100 giỏ <%= money(giaSi.gia_100_499) %>. Xem bảng giá doanh nghiệp.</span>
+        <% } else { %>
+        <span><strong>Mua từ 10 giỏ cho doanh nghiệp?</strong>Giá trên là giá lẻ. Xem bảng giá theo số lượng và catalogue.</span>
+        <% } %>
         <svg class="icon icon-sm"><use href="#i-arrow"/></svg>
       </a>
     </div>
@@ -92,11 +102,9 @@
   <section class="pdp-details has-motif" aria-label="Thông tin chi tiết giỏ quà">
     <img class="motif motif-ink motif-may-tr" src="/img/motif/may-vang.webp" alt="" aria-hidden="true" width="600" height="600" loading="lazy" decoding="async">
     <details class="pdp-acc" open>
-      <summary>Thành phần giỏ quà</summary>
+      <summary>Giới thiệu giỏ quà</summary>
       <div class="pdp-acc-body">
-        <% if (contents.length) { %>
-        <ul class="contents-grid"><% contents.forEach(c => { %><li><%= c %></li><% }) %></ul>
-        <% } %>
+        <% if (!contents.length && product.short_desc) { %><p><%= product.short_desc %></p><% } %>
         <% if (descriptionHtml && descriptionHtml.trim()) { %><div class="prose pdp-desc"><%- descriptionHtml %></div><% } %>
         <p class="pdp-note">Hạn dùng tối thiểu 3 tháng tính từ ngày giao.</p>
       </div>

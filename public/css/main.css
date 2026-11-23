@@ -1622,3 +1622,18 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
   .bang-gia-nhom thead th { font-size: 10.5px; letter-spacing: 0; }
   .bang-gia-nhom tbody th small { display: block; margin: 2px 0 0; font-size: 11px; }
 }
+
+/* Trang sản phẩm: "Trong giỏ gồm" ngay dưới giá (23/11/2026) */
+.pdp-in { margin-top: var(--space-4); padding: 14px 16px; background: var(--cream-100); border: 1px solid var(--line); border-radius: 12px; }
+.pdp-in-title { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-700); }
+.pdp-in-title span { margin-left: 6px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-muted); }
+.pdp-in-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; font-size: 14.5px; line-height: 1.4; color: var(--ink-900); }
+.pdp-in-list li { position: relative; padding-left: 13px; }
+.pdp-in-list li::before { content: ''; position: absolute; left: 0; top: .55em; width: 5px; height: 5px; border-radius: 50%; background: var(--gold-500); }
+@media (max-width: 400px) { .pdp-in-list { font-size: 13.5px; gap: 5px 12px; } }
+
+/* Thẻ sản phẩm trên điện thoại: bỏ mô tả, nhãn danh mục 1 dòng → giá nổi lên (23/11/2026) */
+@media (max-width: 767px) {
+  .p-card .p-desc { display: none; }
+  .p-card .p-cat { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .06em; font-size: 10.5px; }
+}

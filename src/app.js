@@ -89,13 +89,15 @@ app.get('/media/:id', async (req, res, next) => {
       }
     }
   }
+  // ?w=480: bản thu nhỏ cho thẻ sản phẩm (ảnh gốc 1080px quá nặng cho ô ~210px trên điện thoại)
+  const small = req.query.w && /^image\/(jpeg|webp|png)$/.test(m.mime) ? await require('./lib/thumb').thumb(id, m.data, req.query.w) : null;
   res.set({
-    'Content-Type': m.mime,
+    'Content-Type': small ? 'image/jpeg' : m.mime,
     'Cache-Control': 'public, max-age=31536000, immutable',
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
     'X-Content-Type-Options': 'nosniff',
   });
-  res.send(m.data);
+  res.send(small || m.data);
 });
 
 // Bản JPEG của ảnh giỏ cho Messenger (Facebook chỉ chắc chắn nhận JPEG/PNG, ảnh gốc trên web là WebP)

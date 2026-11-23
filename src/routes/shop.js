@@ -206,7 +206,8 @@ router.get('/san-pham/:slug', async (req, res, next) => {
     product, category, related, gallery,
     reviews: await testimonials.listActive({ productId: product.id, limit: 6, textOk: true }),
     earliest: todayVN(Number(res.locals.s.min_delivery_days) || 1),
-    contents: lines(product.contents),
+    contents: lines(product.contents).map(require('../lib/bang-gia').chuanTenMon), // ghi giống catalogue
+    giaSi: require('../lib/bang-gia').giaSoLuong(product.slug), // giá theo số lượng (catalogue doanh nghiệp)
     descriptionHtml: md(product.description),
     depositText: require('../lib/payment').depositText(res.locals.s),
   });
