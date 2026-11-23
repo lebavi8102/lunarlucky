@@ -16,7 +16,7 @@
       <% if (gallery.length > 1) { %>
       <ul class="thumbs" aria-label="Ảnh sản phẩm">
         <% gallery.forEach((id, i) => { %>
-          <li><button type="button" aria-label="Xem ảnh <%= i + 1 %>" aria-current="<%= i === 0 %>" data-src="<%= img(id) %>"><img src="<%= img(id) %>" alt="" loading="lazy" width="76" height="92"></button></li>
+          <li><button type="button" aria-label="Xem ảnh <%= i + 1 %>" aria-current="<%= i === 0 %>" data-src="<%= img(id) %>"><img src="<%= img(id) %>?w=360" alt="" loading="lazy" width="76" height="92"></button></li>
         <% }) %>
       </ul>
       <% } %>
