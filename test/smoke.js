@@ -46,7 +46,7 @@ async function addToCart(c, slug, qty = 1) {
   const c = client();
 
   // 1. Trang công khai
-  for (const p of ['/', '/bo-suu-tap', '/san-pham/gio-an-khang', '/qua-tang-doanh-nghiep', '/blog', '/gioi-thieu',
+  for (const p of ['/', '/bo-suu-tap', '/san-pham/gio-an-khang', '/bo-suu-tap/qua-doanh-nghiep', '/blog', '/gioi-thieu',
     '/lien-he', '/cau-hoi-thuong-gap', '/chinh-sach-giao-hang', '/tim-kiem?q=tr%C3%A0', '/tra-cuu-don', '/dang-nhap',
     '/sitemap.xml', '/robots.txt', '/healthz?db=1']) {
     const r = await c(p);
@@ -209,11 +209,16 @@ async function addToCart(c, slug, qty = 1) {
   ok(!/Phí xuất hóa đơn VAT[^<]*<\/span><span>[\d.]+₫/.test(orderPage.text), 'Đơn bán lẻ không có phí VAT');
 
   // 7. Báo giá doanh nghiệp
-  const biz = await c2('/qua-tang-doanh-nghiep');
+  const old = await c2('/qua-tang-doanh-nghiep');
+  ok(old.status === 301 && old.location === '/bo-suu-tap/qua-doanh-nghiep#bang-gia', 'Link cũ /qua-tang-doanh-nghiep (mã QR catalogue) → 301 sang trang doanh nghiệp, mở ngay bảng giá');
+  const biz = await c2('/bo-suu-tap/qua-doanh-nghiep');
+  ok(/id="bang-gia"/.test(biz.text) && /10–49<span class="dv"> giỏ/.test(biz.text) && /id="quy-trinh"/.test(biz.text), 'Trang doanh nghiệp có bảng giá theo số lượng + quy trình');
   const q = await c2('/qua-tang-doanh-nghiep', { method: 'POST', form: { _csrf: csrf(biz.text), company: 'Công ty ABC',
     contact_name: 'Chị Lan', phone: '0909123456', quantity: '120', budget: 'Cần tư vấn' } });
-  ok(q.status === 303 && q.location === '/qua-tang-doanh-nghiep?da-gui=1#bao-gia', 'Gửi yêu cầu báo giá → chuyển trang (tải lại không gửi trùng)');
-  const qd = await c2('/qua-tang-doanh-nghiep?da-gui=1');
+  ok(q.status === 303 && q.location === '/bo-suu-tap/qua-doanh-nghiep?da-gui=1#nhan-bao-gia', 'Gửi yêu cầu báo giá → chuyển trang (tải lại không gửi trùng)');
+  const qbad = await c2('/qua-tang-doanh-nghiep', { method: 'POST', form: { _csrf: csrf(biz.text), contact_name: 'A', phone: '12' } });
+  ok(qbad.status === 303 && /loi=1/.test(qbad.location || ''), 'Báo giá sai thông tin → quay lại trang kèm thông báo lỗi');
+  const qd = await c2('/bo-suu-tap/qua-doanh-nghiep?da-gui=1');
   ok(qd.status === 200 && /đã nhận yêu cầu/.test(qd.text), 'Trang báo đã nhận yêu cầu báo giá');
 
   // 8. Admin

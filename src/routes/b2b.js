@@ -8,24 +8,15 @@ const { Form } = require('../lib/validate');
 const router = express.Router();
 const quoteLimiter = rateLimit({ ...limiterKey, windowMs: 30 * 60000, limit: 6, standardHeaders: true, legacyHeaders: false });
 
-async function render(res, data) {
-  const products = await db('products')
-    .where({ is_active: true })
-    .orderBy([{ column: 'is_featured', order: 'desc' }, { column: 'sold', order: 'desc' }])
-    .limit(4);
-  res.locals.seo.title = 'Quà Tết doanh nghiệp · In logo, giao hàng loạt · Lunar Lucky';
-  res.locals.seo.description =
-    'Giải pháp quà Tết doanh nghiệp trọn gói: tư vấn ngân sách, in logo doanh nghiệp, xuất hóa đơn VAT, giao hàng loạt đúng hẹn trên toàn quốc.';
-  res.render('pages/business', { products, ...data });
-}
+const PAGE = '/bo-suu-tap/qua-doanh-nghiep';
 
+// Gộp 2 trang doanh nghiệp về 1 (23/11/2026): link cũ, mã QR trong catalogue in ra → chuyển hẳn sang trang mới
 router.get('/qua-tang-doanh-nghiep', (req, res) => {
-  if (req.query['da-gui'] === '1') res.locals.track.events.push({ name: 'generate_lead', value: 0 }); // gửi yêu cầu báo giá
-  render(res, { values: {}, errors: {}, sent: req.query['da-gui'] === '1' });
+  res.redirect(301, req.query['da-gui'] === '1' ? `${PAGE}?da-gui=1#nhan-bao-gia` : `${PAGE}#bang-gia`);
 });
 
 router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
-  if (req.body.website) return res.redirect('/qua-tang-doanh-nghiep'); // honeypot chống spam
+  if (req.body.website) return res.redirect(303, PAGE); // honeypot chống spam
   const f = new Form(req.body);
   const q = {
     company: f.text('company', { label: 'tên doanh nghiệp', max: 200 }),
@@ -38,12 +29,8 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
     logo_print: f.bool('logo_print'),
     message: f.text('message', { max: 2000 }) || null,
   };
-  const fromCollection = req.body.nguon === 'bo-suu-tap';
   if (req.body.catalogue === '1') q.message = ['📘 Khách xin CATALOGUE + báo giá số lượng (gửi qua Zalo theo số điện thoại)', q.message].filter(Boolean).join('\n');
-  if (!f.ok) {
-    res.status(422);
-    return render(res, { values: f.values, errors: f.errors, sent: false });
-  }
+  if (!f.ok) return res.redirect(303, `${PAGE}?loi=1#nhan-bao-gia`);
   await db('quotes').insert(q);
   notify.telegram(notify.quoteTelegram(q), null, { topic: 'consult' });
   if (q.email) {
@@ -51,7 +38,7 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
       .catch((err) => console.error('[mail] báo giá lỗi:', err.message));
   }
   // Chuyển hướng sau khi gửi: tải lại trang không gửi trùng yêu cầu
-  res.redirect(303, fromCollection ? '/bo-suu-tap/qua-doanh-nghiep?da-gui=1#nhan-bao-gia' : '/qua-tang-doanh-nghiep?da-gui=1#bao-gia');
+  res.redirect(303, `${PAGE}?da-gui=1#nhan-bao-gia`);
 });
 
 module.exports = router;

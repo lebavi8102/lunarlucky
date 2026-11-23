@@ -14,12 +14,15 @@ const SORTS = {
   'gia-giam': [['price', 'desc']],
   'moi-nhat': [['id', 'desc']],
 };
+// Mức lọc giá theo giá lẻ thật (40 giỏ 460k–4,8tr, chủ shop chốt 23/11/2026): không mức nào trống
 const PRICE_RANGES = {
   'duoi-1-trieu': [0, 999999],
-  '1-2-trieu': [1000000, 2000000],
-  '2-5-trieu': [2000001, 5000000],
-  'tren-5-trieu': [5000001, null],
+  '1-1-5-trieu': [1000000, 1499999],
+  '1-5-2-trieu': [1500000, 1999999],
+  'tren-2-trieu': [2000000, null],
 };
+// Link cũ (đã chia sẻ/Google đã lưu) → mức mới gần nhất
+const OLD_RANGES = { '1-2-trieu': '1-1-5-trieu', '2-5-trieu': 'tren-2-trieu', 'tren-5-trieu': 'tren-2-trieu' };
 
 function activeProducts() {
   return db('products').where('products.is_active', true);
@@ -54,7 +57,7 @@ router.get('/', async (req, res) => {
 
 async function listing(req, res, category) {
   const sort = SORTS[req.query.sap_xep] ? req.query.sap_xep : 'noi-bat';
-  const range = PRICE_RANGES[req.query.gia] ? req.query.gia : null;
+  const range = PRICE_RANGES[req.query.gia] ? req.query.gia : (OLD_RANGES[req.query.gia] || null);
   const page = Math.max(1, Number(req.query.trang) || 1);
   const perPage = 12;
 
@@ -146,7 +149,15 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   res.locals.jsonLd.push(breadcrumb(res, [['Bộ sưu tập', '/bo-suu-tap'], [category.name, `/bo-suu-tap/${category.slug}`]]));
   const sent = category.slug === 'qua-doanh-nghiep' && req.query['da-gui'] === '1';
   if (sent) res.locals.track.events.push({ name: 'generate_lead', value: 0 }); // gửi yêu cầu báo giá từ trang bộ sưu tập DN
-  res.render('shop/collection', { ...data, category, sent, sorts: Object.keys(SORTS) });
+  let bang = null;
+  if (category.slug === 'qua-doanh-nghiep') {
+    // Trang doanh nghiệp duy nhất (đã gộp /qua-tang-doanh-nghiep vào đây 23/11/2026): kèm bảng giá theo số lượng 40 mẫu
+    bang = require('../lib/bang-gia').bangGia(await activeProducts().select('slug', 'name'));
+    res.locals.seo.title = 'Quà Tết doanh nghiệp 2027 · Bảng giá theo số lượng, in logo | Lunar Lucky';
+    res.locals.seo.description = 'Bảng giá giỏ quà Tết doanh nghiệp 2027 theo số lượng (10–49, 50–99, 100–499 giỏ), tải catalogue PDF, in logo doanh nghiệp, giao theo danh sách người nhận.';
+  }
+  const quoteError = category.slug === 'qua-doanh-nghiep' && req.query.loi === '1';
+  res.render('shop/collection', { ...data, category, sent, bang, quoteError, sorts: Object.keys(SORTS) });
 });
 
 router.get('/san-pham/:slug', async (req, res, next) => {

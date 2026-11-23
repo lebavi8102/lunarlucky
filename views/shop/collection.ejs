@@ -1,7 +1,7 @@
 <%- include('../partials/top') %>
 <% const catById = Object.fromEntries(categories.map(c => [c.id, c.name]));
    const sortLabels = { 'noi-bat': 'Nổi bật', 'ban-chay': 'Bán chạy', 'gia-tang': 'Giá tăng dần', 'gia-giam': 'Giá giảm dần', 'moi-nhat': 'Mới nhất' };
-   const rangeLabels = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-2-trieu': '1 – 2 triệu', '2-5-trieu': '2 – 5 triệu', 'tren-5-trieu': 'Trên 5 triệu' };
+   const rangeLabels = { 'duoi-1-trieu': 'Dưới 1 triệu', '1-1-5-trieu': '1 – 1,5 triệu', '1-5-2-trieu': '1,5 – 2 triệu', 'tren-2-trieu': 'Trên 2 triệu' };
    const landing = locals.landing || null;
    const isB2b = !!(category && category.slug === 'qua-doanh-nghiep' && !landing);
    const bulkFrom = Number(s.ai_escalate_qty) || 5;
@@ -22,7 +22,7 @@
     <h1>Quà tặng doanh nghiệp<br><em>trao lời chúc thịnh vượng</em></h1>
     <p class="lead">Giỏ quà Tết cho nhân viên, đối tác và khách hàng. Báo giá riêng theo số lượng, in logo doanh nghiệp, giao theo danh sách người nhận.</p>
     <div class="b2b-hero-cta">
-      <a class="btn btn-gold btn-lg" href="#nhan-bao-gia">Nhận báo giá &amp; catalogue</a>
+      <a class="btn btn-gold btn-lg" href="#bang-gia">Xem bảng giá số lượng</a>
       <a class="btn btn-lg b2b-btn-light" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a>
     </div>
     <ul class="b2b-hero-points">
@@ -31,7 +31,7 @@
       <li><svg class="icon icon-sm"><use href="#i-truck"/></svg><span>Giao theo <strong>danh sách</strong> người nhận</span></li>
       <li><svg class="icon icon-sm"><use href="#i-clock"/></svg><span>Phản hồi trong <strong>24 giờ</strong></span></li>
     </ul>
-    <a class="b2b-hero-more" href="/qua-tang-doanh-nghiep">Xem quy trình &amp; các mốc số lượng <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
+    <a class="b2b-hero-more" href="#quy-trinh">Xem quy trình &amp; các mốc số lượng <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
   </div>
 </section>
 <% } else { %>
@@ -52,10 +52,40 @@
 <div class="container">
   <aside class="b2b-price-note" aria-label="Giá doanh nghiệp">
     <span class="b2b-price-note-ico" aria-hidden="true"><svg class="icon"><use href="#i-info"/></svg></span>
-    <p><strong>Giá hiển thị bên dưới là giá lẻ (mua 1 giỏ).</strong> Đặt từ <%= bulkFrom %> giỏ trở lên có <strong>báo giá số lượng riêng</strong>, gửi kèm catalogue quà Tết doanh nghiệp 2027.</p>
-    <a class="b2b-price-note-link" href="#nhan-bao-gia">Nhận báo giá <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
+    <p><strong>Giá theo số lượng của cả <%= locals.bang ? bang.soMau : '' %> mẫu ở bảng ngay dưới.</strong> Giá trên thẻ sản phẩm phía sau là giá lẻ (mua 1 giỏ).</p>
+    <a class="b2b-price-note-link" href="<%= s.catalogue_url %>" target="_blank" rel="noopener">Tải catalogue PDF <svg class="icon icon-sm"><use href="#i-arrow"/></svg></a>
   </aside>
 </div>
+<% if (locals.bang) { const vnd = (n) => Number(n).toLocaleString('vi-VN') + '₫'; %>
+<section class="section-tight bang-gia" id="bang-gia" aria-labelledby="bang-gia-title">
+  <div class="container">
+    <div class="bang-gia-head">
+      <div>
+        <span class="eyebrow">Giá 1 giỏ theo số lượng đặt</span>
+        <h2 class="h2" id="bang-gia-title">Bảng giá <em>quà Tết doanh nghiệp 2027</em></h2>
+      </div>
+      <a class="btn btn-gold" href="<%= s.catalogue_url %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-file"/></svg> Tải catalogue PDF</a>
+    </div>
+    <% bang.nhom.forEach((g) => { %>
+    <details class="bang-gia-nhom" open>
+      <summary><span><%= g.ten %></span><small><%= g.mau.length %> mẫu</small><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+      <table>
+        <thead><tr><th scope="col">Mẫu</th><th scope="col">10–49<span class="dv"> giỏ</span></th><th scope="col">50–99<span class="dv"> giỏ</span></th><th scope="col">100–499<span class="dv"> giỏ</span></th></tr></thead>
+        <tbody>
+        <% g.mau.forEach((m) => { %>
+          <tr>
+            <th scope="row"><% if (m.slug) { %><a href="/san-pham/<%= m.slug %>"><%= m.ten %></a><% } else { %><%= m.ten %><% } %><small><%= m.ma %></small></th>
+            <td><%= vnd(m.gia_10_49) %></td><td><%= vnd(m.gia_50_99) %></td><td><%= vnd(m.gia_100_499) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </details>
+    <% }) %>
+    <p class="bang-gia-foot small muted">Từ 500 giỏ, in logo hoặc làm set theo ngân sách riêng: <a href="#nhan-bao-gia">để lại số điện thoại</a> hoặc <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">nhắn Zalo</a>, Lunar Lucky báo giá trong 24 giờ.</p>
+  </div>
+</section>
+<% } %>
 <% } %>
 
 <section class="section-tight collection-section has-motif">
@@ -134,6 +164,7 @@
           <div class="hero-cta" style="justify-content:center;margin-top:16px"><a class="btn" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo ngay</a><a class="btn btn-quiet" href="tel:<%= s.shop_phone.replace(/\s/g,'') %>">Gọi <%= s.shop_phone %></a></div>
         </div>
       <% } else { %>
+      <% if (locals.quoteError) { %><p role="alert" style="margin:0 0 16px;padding:12px 14px;border-radius:10px;background:var(--danger-bg);color:var(--danger);font-size:14px">Thông tin chưa đúng (thường là số điện thoại). Anh/chị kiểm tra lại giúp em, hoặc nhắn Zalo cho nhanh ạ.</p><% } %>
       <form action="/qua-tang-doanh-nghiep" method="post" data-quote-form>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="nguon" value="bo-suu-tap">
@@ -155,6 +186,54 @@
     </div>
   </div>
 </section>
+<% } %>
+<% if (isB2b) { %>
+<section class="section milestones-section" id="quy-trinh">
+  <div class="ms-bg" aria-hidden="true"><img src="/img/b2b-so-luong-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async"></div>
+  <div class="container">
+    <div class="section-head center"><span class="eyebrow center">Theo từng mốc số lượng</span><h2 class="h2">Đặt quà <em>theo số lượng</em></h2><p class="lead" style="margin-top:12px">Tham khảo thời gian chuẩn bị và các lựa chọn tùy chỉnh cho doanh nghiệp.</p></div>
+    <% const tierAt = (n) => bulkTierList().filter((b) => b.tier.qty <= n).pop();
+       const stops = [
+         { n: 10, custom: 'In logo doanh nghiệp.' },
+         { n: 30, custom: 'In logo doanh nghiệp.' },
+         { n: 50, custom: 'In logo doanh nghiệp.' },
+         { n: 100, custom: 'In logo lên hộp và nơ; chuyên viên riêng phụ trách đơn.' },
+       ]; %>
+    <p class="milestone-common">Tư vấn theo ngân sách · Tùy chỉnh logo · Giao nhiều địa chỉ</p>
+    <p class="milestone-label">Các mốc số lượng tham khảo</p>
+    <ul class="milestones">
+      <% stops.forEach((m) => { const t = tierAt(m.n); %>
+      <li>
+        <div class="qty-range"><%= m.n %> giỏ</div>
+        <dl>
+          <dt>Thời gian chuẩn bị</dt><dd><%= t && t.tier.kind === 'review' ? 'Theo lịch thống nhất trong báo giá.' : (t ? 'Dự kiến ' + t.text.replace(/^cần\s+/, '').replace(/\s*chuẩn bị.*$/, '') : '') %></dd>
+          <dt>Tùy chỉnh</dt><dd><%= m.custom %></dd>
+        </dl>
+      </li>
+      <% }) %>
+    </ul>
+    <p class="milestone-foot small muted">Thời gian dự kiến tính từ khi duyệt mẫu và hoàn tất đặt cọc; chưa gồm thời gian vận chuyển. Lịch cụ thể được xác nhận trong báo giá. Từ 500 giỏ có thể thiết kế hộp riêng theo nhận diện thương hiệu.</p>
+    <div class="milestone-notes">
+      <div><h3>Chi phí rõ ràng</h3><p>Báo giá tách rõ tiền quà, tùy chỉnh logo, vận chuyển và VAT nếu áp dụng. Hỗ trợ xuất hóa đơn theo thông tin doanh nghiệp cung cấp.</p></div>
+      <div><h3>Duyệt mẫu trước khi làm</h3><p>Thống nhất mẫu giỏ, thiết kế logo và báo giá trước khi triển khai.</p></div>
+      <div><h3>Đặt cọc &amp; thanh toán</h3><p>Mức cọc, thời điểm thanh toán phần còn lại và điều kiện áp dụng được ghi rõ trong báo giá.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:var(--space-6)"><a class="btn btn-lg" href="#nhan-bao-gia">Nhận báo giá theo số lượng</a></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head center"><span class="eyebrow center">Quy trình</span><h2 class="h2">Bốn bước, <em>không phải lo nghĩ</em></h2></div>
+    <ol class="journey journey-4">
+      <li><h3>Tư vấn</h3><p>Lắng nghe nhu cầu, tư vấn quà tặng phù hợp với ngân sách và người nhận.</p></li>
+      <li><h3>Duyệt mẫu</h3><p>Thống nhất mẫu quà, thiết kế logo và báo giá trước khi thực hiện.</p></li>
+      <li><h3>Đóng gói</h3><p>Chuẩn bị, kiểm tra và hoàn thiện từng phần quà theo mẫu đã duyệt.</p></li>
+      <li><h3>Giao quà tận nơi</h3><p>Giao theo danh sách, cập nhật tiến độ và xác nhận từng đơn hàng.</p></li>
+    </ol>
+  </div>
+</section>
+
 <% } %>
 <% if (landing) { %>
 <section class="section-tight">

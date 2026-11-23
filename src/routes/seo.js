@@ -32,7 +32,6 @@ router.get('/sitemap.xml', async (req, res) => {
     ['/', 'daily', '1.0'],
     ['/bo-suu-tap', 'daily', '0.9'],
     ['/gio-qua-tet-ha-noi', 'daily', '0.9'],
-    ['/qua-tang-doanh-nghiep', 'weekly', '0.8'],
     ['/blog', 'weekly', '0.6'],
     ...Object.keys(PAGES).map((p) => [`/${p}`, 'monthly', '0.4']),
     ...cats.map((c) => [`/bo-suu-tap/${c.slug}`, 'weekly', '0.8', c.updated_at]),
