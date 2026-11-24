@@ -67,7 +67,9 @@ module.exports = async function locals(req, res, next) {
   const staff = res.locals.user && res.locals.user.role === 'admin';
   const pixel = /^\d{8,20}$/.test(String(s.meta_pixel_id || '').trim()) ? String(s.meta_pixel_id).trim() : '';
   const ga4 = /^G-[A-Z0-9]{4,15}$/i.test(String(s.ga4_id || '').trim()) ? String(s.ga4_id).trim().toUpperCase() : '';
-  res.locals.track = { on: !staff && !req.path.startsWith('/admin') && !!(pixel || ga4), pixel, ga4, events: [] };
+  // Chạy thử trên máy (localhost) cũng không đếm, kẻo lẫn vào số liệu Pixel/GA4 của web thật
+  const local = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(req.hostname || '');
+  res.locals.track = { on: !staff && !local && !req.path.startsWith('/admin') && !!(pixel || ga4), pixel, ga4, events: [] };
   res.locals.cartCount = cartCount(req);
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
