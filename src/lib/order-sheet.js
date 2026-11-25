@@ -65,7 +65,7 @@ async function rows() {
     const got = collected(o);
     const gift = !!o.is_gift;
     return {
-      o, items: its, qty, cost, missing, total, got, due: total - got,
+      o, items: its, qty, isSi: qty >= min, cost, missing, total, got, due: total - got,
       cells: [
         o.code,
         String(o.created_at instanceof Date ? o.created_at.toISOString() : o.created_at || '').slice(0, 10),
@@ -123,8 +123,9 @@ const vnDate = (d) => {
 const HEAD_DON = ['Ngày giao', 'Buổi giao', 'Mã đơn', 'Tình trạng', 'Người nhận', 'Địa chỉ giao', 'Tên giỏ', 'Thành phần trong giỏ', 'Số lượng',
   'Giá bán 1 giỏ', 'Giá nhập 1 giỏ', 'Tiền nhập (SL × giá nhập)', 'Khách trả cả đơn', 'Thanh toán', 'Đã thu', 'Còn phải thu', 'Lãi cả đơn', 'Ghi chú', 'Link ảnh'];
 
-async function donCsv() {
-  const r = await rows();
+async function donCsv(loai = '') {
+  // loai: 'si' = chỉ đơn sỉ, 'le' = chỉ đơn lẻ (chủ shop: tách 2 sheet cho dễ đối soát), trống = tất cả
+  const r = (await rows()).filter((x) => (loai === 'si' ? x.isSi : loai === 'le' ? !x.isSi : true));
   const { chuanTenMon } = require('./bang-gia');
   const pids = [...new Set(r.flatMap((x) => x.items.map((i) => i.product_id)).filter(Boolean))];
   const prods = new Map((pids.length ? await db('products').whereIn('id', pids).select('id', 'image_id', 'contents') : []).map((p) => [p.id, p]));
@@ -163,33 +164,44 @@ function weekStart(day) {
 
 async function tongCsv() {
   const r = await rows();
+  const blank = () => ({ n: 0, q: 0, total: 0, got: 0, due: 0, cost: 0, profit: 0, miss: 0 });
   const add = (m, k, x) => {
-    const a = m.get(k) || { n: 0, q: 0, total: 0, got: 0, due: 0, cost: 0, profit: 0, miss: 0 };
+    const a = m.get(k) || blank();
     a.n++; a.q += x.qty; a.total += x.total; a.got += x.got; a.due += x.due;
     if (x.missing) a.miss++; else { a.cost += x.cost; a.profit += x.total - x.cost; }
     m.set(k, a);
   };
-  const days = new Map();
-  const weeks = new Map();
-  const all = new Map();
+  // Mỗi kỳ 3 dòng: Sỉ · Lẻ · Cộng (chủ shop: tách sỉ / lẻ cho dễ đối soát)
+  const groups = { all: new Map(), week: new Map(), day: new Map() };
   for (const x of r) {
     const d = String(x.o.delivery_date || '').slice(0, 10);
-    add(days, d, x);
-    add(weeks, weekStart(d), x);
-    add(all, 'TỔNG CỘNG', x);
+    const kind = x.isSi ? 'si' : 'le';
+    for (const [g, key] of [['all', 'TỔNG'], ['week', weekStart(d)], ['day', d]]) {
+      add(groups[g], `${key}|${kind}`, x);
+      add(groups[g], `${key}|cong`, x);
+    }
   }
-  const line = (label, a) => [label, a.n, a.q, a.total, a.got, a.due, a.cost, a.profit, a.miss ? `${a.miss} đơn chưa nhập giá nhập` : ''];
-  const head = ['Khoảng thời gian', 'Số đơn', 'Số giỏ', 'Khách trả', 'Đã thu', 'Còn phải thu', 'Tiền nhập hàng', 'Lãi', 'Ghi chú'];
+  const line = (label, kind, a) => [label, kind, a.n, a.q, a.total, a.got, a.due, a.cost, a.profit, a.miss ? `${a.miss} đơn chưa nhập giá nhập` : ''];
+  const head = ['Khoảng thời gian', 'Loại', 'Số đơn', 'Số giỏ', 'Khách trả', 'Đã thu', 'Còn phải thu', 'Tiền nhập hàng', 'Lãi', 'Ghi chú'];
   const vn = (d) => d.split('-').reverse().join('/');
+  const block = (m, label) => {
+    const keys = [...new Set([...m.keys()].map((k) => k.split('|')[0]))].sort();
+    const rowsOut = [];
+    for (const k of keys) {
+      const parts = [['🏢 Sỉ', m.get(`${k}|si`)], ['🛍 Lẻ', m.get(`${k}|le`)], ['Cộng', m.get(`${k}|cong`)]].filter(([, v]) => v);
+      parts.forEach(([kind, v], n) => rowsOut.push(line(n === 0 ? label(k) : '', kind, v)));
+    }
+    return rowsOut;
+  };
   const out = [head];
-  for (const [k, a] of all) out.push(line(k, a));
+  out.push(...block(groups.all, () => 'TỔNG CỘNG'));
   out.push([], ['THEO TUẦN (Thứ 2 → CN, theo ngày giao)']);
-  for (const [k, a] of [...weeks].sort()) {
+  out.push(...block(groups.week, (k) => {
     const end = new Date(new Date(`${k}T12:00:00+07:00`).getTime() + 6 * 86400000).toISOString().slice(0, 10);
-    out.push(line(`Tuần ${vn(k).slice(0, 5)} – ${vn(end)}`, a));
-  }
+    return `Tuần ${vn(k).slice(0, 5)} – ${vn(end)}`;
+  }));
   out.push([], ['THEO NGÀY GIAO']);
-  for (const [k, a] of [...days].sort()) out.push(line(vnDate(k), a));
+  out.push(...block(groups.day, (k) => vnDate(k)));
   return csv(out);
 }
 

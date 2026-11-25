@@ -46,7 +46,8 @@ router.get('/bang-don/:kind.csv', async (req, res, next) => {
   const sheet = require('../lib/order-sheet');
   if (!['don', 'tong'].includes(req.params.kind)) return next();
   if (!(await sheet.checkKey(req.query.k))) return res.status(403).type('text/plain').send('Sai khóa');
-  const body = req.params.kind === 'don' ? await sheet.donCsv() : await sheet.tongCsv();
+  const loai = ['si', 'le'].includes(req.query.loai) ? req.query.loai : '';
+  const body = req.params.kind === 'don' ? await sheet.donCsv(loai) : await sheet.tongCsv();
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' }).send(body);
 });
 
