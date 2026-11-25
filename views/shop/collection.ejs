@@ -22,7 +22,7 @@
     <h1>Quà tặng doanh nghiệp<br><em>trao lời chúc thịnh vượng</em></h1>
     <p class="lead">Giỏ quà Tết cho nhân viên, đối tác và khách hàng. Báo giá riêng theo số lượng, in logo doanh nghiệp, giao theo danh sách người nhận.</p>
     <div class="b2b-hero-cta">
-      <a class="btn btn-gold btn-lg" href="/bo-suu-tap/qua-doanh-nghiep#bang-gia">Xem bảng giá số lượng</a>
+      <a class="btn btn-gold btn-lg" href="#nhan-bao-gia">Nhận báo giá &amp; catalogue</a>
       <a class="btn btn-lg b2b-btn-light" href="<%= s.zalo_url %>" target="_blank" rel="noopener">Nhắn Zalo tư vấn</a>
     </div>
     <ul class="b2b-hero-points">
@@ -47,38 +47,6 @@
     <p class="lead"><%= landing ? landing.lead : (category ? (category.description || category.tagline) : 'Giỏ quà Tết cao cấp biếu sếp, đối tác, gia đình và tặng nhân viên. Mỗi giỏ đều được tuyển chọn và đóng gói thủ công, giao đúng ngày hẹn tại Hà Nội và toàn quốc.') %></p>
   </div>
 </section>
-<% } %>
-<% if (isB2b && page === 1) { %>
-<% if (locals.bang && page === 1) { const vnd = (n) => Number(n).toLocaleString('vi-VN') + '₫'; %>
-<section class="section-tight bang-gia" id="bang-gia" aria-labelledby="bang-gia-title">
-  <div class="container">
-    <div class="bang-gia-head">
-      <div>
-        <span class="eyebrow">Giá 1 giỏ theo số lượng đặt</span>
-        <h2 class="h2" id="bang-gia-title">Bảng giá <em>quà Tết doanh nghiệp 2027</em></h2>
-      </div>
-      <a class="btn btn-gold" href="<%= s.catalogue_url %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-file"/></svg> Tải catalogue PDF</a>
-    </div>
-    <% bang.nhom.forEach((g) => { %>
-    <details class="bang-gia-nhom">
-      <summary><span><%= g.ten %></span><small><%= g.mau.length %> mẫu</small><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-      <table>
-        <thead><tr><th scope="col">Mẫu</th><th scope="col">10–49<span class="dv"> giỏ</span></th><th scope="col">50–99<span class="dv"> giỏ</span></th><th scope="col">100–499<span class="dv"> giỏ</span></th></tr></thead>
-        <tbody>
-        <% g.mau.forEach((m) => { %>
-          <tr>
-            <th scope="row"><% if (m.slug) { %><a href="/san-pham/<%= m.slug %>"><%= m.ten %></a><% } else { %><%= m.ten %><% } %><small><%= m.ma %></small></th>
-            <td><%= vnd(m.gia_10_49) %></td><td><%= vnd(m.gia_50_99) %></td><td><%= vnd(m.gia_100_499) %></td>
-          </tr>
-        <% }) %>
-        </tbody>
-      </table>
-    </details>
-    <% }) %>
-    <p class="bang-gia-foot small muted">Từ 500 giỏ, in logo hoặc làm set theo ngân sách riêng: <a href="#nhan-bao-gia">để lại số điện thoại</a> hoặc <a href="<%= s.zalo_url %>" target="_blank" rel="noopener">nhắn Zalo</a>, Lunar Lucky báo giá trong 24 giờ.</p>
-  </div>
-</section>
-<% } %>
 <% } %>
 
 <section class="section-tight collection-section has-motif">

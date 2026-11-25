@@ -121,7 +121,7 @@ router.get('/gio-qua-tet-ha-noi', async (req, res) => {
       {
         h: 'Quà Tết doanh nghiệp tại Hà Nội',
         p: [
-          'Doanh nghiệp đặt từ 10 giỏ có giá theo số lượng (bảng giá công khai trên trang Quà tặng doanh nghiệp), được tư vấn ngân sách, in logo và xuất hóa đơn VAT, giao hàng loạt theo danh sách người nhận.',
+          'Doanh nghiệp đặt từ 10 giỏ có giá theo số lượng (để lại số điện thoại ở trang Quà tặng doanh nghiệp để nhận báo giá), được tư vấn ngân sách, in logo và xuất hóa đơn VAT, giao hàng loạt theo danh sách người nhận.',
           `Cần tư vấn nhanh, gọi hoặc nhắn Zalo ${s.shop_phone || ''} từ 8:00 đến 21:00 hằng ngày.`,
         ],
       },
@@ -151,10 +151,9 @@ router.get('/bo-suu-tap/:slug', async (req, res, next) => {
   if (sent) res.locals.track.events.push({ name: 'generate_lead', value: 0 }); // gửi yêu cầu báo giá từ trang bộ sưu tập DN
   let bang = null;
   if (category.slug === 'qua-doanh-nghiep') {
-    // Trang doanh nghiệp duy nhất (đã gộp /qua-tang-doanh-nghiep vào đây 23/11/2026): kèm bảng giá theo số lượng 40 mẫu
-    bang = require('../lib/bang-gia').bangGia(await activeProducts().select('slug', 'name'));
-    res.locals.seo.title = 'Quà Tết doanh nghiệp 2027 · Bảng giá theo số lượng, in logo | Lunar Lucky';
-    res.locals.seo.description = 'Bảng giá giỏ quà Tết doanh nghiệp 2027 theo số lượng (10–49, 50–99, 100–499 giỏ), tải catalogue PDF, in logo doanh nghiệp, giao theo danh sách người nhận.';
+    // Trang doanh nghiệp duy nhất (đã gộp /qua-tang-doanh-nghiep vào đây 23/11/2026). Bảng giá công khai đã bỏ theo yêu cầu chủ shop 25/11/2026
+    res.locals.seo.title = 'Quà Tết doanh nghiệp 2027 · Báo giá theo số lượng, in logo | Lunar Lucky';
+    res.locals.seo.description = 'Giỏ quà Tết doanh nghiệp 2027: báo giá theo số lượng trong 24 giờ, catalogue gửi qua Zalo, in logo doanh nghiệp, giao theo danh sách người nhận.';
   }
   const quoteError = category.slug === 'qua-doanh-nghiep' && req.query.loi === '1';
   res.render('shop/collection', { ...data, category, sent, bang, quoteError, sorts: Object.keys(SORTS) });

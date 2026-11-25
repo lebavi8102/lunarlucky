@@ -39,7 +39,7 @@ function faq(s = {}) {
     },
     {
       q: 'Doanh nghiệp đặt số lượng lớn có được ưu đãi và in logo không?',
-      a: 'Có. Lunar Lucky nhận đơn doanh nghiệp từ 10 giỏ: tư vấn ngân sách, xuất hóa đơn VAT và giao hàng loạt theo danh sách. In logo doanh nghiệp từ 5 giỏ, lên hộp và nơ từ 100 giỏ, thiết kế hộp riêng từ 500 giỏ. Từ 10 giỏ có giá theo số lượng (10–49, 50–99, 100–499 giỏ), xem bảng giá ngay trên trang Quà tặng doanh nghiệp hoặc tải catalogue.',
+      a: 'Có. Lunar Lucky nhận đơn doanh nghiệp từ 10 giỏ: tư vấn ngân sách, xuất hóa đơn VAT và giao hàng loạt theo danh sách. In logo doanh nghiệp từ 5 giỏ, lên hộp và nơ từ 100 giỏ, thiết kế hộp riêng từ 500 giỏ. Từ 10 giỏ có giá theo số lượng (10–49, 50–99, 100–499 giỏ), để lại số điện thoại ở trang Quà tặng doanh nghiệp, Lunar Lucky gửi bảng giá và catalogue qua Zalo.',
     },
     {
       q: 'Nếu giỏ quà bị hư hỏng khi nhận thì sao?',

@@ -12,7 +12,7 @@ const PAGE = '/bo-suu-tap/qua-doanh-nghiep';
 
 // Gộp 2 trang doanh nghiệp về 1 (23/11/2026): link cũ, mã QR trong catalogue in ra → chuyển hẳn sang trang mới
 router.get('/qua-tang-doanh-nghiep', (req, res) => {
-  res.redirect(301, req.query['da-gui'] === '1' ? `${PAGE}?da-gui=1#nhan-bao-gia` : `${PAGE}#bang-gia`);
+  res.redirect(301, req.query['da-gui'] === '1' ? `${PAGE}?da-gui=1#nhan-bao-gia` : `${PAGE}#nhan-bao-gia`);
 });
 
 router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
