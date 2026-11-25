@@ -429,6 +429,53 @@
     window.addEventListener('resize', watch);
   }
 
+  /* Điện thoại: hàng giỏ vuốt ngang — khóa hướng vuốt. Đã vuốt ngang thì trang KHÔNG trôi lên xuống theo ngón tay,
+     buông tay thì dừng gọn ở đầu một giỏ (vuốt nhanh → sang giỏ kế). Vuốt dọc vẫn cuộn trang bình thường. */
+  if ('ontouchstart' in window) $$('.m-scroll').forEach((row) => {
+    let x0 = null, y0, sl0, axis, lastX, lastT, vx, restore;
+    const snaps = () => {
+      const pad = parseFloat(getComputedStyle(row).scrollPaddingInlineStart) || 0;
+      const base = row.getBoundingClientRect().left + pad;
+      const max = row.scrollWidth - row.clientWidth;
+      return [...row.children].map((c) => Math.min(max, Math.max(0, row.scrollLeft + c.getBoundingClientRect().left - base)));
+    };
+    row.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { x0 = null; return; }
+      const t = e.touches[0];
+      x0 = lastX = t.clientX; y0 = t.clientY; sl0 = row.scrollLeft; axis = null; vx = 0; lastT = e.timeStamp;
+      clearTimeout(restore);
+    }, { passive: true });
+    row.addEventListener('touchmove', (e) => {
+      if (x0 == null || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      if (!axis) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        if (axis === 'x') row.style.scrollSnapType = 'none'; // tự kéo theo ngón tay, snap lại khi buông
+      }
+      if (axis !== 'x' || !e.cancelable) return;
+      e.preventDefault(); // chặn trang cuộn dọc
+      const dt = e.timeStamp - lastT;
+      if (dt > 0) vx = 0.7 * vx + 0.3 * ((t.clientX - lastX) / dt);
+      lastX = t.clientX; lastT = e.timeStamp;
+      row.scrollLeft = sl0 - dx;
+    }, { passive: false });
+    const end = () => {
+      if (axis === 'x') {
+        const pos = snaps(), cur = row.scrollLeft;
+        let target = pos.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a), pos[0] || 0);
+        if (vx < -0.3) target = pos.find((p) => p > cur + 4) ?? target; // vuốt nhanh sang trái → giỏ kế
+        else if (vx > 0.3) target = [...pos].reverse().find((p) => p < cur - 4) ?? target;
+        row.scrollTo({ left: target, behavior: reduceMotion ? 'auto' : 'smooth' });
+        restore = setTimeout(() => { row.style.scrollSnapType = ''; }, 500);
+      }
+      x0 = null; axis = null;
+    };
+    row.addEventListener('touchend', end);
+    row.addEventListener('touchcancel', end);
+  });
+
   /* Thanh toán: chọn COD ở đơn cần cọc → hiện "Đặt cọc trước / Trả khi nhận" */
   const syncDeposit = () => {
     const cod = $('input[name=payment_method][value=cod]');

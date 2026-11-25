@@ -1457,7 +1457,7 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 
 /* Điện thoại: hàng giỏ quà vuốt ngang (trang chủ, giỏ hàng trống) */
 @media (max-width: 767px) {
-  .product-grid.m-scroll { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-padding-inline: 16px; margin-inline: -16px; padding: 4px 16px 14px; scrollbar-width: none; }
+  .product-grid.m-scroll { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-padding-inline: 16px; margin-inline: -16px; padding: 4px 16px 14px; scrollbar-width: none; }
   .product-grid.m-scroll::-webkit-scrollbar { display: none; }
   .product-grid.m-scroll > .p-card { flex: 0 0 66%; scroll-snap-align: start; }
 }
