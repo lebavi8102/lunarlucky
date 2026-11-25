@@ -665,8 +665,14 @@ router.get('/doi-soat', async (req, res) => {
 router.post('/doi-soat/tinh-lai', async (req, res) => {
   const to = isDay(req.body.den) ? req.body.den : supplier.lastWeek().to;
   const n = await supplier.recalcOpen(to);
-  flash(req, 'success', n ? `Đã cập nhật giá nhập cho ${n} dòng giỏ theo bảng giá hiện tại.` : 'Giá nhập các đơn chưa chốt đã đúng bảng giá hiện tại.');
+  flash(req, 'success', n ? `Đã điền giá nhập cho ${n} dòng giỏ còn thiếu. Giá đã có của các đơn giữ nguyên (khóa theo ngày đặt).` : 'Không còn giỏ nào thiếu giá nhập.');
   res.redirect(`/admin/doi-soat?den=${to}`);
+});
+
+router.post('/doi-soat/don/:id/gia-nhap', async (req, res) => {
+  const r = await supplier.reapplyOrder(Number(req.params.id));
+  flash(req, r.error ? 'error' : 'success', r.error || (r.changed ? `Đã áp giá nhập theo bảng hiện tại cho ${r.changed} dòng giỏ.` : 'Giá nhập của đơn đã đúng bảng hiện tại.'));
+  res.redirect(`/admin/don-hang/${Number(req.params.id)}`);
 });
 
 router.post('/doi-soat/chot', async (req, res) => {

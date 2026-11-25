@@ -22,7 +22,7 @@
           <% items.forEach(i => { %>
             <tr>
               <td class="wrap"><b><%= i.name %></b></td>
-              <td class="num"><%= money(i.price) %></td><td class="num"><%= i.qty %></td><td class="num"><%= money(i.line_total) %></td>
+              <td class="num"><%= money(i.price) %><br><span class="tiny muted">nhập <%= i.unit_cost == null ? 'chưa có' : money(i.unit_cost) %></span></td><td class="num"><%= i.qty %></td><td class="num"><%= money(i.line_total) %></td>
             </tr>
           <% }) %>
           </tbody>
@@ -146,6 +146,12 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button class="btn btn-sm btn-quiet" type="submit">📨 Gửi lại tin Telegram (đúng chủ đề)</button>
       </form>
+      <% if (!order.settlement_id) { %>
+      <form action="/admin/doi-soat/don/<%= order.id %>/gia-nhap" method="post" style="margin-top:8px" data-confirm="Áp lại giá nhập theo bảng giá HIỆN TẠI cho đơn này (sỉ nếu đủ số giỏ)? Chỉ dùng khi đã thống nhất với nhà cung cấp.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-sm btn-quiet" type="submit">💰 Áp lại giá nhập theo bảng hiện tại</button>
+      </form>
+      <% } else { %><p class="tiny muted" style="margin-top:8px">Đơn đã chốt đối soát (kỳ #<%= order.settlement_id %>) — giá nhập đã khóa.</p><% } %>
     </section>
   </aside>
 </div>

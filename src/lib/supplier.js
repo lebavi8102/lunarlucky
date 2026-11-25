@@ -90,7 +90,10 @@ async function sheet({ settlementId = null, to = null } = {}) {
   return { rows, revenue, cost, ownerDue: revenue - cost, missing, minSi: min };
 }
 
-/** Tính lại giá nhập theo bảng giá hiện tại cho các đơn CHƯA chốt (vd: vừa cập nhật Excel giá nhập sỉ). */
+/**
+ * Điền giá nhập CÒN THIẾU cho các đơn chưa chốt (giỏ chưa có giá nhập lúc đặt). KHÔNG đổi giá đã có:
+ * giá nhập khóa theo thời điểm đặt đơn — vào vụ nhà cung cấp tăng giá thì chỉ đơn đặt SAU khi cập nhật bảng giá mới chịu giá mới.
+ */
 async function recalcOpen(to) {
   const orders = await eligible(db('orders')).whereNull('settlement_id').andWhere('delivery_date', '<=', to).select('id');
   let n = 0;
@@ -99,17 +102,32 @@ async function recalcOpen(to) {
     const before = its.map((i) => i.unit_cost);
     await applyUnitCosts(its);
     for (let k = 0; k < its.length; k++) {
-      if (its[k].unit_cost !== before[k]) { await db('order_items').where({ id: its[k].id }).update({ unit_cost: its[k].unit_cost }); n++; }
+      if (before[k] == null && its[k].unit_cost != null) { await db('order_items').where({ id: its[k].id }).update({ unit_cost: its[k].unit_cost }); n++; }
     }
   }
   return n;
+}
+
+/** Áp lại giá nhập theo bảng giá HIỆN TẠI cho 1 đơn chưa chốt (chủ shop bấm từng đơn khi cần, vd đơn đặt trước khi có giá nhập sỉ). */
+async function reapplyOrder(orderId) {
+  const o = await db('orders').where({ id: orderId }).first('id', 'settlement_id');
+  if (!o) return { error: 'Không thấy đơn.' };
+  if (o.settlement_id) return { error: 'Đơn đã chốt đối soát — không đổi giá nhập được nữa.' };
+  const its = await db('order_items').where({ order_id: o.id }).select('id', 'product_id', 'qty', 'unit_cost');
+  const before = its.map((i) => i.unit_cost);
+  await applyUnitCosts(its);
+  let n = 0;
+  for (let k = 0; k < its.length; k++) {
+    if (its[k].unit_cost !== before[k]) { await db('order_items').where({ id: its[k].id }).update({ unit_cost: its[k].unit_cost }); n++; }
+  }
+  return { changed: n };
 }
 
 /** Chốt kỳ: khóa các đơn trong bảng vào 1 kỳ. */
 async function close({ from, to, by, note }) {
   const s = await sheet({ to });
   if (!s.rows.length) return { error: 'Không có đơn nào đã giao xong để chốt.' };
-  if (s.missing) return { error: `Còn ${s.missing} đơn thiếu giá nhập — cập nhật giá nhập (Excel) rồi bấm "Tính lại giá nhập" trước khi chốt.` };
+  if (s.missing) return { error: `Còn ${s.missing} đơn thiếu giá nhập — cập nhật giá nhập (Excel) rồi bấm "Điền giá nhập còn thiếu" trước khi chốt.` };
   let id;
   await db.transaction(async (trx) => {
     const [x] = await trx('supplier_settlements').insert({
@@ -167,4 +185,4 @@ function excel(s, title) {
   ]);
 }
 
-module.exports = { unitCostFor, applyUnitCosts, weekOf, lastWeek, sheet, recalcOpen, close, shareKey, shareLink, excel, wholesaleMin };
+module.exports = { reapplyOrder, unitCostFor, applyUnitCosts, weekOf, lastWeek, sheet, recalcOpen, close, shareKey, shareLink, excel, wholesaleMin };

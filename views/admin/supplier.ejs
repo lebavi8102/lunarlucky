@@ -15,7 +15,7 @@
   </form>
   <%- include('../partials/supplier-table', { ds }) %>
   <div class="no-tools" style="margin-top:16px">
-    <form action="/admin/doi-soat/tinh-lai" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="den" value="<%= to %>"><button class="btn btn-sm btn-ghost" type="submit">↻ Tính lại giá nhập theo bảng giá hiện tại</button></form>
+    <form action="/admin/doi-soat/tinh-lai" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="den" value="<%= to %>"><button class="btn btn-sm btn-ghost" type="submit">↻ Điền giá nhập còn thiếu (theo bảng giá hiện tại)</button></form>
     <% if (ds.rows.length) { %>
     <form action="/admin/doi-soat/chot" method="post" data-confirm="Chốt kỳ <%= from.split('-').reverse().join('/') %> – <%= to.split('-').reverse().join('/') %>: <%= ds.rows.length %> đơn, nhà cung cấp chuyển lại <%= money(ds.ownerDue) %>? Đơn đã chốt sẽ bị khóa.">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="tu" value="<%= from %>"><input type="hidden" name="den" value="<%= to %>">

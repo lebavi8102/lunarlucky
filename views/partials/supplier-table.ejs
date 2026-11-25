@@ -5,7 +5,7 @@
   <div><span>Tiền hàng theo giá nhập</span><b><%= money(ds.cost) %></b></div>
   <div class="ss-due"><span>NCC chuyển lại chủ shop</span><b><%= money(ds.ownerDue) %></b></div>
 </div>
-<% if (ds.missing) { %><p class="ss-warn">⚠️ <%= ds.missing %> đơn có giỏ chưa có giá nhập (tính tạm 0₫) — cập nhật giá nhập rồi tính lại trước khi chốt.</p><% } %>
+<% if (ds.missing) { %><p class="ss-warn">⚠️ <%= ds.missing %> đơn có giỏ chưa có giá nhập (tính tạm 0₫) — cập nhật giá nhập (Excel) rồi bấm "Điền giá nhập còn thiếu" trước khi chốt.</p><% } %>
 <div class="table-wrap">
   <table class="table ss-table">
     <thead><tr><th scope="col">Đơn</th><th scope="col">Ngày giao</th><th scope="col">Giỏ</th><th scope="col" class="num">Khách trả</th><th scope="col" class="num">Tiền hàng</th><th scope="col" class="num">Phần chủ shop</th></tr></thead>
