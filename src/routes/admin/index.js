@@ -111,16 +111,27 @@ router.get('/don-hang', async (req, res) => {
   if (nguon === 'web') query = query.where((w) => w.where({ source: 'web' }).orWhereNull('source'));
   else if (nguon) query = query.where({ source: nguon });
   if (ngay) query = query.where({ delivery_date: ngay });
+  // Lọc đơn sỉ / lẻ theo tổng số giỏ (mốc wholesale_min_qty, mặc định 10)
+  const loai = ['si', 'le'].includes(req.query.loai) ? req.query.loai : '';
+  const minSi = await require('../../lib/telegram-orders').loadWholesaleMin();
+  if (loai) {
+    const big = db('order_items').select('order_id').groupBy('order_id').havingRaw('SUM(qty) >= ?', [minSi]);
+    query = loai === 'si' ? query.whereIn('id', big) : query.whereNotIn('id', big);
+  }
   if (q) query = query.andWhere((w) => w.where('code', 'like', `%${q}%`).orWhere('phone', 'like', `%${q}%`).orWhere('customer_name', 'like', `%${q}%`));
   const [{ n }] = await query.clone().count({ n: '*' });
   const orders = await query.orderBy('id', 'desc').limit(30).offset((page - 1) * 30);
+  if (orders.length) {
+    const qty = new Map((await db('order_items').whereIn('order_id', orders.map((o) => o.id)).select('order_id').sum({ n: 'qty' }).groupBy('order_id')).map((r) => [r.order_id, Number(r.n)]));
+    for (const o of orders) { o.baskets = qty.get(o.id) || 0; o.isSi = o.baskets >= minSi; }
+  }
   const [{ n: todo }] = await db('orders').where(readyNew).count({ n: '*' });
   const counts = Object.fromEntries(
     (await db('orders').select('status').count({ n: '*' }).groupBy('status')).map((r) => [r.status, Number(r.n)]),
   );
   res.render('admin/orders', {
     title: 'Đơn hàng', orders, status, q, page, pages: Math.max(1, Math.ceil(Number(n) / 30)), counts,
-    unpaidOnly: !!req.query.chua_tt, todoOnly: !!req.query.can_xu_ly, todo: Number(todo), ngay, nguon,
+    unpaidOnly: !!req.query.chua_tt, todoOnly: !!req.query.can_xu_ly, todo: Number(todo), ngay, nguon, loai,
   });
 });
 
@@ -316,6 +327,7 @@ const SETTING_GROUPS = [
     ['bulk2_min_qty', 'Mức 2 — đơn từ bao nhiêu giỏ (để trống = không dùng mức 2)'], ['bulk2_min_days', 'Mức 2 — số ngày chuẩn bị tối thiểu'],
     ['bulk2_max_days', 'Mức 2 — số ngày chuẩn bị tối đa (báo khách "tùy tình hình thực tế")'],
     ['bulk3_min_qty', 'Mức 3 — đơn từ bao nhiêu giỏ thì không hứa thời gian, Lunar Lucky xem xét rồi báo lại'],
+    ['wholesale_min_qty', 'Từ bao nhiêu giỏ thì tính là ĐƠN SỈ (tin Telegram vào chủ đề Đơn sỉ, nhãn 🏢, lọc trong danh sách đơn). Mặc định 10'],
     ['daily_capacity', 'Tối đa bao nhiêu giỏ giao mỗi ngày (0 = không giới hạn). Ngày đủ số giỏ → khách không chọn được, AI gợi ý ngày khác; chủ shop đặt hộ vẫn nhận vượt được'],
     ['order_deadline', 'Ngày giao cuối cùng trước Tết (YYYY-MM-DD, vd 2027-02-05) — để trống thì không hiện lời nhắc'],
     ['order_deadline_label', 'Cách gọi ngày đó theo âm lịch (vd: 29 tháng Chạp)'],

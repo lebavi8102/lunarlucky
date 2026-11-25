@@ -30,6 +30,14 @@ async function morning(day = todayVN()) {
     for (const o of plan.ready) bySlot[o.delivery_slot || ''] = (bySlot[o.delivery_slot || ''] || 0) + 1;
     const slots = ['sang', 'chieu', 'toi', ''].filter((k) => bySlot[k]).map((k) => `${k ? slotLabel(k).split(' ')[0] : 'Không hẹn buổi'} ${bySlot[k]}`).join(' · ');
     lines.push(`🚚 Giao <b>${plan.ready.length} đơn · ${plan.baskets} giỏ</b> (${slots})${plan.codTotal ? ` · thu COD ${money(plan.codTotal)}` : ''}`);
+    // Tách sỉ / lẻ để kho soạn đơn sỉ trước, không lẫn (chủ shop 25/11/2026)
+    const tg = require('./telegram-orders');
+    await tg.loadWholesaleMin();
+    const si = plan.ready.filter((o) => tg.isWholesale(o.items));
+    if (si.length) {
+      const le = plan.ready.length - si.length;
+      lines.push(`🏢 <b>Sỉ ${si.length} đơn</b>: ${si.slice(0, 8).map((o) => `${e(o.code)} (${tg.basketCount(o.items)} giỏ)`).join(', ')}${le ? ` · 🛍 Lẻ ${le} đơn` : ''}`);
+    }
     lines.push('Gõ <code>/giao</code> để xem danh sách chi tiết.');
   } else {
     lines.push('🚚 Hôm nay không có đơn cần giao.');
@@ -67,7 +75,9 @@ async function morning(day = todayVN()) {
   // Soạn trước cho ngày mai
   const tmr = await delivery.forDate(todayVN(1));
   if (tmr.ready.length) {
-    lines.push('', `📦 <b>Ngày mai ${dm(todayVN(1))}: ${tmr.ready.length} đơn · ${tmr.baskets} giỏ</b> — soạn trước:`);
+    const tg2 = require('./telegram-orders');
+    const siT = tmr.ready.filter((o) => tg2.isWholesale(o.items)).length;
+    lines.push('', `📦 <b>Ngày mai ${dm(todayVN(1))}: ${tmr.ready.length} đơn · ${tmr.baskets} giỏ</b>${siT ? ` (🏢 ${siT} đơn sỉ)` : ''} — soạn trước:`);
     lines.push(tmr.picking.slice(0, 12).map((p) => `${e(p.name)} ×${p.qty}`).join(' · '));
   }
   return lines.join('\n');

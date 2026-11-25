@@ -129,7 +129,7 @@ async function telegram(html, chatIdOverride, extra = {}) {
       ? st.telegram_chat_thread || st.telegram_consult_thread || ''
       : topic === 'consult'
       ? st.telegram_consult_thread || ''
-      : st[`telegram_${topic}_thread`] || (['ops', 'money', 'ship'].includes(topic) ? st.telegram_order_thread : '');
+      : st[`telegram_${topic}_thread`] || (['ops', 'money', 'ship', 'wholesale'].includes(topic) ? st.telegram_order_thread : '');
     if (topic === 'chat' && st.telegram_chat_chat_id) {
       chatId = st.telegram_chat_chat_id;
       thread = st.telegram_chat_thread || '';

@@ -105,8 +105,19 @@ function shipKeyboard(order, opts = {}) {
   return { inline_keyboard: [] };
 }
 
+// Đơn sỉ / đơn lẻ (chủ shop 25/11/2026: tách chủ đề để kho không nhầm). Mốc mặc định 10 giỏ = mốc giá sỉ catalogue.
+let wholesaleMin = 10;
+async function loadWholesaleMin() {
+  const n = Number((await settings.all()).wholesale_min_qty);
+  if (Number.isInteger(n) && n > 1) wholesaleMin = n;
+  return wholesaleMin;
+}
+const basketCount = (items) => (items || []).reduce((t, i) => t + (Number(i.qty) || 0), 0);
+const isWholesale = (items) => basketCount(items) >= wholesaleMin;
+const kindLabel = (items) => (isWholesale(items) ? `🏢 <b>ĐƠN SỈ · ${basketCount(items)} giỏ</b>` : `🛍 ĐƠN LẺ · ${basketCount(items)} giỏ`);
+
 function messageText(order, items, notes = null) {
-  const head = notify
+  const head = `${kindLabel(items)}\n` + notify
     .orderTelegram(order, items)
     .replace(/🧧 <b>ĐƠN MỚI /, '🧧 <b>ĐƠN ')
     .replace(/\n\nhttps?:\/\/\S+$/, '');
@@ -250,7 +261,9 @@ async function sendNewOrder(order, items) {
     const notes = await opsNotes(order).catch(() => null);
     const full = await loadOrder(order.id).catch(() => null); // dòng hàng kèm mã sản phẩm + ảnh giỏ
     if (full) items = full.items;
+    await loadWholesaleMin();
     const msg = await notify.telegram(messageText(order, items, notes).replace('🧧 <b>ĐƠN ', '🧧 <b>ĐƠN MỚI '), null, {
+      topic: isWholesale(items) ? 'wholesale' : 'order', // đơn sỉ vào chủ đề "Đơn sỉ" (/chonsi), chưa chọn → chủ đề đơn hàng
       reply_markup: keyboard(order),
     });
     if (msg && msg.message_id) {
@@ -398,7 +411,7 @@ const KHO_HELP = [
   '<code>/giam LL001 2</code> — trừ 2 giỏ (hỏng, bán ngoài web…)',
   '<code>/dat LL001 45</code> — đặt lại đúng 45 giỏ sau khi kiểm kê',
   '',
-  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper, <code>/chontien</code> trong chủ đề tiền về, <code>/chontuvan</code> trong chủ đề tư vấn khách (mặc định: General), <code>/chonchat</code> trong chủ đề chat với khách Fanpage.',
+  '<i>Nhóm có Chủ đề (Topics):</i> gõ <code>/chondon</code> trong chủ đề nhận đơn (đơn lẻ), <code>/chonsi</code> trong chủ đề đơn sỉ, <code>/chonkho</code> trong chủ đề kho, <code>/chonnhac</code> trong chủ đề nhắc việc, <code>/chonship</code> trong chủ đề shipper, <code>/chontien</code> trong chủ đề tiền về, <code>/chontuvan</code> trong chủ đề tư vấn khách (mặc định: General), <code>/chonchat</code> trong chủ đề chat với khách Fanpage.',
   '',
   '🚚 <code>/giao</code> — danh sách giao hôm nay · <code>/giao mai</code> · <code>/giao 25/1</code>',
   '💵 <code>/thu</code> — tiền COD từng shipper đã thu hôm nay + đơn giao rồi chưa thu · <code>/thu 25/1</code>',
@@ -562,7 +575,7 @@ async function handleCommand(msg) {
   if (!m) return;
   const cmd = m[1].toLowerCase();
   const args = (m[2] || '').trim();
-  if (!['ai', 'ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat', 'giao', 'thu', 'doingay'].includes(cmd)) return;
+  if (!['ai', 'ton', 'nhap', 'giam', 'dat', 'kho', 'help', 'start', 'chondon', 'chonsi', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat', 'giao', 'thu', 'doingay'].includes(cmd)) return;
 
   // Chỉ nhận lệnh từ đúng nhóm/cuộc trò chuyện đã chọn trong admin
   const allowed = await notify.telegramChatId();
@@ -581,7 +594,7 @@ async function handleCommand(msg) {
   if (String(msg.chat.id) !== String(allowed)) return;
 
   // Lệnh sửa tồn kho / đổi chủ đề nhận tin: chỉ quản trị viên nhóm (shipper, người ngoài không đụng được)
-  const ADMIN_CMDS = ['ai', 'nhap', 'giam', 'dat', 'chondon', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat'];
+  const ADMIN_CMDS = ['ai', 'nhap', 'giam', 'dat', 'chondon', 'chonsi', 'chonkho', 'chonanh', 'chonnhac', 'chonship', 'chontien', 'chontuvan', 'chonloi', 'chonchat'];
   if (ADMIN_CMDS.includes(cmd) && String((await settings.all()).telegram_admin_only) !== '0'
       && msg.chat.type !== 'private' && !(await isGroupAdmin(msg.chat.id, msg.from && msg.from.id))) {
     return reply(msg, 'Lệnh này chỉ dành cho quản trị viên nhóm (sửa tồn kho, đổi chủ đề nhận tin).');
@@ -609,14 +622,15 @@ async function handleCommand(msg) {
     await settings.save({ telegram_consult_thread: msg.is_topic_message && msg.message_thread_id ? String(msg.message_thread_id) : '' });
     return reply(msg, '✅ Từ giờ tin <b>tư vấn khách</b> (khách nhờ gọi lại, yêu cầu báo giá doanh nghiệp, khách Fanpage cần gặp người thật) gửi vào chủ đề này.');
   }
-  if (cmd === 'chondon' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
+  if (cmd === 'chondon' || cmd === 'chonsi' || cmd === 'chonkho' || cmd === 'chonanh' || cmd === 'chonnhac' || cmd === 'chonship' || cmd === 'chontien') {
     if (!msg.is_topic_message || !msg.message_thread_id) {
       return reply(msg, 'Hãy bật <b>Chủ đề (Topics)</b> cho nhóm, tạo chủ đề rồi gõ lệnh này <b>bên trong</b> chủ đề đó.');
     }
-    const key = { chondon: 'telegram_order_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread', chontien: 'telegram_money_thread' }[cmd];
+    const key = { chondon: 'telegram_order_thread', chonsi: 'telegram_wholesale_thread', chonkho: 'telegram_stock_thread', chonanh: 'telegram_photo_thread', chonnhac: 'telegram_ops_thread', chonship: 'telegram_ship_thread', chontien: 'telegram_money_thread' }[cmd];
     await settings.save({ [key]: String(msg.message_thread_id) });
     return reply(msg, {
       chondon: '✅ Từ giờ <b>đơn hàng mới</b> sẽ gửi vào chủ đề này.',
+      chonsi: `✅ Đây là chủ đề <b>ĐƠN SỈ</b>. Từ giờ đơn từ ${wholesaleMin} giỏ trở lên (đặt trên web hay tạo trong admin) gửi vào đây; đơn lẻ vẫn ở chủ đề đơn hàng.`,
       chonkho: '✅ Từ giờ <b>cảnh báo kho</b> (sắp hết, hết hàng) sẽ gửi vào chủ đề này. Gõ <code>/ton</code> ở đây để xem tồn kho.',
       chontien: '✅ Từ giờ tin về <b>tiền</b> (đơn chờ chuyển khoản/cọc, khách chuyển thiếu/dư, tiền vào không khớp đơn) gửi vào chủ đề này — chủ đề Đơn hàng chỉ còn đơn đã có tiền để kho soạn.',
       chonship: '✅ Đây là chủ đề <b>SHIPPER</b>. Khi kho bấm "📦 Đã soạn xong", thẻ giao hàng (người nhận, địa chỉ, tiền thu) hiện ở đây với nút <b>Nhận đi giao</b> → <b>Đã giao xong</b>.',
@@ -675,7 +689,7 @@ async function handleUpdate(update) {
     const from = String(update.message.migrate_from_chat_id || update.message.chat.id);
     const to = String(update.message.migrate_to_chat_id || update.message.chat.id);
     if (current === from && from !== to) {
-      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '' });
+      await settings.save({ telegram_chat_id: to, telegram_order_thread: '', telegram_wholesale_thread: '', telegram_stock_thread: '', telegram_photo_thread: '', telegram_ops_thread: '', telegram_ship_thread: '', telegram_money_thread: '' });
       console.log(`[telegram] nhóm chuyển mã ${from} → ${to}, đã cập nhật`);
     }
     return;
@@ -862,7 +876,8 @@ async function ensureWebhook() {
       { command: 'giam', description: 'Trừ hàng: /giam LL001 2' },
       { command: 'dat', description: 'Đặt lại tồn kho: /dat LL001 45' },
       { command: 'kho', description: 'Hướng dẫn lệnh kho' },
-      { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới' },
+      { command: 'chondon', description: 'Chọn chủ đề này để nhận đơn hàng mới (đơn lẻ)' },
+      { command: 'chonsi', description: 'Chọn chủ đề này để nhận đơn sỉ (từ 10 giỏ)' },
       { command: 'chonkho', description: 'Chọn chủ đề này để nhận cảnh báo kho' },
       { command: 'chonanh', description: 'Chọn chủ đề này để shipper gửi ảnh giao hàng' },
       { command: 'chontien', description: 'Chọn chủ đề này cho tin chờ chuyển khoản / tiền vào' },
@@ -877,5 +892,5 @@ async function ensureWebhook() {
 }
 
 module.exports = {
-  sendNewOrder, refreshOrderMessage, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder, opsNotes, codReport,
+  sendNewOrder, refreshOrderMessage, isWholesale, loadWholesaleMin, basketCount, handleUpdate, ensureWebhook, webhookSecret, messageText, keyboard, stockAlertsAfterOrder, opsNotes, codReport,
 };

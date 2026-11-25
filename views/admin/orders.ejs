@@ -2,10 +2,12 @@
 <div class="admin-head"><h1>Đơn hàng</h1><div class="actions"><a class="btn btn-sm" href="/admin/don-hang/tao"><svg class="icon icon-sm"><use href="#i-plus"/></svg> Tạo đơn</a> <a class="btn btn-sm btn-quiet" href="/admin/sao-luu/tai-ve?loai=don-hang"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Xuất Excel</a></div></div>
 <div class="list-tools">
   <nav aria-label="Lọc theo trạng thái"><ul class="chips">
-    <li><a class="chip" href="/admin/don-hang" aria-current="<%= !status && !unpaidOnly && !todoOnly && !ngay %>">Tất cả</a></li>
+    <li><a class="chip" href="/admin/don-hang" aria-current="<%= !status && !unpaidOnly && !todoOnly && !ngay && !loai %>">Tất cả</a></li>
     <li><a class="chip" href="?can_xu_ly=1" aria-current="<%= todoOnly %>">🔥 Cần xử lý<% if (todo) { %>&nbsp;<b><%= todo %></b><% } %></a></li>
     <% Object.entries(ORDER_STATUS).forEach(([k, v]) => { %><li><a class="chip" href="?status=<%= k %>" aria-current="<%= status === k %>"><%= v %><% if (counts[k]) { %>&nbsp;<b><%= counts[k] %></b><% } %></a></li><% }) %>
     <li><a class="chip" href="?chua_tt=1" aria-current="<%= unpaidOnly %>">Chờ chuyển khoản / chờ cọc</a></li>
+    <li><a class="chip" href="?loai=si" aria-current="<%= loai === 'si' %>">🏢 Đơn sỉ</a></li>
+    <li><a class="chip" href="?loai=le" aria-current="<%= loai === 'le' %>">🛍 Đơn lẻ</a></li>
   </ul></nav>
   <details class="filter-more" <%= nguon ? 'open' : '' %>>
     <summary>Lọc theo kênh<%= nguon ? ': ' + fmt.sourceLabel(nguon) : '' %></summary>
@@ -31,7 +33,7 @@
       <% if (!orders.length) { %><tr><td colspan="7" class="muted" style="padding:32px;text-align:center">Không có đơn hàng phù hợp.</td></tr><% } %>
       <% orders.forEach(o => { %>
       <tr>
-        <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.is_gift) { %> <svg class="icon icon-sm" style="display:inline;vertical-align:-3px;color:var(--gold-700)" aria-label="Gửi tặng"><use href="#i-gift"/></svg><% } %></td>
+        <td><a class="t" href="/admin/don-hang/<%= o.id %>"><%= o.code %></a><% if (o.is_gift) { %> <svg class="icon icon-sm" style="display:inline;vertical-align:-3px;color:var(--gold-700)" aria-label="Gửi tặng"><use href="#i-gift"/></svg><% } %><br><span class="tiny <%= o.isSi ? '' : 'muted' %>" style="<%= o.isSi ? 'font-weight:700;color:var(--lacquer-700)' : '' %>"><%= o.isSi ? '🏢 Sỉ' : 'Lẻ' %> · <%= o.baskets %> giỏ</span></td>
         <td><%= fmt.dateTime(o.created_at) %></td>
         <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %><% if (o.source && o.source !== 'web') { %> · <%= fmt.sourceLabel(o.source) %><% } %><% if (o.created_by) { %> · đặt hộ: <%= o.created_by %><% } %></span></td>
         <td><a href="?ngay=<%= o.delivery_date %>" title="Xem các đơn giao cùng ngày"><%= fmt.ymd(o.delivery_date) %></a><br><span class="tiny muted"><%= (o.province || '').split(',')[0] %></span></td>

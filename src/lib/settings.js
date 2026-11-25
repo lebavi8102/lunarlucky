@@ -13,6 +13,8 @@ const DEFAULTS = {
   telegram_stock_thread: '',
   telegram_photo_thread: '',
   telegram_ops_thread: '',
+  telegram_wholesale_thread: '', // chủ đề Đơn sỉ (/chonsi)
+  wholesale_min_qty: '10', // từ bao nhiêu giỏ thì là đơn sỉ
   telegram_ship_thread: '',
   telegram_money_thread: '',
   telegram_consult_thread: '',
