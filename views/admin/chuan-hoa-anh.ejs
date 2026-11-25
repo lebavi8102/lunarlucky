@@ -1,7 +1,7 @@
 <%- include('_top') %>
-<% const nhan = { 'da-chuan': ['Đã đúng 1080×1350', 'muted'], 'da-lam': ['Đã chuẩn hóa', 'muted'], 'cat': ['Cắt nhẹ cho vừa 4:5', ''], 'cat-gio': ['Cắt kín khung quanh giỏ', ''], 'nen-mo': ['Ảnh lệch quá nhiều: thêm nền mờ', ''], 'khong-doc': ['Không đọc được ảnh', 'muted'] };
+<% const nhan = { 'da-chuan': ['Đã đúng khung 4:5', 'muted'], 'da-lam': ['Đã chuẩn hóa', 'muted'], 'cat': ['Cắt nhẹ cho vừa 4:5', ''], 'cat-gio': ['Cắt kín khung quanh giỏ', ''], 'nen-mo': ['Ảnh lệch quá nhiều: thêm nền mờ', ''], 'khong-doc': ['Không đọc được ảnh', 'muted'] };
    const canLam = rows.filter((r) => ['cat', 'cat-gio', 'nen-mo'].includes(r.cach)); const daLam = rows.filter((r) => r.cach === 'da-lam').length; %>
-<div class="admin-head"><h1>Chuẩn hóa ảnh sản phẩm</h1><span class="muted small">Đưa ảnh về cùng khung 1080×1350 (4:5) để trang sản phẩm không lộ viền</span></div>
+<div class="admin-head"><h1>Chuẩn hóa ảnh sản phẩm</h1><span class="muted small">Đưa ảnh về cùng khung 4:5 (rộng 1080–1600px) để trang sản phẩm không lộ viền</span></div>
 
 <div class="panel" style="margin-bottom:16px">
   <b><%= canLam.length %> ảnh cần chuẩn hóa</b> · <%= daLam %> ảnh đã chuẩn hóa · <%= rows.length %> ảnh đang dùng.

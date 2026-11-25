@@ -161,6 +161,7 @@
     if (main.complete) fit();
     $$('[data-src]', gallery).forEach((b) =>
       b.addEventListener('click', () => {
+        if (b.dataset.srcset) main.srcset = b.dataset.srcset; // có srcset thì trình duyệt bỏ qua src → phải đổi cả hai
         main.src = b.dataset.src;
         $$('[data-src]', gallery).forEach((x) => x.setAttribute('aria-current', String(x === b)));
       }),

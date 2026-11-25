@@ -11,12 +11,14 @@
   <div class="pdp">
     <div class="pdp-gallery" data-gallery>
       <div class="gallery-main">
-        <img src="<%= img(gallery[0]) %>" alt="<%= product.name %>" width="800" height="1000" fetchpriority="high" data-gallery-main>
+        <%# Ảnh gốc rộng tới 1600px: màn hình thường lấy bản 720/1080 cho nhẹ, màn hình mịn lấy bản gốc cho nét %>
+        <% const srcsetOf = (id) => `${img(id)}?w=720 720w, ${img(id)}?w=1080 1080w, ${img(id)} 1600w`; %>
+        <img src="<%= img(gallery[0]) %>" srcset="<%= srcsetOf(gallery[0]) %>" sizes="(min-width: 960px) 620px, 100vw" alt="<%= product.name %>" width="800" height="1000" fetchpriority="high" data-gallery-main>
       </div>
       <% if (gallery.length > 1) { %>
       <ul class="thumbs" aria-label="Ảnh sản phẩm">
         <% gallery.forEach((id, i) => { %>
-          <li><button type="button" aria-label="Xem ảnh <%= i + 1 %>" aria-current="<%= i === 0 %>" data-src="<%= img(id) %>"><img src="<%= img(id) %>?w=360" alt="" loading="lazy" width="76" height="92"></button></li>
+          <li><button type="button" aria-label="Xem ảnh <%= i + 1 %>" aria-current="<%= i === 0 %>" data-src="<%= img(id) %>" data-srcset="<%= srcsetOf(id) %>"><img src="<%= img(id) %>?w=360" alt="" loading="lazy" width="76" height="92"></button></li>
         <% }) %>
       </ul>
       <% } %>

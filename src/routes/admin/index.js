@@ -281,7 +281,7 @@ const SETTING_GROUPS = [
     ['cod_deposit_bulk_qty', 'Đơn nhiều giỏ: từ bao nhiêu giỏ thì cọc cao hơn'], ['cod_deposit_bulk_percent', 'Tỉ lệ cọc cho đơn nhiều giỏ (%)'],
   ]],
   ['Ảnh sản phẩm', [
-    ['anh_chuan_hoa', 'Tự đưa ảnh sản phẩm mới tải lên về 1080×1350 (1 = bật, 0 = tắt, giữ nguyên ảnh gốc)'],
+    ['anh_chuan_hoa', 'Tự đưa ảnh sản phẩm mới tải lên về khung 4:5, rộng 1080–1600px (1 = bật, 0 = tắt, giữ nguyên ảnh gốc)'],
   ]],
   ['Giao hàng', [
     ['shipping_fee', 'Phí giao hàng (₫)'], ['free_ship_threshold', 'Miễn phí giao cho đơn từ (₫)'],

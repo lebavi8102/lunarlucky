@@ -17,7 +17,7 @@ function sniff(buf) {
   return null;
 }
 
-/** Ảnh sản phẩm → 1080×1350 (4:5) khi bật cài đặt anh_chuan_hoa. Lỗi → giữ ảnh gốc, không chặn việc tải ảnh. */
+/** Ảnh sản phẩm → khung 4:5, rộng 1080–1600px khi bật cài đặt anh_chuan_hoa. Lỗi → giữ ảnh gốc, không chặn việc tải ảnh. */
 async function chuanHoaAnhSanPham(buffer, mime) {
   try {
     const s = await require('./settings').all();

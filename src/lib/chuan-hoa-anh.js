@@ -1,5 +1,7 @@
 /**
- * Chuẩn hóa ảnh sản phẩm về một kích thước: 1080×1350 (4:5, đúng khung ảnh trên web), JPEG.
+ * Chuẩn hóa ảnh sản phẩm về khung 4:5 (đúng khung ảnh trên web), JPEG, rộng 1080–1600px:
+ * ảnh gốc to → tối đa 1600×2000 (nét trên màn hình điện thoại / laptop đời mới); ảnh gốc nhỏ → 1080×1350 như trước
+ * (không phóng to thêm vì phóng không làm nét hơn, chỉ làm ảnh nặng).
  * - Ảnh gần đúng tỉ lệ (lệch ≤ 10%): cắt nhẹ phần giữa cho vừa khung.
  * - Ảnh lệch nhiều (rất dọc 9:16, ảnh ngang): giữ TRỌN ảnh, chỗ trống lấp bằng chính ảnh đó phóng to + làm mờ.
  * Dùng bộ mã WASM @jsquash có sẵn (Render không cài được sharp). PNG giải bằng zlib của Node, không thêm thư viện.
@@ -8,9 +10,17 @@
 const fs = require('fs');
 const zlib = require('zlib');
 
-const W = 1080;
-const H = 1350;
+const W_MIN = 1080;             // ảnh nhỏ hơn vẫn ra 1080×1350 (như trước)
+const W = 1600;                 // tối đa 1600×2000
+const H = 2000;
 const TI_LE = W / H;            // 0.8
+/** Rộng ảnh ra theo chiều rộng vùng 4:5 của ảnh gốc: 1080, hoặc 1200–1600 chia hết cho 4 (cao = rộng × 1,25 tròn số).
+ *  Gốc chỉ nhỉnh hơn 1080 chút (dưới 1200) → vẫn 1080 cho đồng đều, lệch vài điểm ảnh không nét hơn. */
+function kichRa(cw) {
+  let w = Math.min(W, Math.floor(cw / 4) * 4);
+  if (w < 1200) w = W_MIN;
+  return { w, h: w * 5 / 4 };
+}
 const LECH_CAT = 0.10;          // lệch ≤ 10% so với 4:5 → cắt; hơn → nền mờ
 const CHAT_LUONG = 85;
 
@@ -157,8 +167,8 @@ function catTheoGio(img) {
 
 const MEP_MO = 28;                  // px: mép ảnh chính hòa dần vào nền mờ, không để đường ranh sắc
 function dan(nen, fg, ox, oy) {     // dán ảnh chính lên nền, làm mềm các mép giáp nền
-  const d = nen.data, f = fg.data, fw = fg.width, fh = fg.height;
-  const mL = ox > 0, mR = ox + fw < W, mT = oy > 0, mB = oy + fh < H;
+  const d = nen.data, f = fg.data, fw = fg.width, fh = fg.height, NW = nen.width, NH = nen.height;
+  const mL = ox > 0, mR = ox + fw < NW, mT = oy > 0, mB = oy + fh < NH;
   for (let y = 0; y < fh; y++) {
     for (let x = 0; x < fw; x++) {
       let t = 1;
@@ -166,7 +176,7 @@ function dan(nen, fg, ox, oy) {     // dán ảnh chính lên nền, làm mềm 
       if (mR) t = Math.min(t, (fw - x) / MEP_MO);
       if (mT) t = Math.min(t, (y + 1) / MEP_MO);
       if (mB) t = Math.min(t, (fh - y) / MEP_MO);
-      const i = (y * fw + x) * 4, j = ((oy + y) * W + ox + x) * 4;
+      const i = (y * fw + x) * 4, j = ((oy + y) * NW + ox + x) * 4;
       if (t >= 1) { d[j] = f[i]; d[j + 1] = f[i + 1]; d[j + 2] = f[i + 2]; }
       else { d[j] = d[j] * (1 - t) + f[i] * t; d[j + 1] = d[j + 1] * (1 - t) + f[i + 1] * t; d[j + 2] = d[j + 2] * (1 - t) + f[i + 2] * t; }
     }
@@ -197,12 +207,12 @@ function kichThuoc(buf) {
 /** Cách sẽ dùng cho ảnh kích thước w×h. */
 const LECH_CAT_GIO = 0.40;          // lệch nhiều hơn LECH_CAT nhưng ≤ 40%: cắt kín khung quanh chỗ có giỏ
 function cachXuLy(w, h) {
-  if (w === W && h === H) return 'da-chuan';
+  if (w >= W_MIN && w <= W && w % 4 === 0 && h === w * 5 / 4) return 'da-chuan'; // gồm cả ảnh 1080×1350 đã chuẩn hóa trước đây
   const lech = Math.abs(w / h / TI_LE - 1);
   return lech <= LECH_CAT ? 'cat' : lech <= LECH_CAT_GIO ? 'cat-gio' : 'nen-mo';
 }
 
-/** buf (JPEG/PNG/WebP) → { data: JPEG 1080×1350, mime, cach, goc: 'w×h' }. Ảnh đã đúng chuẩn và là JPEG → trả nguyên. */
+/** buf (JPEG/PNG/WebP) → { data: JPEG 4:5 rộng 1080–1600, mime, cach, goc: 'w×h' }. Ảnh đã đúng chuẩn và là JPEG → trả nguyên. */
 async function chuanHoa(buf) {
   const kt = kichThuoc(buf);
   if (kt && kt.mime === 'image/jpeg' && cachXuLy(kt.w, kt.h) === 'da-chuan') return { data: buf, mime: 'image/jpeg', cach: 'da-chuan', goc: `${kt.w}×${kt.h}` };
@@ -216,11 +226,16 @@ async function chuanHoa(buf) {
   const goc = `${img.width}×${img.height}`;
   const cach = cachXuLy(img.width, img.height);
   let out;
+  let ra;
   if (cach === 'cat' || cach === 'da-chuan') {
-    out = await resize(catGiua45(img), { width: W, height: H });
+    const vung = catGiua45(img);
+    ra = kichRa(vung.width);
+    out = await resize(vung, { width: ra.w, height: ra.h });
   } else {
     // lệch nhiều: cắt phần tường/nền trống quanh giỏ, phần còn thiếu bù bằng nền mờ → không mất quai, nắp, mép hộp
     if (cach === 'cat-gio') img = catTheoGio(img);
+    ra = kichRa(Math.min(img.width, img.height * TI_LE));
+    const W = ra.w, H = ra.h;
     // nền: chính ảnh đó lấp kín khung, thu rất nhỏ rồi phóng lại = mờ mịn; làm sáng nhẹ để ảnh chính nổi lên
     const nho = await resize(catGiua45(img), { width: 27, height: 34 });
     const nen = await resize(nho, { width: W, height: H });
@@ -233,7 +248,7 @@ async function chuanHoa(buf) {
     dan(nen, fg, Math.floor((W - fw) / 2), Math.floor((H - fh) / 2));
     out = nen;
   }
-  return { data: Buffer.from(await encode(out, { quality: CHAT_LUONG })), mime: 'image/jpeg', cach, goc };
+  return { data: Buffer.from(await encode(out, { quality: CHAT_LUONG })), mime: 'image/jpeg', cach, goc, ra: `${ra.w}×${ra.h}` };
 }
 
-module.exports = { chuanHoa, kichThuoc, cachXuLy, decodePng, init, W, H };
+module.exports = { chuanHoa, kichThuoc, cachXuLy, decodePng, init, W, H, W_MIN };

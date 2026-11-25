@@ -1,12 +1,14 @@
 /**
- * Ảnh thu nhỏ cho thẻ sản phẩm: ảnh gốc 1080px (~250–290KB) nhưng trên điện thoại ô ảnh chỉ ~210px.
- * /media/:id?w=480 → JPEG rộng 480px (~40KB). Dùng lại bộ WASM @jsquash của chuan-hoa-anh (Render không có sharp).
+ * Ảnh thu nhỏ cho thẻ sản phẩm: ảnh gốc 1080–1600px (~250–700KB) nhưng trên điện thoại ô ảnh chỉ ~210px.
+ * /media/:id?w=480 → JPEG rộng 480px (~40KB); ?w=1080 cho ảnh lớn trang chi tiết trên màn hình thường.
+ * Dùng lại bộ WASM @jsquash của chuan-hoa-anh (Render không có sharp).
  * Lỗi bất kỳ → trả null, nơi gọi gửi ảnh gốc (không bao giờ làm hỏng ảnh trên web).
  */
 const { init, decodePng } = require('./chuan-hoa-anh');
 
-const WIDTHS = [360, 480, 720];
+const WIDTHS = [360, 480, 720, 1080];
 const CHAT_LUONG = 78;
+const CHAT_LUONG_LON = 85; // bản 1080 hiện to trên trang chi tiết → nén nhẹ tay như ảnh gốc
 
 const isJpeg = (b) => b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 const isPng = (b) => b.length > 8 && b[0] === 0x89 && b.toString('ascii', 1, 4) === 'PNG';
@@ -29,7 +31,7 @@ async function make(buf, w) {
   if (!isJpeg(buf) && !isWebp(buf) && !isPng(buf)) return null;
   const { decJpeg, decWebp, encode, resize } = await init();
   let img = isJpeg(buf) ? await decJpeg(buf) : isWebp(buf) ? await decWebp(buf) : decodePng(buf);
-  if (img.width <= w) return null; // ảnh đã nhỏ sẵn → dùng ảnh gốc
+  if (img.width <= w * 1.15) return null; // ảnh đã nhỏ sẵn / chỉ to hơn chút (1086 so với 1080) → dùng ảnh gốc, khỏi nén lại cho nặng hơn
   // Nền trong suốt (PNG/WebP) → trắng, vì JPEG không có lớp trong suốt
   const d = img.data;
   for (let i = 3; i < d.length; i += 4) {
@@ -42,7 +44,7 @@ async function make(buf, w) {
     }
   }
   img = await resize(img, { width: w, height: Math.round((img.height * w) / img.width) });
-  return Buffer.from(await encode(img, { quality: CHAT_LUONG }));
+  return Buffer.from(await encode(img, { quality: w >= 1080 ? CHAT_LUONG_LON : CHAT_LUONG }));
 }
 
 /** @returns {Promise<Buffer|null>} JPEG đã thu nhỏ, hoặc null (dùng ảnh gốc) */

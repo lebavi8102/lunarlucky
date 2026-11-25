@@ -234,7 +234,7 @@ async function syncFromExcel(buffer, files = [], { final = false, check = false 
   if (check || (need.size && !final)) return { ok: true, applied: false, need_images: [...need], images, errors, skipped };
 
   const result = { ok: true, applied: true, created: [], updated: [], unchanged: 0, skipped, errors, need_images: [] };
-  // ảnh gửi kèm → 1080×1350 (4:5) TRƯỚC khi mở giao dịch (mỗi ảnh ~1 giây); giữ tên file để lần đồng bộ sau vẫn khớp theo tên
+  // ảnh gửi kèm → khung 4:5, rộng 1080–1600px TRƯỚC khi mở giao dịch (mỗi ảnh ~1 giây); giữ tên file để lần đồng bộ sau vẫn khớp theo tên
   const { chuanHoaAnhSanPham } = require('./media');
   for (const f of uploaded.values()) {
     const mime0 = sniff(f.buffer);
@@ -436,7 +436,7 @@ async function stockReport() {
 
 /**
  * Nhận ảnh theo đợt nhỏ trước lượt đồng bộ cuối (gửi 50 ảnh một lần làm máy chủ 512 MB hết RAM, sập giữa chừng).
- * Mỗi ảnh chuẩn hóa 1080×1350 rồi cất ngay vào media với alt = STAGE_ALT; cùng tên gửi lại → thay bản chờ cũ.
+ * Mỗi ảnh chuẩn hóa về khung 4:5 (1080–1600px) rồi cất ngay vào media với alt = STAGE_ALT; cùng tên gửi lại → thay bản chờ cũ.
  */
 async function stageImages(files = []) {
   const { chuanHoaAnhSanPham } = require('./media');
