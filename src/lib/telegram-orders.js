@@ -484,13 +484,14 @@ async function deliveryList(args) {
     if (m) day = `${todayVN().slice(0, 4)}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
   }
   const plan = await delivery.forDate(day);
+  await loadWholesaleMin();
   const head = `🚚 <b>GIAO NGÀY ${day.slice(8)}/${day.slice(5, 7)}</b> · ${plan.ready.length} đơn · ${plan.baskets} giỏ${plan.codTotal ? ` · thu COD ${money(plan.codTotal)}` : ''}`;
   if (!plan.ready.length && !plan.unpaid.length) return `${head}\nKhông có đơn nào.`;
   const lines = plan.ready.map((o, i) => {
     const t = delivery.shipTo(o);
     const cod = delivery.codDue(o);
     return [
-      `<b>${i + 1}. ${e(o.code)}</b>${o.delivery_slot ? ` · ⏰ <b>${require('./format').slotLabel(o.delivery_slot)}</b>` : ''}${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}${o.shipper && o.status === 'shipping' ? ` · 🛵 ${e(o.shipper)}` : ''}`,
+      `<b>${i + 1}. ${e(o.code)}</b>${isWholesale(o.items) ? ' · 🏢 <b>SỈ</b>' : ''}${o.delivery_slot ? ` · ⏰ <b>${require('./format').slotLabel(o.delivery_slot)}</b>` : ''}${o.is_gift ? ' 🎁 tặng' : ''}${o.status !== 'new' ? ` · ${ORDER_STATUS[o.status]}` : ''}${o.shipper && o.status === 'shipping' ? ` · 🛵 ${e(o.shipper)}` : ''}`,
       `   ${e(t.name)} · ${e(t.phone)}`,
       `   📍 ${e(t.address)}`,
       `   ${o.items.map((x) => `${e(x.name)} ×${x.qty}`).join(', ')} · ${cod ? `<b>thu ${money(cod)}</b>` : 'đã thanh toán'}`,
@@ -817,8 +818,11 @@ async function handleUpdate(update) {
     await updateOrder(id, { status: 'confirmed' }, { by: `${by} (Telegram) · Giao không được: ${FAIL_REASONS[action]}` });
     await db('orders').where({ id: o0.id }).update({ shipper: null });
     await refreshOrderMessage(id);
-    // Báo vào chủ đề ĐƠN HÀNG (người xử lý đơn), trả lời ngay dưới tin đơn
+    // Báo vào đúng chủ đề của tin đơn (ĐƠN SỈ hoặc ĐƠN HÀNG), trả lời ngay dưới tin đơn
+    await loadWholesaleMin();
+    const failTopic = isWholesale(await db('order_items').where({ order_id: o0.id }).select('qty')) ? 'wholesale' : 'order';
     await notify.telegram(`⚠️ <b>Đơn ${e(o0.code)} giao không được</b> — ${FAIL_REASONS[action]} (${e(by)}).\nNgười xử lý: gọi lại khách ${e(o0.is_gift ? o0.recipient_phone : o0.phone)}, hẹn lại ngày (<code>/doingay ${e(o0.code)} dd/mm</code>) rồi bấm "Nhận đi giao" khi giao lại.`, null, {
+      topic: failTopic,
       ...(o0.tg_message_id ? { reply_to_message_id: Number(o0.tg_message_id), allow_sending_without_reply: true } : {}),
     }).catch((err) => console.error('[telegram] báo giao lỗi thất bại:', err.message));
     return answer(cb, 'Đã báo nhóm: giao không được. Đơn quay về "Đã xác nhận".');

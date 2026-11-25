@@ -106,7 +106,7 @@ function waitText(order, state) {
     wait: Number(order.deposit_amount) > 0 && order.payment_method === 'cod'
       ? `⏳ <b>CHỜ CỌC</b> ${money2(order.deposit_amount)} · ${order.code} (COD)`
       : `⏳ <b>CHỜ CHUYỂN KHOẢN</b> · ${order.code}`,
-    paid: `✅ <b>${order.payment_status === 'deposit' ? 'ĐÃ NHẬN CỌC' : 'ĐÃ NHẬN TIỀN'}</b> · ${order.code} → xem tin ĐƠN MỚI bên dưới để xử lý`,
+    paid: `✅ <b>${order.payment_status === 'deposit' ? 'ĐÃ NHẬN CỌC' : 'ĐÃ NHẬN TIỀN'}</b> · ${order.code} → xem tin ĐƠN MỚI ở chủ đề Đơn hàng / Đơn sỉ để xử lý`,
     expired: `❌ <b>TỰ HỦY</b> · ${order.code} — quá hạn chưa chuyển khoản, hàng đã trả về kho`,
   }[state];
   return [
