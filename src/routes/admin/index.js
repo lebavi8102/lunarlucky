@@ -659,7 +659,8 @@ router.get('/doi-soat', async (req, res) => {
   const s = await supplier.sheet({ to });
   if (req.query.excel === '1') return xlsxSend(res, supplier.excel(s, `Chưa chốt · giao đến ${to}`), `DoiSoat_ChuaChot_den_${to}`);
   const periods = await db('supplier_settlements').orderBy('id', 'desc').limit(30);
-  res.render('admin/supplier', { title: 'Đối soát nhà cung cấp', ds: s, from, to, periods, shareLink: supplier.shareLink });
+  const up = await supplier.sheet({ to, upcoming: true });
+  res.render('admin/supplier', { title: 'Đối soát nhà cung cấp', ds: s, up, from, to, periods, shareLink: supplier.shareLink });
 });
 
 router.post('/doi-soat/tinh-lai', async (req, res) => {

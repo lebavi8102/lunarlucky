@@ -26,6 +26,30 @@
 </section>
 
 <section class="form-card">
+  <h2>Đơn sắp vào đối soát · <%= up.rows.length %> đơn chưa giao xong (hoặc giao sau <%= to.split('-').reverse().join('/') %>)</h2>
+  <p class="small muted" style="margin:-8px 0 12px">Giao xong (bấm "Đã giao xong" trên Telegram) thì đơn tự vào kỳ đối soát của tuần giao. Số tiền bên dưới là dự kiến.</p>
+  <div class="table-wrap">
+    <table class="table ss-table">
+      <thead><tr><th scope="col">Đơn</th><th scope="col">Ngày giao</th><th scope="col">Trạng thái</th><th scope="col" class="num">Khách trả</th><th scope="col" class="num">Tiền hàng</th><th scope="col" class="num">Phần chủ shop</th></tr></thead>
+      <tbody>
+        <% if (!up.rows.length) { %><tr><td colspan="6" class="muted" style="padding:20px;text-align:center">Không có đơn nào đang chờ.</td></tr><% } %>
+        <% up.rows.forEach((r) => { %>
+        <tr>
+          <td><a class="t" href="/admin/don-hang/<%= r.id %>"><%= r.code %></a><br><span class="tiny muted"><%= r.customer %></span><br><span class="tiny <%= r.isSi ? 'ss-si' : 'muted' %>"><%= r.isSi ? '🏢 Sỉ' : 'Lẻ' %> · <%= r.qty %> giỏ</span></td>
+          <td><%= r.delivery_date.split('-').reverse().join('/') %></td>
+          <td><span class="status status-<%= r.status %>"><%= ORDER_STATUS[r.status] %></span></td>
+          <td class="num"><%= money(r.total) %></td>
+          <td class="num"><%= money(r.cost) %><% if (r.missingCost) { %> ⚠️<% } %></td>
+          <td class="num"><b><%= money(r.owner) %></b></td>
+        </tr>
+        <% }) %>
+      </tbody>
+      <% if (up.rows.length) { %><tfoot><tr><th scope="row" colspan="3">Tổng dự kiến</th><td class="num"><b><%= money(up.revenue) %></b></td><td class="num"><b><%= money(up.cost) %></b></td><td class="num"><b><%= money(up.ownerDue) %></b></td></tr></tfoot><% } %>
+    </table>
+  </div>
+</section>
+
+<section class="form-card">
   <h2>Các kỳ đã chốt</h2>
   <div class="table-wrap">
     <table class="table">

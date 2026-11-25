@@ -55,9 +55,12 @@ const eligible = (q) => q.where({ status: 'completed' }).whereNot('payment_statu
  * - settlementId: xem lại kỳ đã chốt
  * - to: kỳ đang mở → mọi đơn đã giao xong, chưa chốt, ngày giao ≤ to
  */
-async function sheet({ settlementId = null, to = null } = {}) {
+async function sheet({ settlementId = null, to = null, upcoming = false } = {}) {
   let q = db('orders');
   if (settlementId) q = q.where({ settlement_id: settlementId });
+  // Sắp vào đối soát: đơn chưa chốt, chưa hủy, chưa giao xong hoặc giao sau kỳ đang xem (để chủ shop thấy đơn của mình đang ở đâu)
+  else if (upcoming) q = q.whereNull('settlement_id').whereNotIn('status', ['cancelled']).whereNot('payment_status', 'refunded')
+    .andWhere((w) => w.whereNot('status', 'completed').orWhere('delivery_date', '>', to));
   else q = eligible(q).whereNull('settlement_id').andWhere('delivery_date', '<=', to);
   const orders = await q.orderBy([{ column: 'delivery_date' }, { column: 'id' }]);
   const ids = orders.map((o) => o.id);
@@ -82,7 +85,7 @@ async function sheet({ settlementId = null, to = null } = {}) {
     revenue += total;
     cost += c;
     return {
-      id: o.id, code: o.code, delivery_date: String(o.delivery_date || '').slice(0, 10), customer: o.customer_name,
+      id: o.id, status: o.status, code: o.code, delivery_date: String(o.delivery_date || '').slice(0, 10), customer: o.customer_name,
       payment: o.payment_method === 'cod' ? 'COD (shipper thu)' : 'Chuyển khoản',
       items: its, qty, isSi: qty >= min, total, cost: c, owner: total - c, missingCost: miss,
     };
