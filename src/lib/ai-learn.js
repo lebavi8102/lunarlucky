@@ -84,7 +84,7 @@ async function learn({ now = Date.now(), maxThreads = 15 } = {}) {
     await require('./notify').telegram([
       `📚 <b>AI rút ra ${lessons.length} bài học mới từ cách bạn tư vấn</b> — chờ duyệt:`,
       ...lessons.map((x, i) => `${i + 1}. ${e(x)}`),
-      `👉 Duyệt / sửa / bỏ: ${config.publicUrl}/admin/ai-hoc`,
+      `👉 Duyệt / sửa / bỏ: ${config.siteUrl}/admin/ai-hoc`,
     ].join('\n'), null, { topic: 'consult' }).catch(() => {});
   }
   return lessons.length;

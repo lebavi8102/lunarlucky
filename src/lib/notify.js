@@ -222,7 +222,7 @@ function orderTelegram(order, items) {
     order.created_by || (order.source && order.source !== 'web')
       ? `📣 Kênh: ${e(sourceLabel(order.source))}${order.created_by ? ` · đặt hộ bởi ${e(order.created_by)}` : ''}`
       : null,
-    `\n${config.publicUrl}/admin/don-hang/${order.id}`,
+    `\n${config.siteUrl}/admin/don-hang/${order.id}`,
   ]
     .filter((x) => x !== null)
     .join('\n');
@@ -239,7 +239,7 @@ function quoteTelegram(q) {
     q.delivery_date ? `Ngày giao: ${ymd(q.delivery_date)}` : null,
     q.logo_print ? 'In logo: Có' : null,
     q.message ? `📝 ${e(q.message)}` : null,
-    `\n${config.publicUrl}/admin/bao-gia`,
+    `\n${config.siteUrl}/admin/bao-gia`,
   ]
     .filter(Boolean)
     .join('\n');

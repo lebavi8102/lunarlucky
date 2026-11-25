@@ -26,7 +26,7 @@ function messageText(r) {
 }
 
 function keyboard(r) {
-  const open = { text: '🔗 Danh sách gọi lại', url: `${config.publicUrl}/admin/goi-lai` };
+  const open = { text: '🔗 Danh sách gọi lại', url: `${config.siteUrl}/admin/goi-lai` };
   return r.status === 'done' ? { inline_keyboard: [[open]] } : { inline_keyboard: [[{ text: '✅ Đã gọi', callback_data: `g:${r.id}:d` }], [open]] };
 }
 

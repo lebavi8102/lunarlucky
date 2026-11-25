@@ -164,7 +164,7 @@ const FAIL_REASONS = { f1: 'Khách hẹn giao ngày khác', f2: 'Không liên l�
 
 function keyboard(order, { confirmCancel = false, confirmRestore = false, confirmDone = false, failReasons = false, more = false } = {}) {
   const id = order.id;
-  const openBtn = { text: '🔗 Mở đơn trong admin', url: `${config.publicUrl}/admin/don-hang/${id}` };
+  const openBtn = { text: '🔗 Mở đơn trong admin', url: `${config.siteUrl}/admin/don-hang/${id}` };
   if (more) {
     // Ít dùng: nhảy bước, thu COD, hủy, mở admin
     const rows = [];
@@ -492,7 +492,7 @@ async function deliveryList(args) {
   }
   if (shown < lines.length) text += `\n\n… và ${lines.length - shown} đơn nữa.`;
   if (plan.unpaid.length) text += `\n\n⚠️ ${plan.unpaid.length} đơn chuyển khoản <b>chưa thanh toán</b> — chưa giao: ${plan.unpaid.map((o) => e(o.code)).join(', ')}`;
-  text += `\n\nXem / in phiếu: ${config.publicUrl}/admin/giao-hang?ngay=${day}`;
+  text += `\n\nXem / in phiếu: ${config.siteUrl}/admin/giao-hang?ngay=${day}`;
   return text;
 }
 

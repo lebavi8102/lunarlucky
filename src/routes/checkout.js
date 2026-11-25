@@ -122,7 +122,7 @@ function orderKey(code) {
   return require('crypto').createHmac('sha256', `order-link:${require('../config').sessionSecret}`).update(String(code)).digest('base64url').slice(0, 16);
 }
 function shareLink(code) {
-  return `${require('../config').publicUrl}/don-hang/${code}?k=${orderKey(code)}`;
+  return `${require('../config').siteUrl}/don-hang/${code}?k=${orderKey(code)}`;
 }
 
 function checkoutDefaults(req) {

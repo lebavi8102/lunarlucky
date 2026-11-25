@@ -83,7 +83,7 @@ async function fromTelegram(msg) {
   return [
     `📸 Đã lưu ảnh giao ${order ? `đơn <b>${order.code}</b> · ${notify.escapeTg(order.is_gift ? order.recipient_name || order.customer_name : order.customer_name)}` : 'hàng'} vào web — <b>chờ duyệt</b>.`,
     'Chỉ bật hiển thị khi khách <b>đồng ý</b> đăng ảnh.',
-    `Duyệt tại: ${config.publicUrl}/admin/khach-nhan-qua/${tid}`,
+    `Duyệt tại: ${config.siteUrl}/admin/khach-nhan-qua/${tid}`,
   ].join('\n');
 }
 

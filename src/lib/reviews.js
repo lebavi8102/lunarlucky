@@ -7,7 +7,7 @@ const db = require('../db');
 const config = require('../config');
 const settings = require('./settings');
 
-const link = (code) => `${config.publicUrl}/danh-gia/${code}?k=${require('../routes/checkout').orderKey(code)}`;
+const link = (code) => `${config.siteUrl}/danh-gia/${code}?k=${require('../routes/checkout').orderKey(code)}`;
 const vnHour = () => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }).format(new Date()));
 
 /** (chạy mỗi phút) Gửi lời xin đánh giá cho đơn đã giao xong. */
@@ -47,7 +47,7 @@ async function saveReview(order, { rating, content, imageId, consent }) {
     `👤 ${e(order.customer_name)}${imageId ? ' · có ảnh 📷' : ''}`,
     content ? `💭 “${e(content)}”` : null,
     rating <= 3 ? '⚠️ Đánh giá thấp — gọi hỏi thăm khách sớm' : null,
-    consent ? `Khách <b>đồng ý</b> đăng lên web → duyệt: ${config.publicUrl}/admin/khach-nhan-qua/${tid}` : 'Khách <b>không</b> đồng ý đăng công khai (chỉ để shop tham khảo).',
+    consent ? `Khách <b>đồng ý</b> đăng lên web → duyệt: ${config.siteUrl}/admin/khach-nhan-qua/${tid}` : 'Khách <b>không</b> đồng ý đăng công khai (chỉ để shop tham khảo).',
   ].filter(Boolean).join('\n'), null, { topic: 'consult' }).catch(() => {});
   return tid;
 }
