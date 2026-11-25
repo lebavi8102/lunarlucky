@@ -8,7 +8,7 @@
     <p class="topbar-note"><% if (s.announcement) { %><%= s.announcement %><% } else { %>Giỏ quà Tết cao cấp · Cá nhân &amp; doanh nghiệp<% } %></p>
     <div class="topbar-actions">
       <a class="topbar-phone" href="tel:<%= String(s.shop_phone || '').replace(/\s/g, '') %>"><svg class="icon icon-sm"><use href="#i-phone"/></svg><span><%= s.shop_phone %></span></a>
-      <a class="topbar-quote" href="/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia"><svg class="icon icon-sm"><use href="#i-file"/></svg>Báo giá doanh nghiệp</a>
+      <a class="topbar-quote" href="<%= s.catalogue_url || '/bo-suu-tap/qua-doanh-nghiep#nhan-bao-gia' %>" target="_blank" rel="noopener"><svg class="icon icon-sm"><use href="#i-file"/></svg>Tải catalogue</a>
     </div>
   </div>
 </div>
