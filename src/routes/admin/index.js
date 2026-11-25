@@ -644,6 +644,65 @@ router.use(
   }),
 );
 
+/* ---------- Đối soát nhà cung cấp (tiền khách vào tài khoản NCC, mỗi tuần NCC chuyển lại phần chủ shop) ---------- */
+const supplier = require('../../lib/supplier');
+const isDay = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
+const xlsxSend = (res, buf, name) => res.set({
+  'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'Content-Disposition': `attachment; filename="${name}.xlsx"`,
+}).send(buf);
+
+router.get('/doi-soat', async (req, res) => {
+  const wk = supplier.lastWeek();
+  const to = isDay(req.query.den) ? req.query.den : wk.to;
+  const from = isDay(req.query.tu) ? req.query.tu : supplier.weekOf(to).from;
+  const s = await supplier.sheet({ to });
+  if (req.query.excel === '1') return xlsxSend(res, supplier.excel(s, `Chưa chốt · giao đến ${to}`), `DoiSoat_ChuaChot_den_${to}`);
+  const periods = await db('supplier_settlements').orderBy('id', 'desc').limit(30);
+  res.render('admin/supplier', { title: 'Đối soát nhà cung cấp', ds: s, from, to, periods, shareLink: supplier.shareLink });
+});
+
+router.post('/doi-soat/tinh-lai', async (req, res) => {
+  const to = isDay(req.body.den) ? req.body.den : supplier.lastWeek().to;
+  const n = await supplier.recalcOpen(to);
+  flash(req, 'success', n ? `Đã cập nhật giá nhập cho ${n} dòng giỏ theo bảng giá hiện tại.` : 'Giá nhập các đơn chưa chốt đã đúng bảng giá hiện tại.');
+  res.redirect(`/admin/doi-soat?den=${to}`);
+});
+
+router.post('/doi-soat/chot', async (req, res) => {
+  const to = isDay(req.body.den) ? req.body.den : supplier.lastWeek().to;
+  const from = isDay(req.body.tu) ? req.body.tu : supplier.weekOf(to).from;
+  const r = await supplier.close({ from, to, by: req.session.user.name, note: String(req.body.note || '').slice(0, 300) });
+  if (r.error) {
+    flash(req, 'error', r.error);
+    return res.redirect(`/admin/doi-soat?den=${to}`);
+  }
+  const { money } = require('../../lib/format');
+  notify.telegram(`🧾 <b>CHỐT ĐỐI SOÁT ${from.slice(8)}/${from.slice(5, 7)} – ${to.slice(8)}/${to.slice(5, 7)}</b>
+${r.sheet.rows.length} đơn đã giao · khách trả ${money(r.sheet.revenue)} · tiền hàng ${money(r.sheet.cost)}
+👉 <b>Nhà cung cấp chuyển lại chủ shop: ${money(r.sheet.ownerDue)}</b>
+Bảng chi tiết: ${supplier.shareLink(r.id)}`, null, { topic: 'money' }).catch(() => {});
+  flash(req, 'success', `Đã chốt kỳ: ${r.sheet.rows.length} đơn, nhà cung cấp cần chuyển ${money(r.sheet.ownerDue)}. Gửi link chỉ xem cho cô ấy để kiểm tra.`);
+  res.redirect(`/admin/doi-soat/${r.id}`);
+});
+
+router.get('/doi-soat/:id', async (req, res, next) => {
+  const p = await db('supplier_settlements').where({ id: Number(req.params.id) }).first();
+  if (!p) return next();
+  const s = await supplier.sheet({ settlementId: p.id });
+  if (req.query.excel === '1') return xlsxSend(res, supplier.excel(s, `Kỳ ${p.period_from} → ${p.period_to}`), `DoiSoat_${p.period_from}_${p.period_to}`);
+  res.render('admin/supplier-period', { title: `Đối soát ${p.period_from} → ${p.period_to}`, p, ds: s, link: supplier.shareLink(p.id) });
+});
+
+router.post('/doi-soat/:id/da-nhan', async (req, res, next) => {
+  const p = await db('supplier_settlements').where({ id: Number(req.params.id) }).first();
+  if (!p) return next();
+  const received = p.status !== 'received';
+  await db('supplier_settlements').where({ id: p.id }).update({ status: received ? 'received' : 'closed', received_at: received ? new Date() : null, updated_at: new Date() });
+  flash(req, 'success', received ? 'Đã ghi nhận: nhà cung cấp đã chuyển tiền kỳ này.' : 'Đã bỏ đánh dấu đã nhận tiền.');
+  res.redirect(`/admin/doi-soat/${p.id}`);
+});
+
 router.get('/bao-cao', async (req, res) => {
   const valid = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
   let range;

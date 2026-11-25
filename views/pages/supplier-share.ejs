@@ -1,0 +1,12 @@
+<%- include('../partials/top') %>
+<section class="page-head tet-head">
+  <div class="container">
+    <span class="eyebrow">Đối soát nhà cung cấp</span>
+    <h1>Kỳ <%= p.period_from.split('-').reverse().join('/') %> – <%= p.period_to.split('-').reverse().join('/') %></h1>
+    <p class="muted small">Lunar Lucky chốt lúc <%= fmt.dateTime(p.created_at) %> · <%= p.status === 'received' ? 'Đã nhận tiền' : 'Chờ chuyển khoản' %></p>
+  </div>
+</section>
+<section class="section-tight">
+  <div class="container ss-public"><%- include('../partials/supplier-table', { ds }) %></div>
+</section>
+<%- include('../partials/bottom') %>

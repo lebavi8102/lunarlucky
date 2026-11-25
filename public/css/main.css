@@ -1641,3 +1641,19 @@ body.has-buy-bar .ai-fab { bottom: 88px; }
 /* Vùng bấm tối thiểu ~32px cho nút gọi hotline và link Messenger trên điện thoại (soát 23/11/2026) */
 .topbar-phone { padding: 6px 0; margin: -6px 0; }
 .buy-ask-note a { display: inline-block; padding: 7px 0; margin: -7px 0; }
+
+/* Bảng đối soát nhà cung cấp (admin + link chỉ xem) */
+.ss-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.ss-sum > div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.ss-sum span { display: block; font-size: 12.5px; color: var(--text-muted); }
+.ss-sum b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.ss-sum .ss-due { border-color: var(--gold-500); background: var(--cream-100); }
+.ss-sum .ss-due b { color: var(--lacquer-700); }
+.ss-warn { padding: 10px 12px; border-radius: 10px; background: var(--danger-bg); color: var(--danger); font-size: 14px; margin-bottom: 12px; }
+.ss-si { font-weight: 700; color: var(--lacquer-700); }
+.ss-table td { vertical-align: top; }
+.ss-table tfoot th, .ss-table tfoot td { border-top: 2px solid var(--line); padding-top: 10px; }
+.ss-public .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ss-public .table th, .ss-public .table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.ss-public .table .num { text-align: right; white-space: nowrap; }
+.ss-public .table-wrap { overflow-x: auto; }

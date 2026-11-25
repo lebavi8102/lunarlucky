@@ -1,0 +1,49 @@
+<%- include('_top') %>
+<div class="admin-head">
+  <div><h1>Đối soát nhà cung cấp</h1>
+  <p class="small muted">Tiền khách vào tài khoản nhà cung cấp. Mỗi tuần chốt các đơn đã giao xong → nhà cung cấp chuyển lại phần của anh.</p></div>
+  <div class="actions"><a class="btn btn-sm btn-quiet" href="?den=<%= to %>&excel=1"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Tải Excel</a></div>
+</div>
+
+<section class="form-card">
+  <h2>Kỳ đang mở · đơn đã giao xong, chưa chốt, giao đến hết <%= to.split('-').reverse().join('/') %></h2>
+  <form method="get" class="list-tools" style="margin-bottom:12px">
+    <label class="small" for="den">Giao đến ngày</label>
+    <input class="input" type="date" id="den" name="den" value="<%= to %>" style="width:auto">
+    <button class="btn btn-sm btn-ghost" type="submit">Xem</button>
+    <span class="tiny muted">Mặc định: hết Chủ nhật tuần trước. Đơn giao trễ tự vào kỳ sau, không sót.</span>
+  </form>
+  <%- include('../partials/supplier-table', { ds }) %>
+  <div class="no-tools" style="margin-top:16px">
+    <form action="/admin/doi-soat/tinh-lai" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="den" value="<%= to %>"><button class="btn btn-sm btn-ghost" type="submit">↻ Tính lại giá nhập theo bảng giá hiện tại</button></form>
+    <% if (ds.rows.length) { %>
+    <form action="/admin/doi-soat/chot" method="post" data-confirm="Chốt kỳ <%= from.split('-').reverse().join('/') %> – <%= to.split('-').reverse().join('/') %>: <%= ds.rows.length %> đơn, nhà cung cấp chuyển lại <%= money(ds.ownerDue) %>? Đơn đã chốt sẽ bị khóa.">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="tu" value="<%= from %>"><input type="hidden" name="den" value="<%= to %>">
+      <button class="btn btn-sm" type="submit" <%= ds.missing ? 'disabled' : '' %>>🧾 Chốt kỳ &amp; báo Telegram</button>
+    </form>
+    <% } %>
+  </div>
+</section>
+
+<section class="form-card">
+  <h2>Các kỳ đã chốt</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Kỳ</th><th scope="col" class="num">Đơn</th><th scope="col" class="num">Khách trả</th><th scope="col" class="num">Tiền hàng</th><th scope="col" class="num">NCC chuyển lại</th><th scope="col">Trạng thái</th></tr></thead>
+      <tbody>
+        <% if (!periods.length) { %><tr><td colspan="6" class="muted" style="padding:20px;text-align:center">Chưa chốt kỳ nào.</td></tr><% } %>
+        <% periods.forEach((p) => { %>
+        <tr>
+          <td><a class="t" href="/admin/doi-soat/<%= p.id %>"><%= p.period_from.split('-').reverse().slice(0, 2).join('/') %> – <%= p.period_to.split('-').reverse().join('/') %></a></td>
+          <td class="num"><%= p.orders_count %></td>
+          <td class="num"><%= money(p.revenue) %></td>
+          <td class="num"><%= money(p.cost) %></td>
+          <td class="num"><b><%= money(p.owner_due) %></b></td>
+          <td><span class="status status-<%= p.status === 'received' ? 'paid' : 'pending' %>"><%= p.status === 'received' ? 'Đã nhận tiền' : 'Chờ NCC chuyển' %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('_bottom') %>

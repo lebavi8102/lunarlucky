@@ -1,0 +1,28 @@
+<%# Bảng đối soát nhà cung cấp — dùng chung cho admin và link chỉ xem gửi nhà cung cấp. Cần: ds (supplier.sheet), money %>
+<div class="ss-sum">
+  <div><span>Số đơn đã giao</span><b><%= ds.rows.length %></b></div>
+  <div><span>Khách đã trả (vào TK / tiền mặt NCC)</span><b><%= money(ds.revenue) %></b></div>
+  <div><span>Tiền hàng theo giá nhập</span><b><%= money(ds.cost) %></b></div>
+  <div class="ss-due"><span>NCC chuyển lại chủ shop</span><b><%= money(ds.ownerDue) %></b></div>
+</div>
+<% if (ds.missing) { %><p class="ss-warn">⚠️ <%= ds.missing %> đơn có giỏ chưa có giá nhập (tính tạm 0₫) — cập nhật giá nhập rồi tính lại trước khi chốt.</p><% } %>
+<div class="table-wrap">
+  <table class="table ss-table">
+    <thead><tr><th scope="col">Đơn</th><th scope="col">Ngày giao</th><th scope="col">Giỏ</th><th scope="col" class="num">Khách trả</th><th scope="col" class="num">Tiền hàng</th><th scope="col" class="num">Phần chủ shop</th></tr></thead>
+    <tbody>
+      <% if (!ds.rows.length) { %><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Chưa có đơn nào đã giao xong.</td></tr><% } %>
+      <% ds.rows.forEach((r) => { %>
+      <tr>
+        <td><b><%= r.code %></b><br><span class="tiny muted"><%= r.customer %></span><br><span class="tiny <%= r.isSi ? 'ss-si' : 'muted' %>"><%= r.isSi ? '🏢 Sỉ' : 'Lẻ' %> · <%= r.qty %> giỏ · <%= r.payment %></span></td>
+        <td><%= r.delivery_date.split('-').reverse().join('/') %></td>
+        <td class="tiny"><% r.items.forEach((i) => { %><div><%= i.name %> × <%= i.qty %> <span class="muted">· bán <%= money(i.price) %> · nhập <% if (i.unit_cost == null) { %><b style="color:var(--danger)">chưa có</b><% } else { %><%= money(i.unit_cost) %><% } %></span></div><% }) %></td>
+        <td class="num"><%= money(r.total) %></td>
+        <td class="num"><%= money(r.cost) %><% if (r.missingCost) { %> ⚠️<% } %></td>
+        <td class="num"><b><%= money(r.owner) %></b></td>
+      </tr>
+      <% }) %>
+    </tbody>
+    <% if (ds.rows.length) { %><tfoot><tr><th scope="row" colspan="3">Tổng</th><td class="num"><b><%= money(ds.revenue) %></b></td><td class="num"><b><%= money(ds.cost) %></b></td><td class="num"><b><%= money(ds.ownerDue) %></b></td></tr></tfoot><% } %>
+  </table>
+</div>
+<p class="tiny muted" style="margin-top:8px">Giá nhập: đơn từ <%= ds.minSi %> giỏ tính giá nhập sỉ, dưới <%= ds.minSi %> giỏ tính giá nhập lẻ (khóa lúc đặt đơn). Ship, hộp, thiệp, hàng hỏng do nhà cung cấp chịu (đã gồm trong giá nhập). Phần chủ shop = khách trả − tiền hàng.</p>

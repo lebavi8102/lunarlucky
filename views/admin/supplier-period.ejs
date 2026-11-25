@@ -1,0 +1,17 @@
+<%- include('_top') %>
+<div class="admin-head">
+  <div><a class="small muted" href="/admin/doi-soat">← Đối soát nhà cung cấp</a>
+  <h1>Kỳ <%= p.period_from.split('-').reverse().join('/') %> – <%= p.period_to.split('-').reverse().join('/') %></h1>
+  <p class="small muted">Chốt bởi <%= p.created_by || '—' %> · <span class="status status-<%= p.status === 'received' ? 'paid' : 'pending' %>"><%= p.status === 'received' ? 'Đã nhận tiền ' + (p.received_at ? fmt.dateTime(p.received_at) : '') : 'Chờ nhà cung cấp chuyển' %></span></p></div>
+  <div class="actions"><a class="btn btn-sm btn-quiet" href="?excel=1"><svg class="icon icon-sm"><use href="#i-cloud"/></svg> Tải Excel</a></div>
+</div>
+<section class="form-card">
+  <h2>Link gửi nhà cung cấp (chỉ xem, không sửa được)</h2>
+  <div class="list-tools"><input class="input" value="<%= link %>" readonly aria-label="Link chỉ xem" style="flex:1"><button class="btn btn-sm btn-ghost" type="button" data-copy="<%= link %>">Sao chép</button></div>
+  <form action="/admin/doi-soat/<%= p.id %>/da-nhan" method="post" style="margin-top:12px">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-sm <%= p.status === 'received' ? 'btn-quiet' : '' %>" type="submit"><%= p.status === 'received' ? 'Bỏ đánh dấu đã nhận tiền' : '✅ Đã nhận ' + money(p.owner_due) + ' từ nhà cung cấp' %></button>
+  </form>
+</section>
+<section class="form-card"><%- include('../partials/supplier-table', { ds }) %></section>
+<%- include('_bottom') %>

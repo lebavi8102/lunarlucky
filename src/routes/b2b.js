@@ -41,4 +41,17 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
   res.redirect(303, `${PAGE}?da-gui=1#nhan-bao-gia`);
 });
 
+// Link chỉ xem bảng đối soát cho nhà cung cấp (có chữ ký, không cần đăng nhập, không sửa được)
+router.get('/doi-soat/:id', async (req, res, next) => {
+  const supplier = require('../lib/supplier');
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || String(req.query.k || '') !== supplier.shareKey(id)) return next();
+  const p = await db('supplier_settlements').where({ id }).first();
+  if (!p) return next();
+  res.locals.seo.title = `Đối soát ${p.period_from} → ${p.period_to} · Lunar Lucky`;
+  res.locals.seo.noindex = true;
+  res.set('Cache-Control', 'private, no-store');
+  res.render('pages/supplier-share', { p, ds: await supplier.sheet({ settlementId: p.id }) });
+});
+
 module.exports = router;

@@ -320,6 +320,7 @@ router.post('/thanh-toan', orderLimiter, async (req, res) => {
     line_total: l.lineTotal,
     unit_cost: l.unitCost ?? null, // giá vốn lúc đặt — để báo cáo lợi nhuận
   }));
+  await require('../lib/supplier').applyUnitCosts(items); // giá nhập sỉ/lẻ theo tổng số giỏ (đối soát nhà cung cấp)
 
   try {
     await db.transaction(async (trx) => {

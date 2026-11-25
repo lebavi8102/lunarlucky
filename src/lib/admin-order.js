@@ -53,6 +53,7 @@ async function createStaffOrder(body, user) {
     lines.push({ product_id: p.id, name: p.name, price: l.price, qty: l.qty, line_total: l.price * l.qty, unit_cost: p.cost_price ?? null });
   }
   if (!lines.length && !errors.items) errors.items = 'Chọn ít nhất 1 giỏ.';
+  await require('./supplier').applyUnitCosts(lines); // giá nhập sỉ/lẻ theo tổng số giỏ (đối soát nhà cung cấp)
 
   // 2. Khách + giao hàng
   const customer_name = f.text('customer_name', { label: 'tên khách', required: true, min: 2, max: 120 });

@@ -31,7 +31,7 @@ const fileKey = (s) => String(s || '').replace(/"/g, '').trim().replace(/\//g, '
 // Tiêu đề cột (không dấu, chữ thường) → trường. Kiểm tra theo thứ tự, khớp phần đầu tiêu đề.
 const HEADERS = [
   ['ghi chu gia von', null],
-  ['gia nhap si', null], // file chủ shop: giá vốn lấy theo giá nhập LẺ (an toàn khi tính lãi)
+  ['gia nhap si', 'cost_price_si'], // giá nhập SỈ: đơn từ mốc đơn sỉ (10 giỏ) tính giá này khi đối soát nhà cung cấp; giá vốn chung vẫn là giá nhập LẺ
   ['gia nhap le', 'cost_price'],
   ['giam', null], // cột "% giảm" tự tính
   ['kiem tra', null],
@@ -139,6 +139,7 @@ function parseRows(buffer) {
       price: money(raw.price),
       compare_price: money(raw.compare_price),
       cost_price: money(raw.cost_price),
+      cost_price_si: map.includes('cost_price_si') ? money(raw.cost_price_si) : undefined, // file không có cột → giữ số trên web
       stock: raw.stock == null || raw.stock === '' ? null : Math.round(Number(raw.stock)),
       badge: text(raw.badge, 40),
       short_desc: text(raw.short_desc, 300),
@@ -159,6 +160,7 @@ function parseRows(buffer) {
     if (r.price == null || Number.isNaN(r.price) || r.price <= 0) bad.push('Giá bán không hợp lệ');
     if (Number.isNaN(r.compare_price)) bad.push('Giá gốc không hợp lệ');
     if (Number.isNaN(r.cost_price)) bad.push('Giá vốn không hợp lệ');
+    if (Number.isNaN(r.cost_price_si)) r.cost_price_si = null; // ô giá nhập sỉ ghi chữ → bỏ qua, không chặn cả dòng
     if (r.stock != null && (!Number.isInteger(r.stock) || r.stock < 0)) bad.push('Tồn kho không hợp lệ');
     if (bad.length) { errors.push({ line, name, error: bad.join(', ') }); continue; }
     if (r.compare_price != null && r.compare_price <= r.price) r.compare_price = null; // giá gạch phải lớn hơn giá bán
@@ -276,6 +278,7 @@ async function syncFromExcel(buffer, files = [], { final = false, check = false 
         price: r.price,
         compare_price: r.compare_price,
         cost_price: r.cost_price,
+        ...(r.cost_price_si !== undefined ? { cost_price_si: r.cost_price_si } : {}),
         badge: r.badge,
         short_desc: r.short_desc,
         contents: r.contents,

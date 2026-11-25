@@ -47,6 +47,7 @@ async function create({ draft, input, s, psid }) {
   const items = priced.lines.map((l) => ({
     product_id: l.productId, name: l.name, price: l.unitPrice, qty: l.qty, line_total: l.lineTotal, unit_cost: l.unitCost ?? null,
   }));
+  await require('./supplier').applyUnitCosts(items); // giá nhập sỉ/lẻ theo tổng số giỏ (đối soát nhà cung cấp)
 
   // Khách bấm xác nhận hai lần / AI gọi lặp → trả lại đơn vừa tạo, không tạo đơn thứ hai
   const dup = await db('orders').where({ messenger_psid: psid, phone: order.phone, total: order.total, delivery_date: order.delivery_date })
