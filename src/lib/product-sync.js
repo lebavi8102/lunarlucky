@@ -124,7 +124,7 @@ function parseRows(buffer) {
     const raw = {};
     map.forEach((f, ci) => { if (f && raw[f] == null) raw[f] = cells[ci] ?? null; });
     const line = i + 1;
-    const name = text(raw.name, 160);
+    const name = text(raw.name && String(raw.name).replace(/\s+/g, ' '), 160); // gộp dấu cách thừa trong tên ("Hộp Quà  Xuân Hỷ")
     if (!name) {
       if (cells.some((c) => c != null && String(c).trim())) errors.push({ line, error: 'Thiếu tên sản phẩm, bỏ qua dòng này.' });
       continue;

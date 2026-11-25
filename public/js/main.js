@@ -407,17 +407,23 @@
     syncBuyBar();
   }
 
-  /* Trang sản phẩm (điện thoại): nút nổi (Tư vấn chọn quà, Zalo) tự ẩn khi đang nằm đè lên ảnh sản phẩm, hiện lại khi cuộn qua khỏi ảnh */
+  /* Trang sản phẩm (điện thoại): nút nổi tự ẩn khi đang nằm đè lên ảnh sản phẩm hoặc khu Mua ngay (ở đó đã có nút Zalo/Messenger,
+     và nút nổi che mất dòng đặt cọc), hiện lại khi cuộn qua */
   const productMedia = $('.gallery-main');
   if (productMedia && 'IntersectionObserver' in window) {
     let watcher;
     const FAB_ZONE = 260; // chiều cao vùng đáy màn hình có nút nổi: cụm 3 nút liên hệ + khi đã đẩy lên trên thanh Mua ngay
+    const targets = [productMedia, ...$$('#buy-form, .buy-ask, .buy-ask-note, .stock-note, .buy-terms')];
     const watch = () => {
       if (watcher) watcher.disconnect();
-      watcher = new IntersectionObserver(([en]) => document.body.classList.toggle('fab-over-media', en.isIntersecting), {
+      const over = new Set();
+      watcher = new IntersectionObserver((entries) => {
+        entries.forEach((en) => (en.isIntersecting ? over.add(en.target) : over.delete(en.target)));
+        document.body.classList.toggle('fab-over-media', over.size > 0);
+      }, {
         rootMargin: `-${Math.max(0, window.innerHeight - FAB_ZONE)}px 0px 0px 0px`, // chỉ xét dải đáy màn hình
       });
-      watcher.observe(productMedia);
+      targets.forEach((t) => watcher.observe(t));
     };
     watch();
     window.addEventListener('resize', watch);
