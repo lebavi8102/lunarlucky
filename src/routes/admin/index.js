@@ -195,6 +195,21 @@ router.post('/don-hang/:id', async (req, res, next) => {
   res.redirect(`/admin/don-hang/${r.order.id}`);
 });
 
+// Gửi lại tin đơn vào nhóm Telegram (vd: sau khi chọn chủ đề Đơn sỉ) — xóa tin cũ để không trùng
+router.post('/don-hang/:id/gui-lai-tele', async (req, res, next) => {
+  const data = await loadOrder(req.params.id);
+  if (!data) return next();
+  const { order, items } = data;
+  if (order.tg_chat_id && order.tg_message_id) {
+    await notify.tgApi('deleteMessage', { chat_id: order.tg_chat_id, message_id: order.tg_message_id }).catch(() => {});
+  }
+  await db('orders').where({ id: order.id }).update({ tg_chat_id: null, tg_message_id: null });
+  await require('../../lib/telegram-orders').sendNewOrder({ ...order, tg_chat_id: null, tg_message_id: null }, items);
+  const fresh = await db('orders').where({ id: order.id }).first('tg_message_id');
+  flash(req, fresh && fresh.tg_message_id ? 'success' : 'error', fresh && fresh.tg_message_id ? 'Đã gửi lại tin đơn vào nhóm Telegram.' : 'Chưa gửi được vào Telegram — kiểm tra kết nối bot.');
+  res.redirect(`/admin/don-hang/${order.id}`);
+});
+
 // Sửa thông tin giao: ngày, buổi, địa chỉ, SĐT, ghi chú…
 router.post('/don-hang/:id/giao', async (req, res, next) => {
   const order = await db('orders').where({ id: Number(req.params.id) }).first();

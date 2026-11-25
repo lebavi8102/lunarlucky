@@ -142,6 +142,10 @@
         </ul>
       <% } %>
       <% if (order.tg_message_id) { %><p class="tiny muted" style="margin-top:10px">Đơn này có nút xử lý trong nhóm Telegram.</p><% } %>
+      <form action="/admin/don-hang/<%= order.id %>/gui-lai-tele" method="post" style="margin-top:8px" data-confirm="Gửi lại tin đơn này vào đúng chủ đề Telegram (đơn sỉ / đơn lẻ)? Tin cũ sẽ bị xóa.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-sm btn-quiet" type="submit">📨 Gửi lại tin Telegram (đúng chủ đề)</button>
+      </form>
     </section>
   </aside>
 </div>
