@@ -17,13 +17,16 @@ function readLines(body) {
   const ids = arr(body.product_id);
   const qtys = arr(body.qty);
   const prices = arr(body.price);
+  const costs = arr(body.cost); // giá nhập chủ shop tự gõ (trống = lấy theo bảng giá nhập sỉ/lẻ)
   const out = [];
   for (let i = 0; i < Math.min(ids.length, MAX_LINES); i++) {
     const id = Number(ids[i]);
     const qty = Number(String(qtys[i] || '').replace(/\D/g, ''));
     const price = Number(String(prices[i] || '').replace(/\D/g, ''));
+    const cRaw = String(costs[i] ?? '').replace(/\D/g, '');
+    const cost = cRaw === '' ? null : Number(cRaw);
     if (!id) continue;
-    out.push({ product_id: id, qty, price, row: i });
+    out.push({ product_id: id, qty, price, cost, row: i });
   }
   return out;
 }
@@ -48,12 +51,15 @@ async function createStaffOrder(body, user) {
     if (!p) { errors.items = 'Có giỏ không còn trong danh sách sản phẩm — chọn lại.'; continue; }
     if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 10000) { errors.items = `Số lượng "${p.name}" không hợp lệ.`; continue; }
     if (!Number.isInteger(l.price) || l.price < 1000 || l.price > 100000000) { errors.items = `Đơn giá "${p.name}" không hợp lệ (tối thiểu 1.000₫).`; continue; }
-    const same = lines.find((x) => x.product_id === p.id && x.price === l.price);
+    if (l.cost != null && (!Number.isInteger(l.cost) || l.cost > 100000000)) { errors.items = `Giá nhập "${p.name}" không hợp lệ.`; continue; }
+    const same = lines.find((x) => x.product_id === p.id && x.price === l.price && x.typedCost === l.cost);
     if (same) { same.qty += l.qty; same.line_total = same.price * same.qty; continue; }
-    lines.push({ product_id: p.id, name: p.name, price: l.price, qty: l.qty, line_total: l.price * l.qty, unit_cost: p.cost_price ?? null });
+    lines.push({ product_id: p.id, name: p.name, price: l.price, qty: l.qty, line_total: l.price * l.qty, unit_cost: null, typedCost: l.cost });
   }
   if (!lines.length && !errors.items) errors.items = 'Chọn ít nhất 1 giỏ.';
-  await require('./supplier').applyUnitCosts(lines); // giá nhập sỉ/lẻ theo tổng số giỏ (đối soát nhà cung cấp)
+  // Giá nhập: chủ shop gõ ô nào thì lưu đúng số đó; ô trống → theo bảng giá nhập sỉ/lẻ (tổng số giỏ của đơn)
+  await require('./supplier').applyUnitCosts(lines);
+  for (const l of lines) { if (l.typedCost != null) l.unit_cost = l.typedCost; delete l.typedCost; }
 
   // 2. Khách + giao hàng
   const customer_name = f.text('customer_name', { label: 'tên khách', required: true, min: 2, max: 120 });
@@ -149,7 +155,7 @@ async function createStaffOrder(body, user) {
 /** Danh sách giỏ cho form: giá lẻ + giá sỉ catalogue (nếu có) để điền sẵn. */
 async function productChoices() {
   const { giaSoLuong } = require('./bang-gia');
-  const rows = await db('products').where({ is_active: true }).orderBy('name').select('id', 'name', 'slug', 'price', 'stock');
+  const rows = await db('products').where({ is_active: true }).orderBy('name').select('id', 'name', 'slug', 'price', 'stock', 'cost_price', 'cost_price_si');
   return rows.map((p) => {
     const t = giaSoLuong(p.slug);
     return { ...p, t10: t ? t.gia_10_49 : null, t50: t ? t.gia_50_99 : null, t100: t ? t.gia_100_499 : null, ma: t ? t.ma : '' };

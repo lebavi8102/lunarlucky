@@ -90,8 +90,9 @@ input[type=file].input { padding: 10px; min-height: auto; }
 
 /* Tạo đơn trong admin */
 .no-lines { display: grid; gap: 10px; }
-.no-line { display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px 110px 40px; gap: 10px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.no-line { display: grid; grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1fr) 120px 40px; gap: 10px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .no-line .field { margin: 0; }
+.no-line .field:first-child { grid-column: 1 / -1; } /* ô chọn giỏ 1 hàng riêng: đọc đủ tên + giá */
 .no-line-total { padding-bottom: 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .no-del { margin-bottom: 4px; }
 .no-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }

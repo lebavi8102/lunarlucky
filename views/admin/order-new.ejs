@@ -2,12 +2,12 @@
 <%
   const v = values || {};
   const arr = (x) => (Array.isArray(x) ? x : x == null || x === '' ? [] : [x]);
-  const rowsIds = arr(v.product_id), rowsQty = arr(v.qty), rowsPrice = arr(v.price);
-  const rows = rowsIds.length ? rowsIds.map((id, i) => ({ id, qty: rowsQty[i] || '', price: rowsPrice[i] || '' })) : [{ id: '', qty: 1, price: '' }];
+  const rowsIds = arr(v.product_id), rowsQty = arr(v.qty), rowsPrice = arr(v.price), rowsCost = arr(v.cost);
+  const rows = rowsIds.length ? rowsIds.map((id, i) => ({ id, qty: rowsQty[i] || '', price: rowsPrice[i] || '', cost: rowsCost[i] || '' })) : [{ id: '', qty: 1, price: '', cost: '' }];
   const err = (k) => errors[k] ? `<p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg>${errors[k]}</p>` : '';
   const errCount = Object.keys(errors).length;
   const productOptions = (sel) => '<option value="">— Chọn giỏ —</option>' + products.map((p) =>
-    `<option value="${p.id}" data-price="${p.price}" data-t10="${p.t10 || ''}" data-t50="${p.t50 || ''}" data-t100="${p.t100 || ''}" ${String(p.id) === String(sel) ? 'selected' : ''}>${p.name.replace(/</g, '&lt;')}${p.ma ? ' · ' + p.ma : ''} — lẻ ${money(p.price)}${p.t10 ? ' · sỉ ' + money(p.t10) : ''} (kho ${p.stock})</option>`).join('');
+    `<option value="${p.id}" data-price="${p.price}" data-t10="${p.t10 || ''}" data-t50="${p.t50 || ''}" data-t100="${p.t100 || ''}" data-cle="${p.cost_price ?? ''}" data-csi="${p.cost_price_si ?? ''}" ${String(p.id) === String(sel) ? 'selected' : ''}>${p.name.replace(/</g, '&lt;')}${p.ma ? ' · ' + p.ma : ''} — lẻ ${money(p.price)}${p.t10 ? ' · sỉ ' + money(p.t10) : ''} (kho ${p.stock})</option>`).join('');
 %>
 <div class="admin-head">
   <div><a class="small muted" href="/admin/don-hang">← Đơn hàng</a><h1>Tạo đơn cho khách</h1>
@@ -25,7 +25,8 @@
         <div class="no-line" data-line>
           <div class="field"><label class="label">Giỏ</label><select class="select" name="product_id" data-product><%- productOptions(r.id) %></select></div>
           <div class="field"><label class="label">Số lượng</label><input class="input" name="qty" inputmode="numeric" value="<%= r.qty %>" data-qty></div>
-          <div class="field"><label class="label">Đơn giá (₫)</label><input class="input" name="price" inputmode="numeric" value="<%= r.price %>" data-unit data-money></div>
+          <div class="field"><label class="label">Đơn giá bán (₫)</label><input class="input" name="price" inputmode="numeric" value="<%= r.price %>" data-unit data-money></div>
+          <div class="field"><label class="label">Giá nhập (₫)</label><input class="input" name="cost" inputmode="numeric" value="<%= r.cost %>" data-cost data-money <%= r.cost ? 'data-touched' : '' %>></div>
           <div class="no-line-total" data-line-total>—</div>
           <button class="btn btn-sm btn-quiet no-del" type="button" data-del aria-label="Xóa dòng">✕</button>
         </div>
@@ -37,7 +38,10 @@
         <button class="btn btn-sm btn-ghost" type="button" data-tier>Điền giá sỉ catalogue theo tổng số giỏ</button>
         <button class="btn btn-sm btn-quiet" type="button" data-retail>Điền giá lẻ</button>
       </div>
-      <p class="help" data-tier-note>Đơn giá điền sẵn giá lẻ. Anh sửa tay theo giá đã chốt, hoặc bấm "giá sỉ" (từ 10 giỏ: mức 10–49 / 50–99 / 100–499).</p>
+      <p class="help" data-tier-note>Đơn giá bán điền sẵn giá lẻ: sửa tay theo giá đã chốt, hoặc bấm "giá sỉ" (từ 10 giỏ: mức 10–49 / 50–99 / 100–499).</p>
+      <p class="help"><b>Giá nhập</b> = tiền hàng trả nhà cung cấp cho 1 giỏ (dùng để đối soát). Tự gợi ý giá nhập sỉ khi cả đơn từ 10 giỏ, lẻ khi dưới 10 — gõ số khác thì lưu đúng số anh gõ.</p>
+      <div class="sum-row" style="margin-top:8px"><span>Tiền hàng trả NCC (theo giá nhập)</span><b data-sum-cost>0₫</b></div>
+      <div class="sum-row"><span>Phần của anh (tiền hàng bán − giá nhập)</span><b data-sum-profit>0₫</b></div>
     </section>
 
     <section class="form-card">
@@ -91,7 +95,8 @@
   <div class="no-line" data-line>
     <div class="field"><label class="label">Giỏ</label><select class="select" name="product_id" data-product><%- productOptions('') %></select></div>
     <div class="field"><label class="label">Số lượng</label><input class="input" name="qty" inputmode="numeric" value="1" data-qty></div>
-    <div class="field"><label class="label">Đơn giá (₫)</label><input class="input" name="price" inputmode="numeric" value="" data-unit></div>
+    <div class="field"><label class="label">Đơn giá bán (₫)</label><input class="input" name="price" inputmode="numeric" value="" data-unit></div>
+    <div class="field"><label class="label">Giá nhập (₫)</label><input class="input" name="cost" inputmode="numeric" value="" data-cost></div>
     <div class="no-line-total" data-line-total>—</div>
     <button class="btn btn-sm btn-quiet no-del" type="button" data-del aria-label="Xóa dòng">✕</button>
   </div>

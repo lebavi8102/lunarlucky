@@ -126,6 +126,22 @@ async function reapplyOrder(orderId) {
   return { changed: n };
 }
 
+/** Chủ shop gõ tay giá nhập từng giỏ của 1 đơn chưa chốt. costs: { [order_item_id]: number } */
+async function setOrderCosts(orderId, costs) {
+  const o = await db('orders').where({ id: orderId }).first('id', 'settlement_id');
+  if (!o) return { error: 'Không thấy đơn.' };
+  if (o.settlement_id) return { error: 'Đơn đã chốt đối soát — không đổi giá nhập được nữa.' };
+  const its = await db('order_items').where({ order_id: o.id }).select('id', 'unit_cost');
+  let n = 0;
+  for (const i of its) {
+    if (!(i.id in costs)) continue;
+    const v = costs[i.id];
+    if (v != null && (!Number.isInteger(v) || v < 0 || v > 100000000)) return { error: 'Giá nhập không hợp lệ.' };
+    if (v !== i.unit_cost) { await db('order_items').where({ id: i.id }).update({ unit_cost: v }); n++; }
+  }
+  return { changed: n };
+}
+
 /** Chốt kỳ: khóa các đơn trong bảng vào 1 kỳ. */
 async function close({ from, to, by, note }) {
   const s = await sheet({ to });
@@ -188,4 +204,4 @@ function excel(s, title) {
   ]);
 }
 
-module.exports = { reapplyOrder, unitCostFor, applyUnitCosts, weekOf, lastWeek, sheet, recalcOpen, close, shareKey, shareLink, excel, wholesaleMin };
+module.exports = { setOrderCosts, reapplyOrder, unitCostFor, applyUnitCosts, weekOf, lastWeek, sheet, recalcOpen, close, shareKey, shareLink, excel, wholesaleMin };

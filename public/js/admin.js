@@ -107,10 +107,24 @@
   const totalQty = () => lines().reduce((t, l) => t + (optOf(l).value ? num(l.querySelector('[data-qty]').value) : 0), 0);
   const tierPrice = (o, q) => (q >= 100 && o.dataset.t100) || (q >= 50 && o.dataset.t50) || (q >= 10 && o.dataset.t10) || '';
   const setPrice = (line, v) => { const i = line.querySelector('[data-unit]'); i.value = v ? fmt.format(Number(v)) : ''; };
+  // Giá nhập gợi ý: sỉ nếu cả đơn ≥ 10 giỏ (và có giá sỉ), ngược lại lẻ; ô đã gõ tay (data-touched) giữ nguyên
+  const suggestCosts = () => {
+    const q = totalQty();
+    for (const l of lines()) {
+      const c = l.querySelector('[data-cost]'); const o = optOf(l);
+      if (!c || c.hasAttribute('data-touched') || !o.value) continue;
+      const v = q >= 10 && o.dataset.csi ? o.dataset.csi : o.dataset.cle;
+      c.value = v ? fmt.format(Number(v)) : '';
+    }
+  };
   function recalc() {
+    suggestCosts();
     let goods = 0;
+    let costSum = 0;
     for (const l of lines()) {
       const t = num(l.querySelector('[data-qty]').value) * num(l.querySelector('[data-unit]').value);
+      const c = l.querySelector('[data-cost]');
+      if (c) costSum += num(l.querySelector('[data-qty]').value) * num(c.value);
       goods += t;
       l.querySelector('[data-line-total]').textContent = t ? fmt.format(t) + '₫' : '—';
     }
@@ -118,9 +132,12 @@
     form.querySelector('[data-sum-qty]').textContent = totalQty();
     form.querySelector('[data-sum-goods]').textContent = fmt.format(goods) + '₫';
     form.querySelector('[data-sum-total]').textContent = fmt.format(goods + ship) + '₫';
+    const sc = form.querySelector('[data-sum-cost]'); if (sc) sc.textContent = fmt.format(costSum) + '₫';
+    const sp = form.querySelector('[data-sum-profit]'); if (sp) sp.textContent = fmt.format(goods - costSum) + '₫';
   }
   function wire(line) {
     line.querySelector('[data-product]').addEventListener('change', () => {
+      const cc = line.querySelector('[data-cost]'); if (cc) { cc.removeAttribute('data-touched'); cc.value = ''; }
       const o = optOf(line);
       setPrice(line, o.value ? o.dataset.price : '');
       recalc();
@@ -129,9 +146,12 @@
       if (lines().length > 1) line.remove(); else { line.querySelector('[data-product]').value = ''; setPrice(line, ''); }
       recalc();
     });
-    const p = line.querySelector('[data-unit]');
-    p.addEventListener('focus', () => (p.value = String(num(p.value) || '')));
-    p.addEventListener('blur', () => { p.value = num(p.value) ? fmt.format(num(p.value)) : ''; });
+    for (const p of [line.querySelector('[data-unit]'), line.querySelector('[data-cost]')].filter(Boolean)) {
+      p.addEventListener('focus', () => (p.value = String(num(p.value) || '')));
+      p.addEventListener('blur', () => { p.value = num(p.value) ? fmt.format(num(p.value)) : ''; });
+    }
+    const c = line.querySelector('[data-cost]');
+    if (c) c.addEventListener('input', () => { if (c.value.trim()) c.setAttribute('data-touched', ''); else c.removeAttribute('data-touched'); });
   }
   lines().forEach(wire);
   form.addEventListener('input', recalc);

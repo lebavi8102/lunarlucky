@@ -676,6 +676,19 @@ router.post('/doi-soat/don/:id/gia-nhap', async (req, res) => {
   res.redirect(`/admin/don-hang/${Number(req.params.id)}`);
 });
 
+router.post('/doi-soat/don/:id/gia-nhap-tay', async (req, res) => {
+  const costs = {};
+  for (const [k, v] of Object.entries(req.body)) {
+    const m = /^cost_(\d+)$/.exec(k);
+    if (!m) continue;
+    const raw = String(v || '').replace(/\D/g, '');
+    costs[Number(m[1])] = raw === '' ? null : Number(raw);
+  }
+  const r = await supplier.setOrderCosts(Number(req.params.id), costs);
+  flash(req, r.error ? 'error' : 'success', r.error || (r.changed ? `Đã lưu giá nhập mới cho ${r.changed} giỏ.` : 'Giá nhập không thay đổi.'));
+  res.redirect(`/admin/don-hang/${Number(req.params.id)}`);
+});
+
 router.post('/doi-soat/chot', async (req, res) => {
   const to = isDay(req.body.den) ? req.body.den : supplier.lastWeek().to;
   const from = isDay(req.body.tu) ? req.body.tu : supplier.weekOf(to).from;

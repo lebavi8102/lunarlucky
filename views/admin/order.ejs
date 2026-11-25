@@ -28,6 +28,19 @@
           </tbody>
         </table>
       </div>
+      <% if (!order.settlement_id) { %>
+      <details id="sua-gia-nhap" style="margin-top:8px">
+        <summary class="btn btn-sm btn-quiet">✏️ Sửa giá nhập (trả nhà cung cấp)</summary>
+        <form action="/admin/doi-soat/don/<%= order.id %>/gia-nhap-tay" method="post" style="margin-top:12px;display:grid;gap:10px;max-width:420px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% items.forEach(i => { %>
+          <div class="field"><label class="label" for="c<%= i.id %>"><%= i.name %> × <%= i.qty %> · giá nhập 1 giỏ (₫)</label><input class="input" id="c<%= i.id %>" name="cost_<%= i.id %>" inputmode="numeric" value="<%= i.unit_cost == null ? '' : i.unit_cost %>" data-money></div>
+          <% }) %>
+          <button class="btn btn-sm" type="submit">Lưu giá nhập</button>
+          <p class="tiny muted">Dùng cho đối soát nhà cung cấp. Đơn đã chốt kỳ thì không sửa được.</p>
+        </form>
+      </details>
+      <% } %>
       <div style="max-width:320px;margin-left:auto;margin-top:12px">
         <div class="sum-row"><span>Tạm tính</span><span><%= money(order.subtotal) %></span></div>
         <% if (order.discount) { %><div class="sum-row"><span>Mã <%= order.coupon_code %></span><span class="disc">−<%= money(order.discount) %></span></div><% } %>
