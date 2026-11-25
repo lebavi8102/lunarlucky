@@ -41,6 +41,15 @@ router.post('/qua-tang-doanh-nghiep', quoteLimiter, async (req, res) => {
   res.redirect(303, `${PAGE}?da-gui=1#nhan-bao-gia`);
 });
 
+// Bảng đơn hàng cho Google Sheets (=IMPORTDATA): đường dẫn có khóa bí mật, không cần đăng nhập
+router.get('/bang-don/:kind.csv', async (req, res, next) => {
+  const sheet = require('../lib/order-sheet');
+  if (!['don', 'tong'].includes(req.params.kind)) return next();
+  if (!(await sheet.checkKey(req.query.k))) return res.status(403).type('text/plain').send('Sai khóa');
+  const body = req.params.kind === 'don' ? await sheet.donCsv() : await sheet.tongCsv();
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' }).send(body);
+});
+
 // Link chỉ xem bảng đối soát cho nhà cung cấp (có chữ ký, không cần đăng nhập, không sửa được)
 router.get('/doi-soat/:id', async (req, res, next) => {
   const supplier = require('../lib/supplier');

@@ -660,7 +660,14 @@ router.get('/doi-soat', async (req, res) => {
   if (req.query.excel === '1') return xlsxSend(res, supplier.excel(s, `Chưa chốt · giao đến ${to}`), `DoiSoat_ChuaChot_den_${to}`);
   const periods = await db('supplier_settlements').orderBy('id', 'desc').limit(30);
   const up = await supplier.sheet({ to, upcoming: true });
-  res.render('admin/supplier', { title: 'Đối soát nhà cung cấp', ds: s, up, from, to, periods, shareLink: supplier.shareLink });
+  const sheetLinks = await require('../../lib/order-sheet').links();
+  res.render('admin/supplier', { title: 'Đối soát nhà cung cấp', ds: s, up, from, to, periods, shareLink: supplier.shareLink, sheetLinks, sheetUrl: (await settings.all()).order_sheet_url || '' });
+});
+
+router.post('/bang-don/doi-khoa', async (req, res) => {
+  await require('../../lib/order-sheet').newKey();
+  flash(req, 'success', 'Đã đổi khóa bảng đơn: link cũ (và file Google Sheets đang dùng link cũ) hết hiệu lực — dán link mới vào công thức IMPORTDATA.');
+  res.redirect('/admin/doi-soat#bang-don');
 });
 
 router.post('/doi-soat/tinh-lai', async (req, res) => {

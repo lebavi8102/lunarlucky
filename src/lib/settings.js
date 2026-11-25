@@ -15,6 +15,8 @@ const DEFAULTS = {
   telegram_ops_thread: '',
   telegram_wholesale_thread: '', // chủ đề Đơn sỉ (/chonsi)
   wholesale_min_qty: '10', // từ bao nhiêu giỏ thì là đơn sỉ
+  order_sheet_key: '', // khóa bí mật link CSV bảng đơn (Google Sheets IMPORTDATA)
+  order_sheet_url: '', // link file Google Sheets bảng đơn (hiện nút mở trong admin)
   telegram_ship_thread: '',
   telegram_money_thread: '',
   telegram_consult_thread: '',

@@ -25,6 +25,17 @@
   </div>
 </section>
 
+<section class="form-card" id="bang-don">
+  <h2>📊 Bảng đơn hàng Google Sheets (cho người cầm tiền / làm hàng)</h2>
+  <% if (sheetUrl) { %><p><a class="btn btn-sm" href="<%= sheetUrl %>" target="_blank" rel="noopener">Mở file Google Sheets</a></p><% } %>
+  <p class="small muted">File Google Sheets dùng công thức <code>=IMPORTDATA("link")</code> để kéo đơn về, Google tự làm mới định kỳ (khoảng 1 giờ, mở file là cập nhật). Link có khóa bí mật — chỉ đưa cho người cần xem.</p>
+  <div class="field"><label class="label">Link từng đơn (sheet "Đơn hàng")</label><div class="list-tools"><input class="input" value="<%= sheetLinks.don %>" readonly style="flex:1"><button class="btn btn-sm btn-ghost" type="button" data-copy="<%= sheetLinks.don %>">Sao chép</button></div></div>
+  <div class="field" style="margin-top:8px"><label class="label">Link tổng theo ngày / tuần (sheet "Tổng")</label><div class="list-tools"><input class="input" value="<%= sheetLinks.tong %>" readonly style="flex:1"><button class="btn btn-sm btn-ghost" type="button" data-copy="<%= sheetLinks.tong %>">Sao chép</button></div></div>
+  <form action="/admin/bang-don/doi-khoa" method="post" style="margin-top:10px" data-confirm="Đổi khóa? Link cũ và file Google Sheets đang dùng link cũ sẽ ngừng cập nhật cho tới khi dán link mới.">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-quiet" type="submit">🔑 Đổi khóa (khi lỡ lộ link)</button>
+  </form>
+</section>
+
 <section class="form-card">
   <h2>Đơn sắp vào đối soát · <%= up.rows.length %> đơn chưa giao xong (hoặc giao sau <%= to.split('-').reverse().join('/') %>)</h2>
   <p class="small muted" style="margin:-8px 0 12px">Giao xong (bấm "Đã giao xong" trên Telegram) thì đơn tự vào kỳ đối soát của tuần giao. Số tiền bên dưới là dự kiến.</p>
