@@ -112,7 +112,9 @@ function messageText(order, items, notes = null) {
     .replace(/\n\nhttps?:\/\/\S+$/, '');
   const pay =
     order.payment_method === 'bank'
-      ? `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
+      ? order.payment_status === 'deposit'
+        ? `⏳ Đã cọc ${require('./format').money(order.deposit_amount)} · <b>còn chuyển ${require('./format').money(payment.amountDue(order))}</b> (chuyển khoản, nội dung ${e(order.code)})`
+        : `${order.payment_status === 'paid' ? '💰' : '⏳'} ${PAYMENT_STATUS[order.payment_status]} (chuyển khoản, nội dung ${e(order.code)})`
       : order.payment_status === 'paid'
         ? '💵 COD · đã thu tiền'
         : order.status === 'completed' && payment.codDue(order) > 0

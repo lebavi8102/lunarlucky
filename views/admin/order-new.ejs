@@ -1,0 +1,99 @@
+<%- include('_top') %>
+<%
+  const v = values || {};
+  const arr = (x) => (Array.isArray(x) ? x : x == null || x === '' ? [] : [x]);
+  const rowsIds = arr(v.product_id), rowsQty = arr(v.qty), rowsPrice = arr(v.price);
+  const rows = rowsIds.length ? rowsIds.map((id, i) => ({ id, qty: rowsQty[i] || '', price: rowsPrice[i] || '' })) : [{ id: '', qty: 1, price: '' }];
+  const err = (k) => errors[k] ? `<p class="err"><svg class="icon icon-sm"><use href="#i-alert"/></svg>${errors[k]}</p>` : '';
+  const errCount = Object.keys(errors).length;
+  const productOptions = (sel) => '<option value="">— Chọn giỏ —</option>' + products.map((p) =>
+    `<option value="${p.id}" data-price="${p.price}" data-t10="${p.t10 || ''}" data-t50="${p.t50 || ''}" data-t100="${p.t100 || ''}" ${String(p.id) === String(sel) ? 'selected' : ''}>${p.name.replace(/</g, '&lt;')}${p.ma ? ' · ' + p.ma : ''} — lẻ ${money(p.price)}${p.t10 ? ' · sỉ ' + money(p.t10) : ''} (kho ${p.stock})</option>`).join('');
+%>
+<div class="admin-head">
+  <div><a class="small muted" href="/admin/don-hang">← Đơn hàng</a><h1>Tạo đơn cho khách</h1>
+  <p class="small muted">Khách chốt qua Fanpage, Zalo, điện thoại. Giá anh tự quyết. Lưu xong hệ thống báo ngay vào nhóm Telegram.</p></div>
+</div>
+<% if (errCount) { %><div class="flash flash-error" role="alert"><svg class="icon"><use href="#i-alert"/></svg><span>Vui lòng sửa <%= errCount %> lỗi bên dưới.</span></div><% } %>
+
+<form class="form-grid" action="/admin/don-hang/tao" method="post" novalidate data-new-order>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div>
+    <section class="form-card">
+      <h2>1. Giỏ quà &amp; giá</h2>
+      <div class="no-lines" data-lines>
+        <% rows.forEach((r) => { %>
+        <div class="no-line" data-line>
+          <div class="field"><label class="label">Giỏ</label><select class="select" name="product_id" data-product><%- productOptions(r.id) %></select></div>
+          <div class="field"><label class="label">Số lượng</label><input class="input" name="qty" inputmode="numeric" value="<%= r.qty %>" data-qty></div>
+          <div class="field"><label class="label">Đơn giá (₫)</label><input class="input" name="price" inputmode="numeric" value="<%= r.price %>" data-unit data-money></div>
+          <div class="no-line-total" data-line-total>—</div>
+          <button class="btn btn-sm btn-quiet no-del" type="button" data-del aria-label="Xóa dòng">✕</button>
+        </div>
+        <% }) %>
+      </div>
+      <%- err('items') %>
+      <div class="no-tools">
+        <button class="btn btn-sm btn-ghost" type="button" data-add>+ Thêm giỏ</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-tier>Điền giá sỉ catalogue theo tổng số giỏ</button>
+        <button class="btn btn-sm btn-quiet" type="button" data-retail>Điền giá lẻ</button>
+      </div>
+      <p class="help" data-tier-note>Đơn giá điền sẵn giá lẻ. Anh sửa tay theo giá đã chốt, hoặc bấm "giá sỉ" (từ 10 giỏ: mức 10–49 / 50–99 / 100–499).</p>
+    </section>
+
+    <section class="form-card">
+      <h2>2. Khách hàng</h2>
+      <div class="grid-2">
+        <div class="field <%= errors.customer_name ? 'has-error' : '' %>"><label class="label" for="cn">Tên khách <span style="color:var(--danger)">*</span></label><input class="input" id="cn" name="customer_name" value="<%= v.customer_name || '' %>" maxlength="120"><%- err('customer_name') %></div>
+        <div class="field <%= errors.phone ? 'has-error' : '' %>"><label class="label" for="ph">Số điện thoại <span style="color:var(--danger)">*</span></label><input class="input" id="ph" name="phone" inputmode="tel" value="<%= v.phone || '' %>"><%- err('phone') %></div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="field"><label class="label" for="src">Khách đến từ</label><select class="select" id="src" name="order_source"><% Object.entries(SOURCES).filter(([k]) => !['web', 'ai', 'ai_fb'].includes(k)).forEach(([k, t]) => { %><option value="<%= k %>" <%= v.order_source === k ? 'selected' : '' %>><%= t %></option><% }) %></select></div>
+        <div class="field <%= errors.email ? 'has-error' : '' %>"><label class="label" for="em">Email (không bắt buộc)</label><input class="input" id="em" name="email" type="email" value="<%= v.email || '' %>"><%- err('email') %></div>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h2>3. Giao hàng</h2>
+      <div class="grid-2">
+        <div class="field <%= errors.province ? 'has-error' : '' %>"><label class="label" for="pv">Tỉnh / thành</label><select class="select" id="pv" name="province"><% provinces.forEach((p) => { %><option <%= v.province === p ? 'selected' : '' %>><%= p %></option><% }) %></select><%- err('province') %></div>
+        <div class="field <%= errors.address ? 'has-error' : '' %>"><label class="label" for="ad">Địa chỉ</label><input class="input" id="ad" name="address" value="<%= v.address || '' %>" maxlength="300" placeholder="Số nhà, đường, phường/xã"><%- err('address') %></div>
+      </div>
+      <label class="check" style="margin-top:12px"><input type="checkbox" name="is_gift" value="1" <%= v.is_gift ? 'checked' : '' %> data-gift> Gửi tặng người khác (giao cho người nhận, không kèm giá)</label>
+      <div class="grid-2" data-gift-box style="margin-top:12px" <%= v.is_gift ? '' : 'hidden' %>>
+        <div class="field <%= errors.recipient_name ? 'has-error' : '' %>"><label class="label" for="rn">Tên người nhận</label><input class="input" id="rn" name="recipient_name" value="<%= v.recipient_name || '' %>"><%- err('recipient_name') %></div>
+        <div class="field <%= errors.recipient_phone ? 'has-error' : '' %>"><label class="label" for="rp">SĐT người nhận</label><input class="input" id="rp" name="recipient_phone" inputmode="tel" value="<%= v.recipient_phone || '' %>"><%- err('recipient_phone') %></div>
+        <div class="field <%= errors.recipient_address ? 'has-error' : '' %>" style="grid-column:1/-1"><label class="label" for="ra">Địa chỉ người nhận</label><input class="input" id="ra" name="recipient_address" value="<%= v.recipient_address || '' %>"><%- err('recipient_address') %></div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="field <%= errors.delivery_date ? 'has-error' : '' %>"><label class="label" for="dd">Ngày giao</label><input class="input" id="dd" type="date" name="delivery_date" value="<%= v.delivery_date || '' %>"><%- err('delivery_date') %></div>
+        <div class="field"><label class="label" for="sl">Buổi (Hà Nội)</label><select class="select" id="sl" name="delivery_slot"><option value="">Buổi nào cũng được</option><option value="sang" <%= v.delivery_slot === 'sang' ? 'selected' : '' %>>Sáng 8h–12h</option><option value="chieu" <%= v.delivery_slot === 'chieu' ? 'selected' : '' %>>Chiều 13h–17h</option><option value="toi" <%= v.delivery_slot === 'toi' ? 'selected' : '' %>>Tối 18h–20h</option></select></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label class="label" for="nt">Ghi chú cho kho / người giao</label><textarea class="textarea" id="nt" name="note" maxlength="500" placeholder="VD: in thiệp tên công ty, gọi trước 30 phút"><%= v.note || '' %></textarea></div>
+    </section>
+  </div>
+
+  <aside class="form-side">
+    <section class="form-card">
+      <h2>4. Thanh toán</h2>
+      <div class="field"><label class="label" for="pm">Hình thức</label><select class="select" id="pm" name="payment_method"><option value="bank" <%= v.payment_method === 'bank' ? 'selected' : '' %>>Chuyển khoản</option><option value="cod" <%= v.payment_method === 'cod' ? 'selected' : '' %>>COD (trả khi nhận)</option></select></div>
+      <div class="field" style="margin-top:12px"><label class="label" for="ps">Khách đã trả chưa?</label><select class="select" id="ps" name="payment_status" data-paystatus><option value="pending" <%= v.payment_status === 'pending' ? 'selected' : '' %>>Chưa trả</option><option value="deposit" <%= v.payment_status === 'deposit' ? 'selected' : '' %>>Đã cọc một phần</option><option value="paid" <%= v.payment_status === 'paid' ? 'selected' : '' %>>Đã chuyển khoản đủ</option></select></div>
+      <div class="field <%= errors.deposit_amount ? 'has-error' : '' %>" data-deposit-box style="margin-top:12px" <%= v.payment_status === 'deposit' ? '' : 'hidden' %>><label class="label" for="dp">Số tiền đã cọc (₫)</label><input class="input" id="dp" name="deposit_amount" inputmode="numeric" value="<%= v.deposit_amount || '' %>" data-money><%- err('deposit_amount') %></div>
+      <div class="field <%= errors.shipping_fee ? 'has-error' : '' %>" style="margin-top:12px"><label class="label" for="sf">Phí giao (₫)</label><input class="input" id="sf" name="shipping_fee" inputmode="numeric" value="<%= v.shipping_fee || '' %>" placeholder="0 = miễn phí" data-money data-ship><%- err('shipping_fee') %></div>
+      <div class="sum-row" style="margin-top:16px"><span>Số giỏ</span><b data-sum-qty>0</b></div>
+      <div class="sum-row"><span>Tiền hàng</span><b data-sum-goods>0₫</b></div>
+      <div class="sum-row total"><span>Tổng</span><b data-sum-total>0₫</b></div>
+      <button class="btn btn-block" type="submit" style="margin-top:16px">Tạo đơn &amp; báo Telegram</button>
+      <p class="tiny muted" style="margin-top:8px">Đơn vào trạng thái "Đã xác nhận" để kho soạn luôn, không tự hủy khi chưa trả tiền. Khách chưa trả: gửi khách link đơn (có mã QR) hiện sau khi tạo.</p>
+    </section>
+  </aside>
+</form>
+<template data-line-tpl>
+  <div class="no-line" data-line>
+    <div class="field"><label class="label">Giỏ</label><select class="select" name="product_id" data-product><%- productOptions('') %></select></div>
+    <div class="field"><label class="label">Số lượng</label><input class="input" name="qty" inputmode="numeric" value="1" data-qty></div>
+    <div class="field"><label class="label">Đơn giá (₫)</label><input class="input" name="price" inputmode="numeric" value="" data-unit></div>
+    <div class="no-line-total" data-line-total>—</div>
+    <button class="btn btn-sm btn-quiet no-del" type="button" data-del aria-label="Xóa dòng">✕</button>
+  </div>
+</template>
+<%- include('_bottom') %>

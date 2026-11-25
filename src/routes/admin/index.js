@@ -124,6 +124,30 @@ router.get('/don-hang', async (req, res) => {
   });
 });
 
+// Tạo đơn ngay trong admin (khách chốt qua Fanpage/Zalo/điện thoại): giá tự quyết, báo nhóm Telegram
+async function renderNewOrder(res, values = {}, errors = {}) {
+  const ao = require('../../lib/admin-order');
+  const checkout = require('../checkout');
+  res.render('admin/order-new', {
+    title: 'Tạo đơn', products: await ao.productChoices(), provinces: checkout.PROVINCES,
+    values: { province: 'Hà Nội', order_source: 'facebook', payment_method: 'bank', payment_status: 'pending', delivery_date: todayVN(1), ...values },
+    errors, SOURCES: require('../../lib/format').SOURCES,
+  });
+}
+router.get('/don-hang/tao', (req, res) => renderNewOrder(res));
+router.post('/don-hang/tao', async (req, res) => {
+  const r = await require('../../lib/admin-order').createStaffOrder(req.body, req.session.user);
+  if (r.errors) {
+    res.status(422);
+    return renderNewOrder(res, r.values, r.errors);
+  }
+  const link = require('../checkout').shareLink(r.order.code);
+  let msg = `Đã tạo đơn ${r.order.code} và báo nhóm Telegram. Link gửi khách: ${link}`;
+  if (r.negative.length) msg += ` · Lưu ý kho âm: ${r.negative.map((p) => `${p.name} còn ${p.stock}`).join(', ')}`;
+  flash(req, r.negative.length ? 'error' : 'success', msg);
+  res.redirect(`/admin/don-hang/${r.order.id}`);
+});
+
 router.get('/don-hang/:id', async (req, res, next) => {
   const data = await loadOrder(req.params.id);
   if (!data) return next();

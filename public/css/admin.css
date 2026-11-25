@@ -87,3 +87,16 @@ input[type=file].input { padding: 10px; min-height: auto; }
 .quote-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 16px; }
 @media (min-width: 900px) { .quote-card { grid-template-columns: 1fr 320px; } }
 .quote-card + .quote-card { margin-top: 12px; }
+
+/* Tạo đơn trong admin */
+.no-lines { display: grid; gap: 10px; }
+.no-line { display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px 110px 40px; gap: 10px; align-items: end; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.no-line .field { margin: 0; }
+.no-line-total { padding-bottom: 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.no-del { margin-bottom: 4px; }
+.no-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+@media (max-width: 720px) {
+  .no-line { grid-template-columns: 1fr 1fr; }
+  .no-line .field:first-child { grid-column: 1 / -1; }
+  .no-line-total { text-align: left; padding-bottom: 0; }
+}

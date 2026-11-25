@@ -98,6 +98,8 @@ function amountDue(o) {
     if (Number(o.deposit_amount) > 0 && o.payment_status === 'pending') return Number(o.deposit_amount);
     if (o.payment_status === 'deposit') return Number(o.total) - Number(o.deposit_amount);
   }
+  // Chuyển khoản đã cọc một phần (đơn tạo trong admin): QR chỉ đòi phần còn lại
+  if (o.payment_status === 'deposit') return Math.max(0, Number(o.total) - Number(o.deposit_amount));
   return Number(o.total);
 }
 /** Tiền shipper thu khi giao. */
