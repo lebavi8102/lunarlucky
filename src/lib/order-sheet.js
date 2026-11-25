@@ -109,7 +109,13 @@ function csv(table) {
 
 // Tình trạng dễ hiểu cho người không rành công nghệ
 const TINH_TRANG = { new: '🆕 Mới', confirmed: '📦 Đang làm hàng', packing: '📦 Đang làm hàng', shipping: '🚚 Đang giao', completed: '✅ Đã giao xong' };
-const vnDate = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+// "T7 30/01/2027": có thứ để dễ đọc, và Google Sheets không tự đổi thành số ngày (46417)
+const THU = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const vnDate = (d) => {
+  if (!d) return '';
+  const day = String(d).slice(0, 10);
+  return `${THU[new Date(`${day}T12:00:00+07:00`).getUTCDay()]} ${day.split('-').reverse().join('/')}`;
+};
 
 // Sheet ĐƠN HÀNG: MỖI GIỎ 1 DÒNG (có ảnh + thành phần + giá nhập); thông tin đơn chỉ ghi ở dòng đầu của đơn,
 // giữa 2 đơn có 1 dòng trống. Đơn chưa giao lên trên (ngày giao gần nhất trước), đơn đã giao xuống dưới (mới nhất trước).
@@ -180,10 +186,10 @@ async function tongCsv() {
   out.push([], ['THEO TUẦN (Thứ 2 → CN, theo ngày giao)']);
   for (const [k, a] of [...weeks].sort()) {
     const end = new Date(new Date(`${k}T12:00:00+07:00`).getTime() + 6 * 86400000).toISOString().slice(0, 10);
-    out.push(line(`Tuần ${vn(k)} – ${vn(end)}`, a));
+    out.push(line(`Tuần ${vn(k).slice(0, 5)} – ${vn(end)}`, a));
   }
   out.push([], ['THEO NGÀY GIAO']);
-  for (const [k, a] of [...days].sort()) out.push(line(vn(k), a));
+  for (const [k, a] of [...days].sort()) out.push(line(vnDate(k), a));
   return csv(out);
 }
 
