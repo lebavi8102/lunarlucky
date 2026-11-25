@@ -65,7 +65,7 @@ async function rows() {
     const got = collected(o);
     const gift = !!o.is_gift;
     return {
-      o, qty, cost, missing, total, got, due: total - got,
+      o, items: its, qty, cost, missing, total, got, due: total - got,
       cells: [
         o.code,
         String(o.created_at instanceof Date ? o.created_at.toISOString() : o.created_at || '').slice(0, 10),
@@ -95,9 +95,6 @@ async function rows() {
   });
 }
 
-const HEAD_DON = ['Mã đơn', 'Ngày đặt', 'Ngày giao', 'Buổi', 'Sỉ/Lẻ', 'Trạng thái', 'Người đặt', 'SĐT người đặt', 'Người nhận', 'SĐT người nhận', 'Địa chỉ giao',
-  'Giỏ × số lượng', 'Số giỏ', 'Tiền hàng bán', 'Phí giao', 'Khách trả (tổng)', 'Thanh toán', 'Đã thu', 'Còn phải thu', 'Tiền hàng theo giá nhập', 'Phần chủ shop', 'Ghi chú', 'Nguồn'];
-
 // CSV: ô có dấu phẩy/ngoặc/xuống dòng thì bọc "..."; ô bắt đầu bằng = + - @ thêm ' để Sheets không chạy như công thức
 function csv(table) {
   const cell = (v) => {
@@ -110,9 +107,47 @@ function csv(table) {
   return '﻿' + table.map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
+// Tình trạng dễ hiểu cho người không rành công nghệ
+const TINH_TRANG = { new: '🆕 Mới', confirmed: '📦 Đang làm hàng', packing: '📦 Đang làm hàng', shipping: '🚚 Đang giao', completed: '✅ Đã giao xong' };
+const vnDate = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+
+// Sheet ĐƠN HÀNG: MỖI GIỎ 1 DÒNG (có ảnh + thành phần + giá nhập); thông tin đơn chỉ ghi ở dòng đầu của đơn,
+// giữa 2 đơn có 1 dòng trống. Đơn chưa giao lên trên (ngày giao gần nhất trước), đơn đã giao xuống dưới (mới nhất trước).
+// Cột cuối = link ảnh (sheet dùng =IMAGE ở cột A, cột cuối có thể ẩn).
+const HEAD_DON = ['Ngày giao', 'Buổi giao', 'Mã đơn', 'Tình trạng', 'Người nhận', 'Địa chỉ giao', 'Tên giỏ', 'Thành phần trong giỏ', 'Số lượng',
+  'Giá bán 1 giỏ', 'Giá nhập 1 giỏ', 'Tiền nhập (SL × giá nhập)', 'Khách trả cả đơn', 'Thanh toán', 'Đã thu', 'Còn phải thu', 'Lãi cả đơn', 'Ghi chú', 'Link ảnh'];
+
 async function donCsv() {
   const r = await rows();
-  return csv([HEAD_DON, ...r.map((x) => x.cells)]);
+  const { chuanTenMon } = require('./bang-gia');
+  const pids = [...new Set(r.flatMap((x) => x.items.map((i) => i.product_id)).filter(Boolean))];
+  const prods = new Map((pids.length ? await db('products').whereIn('id', pids).select('id', 'image_id', 'contents') : []).map((p) => [p.id, p]));
+  const site = require('../config').siteUrl;
+  const pending = r.filter((x) => x.o.status !== 'completed').sort((a, b) => String(a.o.delivery_date).localeCompare(String(b.o.delivery_date)) || a.o.id - b.o.id);
+  const done = r.filter((x) => x.o.status === 'completed').sort((a, b) => String(b.o.delivery_date).localeCompare(String(a.o.delivery_date)) || b.o.id - a.o.id);
+  const out = [HEAD_DON];
+  for (const x of [...pending, ...done]) {
+    const o = x.o;
+    const gift = !!o.is_gift;
+    const who = gift ? `${o.recipient_name || ''} · ${o.recipient_phone || ''}` : `${o.customer_name || ''} · ${o.phone || ''}`;
+    const addr = [gift ? o.recipient_address : o.address, o.province].filter(Boolean).join(', ');
+    const note = [gift ? `Gửi tặng – người đặt: ${o.customer_name} · ${o.phone} (KHÔNG kèm giá)` : '', o.note].filter(Boolean).join(' | ');
+    x.items.forEach((i, k) => {
+      const p = prods.get(i.product_id) || {};
+      const contents = String(p.contents || '').split(/\r?\n/).map((c) => c.trim()).filter(Boolean).map(chuanTenMon).join(', ');
+      const first = k === 0;
+      out.push([
+        first ? vnDate(o.delivery_date) : '', first ? slotLabel(o.delivery_slot) || 'Cả ngày' : '', first ? o.code : '', first ? TINH_TRANG[o.status] || o.status : '',
+        first ? who : '', first ? addr : '',
+        i.name, contents, i.qty, i.price, i.unit_cost == null ? '' : Number(i.unit_cost), i.unit_cost == null ? '' : Number(i.unit_cost) * i.qty,
+        first ? x.total : '', first ? (o.payment_method === 'cod' ? 'COD – thu khi giao' : 'Chuyển khoản') : '',
+        first ? x.got : '', first ? x.due : '', first ? (x.missing ? '' : x.total - x.cost) : '', first ? note : '',
+        p.image_id ? `${site}/media/${p.image_id}?w=360` : '',
+      ]);
+    });
+    out.push([]); // dòng trống ngăn cách 2 đơn
+  }
+  return csv(out);
 }
 
 function weekStart(day) {
@@ -137,8 +172,8 @@ async function tongCsv() {
     add(weeks, weekStart(d), x);
     add(all, 'TỔNG CỘNG', x);
   }
-  const line = (label, a) => [label, a.n, a.q, a.total, a.got, a.due, a.cost, a.profit, a.miss ? `${a.miss} đơn chưa có giá nhập` : ''];
-  const head = ['Kỳ', 'Số đơn', 'Số giỏ', 'Khách trả', 'Đã thu', 'Còn phải thu', 'Tiền hàng theo giá nhập', 'Phần chủ shop', 'Ghi chú'];
+  const line = (label, a) => [label, a.n, a.q, a.total, a.got, a.due, a.cost, a.profit, a.miss ? `${a.miss} đơn chưa nhập giá nhập` : ''];
+  const head = ['Khoảng thời gian', 'Số đơn', 'Số giỏ', 'Khách trả', 'Đã thu', 'Còn phải thu', 'Tiền nhập hàng', 'Lãi', 'Ghi chú'];
   const vn = (d) => d.split('-').reverse().join('/');
   const out = [head];
   for (const [k, a] of all) out.push(line(k, a));
