@@ -1,5 +1,5 @@
 {
- "ghi_chu": "Giá 1 giỏ/hộp theo số lượng trong catalogue Quà Tết doanh nghiệp 2027 (cập nhật 21/11/2026, 40 mẫu). Từ 500 giỏ: liên hệ. Lấy từ Excel (sheet XEM GIÁ, cột báo giá gửi khách).",
+ "ghi_chu": "Giá 1 giỏ/hộp theo số lượng trong catalogue Quà Tết doanh nghiệp 2027 (cập nhật 26/11/2026, 46 mẫu). Từ 500 giỏ: liên hệ. Lấy từ Excel (sheet XEM GIÁ, cột báo giá gửi khách).",
  "mau": [
   {
    "ma": "LL-018",
@@ -122,6 +122,30 @@
    "gia_100_499": 500000
   },
   {
+   "ma": "LL-047",
+   "ten": "Giỏ Tình Thân",
+   "phan_khuc": "600.000₫ – 800.000₫",
+   "gia_10_49": 610000,
+   "gia_50_99": 540000,
+   "gia_100_499": 520000
+  },
+  {
+   "ma": "LL-043",
+   "ten": "Giỏ Sum Vầy",
+   "phan_khuc": "600.000₫ – 800.000₫",
+   "gia_10_49": 630000,
+   "gia_50_99": 555000,
+   "gia_100_499": 530000
+  },
+  {
+   "ma": "LL-044",
+   "ten": "Giỏ Đoàn Viên",
+   "phan_khuc": "600.000₫ – 800.000₫",
+   "gia_10_49": 630000,
+   "gia_50_99": 555000,
+   "gia_100_499": 530000
+  },
+  {
    "ma": "LL-035",
    "ten": "Giỏ Khai Xuân",
    "phan_khuc": "600.000₫ – 800.000₫",
@@ -136,6 +160,22 @@
    "gia_10_49": 680000,
    "gia_50_99": 600000,
    "gia_100_499": 580000
+  },
+  {
+   "ma": "LL-045",
+   "ten": "Giỏ Viên Mãn",
+   "phan_khuc": "600.000₫ – 800.000₫",
+   "gia_10_49": 695000,
+   "gia_50_99": 620000,
+   "gia_100_499": 600000
+  },
+  {
+   "ma": "LL-046",
+   "ten": "Giỏ Đầm Ấm",
+   "phan_khuc": "600.000₫ – 800.000₫",
+   "gia_10_49": 695000,
+   "gia_50_99": 620000,
+   "gia_100_499": 600000
   },
   {
    "ma": "LL-003",
@@ -304,6 +344,14 @@
    "gia_10_49": 2000000,
    "gia_50_99": 1880000,
    "gia_100_499": 1760000
+  },
+  {
+   "ma": "LL-048",
+   "ten": "Giỏ Hòa Thuận",
+   "phan_khuc": "Trên 1,2 triệu",
+   "gia_10_49": 2200000,
+   "gia_50_99": 2050000,
+   "gia_100_499": 1950000
   },
   {
    "ma": "LL-019",
