@@ -586,8 +586,7 @@ ul, ol { margin: 0; padding: 0; }
 .site-footer a:hover { color: var(--gold-300); }
 .footer-hours { display: inline-flex; align-items: flex-start; gap: 8px; padding-block: 4px; }
 .footer-hours .icon { flex: none; margin-top: 4px; color: var(--gold-400); }
-.footer-legal { padding-bottom: var(--space-4); font-size: 13px; line-height: 1.5; }
-.footer-legal p { margin: 0; color: rgb(253 250 245 / 0.85); }
+.footer-legal { color: rgb(253 250 245 / 0.85); }
 .footer-bottom { border-top: 1px solid rgb(201 161 90 / 0.2); padding-block: var(--space-4); display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); justify-content: space-between; align-items: center; font-size: 13px; color: rgb(253 250 245 / 0.8); }
 /* Nút nổi không che dòng cuối: chừa chỗ bên dưới (điện thoại) và bên phải (máy tính) */
 @media (max-width: 767px) { .site-footer { padding-bottom: 72px; } }
